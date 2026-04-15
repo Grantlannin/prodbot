@@ -1,23 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef, CSSProperties, type KeyboardEvent } from 'react';
+import { useState, useEffect, useRef, type KeyboardEvent } from 'react';
 import { ChatMessage, WorkSession, WorkStatus } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
-const FIRST_ORCHESTRATOR_MESSAGE =
-  'Initialized. I am your AI Performance Orchestrator. To tailor this system to you, we must first build your `USER CONTEXT PROFILE` and operating protocols. Let\'s begin.\n\nFirst, what name should I call you?';
+const WORK_TRACKING_HELP = `Work timer — send one line at a time:
 
-const CMD = {
-  START_WORK:
-    /\b(working now|start(ing)? work|on the clock|let'?s go|go time|clocking in|i'?m working|starting now|begin work)\b/i,
-  BREAK:
-    /\b(break(ing)?|taking a break|brb|stepping (away|out)|step(ping)? out)\b/i,
-  RESUME: /\b(back|i'?m back|returning|back from break|resuming|back at it|let'?s go again)\b/i,
-  STOP: /\b(done(?: working)?|clocking out|wrapping up|finished for (the )?day|signing off|that'?s (it|a wrap)|end of (the )?day|shutting down)\b/i,
-  EOD: /\beod( report)?\b|end of day( report)?\b/i,
-  ACCOMPLISH:
-    /(?:^|\s)(finished|completed|done with|wrapped up|shipped|launched|built|wrote|sent|closed|fixed|solved|delivered|published)\s+(.+)/i,
-};
+• Start work — e.g. "start work", "starting work", "clock in", "begin work"
+• Break — e.g. "break", "taking a break"
+• Done for now — e.g. "done working", "finished working", or just "finished" / "done" while you are working
+• Back from break — e.g. "resume", "back", or "finished" / "done" while you are on a break
+
+Optional: "EOD report" for a quick time summary. To log a win: "shipped …", "fixed …", etc.`;
 
 type ParsedCommand =
   | 'START_WORK'
@@ -28,14 +22,53 @@ type ParsedCommand =
   | { type: 'ACCOMPLISH'; item: string }
   | null;
 
-function parseCommand(input: string): ParsedCommand {
-  if (CMD.START_WORK.test(input)) return 'START_WORK';
-  if (CMD.BREAK.test(input)) return 'BREAK';
-  if (CMD.RESUME.test(input)) return 'RESUME';
-  if (CMD.STOP.test(input)) return 'STOP';
-  if (CMD.EOD.test(input)) return 'EOD';
-  const m = input.match(CMD.ACCOMPLISH);
+function parseCommand(input: string, workStatus: WorkStatus): ParsedCommand {
+  const t = input.trim();
+  if (!t) return null;
+
+  const lower = t.toLowerCase();
+
+  // Break first (so "take a break" wins over "take")
+  if (
+    /\b(break|on break|taking a break|brb|stepping out|pause( my)? work)\b/i.test(t) ||
+    /^break$/i.test(t.trim())
+  ) {
+    return 'BREAK';
+  }
+
+  // Explicit end-of-work phrases (always stop session)
+  if (
+    /\b(done working|finished working|finished for (the )?day|done for (the )?day|clock(ing)? out|signing off|wrap(ping)? up|that'?s a wrap|end (of )?(my )?work|calling it (a )?day)\b/i.test(
+      t
+    )
+  ) {
+    return 'STOP';
+  }
+
+  // Lone "finished" / "done" — depends on state
+  if (/^\s*(finished|done)\s*[.!]?\s*$/i.test(t)) {
+    if (workStatus === 'on_break') return 'RESUME';
+    if (workStatus === 'working') return 'STOP';
+    return null;
+  }
+
+  // Start / resume work
+  if (
+    /\b(start(ing)? work|start work|clock(ing)? in|begin work|let'?s work|deep work|on the clock|time to work|commence work)\b/i.test(
+      t
+    ) ||
+    /\b(back|i'?m back|back from break|resume|resume work|continue work|back to work)\b/i.test(t)
+  ) {
+    return 'START_WORK';
+  }
+
+  if (/\beod( report)?\b|end of day( report)?\b/i.test(lower)) return 'EOD';
+
+  const m = t.match(
+    /(?:^|\s)(shipped|sent|fixed|built|published|completed|wrapped up|launched|closed)\s+(.+)/i
+  );
   if (m) return { type: 'ACCOMPLISH', item: m[2].trim() };
+
   return null;
 }
 
@@ -75,7 +108,7 @@ function buildEODReport(
   const accomplishLines =
     accomplishments.length > 0
       ? accomplishments.map(a => `  • ${a}`).join('\n')
-      : '  (none — you can log wins with phrases like "finished …")';
+      : '  (none — log wins with e.g. "shipped …")';
 
   const date = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -130,7 +163,6 @@ export default function ChatTab({
   void _currentSession;
   const [messages, setMessages] = useLocalStorage<ChatMessage[]>('agentHQ_messages', []);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   function pushAgentMsg(content: string, variant?: ChatMessage['variant']): ChatMessage {
@@ -145,90 +177,112 @@ export default function ChatTab({
     return msg;
   }
 
+  function clearChat() {
+    if (!confirm('Clear all messages in this work log?')) return;
+    setMessages([
+      {
+        id: makeId(),
+        role: 'agent',
+        content: WORK_TRACKING_HELP,
+        timestamp: Date.now(),
+        variant: 'command',
+      },
+    ]);
+  }
+
   useEffect(() => {
     if (messages.length === 0) {
-      pushAgentMsg(FIRST_ORCHESTRATOR_MESSAGE, 'seed');
+      pushAgentMsg(WORK_TRACKING_HELP, 'command');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+  }, [messages]);
 
-  async function callOrchestrator(history: ChatMessage[]): Promise<string> {
-    const payload = history
-      .filter(m => m.variant !== 'seed')
-      .map(({ role, content, variant }) => ({ role, content, variant }));
-
-    try {
-      const res = await fetch('/api/agent-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: payload.slice(-24),
-          context: {
-            workStatus,
-            accomplishments,
-            currentDate: new Date().toString(),
-          },
-        }),
-      });
-      const data = await res.json();
-      return (data.content as string) || 'I did not get a clear reply. Try again.';
-    } catch {
-      return 'Network error. Check your connection and try again.';
-    }
-  }
-
-  async function handleSend() {
+  function handleSend() {
     const text = input.trim();
-    if (!text || isTyping) return;
+    if (!text) return;
     setInput('');
 
-    const userMsg = pushUserMsg(text);
-    setIsTyping(true);
+    pushUserMsg(text);
 
-    try {
-      const cmd = parseCommand(text);
-      const displayName = messages.find(m => m.role === 'user')?.content?.trim() || 'You';
+    const cmd = parseCommand(text, workStatus);
+    const displayName = 'You';
 
-      if (cmd === 'START_WORK') {
-        onStartWork();
+    if (cmd === 'BREAK') {
+      if (workStatus !== 'working') {
         pushAgentMsg(
-          `Work timer started. When you finish something, you can log it with a phrase like "finished …".`,
+          workStatus === 'on_break'
+            ? 'You are already on a break. Say "resume" or "start work" when you are ready to work again.'
+            : 'Start work first (e.g. say "start work"), then you can take a break.',
           'command'
         );
-      } else if (cmd === 'BREAK') {
-        onBreak();
-        pushAgentMsg(`Break timer started. Say "back" when you are ready to resume work.`, 'command');
-      } else if (cmd === 'RESUME') {
-        onResume();
-        pushAgentMsg(`Work timer resumed.`, 'command');
-      } else if (cmd === 'STOP') {
-        onStop();
-        pushAgentMsg(`Work timer stopped. Say "EOD report" if you want a quick local summary of time and accomplishments.`, 'command');
-      } else if (cmd === 'EOD') {
-        const { workMs, breakMs } = getTotals(workStatus !== 'done');
-        const report = buildEODReport(sessions, accomplishments, workMs, breakMs, displayName);
-        pushAgentMsg(report, 'report');
-      } else if (cmd !== null && typeof cmd === 'object' && cmd.type === 'ACCOMPLISH') {
-        onAddAccomplishment(cmd.item);
-        pushAgentMsg(`Logged accomplishment: "${cmd.item}".`, 'command');
-      } else {
-        const historyForModel = [...messages, userMsg];
-        const reply = await callOrchestrator(historyForModel);
-        pushAgentMsg(reply);
+        return;
       }
-    } finally {
-      setIsTyping(false);
+      onBreak();
+      pushAgentMsg(
+        'Break timer started. Work timer paused.\n\nWhen you are done with your break, say "resume", "back", or "finished".',
+        'command'
+      );
+      return;
     }
+
+    if (cmd === 'STOP') {
+      if (workStatus !== 'working' && workStatus !== 'on_break') {
+        pushAgentMsg('Nothing is running right now. Say "start work" to begin tracking.', 'command');
+        return;
+      }
+      onStop();
+      pushAgentMsg(
+        'Workday timer stopped.\n\nSay "start work" when you want to track again, or "EOD report" for a summary.',
+        'command'
+      );
+      return;
+    }
+
+    if (cmd === 'START_WORK' || cmd === 'RESUME') {
+      if (workStatus === 'working') {
+        pushAgentMsg('You are already in a work session. Say "break" for a break, or "done working" to stop.', 'command');
+        return;
+      }
+      if (workStatus === 'on_break') {
+        onResume();
+        pushAgentMsg('Back to work — work timer is running again.', 'command');
+        return;
+      }
+      onStartWork();
+      pushAgentMsg(
+        'Work timer started.\n\nSay "break" when you step away, or "done working" when you are finished for now.',
+        'command'
+      );
+      return;
+    }
+
+    if (cmd === 'EOD') {
+      const { workMs, breakMs } = getTotals(workStatus !== 'done');
+      const report = buildEODReport(sessions, accomplishments, workMs, breakMs, displayName);
+      pushAgentMsg(report, 'report');
+      return;
+    }
+
+    if (cmd !== null && typeof cmd === 'object' && cmd.type === 'ACCOMPLISH') {
+      onAddAccomplishment(cmd.item);
+      pushAgentMsg(`Logged: ${cmd.item}`, 'command');
+      return;
+    }
+
+    pushAgentMsg(
+      'I only handle timer commands right now (start work, break, resume, done working, EOD report, or a win like "shipped …"). Try one of those, or check the tips at the top of this chat.',
+      'command'
+    );
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      void handleSend();
+      handleSend();
     }
   }
 
@@ -247,6 +301,13 @@ export default function ChatTab({
   }, []);
   void tick;
   const { workMs } = getTotals(true);
+
+  const placeholder =
+    workStatus === 'idle' || workStatus === 'done'
+      ? 'Try: start work…'
+      : workStatus === 'on_break'
+        ? 'Try: resume, back, or finished…'
+        : 'Try: break, done working, shipped …';
 
   return (
     <div
@@ -273,16 +334,32 @@ export default function ChatTab({
         {workStatus === 'working' && (
           <span style={{ color: '#64748b', fontSize: 14 }}>{formatDuration(workMs)} tracked</span>
         )}
-        <span style={{ marginLeft: 'auto', color: '#94a3b8', fontSize: 13 }}>Chat</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button
+            type="button"
+            onClick={clearChat}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#64748b',
+              fontFamily: font,
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              padding: '4px 0',
+            }}
+          >
+            Clear chat
+          </button>
+          <span style={{ color: '#94a3b8', fontSize: 13 }}>Work log</span>
+        </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px 28px' }}>
         {messages.map(msg => (
           <MessageBubble key={msg.id} message={msg} />
         ))}
-        {isTyping && (
-          <div style={{ color: '#64748b', fontSize: 14, marginTop: 8 }}>Assistant is typing…</div>
-        )}
         <div ref={bottomRef} />
       </div>
 
@@ -300,12 +377,7 @@ export default function ChatTab({
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={isTyping}
-          placeholder={
-            workStatus === 'idle'
-              ? 'Reply to the orchestrator, or say "working now" to start the timer…'
-              : 'Message the orchestrator…'
-          }
+          placeholder={placeholder}
           style={{
             flex: 1,
             background: '#fff',
@@ -321,18 +393,18 @@ export default function ChatTab({
         />
         <button
           type="button"
-          onClick={() => void handleSend()}
-          disabled={isTyping || !input.trim()}
+          onClick={() => handleSend()}
+          disabled={!input.trim()}
           style={{
-            background: isTyping || !input.trim() ? '#e2e8f0' : '#0f172a',
-            color: isTyping || !input.trim() ? '#94a3b8' : '#fff',
+            background: !input.trim() ? '#e2e8f0' : '#0f172a',
+            color: !input.trim() ? '#94a3b8' : '#fff',
             border: 'none',
             borderRadius: 8,
             padding: '12px 20px',
             fontFamily: font,
             fontSize: 15,
             fontWeight: 600,
-            cursor: isTyping || !input.trim() ? 'not-allowed' : 'pointer',
+            cursor: !input.trim() ? 'not-allowed' : 'pointer',
           }}
         >
           Send
@@ -349,7 +421,7 @@ function bubbleLabel(variant: ChatMessage['variant']): string | null {
     case 'report':
       return 'Summary';
     case 'seed':
-      return 'Orchestrator';
+      return 'Note';
     default:
       return 'Assistant';
   }

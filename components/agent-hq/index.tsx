@@ -60,7 +60,7 @@ export default function AgentHQ() {
 
         {(
           [
-            { id: 'chat' as const, label: 'Chat' },
+            { id: 'chat' as const, label: 'Work log' },
             { id: 'dashboard' as const, label: 'Dashboard' },
           ] as const
         ).map(({ id, label }) => (
