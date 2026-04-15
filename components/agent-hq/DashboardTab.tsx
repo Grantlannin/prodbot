@@ -229,36 +229,6 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
           ? 'Done for now'
           : 'Idle';
 
-  function DeadlineCell({
-    value,
-    completed,
-    onChange,
-  }: {
-    value: string | undefined;
-    completed: boolean;
-    onChange: (v: string) => void;
-  }) {
-    const h = deadlineHint(value, completed);
-    return (
-      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <input
-          type="text"
-          value={value ?? ''}
-          onChange={e => onChange(e.target.value)}
-          placeholder="April 30th"
-          title="Type a month and day"
-          style={{
-            ...styles.goalDateInput,
-            borderColor: isGoalOverdue(value, completed) ? '#f59e0b' : '#cbd5e1',
-          }}
-        />
-        {h.line ? (
-          <span style={{ fontSize: 12, fontWeight: 500, color: hintColor(h.tone), fontFamily: font }}>{h.line}</span>
-        ) : null}
-      </div>
-    );
-  }
-
   function addGoal() {
     if (!newGoalText.trim()) return;
     const deadline = newGoalDeadline.trim();
@@ -459,7 +429,7 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
                   {goal.text}
                 </span>
               )}
-              <DeadlineCell
+              <GoalDeadlineCell
                 value={goal.deadline}
                 completed={goal.completed}
                 onChange={v => setGoalDeadline(goal.id, v)}
@@ -487,7 +457,7 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
                 placeholder="Goal text"
                 style={{ ...styles.fieldInput, minWidth: 0, width: '100%', padding: '8px 10px' }}
               />
-              <DeadlineCell value={newGoalDeadline} completed={false} onChange={setNewGoalDeadline} />
+              <GoalDeadlineCell value={newGoalDeadline} completed={false} onChange={setNewGoalDeadline} />
               <button type="button" onClick={addGoal} style={{ ...styles.primaryBtn, marginTop: 2 }}>
                 Add
               </button>
@@ -979,6 +949,36 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.5,
   },
 };
+
+function GoalDeadlineCell({
+  value,
+  completed,
+  onChange,
+}: {
+  value: string | undefined;
+  completed: boolean;
+  onChange: (v: string) => void;
+}) {
+  const h = deadlineHint(value, completed);
+  return (
+    <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <input
+        type="text"
+        value={value ?? ''}
+        onChange={e => onChange(e.target.value)}
+        placeholder="April 30th"
+        title="Type a month and day"
+        style={{
+          ...styles.goalDateInput,
+          borderColor: isGoalOverdue(value, completed) ? '#f59e0b' : '#cbd5e1',
+        }}
+      />
+      {h.line ? (
+        <span style={{ fontSize: 12, fontWeight: 500, color: hintColor(h.tone), fontFamily: font }}>{h.line}</span>
+      ) : null}
+    </div>
+  );
+}
 
 function openLoopPrimaryStyle(resolved: boolean): CSSProperties {
   return {
