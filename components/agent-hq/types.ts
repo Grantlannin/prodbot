@@ -44,6 +44,17 @@ export interface OpenLoop {
   createdAt: number;
 }
 
+/** Logged from Work log (`infraction - …`) or Dashboard (`agentHQ_infractions`). */
+export interface Infraction {
+  id: string;
+  /** Lowercase key for tallying (e.g. `phone`). */
+  categoryKey: string;
+  /** Display label as entered (e.g. `phone`, `Scrolling Twitter`). */
+  label: string;
+  createdAt: number;
+  source: 'chat' | 'dashboard';
+}
+
 /** Apple-style sidebar note (localStorage `agentHQ_appleNotes`) */
 export interface AppleNote {
   id: string;

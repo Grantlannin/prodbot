@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, CSSProperties } from 'react';
-import { BigGoal, Project, OpenLoop, WorkStatus, WorkSession } from './types';
+import { useState, useEffect, useMemo, CSSProperties } from 'react';
+import { BigGoal, Project, OpenLoop, Infraction, WorkStatus, WorkSession } from './types';
+import { infractionStats } from './infractions';
 import AppleNotesPanel from './AppleNotesPanel';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
@@ -208,9 +209,19 @@ interface DashboardTabProps {
   workStatus: WorkStatus;
   currentSession: WorkSession | null;
   getTotals: (includeRunning?: boolean) => { workMs: number; breakMs: number };
+  infractions: Infraction[];
+  onAddInfraction: (categoryKey: string, label: string) => void;
+  onRemoveInfraction: (id: string) => void;
 }
 
-export default function DashboardTab({ workStatus, currentSession, getTotals }: DashboardTabProps) {
+export default function DashboardTab({
+  workStatus,
+  currentSession,
+  getTotals,
+  infractions,
+  onAddInfraction,
+  onRemoveInfraction,
+}: DashboardTabProps) {
   const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 1000);
@@ -237,6 +248,10 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
   const [loopReq, setLoopReq] = useState('');
   const [loopAction, setLoopAction] = useState('');
   const [loopTime, setLoopTime] = useState('');
+
+  const [newInfractionInput, setNewInfractionInput] = useState('');
+
+  const infractionSummary = useMemo(() => infractionStats(infractions), [infractions]);
 
   const statusColor =
     workStatus === 'working'
@@ -360,6 +375,13 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
 
   function deleteLoop(id: string) {
     setOpenLoops(prev => prev.filter(l => l.id !== id));
+  }
+
+  function submitDashboardInfraction() {
+    const t = newInfractionInput.trim();
+    if (!t) return;
+    onAddInfraction(t.toLowerCase(), t);
+    setNewInfractionInput('');
   }
 
   const projectNameStyle: CSSProperties = {
@@ -614,6 +636,131 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
               Add open loop
             </button>
           </div>
+        </DashCard>
+
+        <DashCard title="Infractions">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div
+              style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: 10,
+                padding: '14px 16px',
+              }}
+            >
+              <div style={{ color: '#64748b', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Total</div>
+              <div style={{ color: '#0f172a', fontFamily: font, fontSize: 28, fontWeight: 700 }}>
+                {infractionSummary.total}
+              </div>
+            </div>
+            <div
+              style={{
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+                borderRadius: 10,
+                padding: '14px 16px',
+              }}
+            >
+              <div style={{ color: '#92400e', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Top infraction</div>
+              {infractionSummary.top ? (
+                <>
+                  <div style={{ color: '#0f172a', fontFamily: font, fontSize: 17, fontWeight: 700, lineHeight: 1.3 }}>
+                    {infractionSummary.top.label}
+                  </div>
+                  <div style={{ color: '#b45309', fontSize: 14, fontWeight: 600, marginTop: 4 }}>
+                    {infractionSummary.top.count}×
+                  </div>
+                </>
+              ) : (
+                <div style={{ color: '#64748b', fontSize: 14 }}>None yet</div>
+              )}
+            </div>
+          </div>
+
+          {infractionSummary.byCategory.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: '#64748b', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>By category</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {infractionSummary.byCategory.slice(0, 8).map(row => (
+                  <div
+                    key={row.key}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontFamily: font,
+                      fontSize: 14,
+                      color: '#0f172a',
+                    }}
+                  >
+                    <span style={{ fontWeight: 500 }}>{row.label}</span>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>{row.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+            <input
+              value={newInfractionInput}
+              onChange={e => setNewInfractionInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') submitDashboardInfraction();
+              }}
+              placeholder='Category (e.g. phone)'
+              style={{ ...styles.fieldInput, flex: 1, minWidth: 160, margin: 0 }}
+            />
+            <button type="button" onClick={submitDashboardInfraction} style={styles.primaryBtn}>
+              Add infraction
+            </button>
+          </div>
+          <p style={{ color: '#94a3b8', fontSize: 12, margin: '0 0 14px', lineHeight: 1.45 }}>
+            From Work log, send <strong style={{ color: '#64748b' }}>infraction - phone</strong> (or colon / em dash) to
+            log here with the same tally.
+          </p>
+
+          {infractions.length === 0 ? (
+            <div style={styles.emptyState}>No infractions logged yet.</div>
+          ) : (
+            <div style={{ maxHeight: 220, overflowY: 'auto', borderTop: '1px solid #f1f5f9', paddingTop: 10 }}>
+              {[...infractions]
+                .sort((a, b) => b.createdAt - a.createdAt)
+                .slice(0, 40)
+                .map(row => (
+                  <div
+                    key={row.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '8px 0',
+                      borderBottom: '1px solid #f8fafc',
+                      fontFamily: font,
+                      fontSize: 14,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontWeight: 600, color: '#0f172a' }}>{row.label}</span>
+                      <span style={{ color: '#94a3b8', marginLeft: 8, fontSize: 12 }}>
+                        {row.source === 'chat' ? 'Work log' : 'Dashboard'}
+                      </span>
+                      <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 2 }}>
+                        {new Date(row.createdAt).toLocaleString([], {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => onRemoveInfraction(row.id)} style={styles.ghostBtn}>
+                      Remove
+                    </button>
+                  </div>
+                ))}
+            </div>
+          )}
         </DashCard>
       </div>
 

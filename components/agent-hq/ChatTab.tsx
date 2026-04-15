@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, type KeyboardEvent } from 'react';
 import { ChatMessage, WorkSession, WorkStatus } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { parseInfractionCommand } from './infractions';
 
 const WORK_TRACKING_HELP = `Work timer — send one line at a time:
 
@@ -10,6 +11,7 @@ const WORK_TRACKING_HELP = `Work timer — send one line at a time:
 • Break — e.g. "break", "taking a break"
 • Done for now — e.g. "done working", "finished working", or just "finished" / "done" while you are working
 • Back from break — e.g. "resume", "back", or "finished" / "done" while you are on a break
+• Infraction — e.g. "infraction - phone" (logged on your Dashboard with a tally)
 
 Optional: "EOD report" for a quick time summary. To log a win: "shipped …", "fixed …", etc.`;
 
@@ -145,6 +147,7 @@ interface ChatTabProps {
   onResume: () => void;
   onStop: () => void;
   onAddAccomplishment: (text: string) => void;
+  onAddInfraction: (categoryKey: string, label: string) => void;
   getTotals: (includeRunning?: boolean) => { workMs: number; breakMs: number };
 }
 
@@ -158,6 +161,7 @@ export default function ChatTab({
   onResume,
   onStop,
   onAddAccomplishment,
+  onAddInfraction,
   getTotals,
 }: ChatTabProps) {
   void _currentSession;
@@ -207,6 +211,16 @@ export default function ChatTab({
     setInput('');
 
     pushUserMsg(text);
+
+    const infParsed = parseInfractionCommand(text);
+    if (infParsed) {
+      onAddInfraction(infParsed.categoryKey, infParsed.label);
+      pushAgentMsg(
+        `Logged infraction — ${infParsed.label}. Open the Dashboard to see totals and your top category.`,
+        'command'
+      );
+      return;
+    }
 
     const cmd = parseCommand(text, workStatus);
     const displayName = 'You';
@@ -274,7 +288,7 @@ export default function ChatTab({
     }
 
     pushAgentMsg(
-      'I only handle timer commands right now (start work, break, resume, done working, EOD report, or a win like "shipped …"). Try one of those, or check the tips at the top of this chat.',
+      'I only handle timer commands, infractions (e.g. "infraction - phone"), EOD report, or a win like "shipped …". Try one of those, or check the tips at the top of this chat.',
       'command'
     );
   }
@@ -307,7 +321,7 @@ export default function ChatTab({
       ? 'Try: start work…'
       : workStatus === 'on_break'
         ? 'Try: resume, back, or finished…'
-        : 'Try: break, done working, shipped …';
+        : 'Try: break, done working, infraction - …, shipped …';
 
   return (
     <div

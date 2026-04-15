@@ -1,15 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import ChatTab from './ChatTab';
 import DashboardTab from './DashboardTab';
 import { useWorkTracker } from './hooks/useWorkTracker';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import type { Infraction } from './types';
+import { INFRACTIONS_STORAGE_KEY } from './infractions';
+
+function makeInfractionId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
 
 type Tab = 'chat' | 'dashboard';
 
 export default function AgentHQ() {
   const [tab, setTab] = useState<Tab>('chat');
   const tracker = useWorkTracker();
+  const [infractions, setInfractions] = useLocalStorage<Infraction[]>(INFRACTIONS_STORAGE_KEY, []);
+
+  const addInfraction = useCallback((categoryKey: string, label: string, source: Infraction['source']) => {
+    setInfractions(prev => [
+      ...prev,
+      { id: makeInfractionId(), categoryKey, label, createdAt: Date.now(), source },
+    ]);
+  }, [setInfractions]);
+
+  const removeInfraction = useCallback(
+    (id: string) => {
+      setInfractions(prev => prev.filter(i => i.id !== id));
+    },
+    [setInfractions]
+  );
 
   const statusColor =
     tracker.status === 'working'
@@ -117,6 +139,7 @@ export default function AgentHQ() {
             onResume={tracker.resumeWork}
             onStop={tracker.stopTracking}
             onAddAccomplishment={tracker.addAccomplishment}
+            onAddInfraction={(categoryKey, label) => addInfraction(categoryKey, label, 'chat')}
             getTotals={tracker.getTotals}
           />
         ) : (
@@ -124,6 +147,9 @@ export default function AgentHQ() {
             workStatus={tracker.status}
             currentSession={tracker.currentSession}
             getTotals={tracker.getTotals}
+            infractions={infractions}
+            onAddInfraction={(categoryKey, label) => addInfraction(categoryKey, label, 'dashboard')}
+            onRemoveInfraction={removeInfraction}
           />
         )}
       </div>
