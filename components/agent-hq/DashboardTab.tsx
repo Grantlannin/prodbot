@@ -166,6 +166,33 @@ function hintColor(tone: 'ok' | 'soon' | 'bad' | 'muted') {
   return '#64748b';
 }
 
+function toIsoDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Normalize stored value to `YYYY-MM-DD` when parseable. */
+function getDeadlineIso(stored: string | undefined): string | null {
+  if (!stored?.trim()) return null;
+  const t = stored.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  const d = parseFlexibleDeadline(t);
+  return d ? toIsoDate(d) : null;
+}
+
+function formatOfficialDeadlineDisplay(stored: string | undefined): string {
+  const iso = getDeadlineIso(stored);
+  if (!iso) return '';
+  const [y, mo, day] = iso.split('-').map(n => parseInt(n, 10));
+  return new Date(y, mo - 1, day).toLocaleDateString(undefined, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 function formatDuration(ms: number): string {
   if (ms <= 0) return '0m';
   const totalSec = Math.floor(ms / 1000);
@@ -200,7 +227,7 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
   const [editingGoalText, setEditingGoalText] = useState('');
   const [addingGoal, setAddingGoal] = useState(false);
   const [newGoalText, setNewGoalText] = useState('');
-  const [newGoalDeadline, setNewGoalDeadline] = useState('');
+  const [newGoalDeadlineIso, setNewGoalDeadlineIso] = useState<string | undefined>(undefined);
 
   const [addingProject, setAddingProject] = useState(false);
   const [newProject, setNewProject] = useState({ name: '', description: '', status: 'active' as Project['status'] });
@@ -231,7 +258,6 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
 
   function addGoal() {
     if (!newGoalText.trim()) return;
-    const deadline = newGoalDeadline.trim();
     setBigGoals(prev => [
       ...prev,
       {
@@ -239,21 +265,21 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
         text: newGoalText.trim(),
         completed: false,
         createdAt: Date.now(),
-        ...(deadline ? { deadline } : {}),
+        ...(newGoalDeadlineIso ? { deadline: newGoalDeadlineIso } : {}),
       },
     ]);
     setNewGoalText('');
-    setNewGoalDeadline('');
+    setNewGoalDeadlineIso(undefined);
     setAddingGoal(false);
   }
 
-  function setGoalDeadline(id: string, deadline: string) {
+  function setGoalDeadline(id: string, deadline: string | undefined) {
     setBigGoals(prev =>
       prev.map(g => {
         if (g.id !== id) return g;
         const next = { ...g };
-        if (!deadline) delete next.deadline;
-        else next.deadline = deadline;
+        if (!deadline?.trim()) delete next.deadline;
+        else next.deadline = deadline.trim();
         return next;
       })
     );
@@ -384,11 +410,10 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
             <div style={styles.goalListHeader}>
               <span aria-hidden="true" />
               <span>Goal</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, minWidth: 0 }}>
                 <span>Goal deadline</span>
-                <span style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8' }}>e.g. April 30th</span>
+                <span style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8' }}>Type a date, then Enter</span>
               </div>
-              <span aria-hidden="true" />
             </div>
           )}
           {bigGoals.map(goal => (
@@ -429,14 +454,16 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
                   {goal.text}
                 </span>
               )}
-              <GoalDeadlineCell
-                value={goal.deadline}
-                completed={goal.completed}
-                onChange={v => setGoalDeadline(goal.id, v)}
-              />
-              <button type="button" onClick={() => deleteGoal(goal.id)} style={{ ...styles.ghostBtn, marginTop: 2 }}>
-                Remove
-              </button>
+              <div style={styles.goalRightCol}>
+                <GoalDeadlineBlock
+                  value={goal.deadline}
+                  completed={goal.completed}
+                  onCommit={iso => setGoalDeadline(goal.id, iso)}
+                />
+                <button type="button" onClick={() => deleteGoal(goal.id)} style={styles.goalRemoveSmall}>
+                  Remove
+                </button>
+              </div>
             </div>
           ))}
           {addingGoal ? (
@@ -451,16 +478,22 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
                   if (e.key === 'Escape') {
                     setAddingGoal(false);
                     setNewGoalText('');
-                    setNewGoalDeadline('');
+                    setNewGoalDeadlineIso(undefined);
                   }
                 }}
                 placeholder="Goal text"
                 style={{ ...styles.fieldInput, minWidth: 0, width: '100%', padding: '8px 10px' }}
               />
-              <GoalDeadlineCell value={newGoalDeadline} completed={false} onChange={setNewGoalDeadline} />
-              <button type="button" onClick={addGoal} style={{ ...styles.primaryBtn, marginTop: 2 }}>
-                Add
-              </button>
+              <div style={styles.goalRightCol}>
+                <GoalDeadlineBlock
+                  value={newGoalDeadlineIso}
+                  completed={false}
+                  onCommit={setNewGoalDeadlineIso}
+                />
+                <button type="button" onClick={addGoal} style={styles.goalRemoveSmall}>
+                  Add goal
+                </button>
+              </div>
             </div>
           ) : (
             <button type="button" onClick={() => setAddingGoal(true)} style={styles.addRow}>
@@ -758,9 +791,27 @@ const styles: Record<string, CSSProperties> = {
     padding: '10px 0',
     borderBottom: '1px solid #f1f5f9',
   },
+  goalRightCol: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 8,
+    minWidth: 0,
+  },
+  goalRemoveSmall: {
+    background: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    cursor: 'pointer',
+    fontSize: 12,
+    fontFamily: font,
+    padding: 0,
+    textDecoration: 'underline',
+    alignSelf: 'flex-end',
+  },
   goalListHeader: {
     display: 'grid',
-    gridTemplateColumns: '18px 1fr minmax(200px, 1.15fr) 72px',
+    gridTemplateColumns: '18px 1fr minmax(200px, 260px)',
     gap: 10,
     alignItems: 'flex-end',
     padding: '4px 0 10px',
@@ -773,7 +824,7 @@ const styles: Record<string, CSSProperties> = {
   },
   goalListRow: {
     display: 'grid',
-    gridTemplateColumns: '18px 1fr minmax(200px, 1.15fr) 72px',
+    gridTemplateColumns: '18px 1fr minmax(200px, 260px)',
     gap: 10,
     alignItems: 'flex-start',
     padding: '10px 0',
@@ -950,31 +1001,185 @@ const styles: Record<string, CSSProperties> = {
   },
 };
 
-function GoalDeadlineCell({
+function GoalDeadlineBlock({
   value,
   completed,
-  onChange,
+  onCommit,
 }: {
   value: string | undefined;
   completed: boolean;
-  onChange: (v: string) => void;
+  onCommit: (iso: string | undefined) => void;
 }) {
-  const h = deadlineHint(value, completed);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  const iso = value ? getDeadlineIso(value) : null;
+
+  function cancelEdit() {
+    setEditing(false);
+    setDraft('');
+  }
+
+  function tryCommit() {
+    const t = draft.trim();
+    if (!t) {
+      cancelEdit();
+      return;
+    }
+    const d = parseFlexibleDeadline(t);
+    if (!d) return;
+    onCommit(toIsoDate(d));
+    setEditing(false);
+    setDraft('');
+  }
+
+  function handleBlur() {
+    if (!editing) return;
+    const t = draft.trim();
+    if (!t) {
+      if (iso) onCommit(undefined);
+      cancelEdit();
+      return;
+    }
+    const d = parseFlexibleDeadline(t);
+    if (d) {
+      onCommit(toIsoDate(d));
+      setEditing(false);
+      setDraft('');
+    } else {
+      cancelEdit();
+    }
+  }
+
+  const hintFromDraft = deadlineHint(draft, completed);
+  const hintStored = iso ? deadlineHint(iso, completed) : { line: '', tone: 'muted' as const };
+
+  if (!editing && iso) {
+    const overdue = isGoalOverdue(iso, completed);
+    return (
+      <div style={{ width: '100%', textAlign: 'right' as const }}>
+        {!completed ? (
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(true);
+              setDraft('');
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px 0',
+              textAlign: 'right',
+              width: '100%',
+            }}
+          >
+            <div
+              style={{
+                fontFamily: font,
+                fontSize: 15,
+                fontWeight: 600,
+                color: overdue ? '#b45309' : '#0f172a',
+              }}
+            >
+              {formatOfficialDeadlineDisplay(value)}
+            </div>
+            {hintStored.line ? (
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: hintColor(hintStored.tone),
+                  fontFamily: font,
+                  marginTop: 4,
+                }}
+              >
+                {hintStored.line}
+              </div>
+            ) : null}
+          </button>
+        ) : (
+          <div>
+            <div style={{ fontFamily: font, fontSize: 15, fontWeight: 600, color: '#94a3b8' }}>
+              {formatOfficialDeadlineDisplay(value)}
+            </div>
+            {hintStored.line ? (
+              <div style={{ fontSize: 12, fontWeight: 500, color: hintColor(hintStored.tone), marginTop: 4 }}>
+                {hintStored.line}
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (!editing && !iso) {
+    return (
+      <div style={{ width: '100%', textAlign: 'right' as const }}>
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(true);
+            setDraft('');
+          }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#64748b',
+            cursor: 'pointer',
+            fontFamily: font,
+            fontSize: 14,
+            textDecoration: 'underline',
+            padding: '4px 0',
+          }}
+        >
+          Set deadline
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div
+      style={{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: 4,
+      }}
+    >
       <input
         type="text"
-        value={value ?? ''}
-        onChange={e => onChange(e.target.value)}
-        placeholder="April 30th"
-        title="Type a month and day"
+        autoFocus
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            tryCommit();
+          }
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelEdit();
+          }
+        }}
+        onBlur={handleBlur}
+        placeholder="e.g. April 30th"
+        title="Type a date, then Enter"
         style={{
           ...styles.goalDateInput,
-          borderColor: isGoalOverdue(value, completed) ? '#f59e0b' : '#cbd5e1',
+          textAlign: 'right',
+          width: '100%',
+          maxWidth: 240,
+          borderColor: '#94a3b8',
         }}
       />
-      {h.line ? (
-        <span style={{ fontSize: 12, fontWeight: 500, color: hintColor(h.tone), fontFamily: font }}>{h.line}</span>
+      {hintFromDraft.line ? (
+        <span style={{ fontSize: 12, fontWeight: 500, color: hintColor(hintFromDraft.tone), fontFamily: font }}>
+          {hintFromDraft.line}
+        </span>
       ) : null}
     </div>
   );
