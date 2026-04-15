@@ -23,7 +23,7 @@ export interface BigGoal {
   text: string;
   completed: boolean;
   createdAt: number;
-  /** `YYYY-MM-DD` for native date input */
+  /** Free text (e.g. April 30th, 4/30) plus optional legacy `YYYY-MM-DD` */
   deadline?: string;
 }
 

@@ -16,12 +16,154 @@ function startOfLocalDay(d: Date): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 }
 
-function isGoalOverdue(deadline: string | undefined, completed: boolean): boolean {
-  if (!deadline || completed) return false;
-  const parts = deadline.split('-').map(p => parseInt(p, 10));
-  if (parts.length !== 3 || parts.some(n => Number.isNaN(n))) return false;
-  const [y, mo, day] = parts;
-  return new Date(y, mo - 1, day).getTime() < startOfLocalDay(new Date());
+const MONTH_ALIASES: Record<string, number> = {
+  january: 0,
+  jan: 0,
+  february: 1,
+  feb: 1,
+  march: 2,
+  mar: 2,
+  april: 3,
+  apr: 3,
+  may: 4,
+  june: 5,
+  jun: 5,
+  july: 6,
+  jul: 6,
+  august: 7,
+  aug: 7,
+  september: 8,
+  sep: 8,
+  sept: 8,
+  october: 9,
+  oct: 9,
+  november: 10,
+  nov: 10,
+  december: 11,
+  dec: 11,
+};
+
+const MONTH_NAMES_SORTED = Object.keys(MONTH_ALIASES).sort((a, b) => b.length - a.length);
+
+function escapeRe(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function stripOrdinals(s: string) {
+  return s.replace(/\b(\d{1,2})(st|nd|rd|th)\b/gi, '$1');
+}
+
+/** Parses month/day style text into a calendar date (local midnight). */
+function parseFlexibleDeadline(raw: string, ref = new Date()): Date | null {
+  const s = stripOrdinals(raw.trim()).replace(/\s+/g, ' ');
+  if (!s) return null;
+
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const y = parseInt(iso[1], 10);
+    const mo = parseInt(iso[2], 10) - 1;
+    const day = parseInt(iso[3], 10);
+    if (mo < 0 || mo > 11 || day < 1 || day > 31) return null;
+    const d = new Date(y, mo, day);
+    return d.getMonth() === mo && d.getDate() === day ? d : null;
+  }
+
+  const slash = s.match(/^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?$/);
+  if (slash) {
+    const mo = parseInt(slash[1], 10) - 1;
+    const day = parseInt(slash[2], 10);
+    let year: number;
+    if (slash[3]) {
+      const yv = parseInt(slash[3], 10);
+      year = slash[3].length === 2 ? 2000 + yv : yv;
+    } else {
+      year = ref.getFullYear();
+    }
+    const d = new Date(year, mo, day);
+    if (d.getMonth() !== mo || d.getDate() !== day) return null;
+    if (!slash[3]) {
+      while (startOfLocalDay(d) < startOfLocalDay(ref)) {
+        d.setFullYear(d.getFullYear() + 1);
+      }
+    }
+    return d;
+  }
+
+  const lower = s.toLowerCase();
+  for (const name of MONTH_NAMES_SORTED) {
+    const mo = MONTH_ALIASES[name];
+    const re = new RegExp(`^${escapeRe(name)}\\s+(\\d{1,2})(?:\\s*,?\\s*(\\d{4}))?\\s*$`, 'i');
+    const m = lower.match(re);
+    if (m) {
+      const day = parseInt(m[1], 10);
+      const year = m[2] ? parseInt(m[2], 10) : ref.getFullYear();
+      const d = new Date(year, mo, day);
+      if (d.getMonth() !== mo || d.getDate() !== day) return null;
+      if (!m[2]) {
+        while (startOfLocalDay(d) < startOfLocalDay(ref)) {
+          d.setFullYear(d.getFullYear() + 1);
+        }
+      }
+      return d;
+    }
+  }
+
+  for (const name of MONTH_NAMES_SORTED) {
+    const mo = MONTH_ALIASES[name];
+    const re = new RegExp(`^(\\d{1,2})\\s+${escapeRe(name)}(?:\\s*,?\\s*(\\d{4}))?\\s*$`, 'i');
+    const m = lower.match(re);
+    if (m) {
+      const day = parseInt(m[1], 10);
+      const year = m[2] ? parseInt(m[2], 10) : ref.getFullYear();
+      const d = new Date(year, mo, day);
+      if (d.getMonth() !== mo || d.getDate() !== day) return null;
+      if (!m[2]) {
+        while (startOfLocalDay(d) < startOfLocalDay(ref)) {
+          d.setFullYear(d.getFullYear() + 1);
+        }
+      }
+      return d;
+    }
+  }
+
+  const y0 = ref.getFullYear();
+  for (const y of [y0, y0 + 1]) {
+    const t = Date.parse(`${s}, ${y}`);
+    if (!Number.isNaN(t)) {
+      const d = new Date(t);
+      if (d.getFullYear() === y) return d;
+    }
+  }
+  return null;
+}
+
+function daysFromTodayTo(deadline: Date, ref = new Date()): number {
+  return Math.round((startOfLocalDay(deadline) - startOfLocalDay(ref)) / 86400000);
+}
+
+function deadlineHint(text: string | undefined, completed: boolean): { line: string; tone: 'ok' | 'soon' | 'bad' | 'muted' } {
+  if (!text?.trim() || completed) return { line: '', tone: 'muted' };
+  const d = parseFlexibleDeadline(text);
+  if (!d) return { line: "Can't read that date", tone: 'bad' };
+  const n = daysFromTodayTo(d);
+  if (n === 0) return { line: 'Due today', tone: 'soon' };
+  if (n === 1) return { line: '1 day away', tone: 'ok' };
+  if (n > 1) return { line: `${n} days away`, tone: n <= 7 ? 'soon' : 'ok' };
+  if (n === -1) return { line: '1 day overdue', tone: 'bad' };
+  return { line: `${-n} days overdue`, tone: 'bad' };
+}
+
+function isGoalOverdue(text: string | undefined, completed: boolean): boolean {
+  if (!text?.trim() || completed) return false;
+  const d = parseFlexibleDeadline(text);
+  if (!d) return false;
+  return daysFromTodayTo(d) < 0;
+}
+
+function hintColor(tone: 'ok' | 'soon' | 'bad' | 'muted') {
+  if (tone === 'bad') return '#b45309';
+  if (tone === 'soon') return '#a16207';
+  return '#64748b';
 }
 
 function formatDuration(ms: number): string {
@@ -86,6 +228,36 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
         : workStatus === 'done'
           ? 'Done for now'
           : 'Idle';
+
+  function DeadlineCell({
+    value,
+    completed,
+    onChange,
+  }: {
+    value: string | undefined;
+    completed: boolean;
+    onChange: (v: string) => void;
+  }) {
+    const h = deadlineHint(value, completed);
+    return (
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <input
+          type="text"
+          value={value ?? ''}
+          onChange={e => onChange(e.target.value)}
+          placeholder="April 30th"
+          title="Type a month and day"
+          style={{
+            ...styles.goalDateInput,
+            borderColor: isGoalOverdue(value, completed) ? '#f59e0b' : '#cbd5e1',
+          }}
+        />
+        {h.line ? (
+          <span style={{ fontSize: 12, fontWeight: 500, color: hintColor(h.tone), fontFamily: font }}>{h.line}</span>
+        ) : null}
+      </div>
+    );
+  }
 
   function addGoal() {
     if (!newGoalText.trim()) return;
@@ -242,13 +414,20 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
             <div style={styles.goalListHeader}>
               <span aria-hidden="true" />
               <span>Goal</span>
-              <span>Goal deadline</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                <span>Goal deadline</span>
+                <span style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8' }}>e.g. April 30th</span>
+              </div>
               <span aria-hidden="true" />
             </div>
           )}
           {bigGoals.map(goal => (
             <div key={goal.id} style={styles.goalListRow}>
-              <button type="button" onClick={() => toggleGoal(goal.id)} style={checkboxStyle(goal.completed)} />
+              <button
+                type="button"
+                onClick={() => toggleGoal(goal.id)}
+                style={{ ...checkboxStyle(goal.completed), marginTop: 2 }}
+              />
               {editingGoalId === goal.id ? (
                 <input
                   autoFocus
@@ -280,18 +459,12 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
                   {goal.text}
                 </span>
               )}
-              <input
-                type="date"
-                value={goal.deadline ?? ''}
-                onChange={e => setGoalDeadline(goal.id, e.target.value)}
-                title="Goal deadline"
-                style={{
-                  ...styles.goalDateInput,
-                  borderColor: isGoalOverdue(goal.deadline, goal.completed) ? '#f59e0b' : '#cbd5e1',
-                  color: isGoalOverdue(goal.deadline, goal.completed) ? '#b45309' : '#0f172a',
-                }}
+              <DeadlineCell
+                value={goal.deadline}
+                completed={goal.completed}
+                onChange={v => setGoalDeadline(goal.id, v)}
               />
-              <button type="button" onClick={() => deleteGoal(goal.id)} style={styles.ghostBtn}>
+              <button type="button" onClick={() => deleteGoal(goal.id)} style={{ ...styles.ghostBtn, marginTop: 2 }}>
                 Remove
               </button>
             </div>
@@ -314,14 +487,8 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
                 placeholder="Goal text"
                 style={{ ...styles.fieldInput, minWidth: 0, width: '100%', padding: '8px 10px' }}
               />
-              <input
-                type="date"
-                value={newGoalDeadline}
-                onChange={e => setNewGoalDeadline(e.target.value)}
-                title="Goal deadline"
-                style={styles.goalDateInput}
-              />
-              <button type="button" onClick={addGoal} style={styles.primaryBtn}>
+              <DeadlineCell value={newGoalDeadline} completed={false} onChange={setNewGoalDeadline} />
+              <button type="button" onClick={addGoal} style={{ ...styles.primaryBtn, marginTop: 2 }}>
                 Add
               </button>
             </div>
@@ -623,9 +790,9 @@ const styles: Record<string, CSSProperties> = {
   },
   goalListHeader: {
     display: 'grid',
-    gridTemplateColumns: '18px 1fr minmax(132px, 1fr) 72px',
+    gridTemplateColumns: '18px 1fr minmax(200px, 1.15fr) 72px',
     gap: 10,
-    alignItems: 'center',
+    alignItems: 'flex-end',
     padding: '4px 0 10px',
     borderBottom: '1px solid #e2e8f0',
     fontSize: 12,
@@ -636,9 +803,9 @@ const styles: Record<string, CSSProperties> = {
   },
   goalListRow: {
     display: 'grid',
-    gridTemplateColumns: '18px 1fr minmax(132px, 1fr) 72px',
+    gridTemplateColumns: '18px 1fr minmax(200px, 1.15fr) 72px',
     gap: 10,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: '10px 0',
     borderBottom: '1px solid #f1f5f9',
   },
