@@ -12,3 +12,12 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+## Deploy on Vercel
+
+Use the **Next.js** preset (auto-detected from this repo). In **Project → Settings → Build & Development**:
+
+- **Framework Preset:** Next.js  
+- **Output Directory:** leave **empty** (default). Do **not** set it to `public` or `dist` — that causes “No Output Directory named public” after a successful `next build`.
+
+Then add your environment variables under **Settings → Environment Variables** and redeploy.
