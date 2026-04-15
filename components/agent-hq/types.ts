@@ -23,6 +23,8 @@ export interface BigGoal {
   text: string;
   completed: boolean;
   createdAt: number;
+  /** `YYYY-MM-DD` for native date input */
+  deadline?: string;
 }
 
 export interface Project {

@@ -12,6 +12,18 @@ function makeId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
+function startOfLocalDay(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+function isGoalOverdue(deadline: string | undefined, completed: boolean): boolean {
+  if (!deadline || completed) return false;
+  const parts = deadline.split('-').map(p => parseInt(p, 10));
+  if (parts.length !== 3 || parts.some(n => Number.isNaN(n))) return false;
+  const [y, mo, day] = parts;
+  return new Date(y, mo - 1, day).getTime() < startOfLocalDay(new Date());
+}
+
 function formatDuration(ms: number): string {
   if (ms <= 0) return '0m';
   const totalSec = Math.floor(ms / 1000);
@@ -46,6 +58,7 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
   const [editingGoalText, setEditingGoalText] = useState('');
   const [addingGoal, setAddingGoal] = useState(false);
   const [newGoalText, setNewGoalText] = useState('');
+  const [newGoalDeadline, setNewGoalDeadline] = useState('');
 
   const [addingProject, setAddingProject] = useState(false);
   const [newProject, setNewProject] = useState({ name: '', description: '', status: 'active' as Project['status'] });
@@ -76,12 +89,32 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
 
   function addGoal() {
     if (!newGoalText.trim()) return;
+    const deadline = newGoalDeadline.trim();
     setBigGoals(prev => [
       ...prev,
-      { id: makeId(), text: newGoalText.trim(), completed: false, createdAt: Date.now() },
+      {
+        id: makeId(),
+        text: newGoalText.trim(),
+        completed: false,
+        createdAt: Date.now(),
+        ...(deadline ? { deadline } : {}),
+      },
     ]);
     setNewGoalText('');
+    setNewGoalDeadline('');
     setAddingGoal(false);
+  }
+
+  function setGoalDeadline(id: string, deadline: string) {
+    setBigGoals(prev =>
+      prev.map(g => {
+        if (g.id !== id) return g;
+        const next = { ...g };
+        if (!deadline) delete next.deadline;
+        else next.deadline = deadline;
+        return next;
+      })
+    );
   }
 
   function toggleGoal(id: string) {
@@ -205,8 +238,16 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
           {bigGoals.length === 0 && !addingGoal && (
             <div style={styles.emptyState}>Add a few goals you are working toward.</div>
           )}
+          {(bigGoals.length > 0 || addingGoal) && (
+            <div style={styles.goalListHeader}>
+              <span aria-hidden="true" />
+              <span>Goal</span>
+              <span>Goal deadline</span>
+              <span aria-hidden="true" />
+            </div>
+          )}
           {bigGoals.map(goal => (
-            <div key={goal.id} style={styles.listRow}>
+            <div key={goal.id} style={styles.goalListRow}>
               <button type="button" onClick={() => toggleGoal(goal.id)} style={checkboxStyle(goal.completed)} />
               {editingGoalId === goal.id ? (
                 <input
@@ -218,7 +259,7 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
                     if (e.key === 'Enter') commitGoalEdit(goal.id);
                     if (e.key === 'Escape') setEditingGoalId(null);
                   }}
-                  style={{ ...styles.inlineInput, flex: 1 }}
+                  style={{ ...styles.inlineInput, minWidth: 0, width: '100%' }}
                 />
               ) : (
                 <span
@@ -227,7 +268,7 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
                     setEditingGoalText(goal.text);
                   }}
                   style={{
-                    flex: 1,
+                    minWidth: 0,
                     color: goal.completed ? '#94a3b8' : '#0f172a',
                     fontFamily: font,
                     fontSize: 15,
@@ -239,23 +280,46 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
                   {goal.text}
                 </span>
               )}
+              <input
+                type="date"
+                value={goal.deadline ?? ''}
+                onChange={e => setGoalDeadline(goal.id, e.target.value)}
+                title="Goal deadline"
+                style={{
+                  ...styles.goalDateInput,
+                  borderColor: isGoalOverdue(goal.deadline, goal.completed) ? '#f59e0b' : '#cbd5e1',
+                  color: isGoalOverdue(goal.deadline, goal.completed) ? '#b45309' : '#0f172a',
+                }}
+              />
               <button type="button" onClick={() => deleteGoal(goal.id)} style={styles.ghostBtn}>
                 Remove
               </button>
             </div>
           ))}
           {addingGoal ? (
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <div style={{ ...styles.goalListRow, marginTop: 10 }}>
+              <span aria-hidden="true" />
               <input
                 autoFocus
                 value={newGoalText}
                 onChange={e => setNewGoalText(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter') addGoal();
-                  if (e.key === 'Escape') setAddingGoal(false);
+                  if (e.key === 'Escape') {
+                    setAddingGoal(false);
+                    setNewGoalText('');
+                    setNewGoalDeadline('');
+                  }
                 }}
                 placeholder="Goal text"
-                style={{ ...styles.fieldInput, flex: 1 }}
+                style={{ ...styles.fieldInput, minWidth: 0, width: '100%', padding: '8px 10px' }}
+              />
+              <input
+                type="date"
+                value={newGoalDeadline}
+                onChange={e => setNewGoalDeadline(e.target.value)}
+                title="Goal deadline"
+                style={styles.goalDateInput}
               />
               <button type="button" onClick={addGoal} style={styles.primaryBtn}>
                 Add
@@ -556,6 +620,40 @@ const styles: Record<string, CSSProperties> = {
     gap: 10,
     padding: '10px 0',
     borderBottom: '1px solid #f1f5f9',
+  },
+  goalListHeader: {
+    display: 'grid',
+    gridTemplateColumns: '18px 1fr minmax(132px, 1fr) 72px',
+    gap: 10,
+    alignItems: 'center',
+    padding: '4px 0 10px',
+    borderBottom: '1px solid #e2e8f0',
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#64748b',
+    fontFamily: font,
+    letterSpacing: 0.02,
+  },
+  goalListRow: {
+    display: 'grid',
+    gridTemplateColumns: '18px 1fr minmax(132px, 1fr) 72px',
+    gap: 10,
+    alignItems: 'center',
+    padding: '10px 0',
+    borderBottom: '1px solid #f1f5f9',
+  },
+  goalDateInput: {
+    background: '#fff',
+    border: '1px solid #cbd5e1',
+    borderRadius: 8,
+    color: '#0f172a',
+    fontFamily: font,
+    fontSize: 13,
+    padding: '6px 8px',
+    outline: 'none',
+    width: '100%',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
   },
   inlineInput: {
     background: '#fff',
