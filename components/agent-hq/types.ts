@@ -42,6 +42,14 @@ export interface OpenLoop {
   createdAt: number;
 }
 
+/** Apple-style sidebar note (localStorage `agentHQ_appleNotes`) */
+export interface AppleNote {
+  id: string;
+  content: string;
+  updatedAt: number;
+  createdAt: number;
+}
+
 export interface OnboardingState {
   step: number; // current question index
   completed: boolean;

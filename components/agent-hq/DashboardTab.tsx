@@ -2,6 +2,7 @@
 
 import { useState, useEffect, CSSProperties } from 'react';
 import { BigGoal, Project, OpenLoop, WorkStatus, WorkSession } from './types';
+import AppleNotesPanel from './AppleNotesPanel';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
 const font =
@@ -40,7 +41,6 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
   const [bigGoals, setBigGoals] = useLocalStorage<BigGoal[]>('agentHQ_bigGoals', []);
   const [projects, setProjects] = useLocalStorage<Project[]>('agentHQ_projects', []);
   const [openLoops, setOpenLoops] = useLocalStorage<OpenLoop[]>('agentHQ_openLoops', []);
-  const [notes, setNotes] = useLocalStorage<string>('agentHQ_notes', '');
 
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editingGoalText, setEditingGoalText] = useState('');
@@ -385,24 +385,7 @@ export default function DashboardTab({ workStatus, currentSession, getTotals }: 
 
       <div style={{ padding: '20px 24px 32px' }}>
         <DashCard title="Notes" noPad>
-          <div style={{ background: '#fffbeb', borderRadius: '0 0 10px 10px' }}>
-            <div style={styles.notesToolbar}>
-              <span style={styles.notesDate}>
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-              </span>
-              {notes.length > 0 && (
-                <span style={styles.notesMeta}>
-                  {notes.split(/\s+/).filter(Boolean).length} words · saved locally
-                </span>
-              )}
-            </div>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="Notes…"
-              style={styles.notesArea}
-            />
-          </div>
+          <AppleNotesPanel />
         </DashCard>
       </div>
 
@@ -683,37 +666,6 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-  },
-  notesToolbar: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '10px 16px 6px',
-    borderBottom: '1px solid #fde68a',
-  },
-  notesDate: {
-    fontFamily: font,
-    fontSize: 13,
-    color: '#78716c',
-  },
-  notesMeta: {
-    fontFamily: font,
-    fontSize: 13,
-    color: '#a8a29e',
-  },
-  notesArea: {
-    width: '100%',
-    minHeight: 260,
-    background: 'transparent',
-    border: 'none',
-    outline: 'none',
-    resize: 'vertical',
-    padding: '14px 16px 18px',
-    fontFamily: font,
-    fontSize: 16,
-    lineHeight: 1.65,
-    color: '#1c1917',
-    boxSizing: 'border-box',
   },
   modalOverlay: {
     position: 'fixed',
