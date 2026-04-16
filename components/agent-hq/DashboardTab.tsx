@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo, CSSProperties } from 'react';
-import { BigGoal, Project, OpenLoop, Infraction, WorkStatus, WorkSession } from './types';
-import { infractionStats } from './infractions';
+import { useState, useEffect, useMemo, CSSProperties, type ReactNode } from 'react';
+import { BigGoal, OpenLoop, Infraction, WorkStatus, WorkSession } from './types';
+import { infractionCategoriesInOrder, topInfractionLine } from './infractions';
 import AppleNotesPanel from './AppleNotesPanel';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
@@ -211,7 +211,8 @@ interface DashboardTabProps {
   getTotals: (includeRunning?: boolean) => { workMs: number; breakMs: number };
   infractions: Infraction[];
   onAddInfraction: (categoryKey: string, label: string) => void;
-  onRemoveInfraction: (id: string) => void;
+  onResetInfractionsToday: () => void;
+  onResetWorkDay: () => void;
 }
 
 export default function DashboardTab({
@@ -220,7 +221,8 @@ export default function DashboardTab({
   getTotals,
   infractions,
   onAddInfraction,
-  onRemoveInfraction,
+  onResetInfractionsToday,
+  onResetWorkDay,
 }: DashboardTabProps) {
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -231,7 +233,6 @@ export default function DashboardTab({
   const { workMs, breakMs } = getTotals(true);
 
   const [bigGoals, setBigGoals] = useLocalStorage<BigGoal[]>('agentHQ_bigGoals', []);
-  const [projects, setProjects] = useLocalStorage<Project[]>('agentHQ_projects', []);
   const [openLoops, setOpenLoops] = useLocalStorage<OpenLoop[]>('agentHQ_openLoops', []);
 
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
@@ -239,9 +240,6 @@ export default function DashboardTab({
   const [addingGoal, setAddingGoal] = useState(false);
   const [newGoalText, setNewGoalText] = useState('');
   const [newGoalDeadlineIso, setNewGoalDeadlineIso] = useState<string | undefined>(undefined);
-
-  const [addingProject, setAddingProject] = useState(false);
-  const [newProject, setNewProject] = useState({ name: '', description: '', status: 'active' as Project['status'] });
 
   const [showLoopModal, setShowLoopModal] = useState(false);
   const [loopStep, setLoopStep] = useState<1 | 2>(1);
@@ -251,7 +249,8 @@ export default function DashboardTab({
 
   const [newInfractionInput, setNewInfractionInput] = useState('');
 
-  const infractionSummary = useMemo(() => infractionStats(infractions), [infractions]);
+  const infractionRows = useMemo(() => infractionCategoriesInOrder(infractions), [infractions]);
+  const infractionTopLine = useMemo(() => topInfractionLine(infractions), [infractions]);
 
   const statusColor =
     workStatus === 'working'
@@ -315,36 +314,6 @@ export default function DashboardTab({
     setBigGoals(prev => prev.filter(g => g.id !== id));
   }
 
-  const statusCycle: Record<Project['status'], Project['status']> = {
-    active: 'paused',
-    paused: 'complete',
-    complete: 'active',
-  };
-
-  function addProject() {
-    if (!newProject.name.trim()) return;
-    setProjects(prev => [
-      ...prev,
-      {
-        id: makeId(),
-        ...newProject,
-        name: newProject.name.trim(),
-        description: newProject.description.trim(),
-        createdAt: Date.now(),
-      },
-    ]);
-    setNewProject({ name: '', description: '', status: 'active' });
-    setAddingProject(false);
-  }
-
-  function cycleStatus(id: string) {
-    setProjects(prev => prev.map(p => (p.id === id ? { ...p, status: statusCycle[p.status] } : p)));
-  }
-
-  function deleteProject(id: string) {
-    setProjects(prev => prev.filter(p => p.id !== id));
-  }
-
   function submitLoop() {
     if (!loopReq.trim() || !loopAction.trim()) return;
     setOpenLoops(prev => [
@@ -384,16 +353,6 @@ export default function DashboardTab({
     setNewInfractionInput('');
   }
 
-  const projectNameStyle: CSSProperties = {
-    color: '#0f172a',
-    fontFamily: font,
-    fontSize: 15,
-    fontWeight: 600,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  };
-
   return (
     <div style={{ background: '#f8fafc', minHeight: '100%', overflowY: 'auto', fontFamily: font }}>
       <div style={styles.timeBanner}>
@@ -413,17 +372,31 @@ export default function DashboardTab({
           </div>
         </div>
 
-        <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-          <div style={{ color: statusColor, fontFamily: font, fontSize: 15, fontWeight: 600 }}>{statusLabel}</div>
-          {workStatus === 'working' && currentSession && (
-            <div style={{ color: '#64748b', fontFamily: font, fontSize: 14, marginTop: 4 }}>
-              Since {new Date(currentSession.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
-          )}
+        <div
+          style={{
+            marginLeft: 'auto',
+            textAlign: 'right',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 10,
+          }}
+        >
+          <div>
+            <div style={{ color: statusColor, fontFamily: font, fontSize: 15, fontWeight: 600 }}>{statusLabel}</div>
+            {workStatus === 'working' && currentSession && (
+              <div style={{ color: '#64748b', fontFamily: font, fontSize: 14, marginTop: 4 }}>
+                Since {new Date(currentSession.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
+          </div>
+          <button type="button" onClick={onResetWorkDay} style={styles.secondaryBtnSmall}>
+            Reset timer
+          </button>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, padding: '20px 24px 0' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20, padding: '20px 24px 0', maxWidth: 920 }}>
         <DashCard title="Goals">
           {bigGoals.length === 0 && !addingGoal && (
             <div style={styles.emptyState}>Add a few goals you are working toward.</div>
@@ -523,72 +496,6 @@ export default function DashboardTab({
             </button>
           )}
         </DashCard>
-
-        <DashCard title="Projects">
-          {projects.length === 0 && !addingProject && (
-            <div style={styles.emptyState}>Track projects you are building.</div>
-          )}
-          {projects.map(p => (
-            <div key={p.id} style={styles.listRow}>
-              <button
-                type="button"
-                onClick={() => cycleStatus(p.id)}
-                title="Click to change status"
-                style={{
-                  ...styles.statusBadge,
-                  color:
-                    p.status === 'active' ? '#15803d' : p.status === 'paused' ? '#b45309' : '#64748b',
-                  borderColor:
-                    p.status === 'active' ? '#bbf7d0' : p.status === 'paused' ? '#fde68a' : '#e2e8f0',
-                  background:
-                    p.status === 'active' ? '#f0fdf4' : p.status === 'paused' ? '#fffbeb' : '#f8fafc',
-                }}
-              >
-                {p.status}
-              </button>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={projectNameStyle}>{p.name}</div>
-                {p.description && (
-                  <div style={{ color: '#64748b', fontFamily: font, fontSize: 14, marginTop: 4 }}>
-                    {p.description}
-                  </div>
-                )}
-              </div>
-              <button type="button" onClick={() => deleteProject(p.id)} style={styles.ghostBtn}>
-                Remove
-              </button>
-            </div>
-          ))}
-          {addingProject ? (
-            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <input
-                autoFocus
-                value={newProject.name}
-                onChange={e => setNewProject(pr => ({ ...pr, name: e.target.value }))}
-                placeholder="Project name"
-                style={styles.fieldInput}
-              />
-              <input
-                value={newProject.description}
-                onChange={e => setNewProject(pr => ({ ...pr, description: e.target.value }))}
-                placeholder="Description (optional)"
-                style={styles.fieldInput}
-              />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" onClick={addProject} style={styles.primaryBtn}>
-                  Add
-                </button>
-                <button type="button" onClick={() => setAddingProject(false)} style={styles.secondaryBtn}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button type="button" onClick={() => setAddingProject(true)} style={styles.addRow}>
-              + Add project
-            </button>
-          )}
-        </DashCard>
       </div>
 
       <div style={{ padding: '20px 24px 0' }}>
@@ -638,129 +545,63 @@ export default function DashboardTab({
           </div>
         </DashCard>
 
-        <DashCard title="Infractions">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-            <div
-              style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: 10,
-                padding: '14px 16px',
-              }}
-            >
-              <div style={{ color: '#64748b', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Total</div>
-              <div style={{ color: '#0f172a', fontFamily: font, fontSize: 28, fontWeight: 700 }}>
-                {infractionSummary.total}
-              </div>
-            </div>
-            <div
-              style={{
-                background: '#fffbeb',
-                border: '1px solid #fde68a',
-                borderRadius: 10,
-                padding: '14px 16px',
-              }}
-            >
-              <div style={{ color: '#92400e', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Top infraction</div>
-              {infractionSummary.top ? (
-                <>
-                  <div style={{ color: '#0f172a', fontFamily: font, fontSize: 17, fontWeight: 700, lineHeight: 1.3 }}>
-                    {infractionSummary.top.label}
-                  </div>
-                  <div style={{ color: '#b45309', fontSize: 14, fontWeight: 600, marginTop: 4 }}>
-                    {infractionSummary.top.count}×
-                  </div>
-                </>
-              ) : (
-                <div style={{ color: '#64748b', fontSize: 14 }}>None yet</div>
-              )}
-            </div>
-          </div>
-
-          {infractionSummary.byCategory.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#64748b', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>By category</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {infractionSummary.byCategory.slice(0, 8).map(row => (
-                  <div
-                    key={row.key}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      fontFamily: font,
-                      fontSize: 14,
-                      color: '#0f172a',
-                    }}
-                  >
-                    <span style={{ fontWeight: 500 }}>{row.label}</span>
-                    <span style={{ color: '#64748b', fontWeight: 600 }}>{row.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        <DashCard
+          title="infractions"
+          headerRight={
+            <button type="button" onClick={onResetInfractionsToday} style={styles.infractionHeaderBtn}>
+              Reset today
+            </button>
+          }
+        >
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
             <input
               value={newInfractionInput}
               onChange={e => setNewInfractionInput(e.target.value)}
               onKeyDown={e => {
                 if (e.key === 'Enter') submitDashboardInfraction();
               }}
-              placeholder='Category (e.g. phone)'
-              style={{ ...styles.fieldInput, flex: 1, minWidth: 160, margin: 0 }}
+              placeholder="Category"
+              aria-label="Infraction category"
+              style={styles.infractionInput}
             />
-            <button type="button" onClick={submitDashboardInfraction} style={styles.primaryBtn}>
-              Add infraction
+            <button type="button" onClick={submitDashboardInfraction} style={styles.infractionAddBtn}>
+              Add
             </button>
           </div>
-          <p style={{ color: '#94a3b8', fontSize: 12, margin: '0 0 14px', lineHeight: 1.45 }}>
-            From Work log, send <strong style={{ color: '#64748b' }}>infraction - phone</strong> (or colon / em dash) to
-            log here with the same tally.
+          <p style={{ color: '#94a3b8', fontSize: 11, margin: '0 0 10px', lineHeight: 1.35 }}>
+            Work log: <span style={{ color: '#64748b' }}>infraction - phone</span>
           </p>
 
-          {infractions.length === 0 ? (
-            <div style={styles.emptyState}>No infractions logged yet.</div>
+          {infractionRows.length === 0 ? (
+            <div style={{ ...styles.emptyState, padding: '4px 0 2px', fontSize: 13 }}>None yet.</div>
           ) : (
-            <div style={{ maxHeight: 220, overflowY: 'auto', borderTop: '1px solid #f1f5f9', paddingTop: 10 }}>
-              {[...infractions]
-                .sort((a, b) => b.createdAt - a.createdAt)
-                .slice(0, 40)
-                .map(row => (
-                  <div
-                    key={row.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '8px 0',
-                      borderBottom: '1px solid #f8fafc',
-                      fontFamily: font,
-                      fontSize: 14,
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontWeight: 600, color: '#0f172a' }}>{row.label}</span>
-                      <span style={{ color: '#94a3b8', marginLeft: 8, fontSize: 12 }}>
-                        {row.source === 'chat' ? 'Work log' : 'Dashboard'}
-                      </span>
-                      <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 2 }}>
-                        {new Date(row.createdAt).toLocaleString([], {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </div>
-                    </div>
-                    <button type="button" onClick={() => onRemoveInfraction(row.id)} style={styles.ghostBtn}>
-                      Remove
-                    </button>
-                  </div>
-                ))}
+            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 6 }}>
+              {infractionRows.map(row => (
+                <div key={row.key} style={styles.infractionRow}>
+                  <span style={{ color: '#0f172a', fontWeight: 500, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {row.label}
+                  </span>
+                  <span style={{ color: '#64748b', fontWeight: 600, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                    {row.count}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
+
+          <div
+            style={{
+              marginTop: 10,
+              paddingTop: 8,
+              borderTop: '1px solid #f1f5f9',
+              fontSize: 12,
+              color: '#64748b',
+              fontFamily: font,
+              lineHeight: 1.4,
+            }}
+          >
+            {infractionTopLine ?? 'Top infraction: —'}
+          </div>
         </DashCard>
       </div>
 
@@ -862,10 +703,12 @@ function DashCard({
   title,
   children,
   noPad,
+  headerRight,
 }: {
   title: string;
   children: React.ReactNode;
   noPad?: boolean;
+  headerRight?: ReactNode;
 }) {
   return (
     <div
@@ -879,16 +722,31 @@ function DashCard({
     >
       <div
         style={{
-          padding: '12px 16px',
+          padding: '10px 14px',
           borderBottom: '1px solid #e2e8f0',
           display: 'flex',
           alignItems: 'center',
           gap: 10,
+          minHeight: 40,
+          boxSizing: 'border-box',
         }}
       >
-        <span style={{ color: '#0f172a', fontFamily: font, fontSize: 15, fontWeight: 700 }}>{title}</span>
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            color: '#0f172a',
+            fontFamily: font,
+            fontSize: 14,
+            fontWeight: 600,
+            letterSpacing: 0.01,
+          }}
+        >
+          {title}
+        </span>
+        {headerRight}
       </div>
-      <div style={noPad ? undefined : { padding: '12px 16px' }}>{children}</div>
+      <div style={noPad ? undefined : { padding: '10px 14px' }}>{children}</div>
     </div>
   );
 }
@@ -931,13 +789,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 14,
     padding: '8px 0 12px',
   },
-  listRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    padding: '10px 0',
-    borderBottom: '1px solid #f1f5f9',
-  },
   goalRightCol: {
     display: 'flex',
     flexDirection: 'column',
@@ -955,6 +806,53 @@ const styles: Record<string, CSSProperties> = {
     padding: 0,
     textDecoration: 'underline',
     alignSelf: 'flex-end',
+  },
+  infractionHeaderBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: '#64748b',
+    cursor: 'pointer',
+    fontFamily: font,
+    fontSize: 12,
+    fontWeight: 500,
+    padding: '4px 0',
+    textDecoration: 'underline',
+    flexShrink: 0,
+  },
+  infractionInput: {
+    flex: 1,
+    minWidth: 0,
+    background: '#fff',
+    border: '1px solid #e2e8f0',
+    borderRadius: 6,
+    color: '#0f172a',
+    fontFamily: font,
+    fontSize: 13,
+    padding: '7px 10px',
+    outline: 'none',
+    boxSizing: 'border-box',
+  },
+  infractionAddBtn: {
+    background: '#0f172a',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    padding: '7px 14px',
+    fontFamily: font,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
+  infractionRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    padding: '5px 0',
+    borderBottom: '1px solid #f8fafc',
+    fontFamily: font,
+    fontSize: 13,
   },
   goalListHeader: {
     display: 'grid',
@@ -1064,17 +962,6 @@ const styles: Record<string, CSSProperties> = {
     padding: '10px 0 4px',
     textAlign: 'left',
     display: 'block',
-  },
-  statusBadge: {
-    border: '1px solid',
-    borderRadius: 8,
-    padding: '4px 10px',
-    fontFamily: font,
-    fontSize: 12,
-    fontWeight: 600,
-    cursor: 'pointer',
-    flexShrink: 0,
-    textTransform: 'capitalize' as const,
   },
   loopLabel: {
     color: '#b45309',

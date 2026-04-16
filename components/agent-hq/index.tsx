@@ -6,7 +6,7 @@ import DashboardTab from './DashboardTab';
 import { useWorkTracker } from './hooks/useWorkTracker';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import type { Infraction } from './types';
-import { INFRACTIONS_STORAGE_KEY } from './infractions';
+import { INFRACTIONS_STORAGE_KEY, startOfLocalDayMs } from './infractions';
 
 function makeInfractionId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -26,12 +26,11 @@ export default function AgentHQ() {
     ]);
   }, [setInfractions]);
 
-  const removeInfraction = useCallback(
-    (id: string) => {
-      setInfractions(prev => prev.filter(i => i.id !== id));
-    },
-    [setInfractions]
-  );
+  const resetInfractionsToday = useCallback(() => {
+    if (!confirm('Clear all infractions logged today?')) return;
+    const todayStart = startOfLocalDayMs(Date.now());
+    setInfractions(prev => prev.filter(i => startOfLocalDayMs(i.createdAt) !== todayStart));
+  }, [setInfractions]);
 
   const statusColor =
     tracker.status === 'working'
@@ -149,7 +148,10 @@ export default function AgentHQ() {
             getTotals={tracker.getTotals}
             infractions={infractions}
             onAddInfraction={(categoryKey, label) => addInfraction(categoryKey, label, 'dashboard')}
-            onRemoveInfraction={removeInfraction}
+            onResetInfractionsToday={resetInfractionsToday}
+            onResetWorkDay={() => {
+              if (confirm('Reset today’s work timer, sessions, and accomplishments?')) tracker.resetDay();
+            }}
           />
         )}
       </div>
