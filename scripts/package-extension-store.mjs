@@ -4,7 +4,7 @@
  * Excludes dev files, README, and macOS junk.
  *
  * Usage: node scripts/package-extension-store.mjs
- * Output: public/produc-focus-extension-store.zip
+ * Output: public/daywinner.zip
  */
 
 import { execSync } from 'node:child_process';
@@ -14,7 +14,7 @@ import { join } from 'node:path';
 const root = new URL('..', import.meta.url).pathname;
 const extDir = join(root, 'extension');
 const outDir = join(root, 'public');
-const outZip = join(outDir, 'produc-focus-extension-store.zip');
+const outZip = join(outDir, 'daywinner.zip');
 
 if (!existsSync(extDir)) {
   console.error('extension/ folder not found');
