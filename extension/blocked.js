@@ -17,6 +17,10 @@ chrome.runtime.sendMessage({ type: 'LOG_INFRACTION', domain: site }).catch(() =>
 
 function updateRemaining() {
   chrome.runtime.sendMessage({ type: 'GET_STATE' }, state => {
+    if (state?.timerPaused && state.remainingMs != null) {
+      document.getElementById('remaining').textContent = formatRemaining(state.remainingMs);
+      return;
+    }
     const endsAt = state?.sessionEndsAt;
     if (!endsAt) {
       document.getElementById('remaining').textContent = '--:--';

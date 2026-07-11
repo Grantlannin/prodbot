@@ -1,10 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextResponse } from 'next/server';
+import { requireActiveSubscription } from '@/lib/billing/require-subscription';
 import { ORCHESTRATOR_SYSTEM_PROMPT } from './orchestrator-prompt';
 
 const client = new Anthropic();
 
 export async function POST(req: Request) {
+  const access = await requireActiveSubscription();
+  if (access.denied) return access.denied;
+
   try {
     const { messages, context } = (await req.json()) as {
       messages: Array<{ role: 'user' | 'agent'; content: string; variant?: string }>;

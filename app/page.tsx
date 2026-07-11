@@ -1,5 +1,5 @@
-import AgentHQ from '@/components/agent-hq';
+import LandingPage from '@/components/marketing/LandingPage';
 
 export default function Home() {
-  return <AgentHQ />;
+  return <LandingPage />;
 }

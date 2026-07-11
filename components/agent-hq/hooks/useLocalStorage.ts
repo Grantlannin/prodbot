@@ -25,6 +25,19 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     }
   }, [key, value]);
 
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== key || e.newValue === null) return;
+      try {
+        setValue(JSON.parse(e.newValue) as T);
+      } catch {
+        /* ignore corrupt cross-tab payload */
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [key]);
+
   const setValueSafe = useCallback(
     (updater: T | ((prev: T) => T)) => {
       setValue(prev =>

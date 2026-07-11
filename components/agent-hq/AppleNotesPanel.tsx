@@ -135,12 +135,14 @@ export default function AppleNotesPanel() {
     setSelectedId(null);
   }, [selectedId, setNotes]);
 
-  const sidebarBg = '#1c1c1e';
-  const editorBg = '#2c2c2e';
-  const accentSelect = '#5c4f1a';
-  const borderSub = '#3a3a3c';
-  const textPrimary = '#f5f5f7';
-  const textSecondary = '#a1a1a6';
+  const sidebarBg = '#fff';
+  const editorBg = '#fff';
+  const accentSelect = '#eef2ff';
+  const accentBorder = '#6366f1';
+  const borderSub = '#e2e8f0';
+  const borderLight = '#f1f5f9';
+  const textPrimary = '#0f172a';
+  const textSecondary = '#64748b';
 
   return (
     <div
@@ -151,6 +153,7 @@ export default function AppleNotesPanel() {
         overflow: 'hidden',
         fontFamily: font,
         borderTop: `1px solid ${borderSub}`,
+        background: editorBg,
       }}
     >
       {/* Sidebar */}
@@ -179,17 +182,19 @@ export default function AppleNotesPanel() {
             active={view === 'list'}
             onClick={() => setView('list')}
             icon="☰"
+            theme="light"
           />
           <ToolbarBtn
             label="Gallery"
             active={view === 'gallery'}
             onClick={() => setView('gallery')}
             icon="▦"
+            theme="light"
           />
           <div style={{ width: 1, height: 20, background: borderSub, margin: '0 4px' }} />
-          <ToolbarBtn label="Delete" onClick={deleteSelected} icon="⌫" disabled={!selectedId} />
+          <ToolbarBtn label="Delete" onClick={deleteSelected} icon="⌫" disabled={!selectedId} theme="light" />
           <div style={{ flex: 1 }} />
-          <ToolbarBtn label="New note" onClick={addNote} icon="✎" primary />
+          <ToolbarBtn label="New note" onClick={addNote} icon="✎" primary theme="light" />
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -216,6 +221,7 @@ export default function AppleNotesPanel() {
                     selected={note.id === selectedId}
                     onSelect={() => setSelectedId(note.id)}
                     accentSelect={accentSelect}
+                    accentBorder={accentBorder}
                     textPrimary={textPrimary}
                     textSecondary={textSecondary}
                   />
@@ -234,9 +240,9 @@ export default function AppleNotesPanel() {
                     style={{
                       textAlign: 'left',
                       padding: 10,
-                      borderRadius: 10,
-                      border: `1px solid ${note.id === selectedId ? '#8a7a30' : borderSub}`,
-                      background: note.id === selectedId ? accentSelect : '#2a2a2c',
+                      borderRadius: 8,
+                      border: `1px solid ${note.id === selectedId ? accentBorder : borderSub}`,
+                      background: note.id === selectedId ? accentSelect : '#f8fafc',
                       color: textPrimary,
                       cursor: 'pointer',
                       fontFamily: font,
@@ -259,10 +265,11 @@ export default function AppleNotesPanel() {
           <>
             <div
               style={{
-                padding: '10px 16px',
-                borderBottom: `1px solid ${borderSub}`,
+                padding: '8px 14px',
+                borderBottom: `1px solid ${borderLight}`,
                 color: textSecondary,
-                fontSize: 12,
+                fontSize: 11,
+                background: '#fff',
               }}
             >
               {new Date(selected.updatedAt).toLocaleString([], {
@@ -282,10 +289,10 @@ export default function AppleNotesPanel() {
                 border: 'none',
                 outline: 'none',
                 resize: 'none',
-                background: 'transparent',
+                background: '#fff',
                 color: textPrimary,
                 fontFamily: font,
-                fontSize: 16,
+                fontSize: 14,
                 lineHeight: 1.6,
                 boxSizing: 'border-box',
               }}
@@ -307,6 +314,7 @@ function ToolbarBtn({
   active,
   disabled,
   primary,
+  theme = 'dark',
   onClick,
 }: {
   icon: string;
@@ -314,8 +322,10 @@ function ToolbarBtn({
   active?: boolean;
   disabled?: boolean;
   primary?: boolean;
+  theme?: 'dark' | 'light';
   onClick: () => void;
 }) {
+  const light = theme === 'light';
   return (
     <button
       type="button"
@@ -327,11 +337,21 @@ function ToolbarBtn({
         width: 34,
         height: 30,
         borderRadius: 6,
-        border: 'none',
+        border: light ? '1px solid #e2e8f0' : 'none',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.35 : 1,
-        background: active ? '#3a3a3c' : primary ? '#48484a' : 'transparent',
-        color: '#e8e8ed',
+        background: active
+          ? light
+            ? '#eef2ff'
+            : '#3a3a3c'
+          : primary
+            ? light
+              ? '#6366f1'
+              : '#48484a'
+            : light
+              ? '#fff'
+              : 'transparent',
+        color: primary && light ? '#fff' : light ? '#334155' : '#e8e8ed',
         fontSize: 14,
         lineHeight: 1,
         display: 'flex',
@@ -349,6 +369,7 @@ function NoteRow({
   selected,
   onSelect,
   accentSelect,
+  accentBorder,
   textPrimary,
   textSecondary,
 }: {
@@ -356,6 +377,7 @@ function NoteRow({
   selected: boolean;
   onSelect: () => void;
   accentSelect: string;
+  accentBorder: string;
   textPrimary: string;
   textSecondary: string;
 }) {
@@ -373,9 +395,10 @@ function NoteRow({
         padding: '10px 14px 12px',
         marginBottom: 2,
         border: 'none',
-        borderRadius: 10,
+        borderRadius: 8,
         cursor: 'pointer',
         background: selected ? accentSelect : 'transparent',
+        boxShadow: selected ? `inset 0 0 0 1px ${accentBorder}` : 'none',
         display: 'block',
         fontFamily: font,
       }}
@@ -383,7 +406,7 @@ function NoteRow({
       <div
         style={{
           fontWeight: 600,
-          fontSize: 15,
+          fontSize: 13,
           color: textPrimary,
           marginBottom: 4,
           lineHeight: 1.25,
@@ -391,10 +414,10 @@ function NoteRow({
       >
         {title}
       </div>
-      <div style={{ fontSize: 13, color: selected ? '#d1d1d6' : textSecondary, marginBottom: 6, lineHeight: 1.35 }}>
+      <div style={{ fontSize: 11, color: selected ? textSecondary : textSecondary, marginBottom: 4, lineHeight: 1.35 }}>
         {preview ? `${time} · ${preview}` : time}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: textSecondary }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: textSecondary }}>
         <span style={{ opacity: 0.85 }} aria-hidden>
           📁
         </span>

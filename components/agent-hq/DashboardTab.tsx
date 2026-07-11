@@ -1,700 +1,341 @@
 'use client';
 
-import { useState, useEffect, useMemo, CSSProperties, type ReactNode } from 'react';
-import { BigGoal, OpenLoop, Infraction, WorkStatus, WorkSession } from './types';
-import { infractionCategoriesInOrder, topInfractionLine } from './infractions';
+import { useEffect, useMemo, useRef, useState, CSSProperties, type ReactNode } from 'react';
+import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
+import { useEndSession } from './hooks/EndSessionProvider';
+import { useHoverTimer } from './hooks/HoverTimerProvider';
+import { useDoneToday } from './hooks/useDoneToday';
+import type { Infraction } from './types';
+import { infractionCategoriesInOrder, startOfLocalDayMs } from './infractions';
+import { formatDuration } from './chatLogic';
+import { getTimerDisplay, formatTimerDisplay } from './timerDisplay';
 import AppleNotesPanel from './AppleNotesPanel';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import ProjectsPanel, { addProjectBtnStyle, type ProjectsPanelHandle } from './ProjectsPanel';
+import ProjectProgressBar from './ProjectProgressBar';
+import type { ProjectProgress } from './projectProgress';
+import OpenLoopsPanel from './OpenLoopsPanel';
+import NightPrepPanel from './NightPrepPanel';
+import { DoneTodayBanner } from './DoneTodaySection';
+import EodReportsCalendar from './EodReportsCalendar';
+import EodSendModal from './EodSendModal';
+import StartWorkModal from './StartWorkModal';
+import FocusExtensionModal from './FocusExtensionModal';
 
-const font =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-
-function makeId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
-function startOfLocalDay(d: Date): number {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-}
-
-const MONTH_ALIASES: Record<string, number> = {
-  january: 0,
-  jan: 0,
-  february: 1,
-  feb: 1,
-  march: 2,
-  mar: 2,
-  april: 3,
-  apr: 3,
-  may: 4,
-  june: 5,
-  jun: 5,
-  july: 6,
-  jul: 6,
-  august: 7,
-  aug: 7,
-  september: 8,
-  sep: 8,
-  sept: 8,
-  october: 9,
-  oct: 9,
-  november: 10,
-  nov: 10,
-  december: 11,
-  dec: 11,
-};
-
-const MONTH_NAMES_SORTED = Object.keys(MONTH_ALIASES).sort((a, b) => b.length - a.length);
-
-function escapeRe(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function stripOrdinals(s: string) {
-  return s.replace(/\b(\d{1,2})(st|nd|rd|th)\b/gi, '$1');
-}
-
-/** Parses month/day style text into a calendar date (local midnight). */
-function parseFlexibleDeadline(raw: string, ref = new Date()): Date | null {
-  const s = stripOrdinals(raw.trim()).replace(/\s+/g, ' ');
-  if (!s) return null;
-
-  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (iso) {
-    const y = parseInt(iso[1], 10);
-    const mo = parseInt(iso[2], 10) - 1;
-    const day = parseInt(iso[3], 10);
-    if (mo < 0 || mo > 11 || day < 1 || day > 31) return null;
-    const d = new Date(y, mo, day);
-    return d.getMonth() === mo && d.getDate() === day ? d : null;
-  }
-
-  const slash = s.match(/^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?$/);
-  if (slash) {
-    const mo = parseInt(slash[1], 10) - 1;
-    const day = parseInt(slash[2], 10);
-    let year: number;
-    if (slash[3]) {
-      const yv = parseInt(slash[3], 10);
-      year = slash[3].length === 2 ? 2000 + yv : yv;
-    } else {
-      year = ref.getFullYear();
-    }
-    const d = new Date(year, mo, day);
-    if (d.getMonth() !== mo || d.getDate() !== day) return null;
-    if (!slash[3]) {
-      while (startOfLocalDay(d) < startOfLocalDay(ref)) {
-        d.setFullYear(d.getFullYear() + 1);
-      }
-    }
-    return d;
-  }
-
-  const lower = s.toLowerCase();
-  for (const name of MONTH_NAMES_SORTED) {
-    const mo = MONTH_ALIASES[name];
-    const re = new RegExp(`^${escapeRe(name)}\\s+(\\d{1,2})(?:\\s*,?\\s*(\\d{4}))?\\s*$`, 'i');
-    const m = lower.match(re);
-    if (m) {
-      const day = parseInt(m[1], 10);
-      const year = m[2] ? parseInt(m[2], 10) : ref.getFullYear();
-      const d = new Date(year, mo, day);
-      if (d.getMonth() !== mo || d.getDate() !== day) return null;
-      if (!m[2]) {
-        while (startOfLocalDay(d) < startOfLocalDay(ref)) {
-          d.setFullYear(d.getFullYear() + 1);
-        }
-      }
-      return d;
-    }
-  }
-
-  for (const name of MONTH_NAMES_SORTED) {
-    const mo = MONTH_ALIASES[name];
-    const re = new RegExp(`^(\\d{1,2})\\s+${escapeRe(name)}(?:\\s*,?\\s*(\\d{4}))?\\s*$`, 'i');
-    const m = lower.match(re);
-    if (m) {
-      const day = parseInt(m[1], 10);
-      const year = m[2] ? parseInt(m[2], 10) : ref.getFullYear();
-      const d = new Date(year, mo, day);
-      if (d.getMonth() !== mo || d.getDate() !== day) return null;
-      if (!m[2]) {
-        while (startOfLocalDay(d) < startOfLocalDay(ref)) {
-          d.setFullYear(d.getFullYear() + 1);
-        }
-      }
-      return d;
-    }
-  }
-
-  const y0 = ref.getFullYear();
-  for (const y of [y0, y0 + 1]) {
-    const t = Date.parse(`${s}, ${y}`);
-    if (!Number.isNaN(t)) {
-      const d = new Date(t);
-      if (d.getFullYear() === y) return d;
-    }
-  }
-  return null;
-}
-
-function daysFromTodayTo(deadline: Date, ref = new Date()): number {
-  return Math.round((startOfLocalDay(deadline) - startOfLocalDay(ref)) / 86400000);
-}
-
-function deadlineHint(text: string | undefined, completed: boolean): { line: string; tone: 'ok' | 'soon' | 'bad' | 'muted' } {
-  if (!text?.trim() || completed) return { line: '', tone: 'muted' };
-  const d = parseFlexibleDeadline(text);
-  if (!d) return { line: "Can't read that date", tone: 'bad' };
-  const n = daysFromTodayTo(d);
-  if (n === 0) return { line: 'Due today', tone: 'soon' };
-  if (n === 1) return { line: '1 day away', tone: 'ok' };
-  if (n > 1) return { line: `${n} days away`, tone: n <= 7 ? 'soon' : 'ok' };
-  if (n === -1) return { line: '1 day overdue', tone: 'bad' };
-  return { line: `${-n} days overdue`, tone: 'bad' };
-}
-
-function isGoalOverdue(text: string | undefined, completed: boolean): boolean {
-  if (!text?.trim() || completed) return false;
-  const d = parseFlexibleDeadline(text);
-  if (!d) return false;
-  return daysFromTodayTo(d) < 0;
-}
-
-function hintColor(tone: 'ok' | 'soon' | 'bad' | 'muted') {
-  if (tone === 'bad') return '#b45309';
-  if (tone === 'soon') return '#a16207';
-  return '#64748b';
-}
-
-function toIsoDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-/** Normalize stored value to `YYYY-MM-DD` when parseable. */
-function getDeadlineIso(stored: string | undefined): string | null {
-  if (!stored?.trim()) return null;
-  const t = stored.trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
-  const d = parseFlexibleDeadline(t);
-  return d ? toIsoDate(d) : null;
-}
-
-function formatOfficialDeadlineDisplay(stored: string | undefined): string {
-  const iso = getDeadlineIso(stored);
-  if (!iso) return '';
-  const [y, mo, day] = iso.split('-').map(n => parseInt(n, 10));
-  return new Date(y, mo - 1, day).toLocaleDateString(undefined, {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-function formatDuration(ms: number): string {
-  if (ms <= 0) return '0m';
-  const totalSec = Math.floor(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  if (h > 0) return `${h}h ${m < 10 ? '0' : ''}${m}m`;
-  if (m > 0) return `${m}m ${s < 10 ? '0' : ''}${s}s`;
-  return `${s}s`;
-}
+const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 interface DashboardTabProps {
-  workStatus: WorkStatus;
-  currentSession: WorkSession | null;
-  getTotals: (includeRunning?: boolean) => { workMs: number; breakMs: number };
   infractions: Infraction[];
-  onAddInfraction: (categoryKey: string, label: string) => void;
-  onResetInfractionsToday: () => void;
-  onResetWorkDay: () => void;
+  focusNightPrep?: boolean;
+  onNightPrepFocused?: () => void;
 }
 
 export default function DashboardTab({
-  workStatus,
-  currentSession,
-  getTotals,
   infractions,
-  onAddInfraction,
-  onResetInfractionsToday,
-  onResetWorkDay,
+  focusNightPrep = false,
+  onNightPrepFocused,
 }: DashboardTabProps) {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
+  const projectsRef = useRef<ProjectsPanelHandle>(null);
+  const [selectedProjectProgress, setSelectedProjectProgress] = useState<ProjectProgress | null>(null);
+  const [startWorkOpen, setStartWorkOpen] = useState(false);
+  const [setTimerOpen, setSetTimerOpen] = useState(false);
+  const [eodSendOpen, setEodSendOpen] = useState(false);
+  const nightPrepRef = useRef<HTMLDivElement>(null);
+  const { requestEndSession } = useEndSession();
+  const { isOpen: hoverTimerOpen, supported: hoverTimerSupported, toggle: toggleHoverTimer } = useHoverTimer();
+  const {
+    getTodayStats,
+    status,
+    phase,
+    timerPaused,
+    pauseTimer,
+    resumeTimer,
+    elapsed,
+    pomodoroLeft,
+    breakLeft,
+    openCountdownLeft,
+    pomodoroPausedRemaining,
+    pausedWorkElapsed,
+    currentSession,
+    currentBreak,
+  } = useWorkTrackerContext();
+  const { items: doneTodayItems, addItem: addDoneToday, removeItem: removeDoneToday } = useDoneToday();
+  const todayStats = getTodayStats();
+  const projectStatsToday = todayStats.projectStats;
 
-  const { workMs, breakMs } = getTotals(true);
+  const infractionsToday = useMemo(() => {
+    const t0 = startOfLocalDayMs(Date.now());
+    return infractions.filter(i => startOfLocalDayMs(i.createdAt) === t0);
+  }, [infractions]);
 
-  const [bigGoals, setBigGoals] = useLocalStorage<BigGoal[]>('agentHQ_bigGoals', []);
-  const [openLoops, setOpenLoops] = useLocalStorage<OpenLoop[]>('agentHQ_openLoops', []);
+  const infractionCategoriesTodayOrdered = useMemo(
+    () => infractionCategoriesInOrder(infractionsToday),
+    [infractionsToday]
+  );
 
-  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
-  const [editingGoalText, setEditingGoalText] = useState('');
-  const [addingGoal, setAddingGoal] = useState(false);
-  const [newGoalText, setNewGoalText] = useState('');
-  const [newGoalDeadlineIso, setNewGoalDeadlineIso] = useState<string | undefined>(undefined);
+  const topInfractionLabel = useMemo(() => {
+    const ordered = infractionCategoriesTodayOrdered;
+    if (ordered.length === 0) return null;
+    const max = Math.max(...ordered.map(c => c.count));
+    return ordered.find(c => c.count === max)!.label;
+  }, [infractionCategoriesTodayOrdered]);
 
-  const [showLoopModal, setShowLoopModal] = useState(false);
-  const [loopStep, setLoopStep] = useState<1 | 2>(1);
-  const [loopReq, setLoopReq] = useState('');
-  const [loopAction, setLoopAction] = useState('');
-  const [loopTime, setLoopTime] = useState('');
+  const hasActiveSession = status === 'working' || status === 'on_break';
+  const canPauseTimer = hasActiveSession && !timerPaused;
+  const canResumeTimer = hasActiveSession && timerPaused;
 
-  const [newInfractionInput, setNewInfractionInput] = useState('');
+  const handleStartTimer = () => {
+    setStartWorkOpen(true);
+  };
 
-  const infractionRows = useMemo(() => infractionCategoriesInOrder(infractions), [infractions]);
-  const infractionTopLine = useMemo(() => topInfractionLine(infractions), [infractions]);
-
-  const statusColor =
-    workStatus === 'working'
-      ? '#15803d'
-      : workStatus === 'on_break'
-        ? '#b45309'
-        : workStatus === 'done'
-          ? '#1d4ed8'
-          : '#64748b';
-
-  const statusLabel =
-    workStatus === 'working'
-      ? 'Working'
-      : workStatus === 'on_break'
-        ? 'On break'
-        : workStatus === 'done'
-          ? 'Done for now'
-          : 'Idle';
-
-  function addGoal() {
-    if (!newGoalText.trim()) return;
-    setBigGoals(prev => [
-      ...prev,
-      {
-        id: makeId(),
-        text: newGoalText.trim(),
-        completed: false,
-        createdAt: Date.now(),
-        ...(newGoalDeadlineIso ? { deadline: newGoalDeadlineIso } : {}),
-      },
-    ]);
-    setNewGoalText('');
-    setNewGoalDeadlineIso(undefined);
-    setAddingGoal(false);
-  }
-
-  function setGoalDeadline(id: string, deadline: string | undefined) {
-    setBigGoals(prev =>
-      prev.map(g => {
-        if (g.id !== id) return g;
-        const next = { ...g };
-        if (!deadline?.trim()) delete next.deadline;
-        else next.deadline = deadline.trim();
-        return next;
-      })
-    );
-  }
-
-  function toggleGoal(id: string) {
-    setBigGoals(prev => prev.map(g => (g.id === id ? { ...g, completed: !g.completed } : g)));
-  }
-
-  function commitGoalEdit(id: string) {
-    if (editingGoalText.trim()) {
-      setBigGoals(prev => prev.map(g => (g.id === id ? { ...g, text: editingGoalText.trim() } : g)));
+  const handlePauseResumeTimer = () => {
+    if (canResumeTimer) {
+      resumeTimer();
+    } else if (canPauseTimer) {
+      pauseTimer();
     }
-    setEditingGoalId(null);
-  }
+  };
 
-  function deleteGoal(id: string) {
-    setBigGoals(prev => prev.filter(g => g.id !== id));
-  }
+  const handleEndWorkSession = () => {
+    if (!hasActiveSession) return;
+    requestEndSession();
+  };
 
-  function submitLoop() {
-    if (!loopReq.trim() || !loopAction.trim()) return;
-    setOpenLoops(prev => [
-      ...prev,
-      {
-        id: makeId(),
-        requirement: loopReq.trim(),
-        action: loopAction.trim(),
-        scheduledTime: loopTime.trim(),
-        resolved: false,
-        createdAt: Date.now(),
-      },
-    ]);
-    resetLoopModal();
-  }
+  const handleSetTimer = () => {
+    setSetTimerOpen(true);
+  };
 
-  function resetLoopModal() {
-    setLoopReq('');
-    setLoopAction('');
-    setLoopTime('');
-    setLoopStep(1);
-    setShowLoopModal(false);
-  }
+  const countdownDisplay = getTimerDisplay({
+    status,
+    phase,
+    elapsed,
+    pomodoroLeft,
+    breakLeft,
+    pomodoroPausedRemaining: pomodoroPausedRemaining ?? null,
+    pausedWorkElapsed: pausedWorkElapsed ?? null,
+    openCountdownLeft,
+    currentSession,
+    currentBreak,
+    timerPaused,
+  });
+  const liveCountdown =
+    hasActiveSession && countdownDisplay?.countingDown
+      ? formatTimerDisplay(countdownDisplay)
+      : null;
 
-  function toggleLoop(id: string) {
-    setOpenLoops(prev => prev.map(l => (l.id === id ? { ...l, resolved: !l.resolved } : l)));
-  }
+  const [, setCountdownTick] = useState(0);
+  useEffect(() => {
+    if (!hasActiveSession || !countdownDisplay?.countingDown || timerPaused) return;
+    const id = setInterval(() => setCountdownTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [hasActiveSession, countdownDisplay?.countingDown, timerPaused]);
 
-  function deleteLoop(id: string) {
-    setOpenLoops(prev => prev.filter(l => l.id !== id));
-  }
-
-  function submitDashboardInfraction() {
-    const t = newInfractionInput.trim();
-    if (!t) return;
-    onAddInfraction(t.toLowerCase(), t);
-    setNewInfractionInput('');
-  }
+  useEffect(() => {
+    if (!focusNightPrep) return;
+    const el = nightPrepRef.current;
+    if (!el) return;
+    const timer = window.setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.transition = 'box-shadow 0.3s ease';
+      el.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.45)';
+      window.setTimeout(() => {
+        el.style.boxShadow = '';
+        onNightPrepFocused?.();
+      }, 2200);
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [focusNightPrep, onNightPrepFocused]);
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100%', overflowY: 'auto', fontFamily: font }}>
+    <div style={{ background: '#f8fafc', minHeight: '100%', overflowY: 'auto', fontFamily: font, position: 'relative' }}>
+      <StartWorkModal open={startWorkOpen} onClose={() => setStartWorkOpen(false)} />
+      <StartWorkModal open={setTimerOpen} onClose={() => setSetTimerOpen(false)} mode="set-timer" />
+      <EodSendModal
+        open={eodSendOpen}
+        onClose={() => setEodSendOpen(false)}
+        infractions={infractions}
+        doneTodayItems={doneTodayItems}
+      />
       <div style={styles.timeBanner}>
-        <div>
-          <div style={styles.bannerLabel}>Work time today</div>
-          <div style={{ color: '#0f172a', fontFamily: font, fontSize: 36, fontWeight: 700 }}>
-            {formatDuration(workMs)}
-          </div>
-        </div>
-
-        <div style={styles.divider} />
-
-        <div>
-          <div style={styles.bannerLabel}>Break</div>
-          <div style={{ color: '#b45309', fontFamily: font, fontSize: 26, fontWeight: 700 }}>
-            {formatDuration(breakMs)}
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginLeft: 'auto',
-            textAlign: 'right',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            gap: 10,
-          }}
-        >
-          <div>
-            <div style={{ color: statusColor, fontFamily: font, fontSize: 15, fontWeight: 600 }}>{statusLabel}</div>
-            {workStatus === 'working' && currentSession && (
-              <div style={{ color: '#64748b', fontFamily: font, fontSize: 14, marginTop: 4 }}>
-                Since {new Date(currentSession.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </div>
-            )}
-          </div>
-          <button type="button" onClick={onResetWorkDay} style={styles.secondaryBtnSmall}>
-            Reset timer
-          </button>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20, padding: '20px 24px 0', maxWidth: 920 }}>
-        <DashCard title="Goals">
-          {bigGoals.length === 0 && !addingGoal && (
-            <div style={styles.emptyState}>Add a few goals you are working toward.</div>
-          )}
-          {(bigGoals.length > 0 || addingGoal) && (
-            <div style={styles.goalListHeader}>
-              <span aria-hidden="true" />
-              <span>Goal</span>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, minWidth: 0 }}>
-                <span>Goal deadline</span>
-                <span style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8' }}>Type a date, then Enter</span>
-              </div>
-            </div>
-          )}
-          {bigGoals.map(goal => (
-            <div key={goal.id} style={styles.goalListRow}>
-              <button
-                type="button"
-                onClick={() => toggleGoal(goal.id)}
-                style={{ ...checkboxStyle(goal.completed), marginTop: 2 }}
-              />
-              {editingGoalId === goal.id ? (
-                <input
-                  autoFocus
-                  value={editingGoalText}
-                  onChange={e => setEditingGoalText(e.target.value)}
-                  onBlur={() => commitGoalEdit(goal.id)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') commitGoalEdit(goal.id);
-                    if (e.key === 'Escape') setEditingGoalId(null);
-                  }}
-                  style={{ ...styles.inlineInput, minWidth: 0, width: '100%' }}
-                />
+        <div style={styles.bannerStatsRow}>
+          <div style={styles.workTodayCell}>
+            <div style={styles.bannerLabel}>Work today</div>
+            <div style={{ color: '#0f172a', fontSize: 36, fontWeight: 700 }}>{formatDuration(todayStats.totalWorkMs)}</div>
+            <div style={styles.timerControls}>
+              {!hasActiveSession ? (
+                <div style={styles.timerStartRow}>
+                  <button type="button" onClick={handleStartTimer} style={styles.timerStartBtn}>
+                    Start
+                  </button>
+                  <button type="button" onClick={handleSetTimer} style={styles.timerSetBtn}>
+                    Set timer
+                  </button>
+                </div>
               ) : (
-                <span
-                  onClick={() => {
-                    setEditingGoalId(goal.id);
-                    setEditingGoalText(goal.text);
-                  }}
-                  style={{
-                    minWidth: 0,
-                    color: goal.completed ? '#94a3b8' : '#0f172a',
-                    fontFamily: font,
-                    fontSize: 15,
-                    textDecoration: goal.completed ? 'line-through' : 'none',
-                    cursor: 'text',
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {goal.text}
-                </span>
-              )}
-              <div style={styles.goalRightCol}>
-                <GoalDeadlineBlock
-                  value={goal.deadline}
-                  completed={goal.completed}
-                  onCommit={iso => setGoalDeadline(goal.id, iso)}
-                />
-                <button type="button" onClick={() => deleteGoal(goal.id)} style={styles.goalRemoveSmall}>
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
-          {addingGoal ? (
-            <div style={{ ...styles.goalListRow, marginTop: 10 }}>
-              <span aria-hidden="true" />
-              <input
-                autoFocus
-                value={newGoalText}
-                onChange={e => setNewGoalText(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') addGoal();
-                  if (e.key === 'Escape') {
-                    setAddingGoal(false);
-                    setNewGoalText('');
-                    setNewGoalDeadlineIso(undefined);
-                  }
-                }}
-                placeholder="Goal text"
-                style={{ ...styles.fieldInput, minWidth: 0, width: '100%', padding: '8px 10px' }}
-              />
-              <div style={styles.goalRightCol}>
-                <GoalDeadlineBlock
-                  value={newGoalDeadlineIso}
-                  completed={false}
-                  onCommit={setNewGoalDeadlineIso}
-                />
-                <button type="button" onClick={addGoal} style={styles.goalRemoveSmall}>
-                  Add goal
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button type="button" onClick={() => setAddingGoal(true)} style={styles.addRow}>
-              + Add goal
-            </button>
-          )}
-        </DashCard>
-      </div>
-
-      <div style={{ padding: '20px 24px 0' }}>
-        <DashCard title="Open loops">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
-            {openLoops.map(loop => (
-              <div
-                key={loop.id}
-                style={{
-                  background: '#fff',
-                  border: `1px solid ${loop.resolved ? '#e2e8f0' : '#fed7aa'}`,
-                  borderRadius: 10,
-                  padding: 14,
-                  opacity: loop.resolved ? 0.65 : 1,
-                  transition: 'opacity 0.2s',
-                  boxShadow: '0 1px 2px rgba(15,23,42,0.05)',
-                }}
-              >
-                <div style={styles.loopLabel}>Requirement</div>
-                <div style={{ color: '#0f172a', fontFamily: font, fontSize: 15, marginBottom: 10, lineHeight: 1.5 }}>
-                  {loop.requirement}
-                </div>
-                <div style={styles.loopLabel}>Next action</div>
-                <div style={{ color: '#475569', fontFamily: font, fontSize: 14, marginBottom: 6, lineHeight: 1.5 }}>
-                  {loop.action}
-                </div>
-                {loop.scheduledTime && (
-                  <div style={{ color: '#1d4ed8', fontFamily: font, fontSize: 14, marginBottom: 8 }}>
-                    {loop.scheduledTime}
+                <>
+                  {liveCountdown ? (
+                    <div style={styles.liveCountdown} aria-live="polite">
+                      {liveCountdown}
+                    </div>
+                  ) : null}
+                  <div style={styles.timerActionRow}>
+                    <div style={styles.timerSegment}>
+                      <button
+                        type="button"
+                        onClick={handlePauseResumeTimer}
+                        style={{
+                          ...styles.timerSegmentBtn,
+                          ...styles.timerSegmentBtnActive,
+                          ...(canResumeTimer ? styles.timerSegmentBtnEmphasis : {}),
+                        }}
+                      >
+                        {canResumeTimer ? 'Resume' : 'Pause'}
+                      </button>
+                    </div>
+                    {hoverTimerSupported ? (
+                      <button
+                        type="button"
+                        onClick={() => void toggleHoverTimer()}
+                        style={{
+                          ...styles.timerFloatBtn,
+                          ...(hoverTimerOpen ? styles.timerFloatBtnActive : {}),
+                        }}
+                        title={hoverTimerOpen ? 'Hide floating timer' : 'Show floating timer'}
+                      >
+                        {hoverTimerOpen ? 'Hide float' : 'Float timer'}
+                      </button>
+                    ) : null}
                   </div>
-                )}
-                <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  <button type="button" onClick={() => toggleLoop(loop.id)} style={openLoopPrimaryStyle(loop.resolved)}>
-                    {loop.resolved ? 'Reopen' : 'Mark done'}
+                  <button type="button" onClick={handleEndWorkSession} style={styles.timerEndBtn}>
+                    End session
                   </button>
-                  <button type="button" onClick={() => deleteLoop(loop.id)} style={styles.secondaryBtnSmall}>
-                    Delete
-                  </button>
-                </div>
+                </>
+              )}
+            </div>
+          </div>
+          <div style={styles.divider} />
+          <div>
+            <div style={styles.bannerLabel}>Break</div>
+            <div style={{ color: '#b45309', fontSize: 26, fontWeight: 700 }}>{formatDuration(todayStats.totalBreakMs)}</div>
+          </div>
+          <div style={styles.divider} />
+          <div>
+            <div style={styles.bannerLabel}>Sessions</div>
+            <div style={{ color: '#0f172a', fontSize: 26, fontWeight: 700 }}>{todayStats.sessionCount}</div>
+          </div>
+          <div style={styles.divider} />
+          <div style={styles.bannerInfractions}>
+            <div style={styles.bannerLabel}>Infractions today</div>
+            <div style={styles.bannerInfractionsTodayNum}>{infractionsToday.length}</div>
+            <div style={styles.bannerLabelTopInfraction}>Top infraction</div>
+            {topInfractionLabel ? (
+              <div style={styles.bannerTopInfractionNameOnly} title={topInfractionLabel}>
+                {topInfractionLabel}
               </div>
-            ))}
-
-            <button type="button" onClick={() => setShowLoopModal(true)} style={styles.addLoopCard}>
-              <span style={{ fontSize: 22, marginBottom: 4 }}>+</span>
-              Add open loop
-            </button>
-          </div>
-        </DashCard>
-
-        <DashCard
-          title="infractions"
-          headerRight={
-            <button type="button" onClick={onResetInfractionsToday} style={styles.infractionHeaderBtn}>
-              Reset today
-            </button>
-          }
-        >
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-            <input
-              value={newInfractionInput}
-              onChange={e => setNewInfractionInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') submitDashboardInfraction();
-              }}
-              placeholder="Category"
-              aria-label="Infraction category"
-              style={styles.infractionInput}
-            />
-            <button type="button" onClick={submitDashboardInfraction} style={styles.infractionAddBtn}>
-              Add
-            </button>
-          </div>
-          <p style={{ color: '#94a3b8', fontSize: 11, margin: '0 0 10px', lineHeight: 1.35 }}>
-            Work log: <span style={{ color: '#64748b' }}>infraction - phone</span>
-          </p>
-
-          {infractionRows.length === 0 ? (
-            <div style={{ ...styles.emptyState, padding: '4px 0 2px', fontSize: 13 }}>None yet.</div>
-          ) : (
-            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 6 }}>
-              {infractionRows.map(row => (
-                <div key={row.key} style={styles.infractionRow}>
-                  <span style={{ color: '#0f172a', fontWeight: 500, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {row.label}
-                  </span>
-                  <span style={{ color: '#64748b', fontWeight: 600, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
-                    {row.count}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div
-            style={{
-              marginTop: 10,
-              paddingTop: 8,
-              borderTop: '1px solid #f1f5f9',
-              fontSize: 12,
-              color: '#64748b',
-              fontFamily: font,
-              lineHeight: 1.4,
-            }}
-          >
-            {infractionTopLine ?? 'Top infraction: —'}
-          </div>
-        </DashCard>
-      </div>
-
-      <div style={{ padding: '20px 24px 32px' }}>
-        <DashCard title="Notes" noPad>
-          <AppleNotesPanel />
-        </DashCard>
-      </div>
-
-      {showLoopModal && (
-        <div
-          style={styles.modalOverlay}
-          onClick={e => {
-            if (e.target === e.currentTarget) resetLoopModal();
-          }}
-        >
-          <div style={styles.modal}>
-            <div style={{ color: '#b45309', fontFamily: font, fontSize: 13, fontWeight: 600, marginBottom: 16 }}>
-              New open loop — step {loopStep} of 2
-            </div>
-
-            {loopStep === 1 ? (
-              <>
-                <p style={styles.modalQuestion}>What is blocked or waiting on something else?</p>
-                <p style={styles.modalHint}>Describe the dependency or requirement.</p>
-                <textarea
-                  autoFocus
-                  value={loopReq}
-                  onChange={e => setLoopReq(e.target.value)}
-                  placeholder="Example: Need approval before I can send the proposal."
-                  rows={3}
-                  style={{
-                    ...styles.fieldInput,
-                    width: '100%',
-                    resize: 'vertical',
-                    marginBottom: 16,
-                    boxSizing: 'border-box',
-                  }}
-                />
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => loopReq.trim() && setLoopStep(2)}
-                    style={{ ...styles.primaryBtn, opacity: loopReq.trim() ? 1 : 0.45 }}
-                  >
-                    Next
-                  </button>
-                  <button type="button" onClick={resetLoopModal} style={styles.secondaryBtn}>
-                    Cancel
-                  </button>
-                </div>
-              </>
             ) : (
-              <>
-                <div style={styles.modalReqPreview}>{loopReq}</div>
-                <p style={styles.modalQuestion}>What will you do, and when?</p>
-                <textarea
-                  autoFocus
-                  value={loopAction}
-                  onChange={e => setLoopAction(e.target.value)}
-                  placeholder="Concrete next step"
-                  rows={2}
-                  style={{
-                    ...styles.fieldInput,
-                    width: '100%',
-                    resize: 'none',
-                    marginBottom: 10,
-                    boxSizing: 'border-box',
-                  }}
-                />
-                <input
-                  value={loopTime}
-                  onChange={e => setLoopTime(e.target.value)}
-                  placeholder="When (e.g. Friday 3pm)"
-                  style={{ ...styles.fieldInput, width: '100%', boxSizing: 'border-box', marginBottom: 16 }}
-                />
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={submitLoop}
-                    style={{ ...styles.primaryBtn, opacity: loopAction.trim() ? 1 : 0.45 }}
-                  >
-                    Save
-                  </button>
-                  <button type="button" onClick={() => setLoopStep(1)} style={styles.secondaryBtn}>
-                    Back
-                  </button>
-                </div>
-              </>
+              <div style={styles.bannerTopInfractionEmpty}>—</div>
             )}
           </div>
+          <div style={styles.divider} />
+          <div style={styles.bannerProjects}>
+            <div style={styles.bannerLabel}>Time by project (today)</div>
+            {projectStatsToday.length > 0 ? (
+              <div style={styles.projectList}>
+                {projectStatsToday.map(p => {
+                  const maxMs = projectStatsToday[0].totalMs;
+                  const pct = (p.totalMs / maxMs) * 100;
+                  return (
+                    <div key={p.name} style={styles.projectItem}>
+                      <div style={styles.projectItemHeader}>
+                        <span style={styles.projectName}>{p.name}</span>
+                        <span style={styles.projectDuration}>{formatDuration(p.totalMs)}</span>
+                      </div>
+                      <div style={styles.projectBarTrack}>
+                        <div style={{ ...styles.projectBarFill, width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={styles.projectEmpty}>No sessions yet today</div>
+            )}
+          </div>
+          <div style={styles.divider} />
+          <div style={styles.doneTodayColumn}>
+            <div style={styles.focusExtensionRow}>
+              <FocusExtensionModal />
+            </div>
+            <DoneTodayBanner
+              items={doneTodayItems}
+              onRemove={removeDoneToday}
+              onAdd={text =>
+                addDoneToday({
+                  text,
+                  source: 'manual',
+                })
+              }
+            />
+          </div>
+          <div style={styles.divider} />
+          <div style={styles.eodAnchor}>
+            <div style={styles.bannerLabel}>Reports</div>
+            <div style={styles.eodActionsRow}>
+              <button type="button" onClick={() => setEodSendOpen(true)} style={styles.eodSendBtn}>
+                Send EOD
+              </button>
+              <EodReportsCalendar />
+            </div>
+          </div>
         </div>
-      )}
+      </div>
+
+      <div style={styles.captureSection}>
+        <div style={styles.upperHalf}>
+          <DashCard
+            title="Projects"
+            headerRight={
+              <div style={styles.projectsHeaderRight}>
+                <button
+                  type="button"
+                  onClick={() => projectsRef.current?.addProject()}
+                  style={addProjectBtnStyle}
+                >
+                  Add project
+                </button>
+                {selectedProjectProgress && selectedProjectProgress.total > 0 ? (
+                  <ProjectProgressBar progress={selectedProjectProgress} compact />
+                ) : null}
+              </div>
+            }
+          >
+            <ProjectsPanel
+              ref={projectsRef}
+              onSelectedProgressChange={setSelectedProjectProgress}
+              onProjectCompleted={payload =>
+                addDoneToday({
+                  ...payload,
+                  source: 'project',
+                })
+              }
+            />
+          </DashCard>
+          <div ref={nightPrepRef} id="night-prep" style={styles.nightPrepCell}>
+            <DashCard title="NIGHT PREP: what you're going to get done tomorrow (10 minutes max)">
+              <NightPrepPanel />
+            </DashCard>
+          </div>
+        </div>
+
+        <div style={styles.lowerHalf}>
+          <DashCard title="Notes" noPad>
+            <AppleNotesPanel />
+          </DashCard>
+          <DashCard title="Open loops">
+            <OpenLoopsPanel />
+          </DashCard>
+        </div>
+
+      </div>
     </div>
   );
 }
@@ -718,6 +359,10 @@ function DashCard({
         borderRadius: 10,
         overflow: 'hidden',
         boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
       }}
     >
       <div
@@ -729,51 +374,252 @@ function DashCard({
           gap: 10,
           minHeight: 40,
           boxSizing: 'border-box',
+          flexShrink: 0,
         }}
       >
-        <span
-          style={{
-            flex: 1,
-            minWidth: 0,
-            color: '#0f172a',
-            fontFamily: font,
-            fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: 0.01,
-          }}
-        >
+        <span style={{ flex: 1, minWidth: 0, color: '#0f172a', fontFamily: font, fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
           {title}
+          {headerRight}
         </span>
-        {headerRight}
       </div>
-      <div style={noPad ? undefined : { padding: '10px 14px' }}>{children}</div>
+      <div
+        style={
+          noPad
+            ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }
+            : { padding: '14px 16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }
+        }
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
-function checkboxStyle(checked: boolean): CSSProperties {
-  return {
-    width: 18,
-    height: 18,
-    border: `2px solid ${checked ? '#15803d' : '#cbd5e1'}`,
-    background: checked ? '#15803d' : '#fff',
-    borderRadius: 4,
-    cursor: 'pointer',
-    flexShrink: 0,
+const styles: Record<string, CSSProperties> = {
+  projectsHeaderRight: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-  };
-}
-
-const styles: Record<string, CSSProperties> = {
+    gap: 12,
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'flex-start',
+  },
+  workTodayCell: {
+    minWidth: 0,
+  },
+  timerControls: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 5,
+    marginTop: 10,
+    width: 196,
+  },
+  timerStartRow: {
+    display: 'flex',
+    gap: 5,
+  },
+  timerStartBtn: {
+    flex: 1,
+    border: 'none',
+    borderRadius: 9,
+    padding: '7px 10px',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    letterSpacing: '-0.01em',
+    background: '#eef2f6',
+    color: '#0f172a',
+    cursor: 'pointer',
+    boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.04)',
+  },
+  timerSetBtn: {
+    flex: 1,
+    border: 'none',
+    borderRadius: 9,
+    padding: '7px 8px',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    letterSpacing: '-0.01em',
+    background: '#ecfdf5',
+    color: '#047857',
+    cursor: 'pointer',
+    boxShadow: 'inset 0 0 0 1px rgba(16, 185, 129, 0.2)',
+  },
+  liveCountdown: {
+    fontSize: 15,
+    fontWeight: 700,
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+    color: '#047857',
+    fontVariantNumeric: 'tabular-nums',
+    letterSpacing: '0.02em',
+  },
+  timerActionRow: {
+    display: 'flex',
+    alignItems: 'stretch',
+    gap: 5,
+  },
+  timerSegment: {
+    display: 'flex',
+    flex: 1,
+    minWidth: 0,
+    background: '#eef2f6',
+    borderRadius: 9,
+    padding: 3,
+    gap: 2,
+  },
+  timerFloatBtn: {
+    flexShrink: 0,
+    border: 'none',
+    borderRadius: 9,
+    padding: '6px 8px',
+    fontSize: 10,
+    fontWeight: 600,
+    fontFamily: font,
+    letterSpacing: '-0.01em',
+    background: '#ecfdf5',
+    color: '#047857',
+    cursor: 'pointer',
+    boxShadow: 'inset 0 0 0 1px rgba(16, 185, 129, 0.25)',
+    whiteSpace: 'nowrap',
+  },
+  timerFloatBtnActive: {
+    background: '#eef2f6',
+    color: '#64748b',
+    boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.06)',
+  },
+  timerSegmentBtn: {
+    flex: 1,
+    minWidth: 0,
+    border: 'none',
+    borderRadius: 7,
+    padding: '6px 8px',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    letterSpacing: '-0.01em',
+    cursor: 'pointer',
+    transition: 'background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease',
+  },
+  timerSegmentBtnActive: {
+    background: '#fff',
+    color: '#0f172a',
+    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
+  },
+  timerSegmentBtnEmphasis: {
+    color: '#1d4ed8',
+  },
+  timerEndBtn: {
+    border: 'none',
+    borderRadius: 7,
+    padding: '5px 8px',
+    fontSize: 11,
+    fontWeight: 500,
+    fontFamily: font,
+    letterSpacing: '-0.01em',
+    background: 'transparent',
+    color: '#64748b',
+    cursor: 'pointer',
+    textAlign: 'center',
+  },
   timeBanner: {
     background: '#fff',
     borderBottom: '1px solid #e2e8f0',
     padding: '18px 24px',
+  },
+  bannerStatsRow: {
     display: 'flex',
-    alignItems: 'center',
-    gap: 32,
+    alignItems: 'flex-start',
+    gap: 24,
+    flexWrap: 'wrap',
+    rowGap: 16,
+  },
+  bannerProjects: {
+    minWidth: 0,
+    flex: '1 1 200px',
+    maxWidth: 320,
+  },
+  projectList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    marginTop: 2,
+  },
+  projectItem: {
+    minWidth: 0,
+  },
+  projectItemHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+    gap: 12,
+  },
+  projectName: {
+    fontSize: 13,
+    color: '#0f172a',
+    fontWeight: 500,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  projectDuration: {
+    fontSize: 12,
+    color: '#64748b',
+    flexShrink: 0,
+  },
+  projectBarTrack: {
+    height: 6,
+    background: '#e2e8f0',
+    borderRadius: 3,
+  },
+  projectBarFill: {
+    height: '100%',
+    background: '#3b82f6',
+    borderRadius: 3,
+  },
+  projectEmpty: {
+    color: '#94a3b8',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  bannerInfractions: {
+    minWidth: 0,
+    maxWidth: 300,
+    flex: '0 1 280px',
+  },
+  bannerInfractionsTodayNum: {
+    color: '#0f172a',
+    fontFamily: font,
+    fontSize: 32,
+    fontWeight: 700,
+    lineHeight: 1.1,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  bannerLabelTopInfraction: {
+    color: '#64748b',
+    fontFamily: font,
+    fontSize: 13,
+    fontWeight: 500,
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  bannerTopInfractionNameOnly: {
+    color: '#0f172a',
+    fontFamily: font,
+    fontSize: 15,
+    fontWeight: 600,
+    marginTop: 2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  bannerTopInfractionEmpty: {
+    color: '#94a3b8',
+    fontFamily: font,
+    fontSize: 15,
+    fontWeight: 600,
+    marginTop: 2,
   },
   bannerLabel: {
     color: '#64748b',
@@ -783,448 +629,66 @@ const styles: Record<string, CSSProperties> = {
     marginBottom: 6,
   },
   divider: { width: 1, height: 48, background: '#e2e8f0' },
-  emptyState: {
-    color: '#64748b',
-    fontFamily: font,
-    fontSize: 14,
-    padding: '8px 0 12px',
-  },
-  goalRightCol: {
+  doneTodayColumn: {
+    minWidth: 0,
+    flex: '1.2 1 260px',
+    maxWidth: 420,
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'flex-end',
-    gap: 8,
-    minWidth: 0,
+    alignItems: 'stretch',
   },
-  goalRemoveSmall: {
-    background: 'transparent',
-    border: 'none',
-    color: '#94a3b8',
-    cursor: 'pointer',
-    fontSize: 12,
-    fontFamily: font,
-    padding: 0,
-    textDecoration: 'underline',
-    alignSelf: 'flex-end',
-  },
-  infractionHeaderBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: '#64748b',
-    cursor: 'pointer',
-    fontFamily: font,
-    fontSize: 12,
-    fontWeight: 500,
-    padding: '4px 0',
-    textDecoration: 'underline',
-    flexShrink: 0,
-  },
-  infractionInput: {
-    flex: 1,
-    minWidth: 0,
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 6,
-    color: '#0f172a',
-    fontFamily: font,
-    fontSize: 13,
-    padding: '7px 10px',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  infractionAddBtn: {
-    background: '#0f172a',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 6,
-    padding: '7px 14px',
-    fontFamily: font,
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: 'pointer',
-    flexShrink: 0,
-  },
-  infractionRow: {
+  focusExtensionRow: {
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
-    padding: '5px 0',
-    borderBottom: '1px solid #f8fafc',
-    fontFamily: font,
-    fontSize: 13,
+    justifyContent: 'flex-end',
+    marginBottom: 6,
   },
-  goalListHeader: {
-    display: 'grid',
-    gridTemplateColumns: '18px 1fr minmax(200px, 260px)',
-    gap: 10,
-    alignItems: 'flex-end',
-    padding: '4px 0 10px',
-    borderBottom: '1px solid #e2e8f0',
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#64748b',
-    fontFamily: font,
-    letterSpacing: 0.02,
-  },
-  goalListRow: {
-    display: 'grid',
-    gridTemplateColumns: '18px 1fr minmax(200px, 260px)',
-    gap: 10,
+  eodAnchor: {
+    display: 'flex',
+    flexDirection: 'column',
     alignItems: 'flex-start',
-    padding: '10px 0',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  goalDateInput: {
-    background: '#fff',
-    border: '1px solid #cbd5e1',
-    borderRadius: 8,
-    color: '#0f172a',
-    fontFamily: font,
-    fontSize: 13,
-    padding: '6px 8px',
-    outline: 'none',
-    width: '100%',
-    maxWidth: '100%',
-    boxSizing: 'border-box',
-  },
-  inlineInput: {
-    background: '#fff',
-    border: '1px solid #cbd5e1',
-    borderRadius: 8,
-    color: '#0f172a',
-    fontFamily: font,
-    fontSize: 15,
-    padding: '6px 10px',
-    outline: 'none',
-  },
-  fieldInput: {
-    background: '#fff',
-    border: '1px solid #cbd5e1',
-    borderRadius: 8,
-    color: '#0f172a',
-    fontFamily: font,
-    fontSize: 15,
-    padding: '10px 12px',
-    outline: 'none',
-    display: 'block',
-  },
-  ghostBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: '#64748b',
-    cursor: 'pointer',
-    fontSize: 13,
-    padding: '4px 6px',
-    fontFamily: font,
+    gap: 6,
     flexShrink: 0,
-    textDecoration: 'underline',
   },
-  primaryBtn: {
-    background: '#0f172a',
-    color: '#fff',
+  eodActionsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  eodSendBtn: {
     border: 'none',
     borderRadius: 8,
-    padding: '8px 16px',
-    fontFamily: font,
-    fontSize: 14,
+    padding: '6px 10px',
+    fontSize: 11,
     fontWeight: 600,
-    cursor: 'pointer',
-  },
-  secondaryBtn: {
-    background: '#fff',
-    color: '#475569',
-    border: '1px solid #cbd5e1',
-    borderRadius: 8,
-    padding: '8px 16px',
     fontFamily: font,
-    fontSize: 14,
-    fontWeight: 500,
+    letterSpacing: '-0.01em',
+    background: '#ecfdf5',
+    color: '#047857',
     cursor: 'pointer',
+    boxShadow: 'inset 0 0 0 1px rgba(16, 185, 129, 0.25)',
+    whiteSpace: 'nowrap',
   },
-  secondaryBtnSmall: {
-    background: '#fff',
-    color: '#475569',
-    border: '1px solid #cbd5e1',
-    borderRadius: 8,
-    padding: '6px 12px',
-    fontFamily: font,
-    fontSize: 13,
-    cursor: 'pointer',
-  },
-  addRow: {
-    background: 'transparent',
-    border: 'none',
-    color: '#475569',
-    cursor: 'pointer',
-    fontFamily: font,
-    fontSize: 14,
-    padding: '10px 0 4px',
-    textAlign: 'left',
-    display: 'block',
-  },
-  loopLabel: {
-    color: '#b45309',
-    fontFamily: font,
-    fontSize: 12,
-    fontWeight: 600,
-    marginBottom: 4,
-  },
-  addLoopCard: {
-    background: '#fffbeb',
-    border: '1px dashed #fdba74',
-    borderRadius: 10,
-    padding: 16,
-    color: '#b45309',
-    fontFamily: font,
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: 'pointer',
-    minHeight: 80,
+  captureSection: {
+    padding: '20px 24px 32px',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+    gap: 16,
   },
-  modalOverlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(15,23,42,0.45)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
+  upperHalf: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(380px, 2fr) minmax(300px, 1fr)',
+    gap: 16,
+    alignItems: 'start',
   },
-  modal: {
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 12,
-    padding: 24,
-    width: 500,
-    maxWidth: '92vw',
-    boxShadow: '0 20px 40px rgba(15,23,42,0.12)',
+  lowerHalf: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(340px, 1fr))',
+    gap: 16,
+    alignItems: 'start',
   },
-  modalQuestion: {
-    color: '#0f172a',
-    fontFamily: font,
-    fontSize: 17,
-    marginBottom: 8,
-    marginTop: 0,
-    lineHeight: 1.45,
-    fontWeight: 700,
-  },
-  modalHint: {
-    color: '#64748b',
-    fontFamily: font,
-    fontSize: 14,
-    marginBottom: 14,
-    marginTop: 0,
-    lineHeight: 1.5,
-  },
-  modalReqPreview: {
-    background: '#f8fafc',
-    border: '1px solid #e2e8f0',
-    borderRadius: 8,
-    padding: '10px 14px',
-    color: '#475569',
-    fontFamily: font,
-    fontSize: 14,
-    marginBottom: 16,
-    lineHeight: 1.5,
+  nightPrepCell: {
+    scrollMarginTop: 24,
+    minWidth: 0,
   },
 };
-
-function GoalDeadlineBlock({
-  value,
-  completed,
-  onCommit,
-}: {
-  value: string | undefined;
-  completed: boolean;
-  onCommit: (iso: string | undefined) => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
-
-  const iso = value ? getDeadlineIso(value) : null;
-
-  function cancelEdit() {
-    setEditing(false);
-    setDraft('');
-  }
-
-  function tryCommit() {
-    const t = draft.trim();
-    if (!t) {
-      cancelEdit();
-      return;
-    }
-    const d = parseFlexibleDeadline(t);
-    if (!d) return;
-    onCommit(toIsoDate(d));
-    setEditing(false);
-    setDraft('');
-  }
-
-  function handleBlur() {
-    if (!editing) return;
-    const t = draft.trim();
-    if (!t) {
-      if (iso) onCommit(undefined);
-      cancelEdit();
-      return;
-    }
-    const d = parseFlexibleDeadline(t);
-    if (d) {
-      onCommit(toIsoDate(d));
-      setEditing(false);
-      setDraft('');
-    } else {
-      cancelEdit();
-    }
-  }
-
-  const hintFromDraft = deadlineHint(draft, completed);
-  const hintStored = iso ? deadlineHint(iso, completed) : { line: '', tone: 'muted' as const };
-
-  if (!editing && iso) {
-    const overdue = isGoalOverdue(iso, completed);
-    return (
-      <div style={{ width: '100%', textAlign: 'right' as const }}>
-        {!completed ? (
-          <button
-            type="button"
-            onClick={() => {
-              setEditing(true);
-              setDraft('');
-            }}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px 0',
-              textAlign: 'right',
-              width: '100%',
-            }}
-          >
-            <div
-              style={{
-                fontFamily: font,
-                fontSize: 15,
-                fontWeight: 600,
-                color: overdue ? '#b45309' : '#0f172a',
-              }}
-            >
-              {formatOfficialDeadlineDisplay(value)}
-            </div>
-            {hintStored.line ? (
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: hintColor(hintStored.tone),
-                  fontFamily: font,
-                  marginTop: 4,
-                }}
-              >
-                {hintStored.line}
-              </div>
-            ) : null}
-          </button>
-        ) : (
-          <div>
-            <div style={{ fontFamily: font, fontSize: 15, fontWeight: 600, color: '#94a3b8' }}>
-              {formatOfficialDeadlineDisplay(value)}
-            </div>
-            {hintStored.line ? (
-              <div style={{ fontSize: 12, fontWeight: 500, color: hintColor(hintStored.tone), marginTop: 4 }}>
-                {hintStored.line}
-              </div>
-            ) : null}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (!editing && !iso) {
-    return (
-      <div style={{ width: '100%', textAlign: 'right' as const }}>
-        <button
-          type="button"
-          onClick={() => {
-            setEditing(true);
-            setDraft('');
-          }}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#64748b',
-            cursor: 'pointer',
-            fontFamily: font,
-            fontSize: 14,
-            textDecoration: 'underline',
-            padding: '4px 0',
-          }}
-        >
-          Set deadline
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      style={{
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-end',
-        gap: 4,
-      }}
-    >
-      <input
-        type="text"
-        autoFocus
-        value={draft}
-        onChange={e => setDraft(e.target.value)}
-        onKeyDown={e => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            tryCommit();
-          }
-          if (e.key === 'Escape') {
-            e.preventDefault();
-            cancelEdit();
-          }
-        }}
-        onBlur={handleBlur}
-        placeholder="e.g. April 30th"
-        title="Type a date, then Enter"
-        style={{
-          ...styles.goalDateInput,
-          textAlign: 'right',
-          width: '100%',
-          maxWidth: 240,
-          borderColor: '#94a3b8',
-        }}
-      />
-      {hintFromDraft.line ? (
-        <span style={{ fontSize: 12, fontWeight: 500, color: hintColor(hintFromDraft.tone), fontFamily: font }}>
-          {hintFromDraft.line}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-function openLoopPrimaryStyle(resolved: boolean): CSSProperties {
-  return {
-    ...styles.primaryBtn,
-    fontSize: 13,
-    padding: '6px 12px',
-    background: resolved ? '#e2e8f0' : '#0f172a',
-    color: resolved ? '#64748b' : '#fff',
-  };
-}

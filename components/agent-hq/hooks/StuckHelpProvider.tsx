@@ -1,0 +1,392 @@
+'use client';
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { useWorkTrackerContext } from './WorkTrackerProvider';
+import { useDoneToday } from './useDoneToday';
+import { useHoverTimer } from './HoverTimerProvider';
+import {
+  KICKSTART_DURATION_MS,
+  STARTING_FLOW_COPY,
+  STUCK_PREP_NOTES_PREFIX,
+  STUCK_WORK_NOTES_PREFIX,
+  type StartingFlowPhase,
+  type StartingFlowState,
+  type StuckChatMessage,
+} from '../stuckHelp/flows';
+import type { FocusLockMode } from '../types';
+
+function makeId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function isPrepSession(
+  session: { sessionNotes?: string | null; countdownTargetMs?: number | null } | null
+): boolean {
+  return (
+    !!session?.sessionNotes?.startsWith(STUCK_PREP_NOTES_PREFIX) &&
+    session.countdownTargetMs === KICKSTART_DURATION_MS
+  );
+}
+
+function isWorkSession(
+  session: { lockMode?: string; sessionNotes?: string | null; countdownTargetMs?: number | null } | null
+): boolean {
+  return !!session?.sessionNotes?.startsWith(STUCK_WORK_NOTES_PREFIX);
+}
+
+interface WorkSessionMeta {
+  sessionId: string;
+  importantTask: string;
+  chunks: string;
+}
+
+interface StuckHelpContextValue {
+  open: boolean;
+  openStuckHelp: () => void;
+  closeStuckHelp: () => void;
+  startingFlow: StartingFlowState | null;
+  startStartingFlow: () => void;
+  clearStartingFlow: () => void;
+  setStartingPhase: (phase: StartingFlowPhase) => void;
+  setStartingFields: (fields: Partial<Pick<StartingFlowState, 'importantTask' | 'prepPlan' | 'chunks'>>) => void;
+  appendStartingMessages: (...items: Omit<StuckChatMessage, 'id'>[]) => void;
+  postPrepResume: boolean;
+  clearPostPrepResume: () => void;
+  prepOverlayOpen: boolean;
+  beginPrepTimer: (importantTask: string, prepPlan: string) => void;
+  finishPrepTimer: () => void;
+  cancelPrepTimer: () => void;
+  beginWorkTimer: (importantTask: string, chunks: string) => void;
+  blockStuckSessionAutoEnd: boolean;
+  isContinuingStuckWork: boolean;
+  extendWorkSession: (minutes: number, lockMode: FocusLockMode) => void;
+  dismissWorkComplete: () => void;
+  endWorkSession: () => void;
+  workCompleteOpen: boolean;
+  workLoggedOpen: boolean;
+  dismissWorkLogged: () => void;
+}
+
+const StuckHelpContext = createContext<StuckHelpContextValue | null>(null);
+
+export function StuckHelpProvider({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const [startingFlow, setStartingFlow] = useState<StartingFlowState | null>(null);
+  const [postPrepResume, setPostPrepResume] = useState(false);
+  const [prepOverlayOpen, setPrepOverlayOpen] = useState(false);
+  const [workMeta, setWorkMeta] = useState<WorkSessionMeta | null>(null);
+  const [workCompleteOpen, setWorkCompleteOpen] = useState(false);
+  const [workLoggedOpen, setWorkLoggedOpen] = useState(false);
+  const [isContinuingStuckWork, setIsContinuingStuckWork] = useState(false);
+  const prepNotifiedRef = useRef(false);
+  const workNotifiedRef = useRef(false);
+  const workMetaRef = useRef<WorkSessionMeta | null>(null);
+  workMetaRef.current = workMeta;
+
+  const { startSession, continueStuckWorkSession, finishWorkSession, abortActiveSession, status, openCountdownLeft, currentSession } =
+    useWorkTrackerContext();
+  const { requestOpen, open: openHoverTimer, supported: hoverTimerSupported } = useHoverTimer();
+  const { addItem: addDoneToday } = useDoneToday();
+
+  const blockStuckSessionAutoEnd =
+    status === 'working' &&
+    (isPrepSession(currentSession) ||
+      (isWorkSession(currentSession) &&
+        !!workMeta &&
+        currentSession?.countdownTargetMs === KICKSTART_DURATION_MS));
+
+  const blockPrepAutoEnd =
+    prepOverlayOpen && status === 'working' && isPrepSession(currentSession) && !prepNotifiedRef.current;
+
+  const blockWorkAutoEnd =
+    !!workMeta &&
+    status === 'working' &&
+    isWorkSession(currentSession) &&
+    currentSession?.countdownTargetMs === KICKSTART_DURATION_MS &&
+    !workCompleteOpen &&
+    !workLoggedOpen &&
+    !workNotifiedRef.current;
+
+  const openStuckHelp = useCallback(() => setOpen(true), []);
+  const closeStuckHelp = useCallback(() => setOpen(false), []);
+
+  const startStartingFlow = useCallback(() => {
+    setStartingFlow({
+      phase: 'await_task',
+      messages: [],
+      importantTask: '',
+      prepPlan: '',
+      chunks: '',
+    });
+  }, []);
+
+  const clearStartingFlow = useCallback(() => {
+    setStartingFlow(null);
+    setPostPrepResume(false);
+  }, []);
+
+  const setStartingPhase = useCallback((phase: StartingFlowPhase) => {
+    setStartingFlow(prev => (prev ? { ...prev, phase } : prev));
+  }, []);
+
+  const setStartingFields = useCallback(
+    (fields: Partial<Pick<StartingFlowState, 'importantTask' | 'prepPlan' | 'chunks'>>) => {
+      setStartingFlow(prev => (prev ? { ...prev, ...fields } : prev));
+    },
+    []
+  );
+
+  const appendStartingMessages = useCallback((...items: Omit<StuckChatMessage, 'id'>[]) => {
+    setStartingFlow(prev =>
+      prev
+        ? {
+            ...prev,
+            messages: [...prev.messages, ...items.map(item => ({ ...item, id: makeId() }))],
+          }
+        : prev
+    );
+  }, []);
+
+  const clearPostPrepResume = useCallback(() => setPostPrepResume(false), []);
+
+  const beginPrepTimer = useCallback(
+    (importantTask: string, prepPlan: string) => {
+      if (status === 'working' || status === 'on_break') return;
+      const task = importantTask.trim();
+      const prep = prepPlan.trim();
+      if (!task || !prep) return;
+
+      startSession({
+        project: task,
+        type: 'open',
+        countdownTargetMs: KICKSTART_DURATION_MS,
+        lockMode: 'hard',
+        sessionNotes: `${STUCK_PREP_NOTES_PREFIX}: ${prep}`,
+      });
+      prepNotifiedRef.current = false;
+      setPrepOverlayOpen(true);
+      setOpen(false);
+    },
+    [status, startSession]
+  );
+
+  const finishPrepTimer = useCallback(() => {
+    if (!isPrepSession(currentSession)) return;
+    finishWorkSession('stuck-help prep complete');
+    prepNotifiedRef.current = false;
+    setPrepOverlayOpen(false);
+    setStartingPhase('await_chunks');
+    setPostPrepResume(true);
+    setOpen(true);
+  }, [currentSession, finishWorkSession, setStartingPhase]);
+
+  const cancelPrepTimer = useCallback(() => {
+    if (!isPrepSession(currentSession) && status !== 'working') {
+      setPrepOverlayOpen(false);
+      setOpen(true);
+      return;
+    }
+    abortActiveSession();
+    prepNotifiedRef.current = false;
+    setPrepOverlayOpen(false);
+    setOpen(true);
+  }, [currentSession, status, abortActiveSession]);
+
+  const beginWorkTimer = useCallback(
+    (importantTask: string, chunks: string) => {
+      if (status === 'working' || status === 'on_break') return;
+      const task = importantTask.trim();
+      const chunkText = chunks.trim();
+      if (!task || !chunkText) return;
+
+      startSession({
+        project: task,
+        type: 'open',
+        countdownTargetMs: KICKSTART_DURATION_MS,
+        lockMode: 'hard',
+        sessionNotes: `${STUCK_WORK_NOTES_PREFIX}: ${chunkText}`,
+      });
+      requestOpen();
+      workNotifiedRef.current = false;
+      setWorkMeta({
+        sessionId: '',
+        importantTask: task,
+        chunks: chunkText,
+      });
+      setOpen(false);
+    },
+    [status, startSession, requestOpen]
+  );
+
+  useEffect(() => {
+    if (!workMeta || workMeta.sessionId || !currentSession) return;
+    if (isWorkSession(currentSession)) {
+      setWorkMeta(prev => (prev ? { ...prev, sessionId: currentSession.id } : prev));
+    }
+  }, [workMeta, currentSession]);
+
+  const notifyPrepComplete = useCallback(() => {
+    if (prepNotifiedRef.current) return;
+    if (!isPrepSession(currentSession)) return;
+    prepNotifiedRef.current = true;
+    finishPrepTimer();
+  }, [currentSession, finishPrepTimer]);
+
+  const notifyWorkComplete = useCallback(() => {
+    if (workNotifiedRef.current) return;
+    if (!workMeta || !isWorkSession(currentSession)) return;
+    if (currentSession?.countdownTargetMs !== KICKSTART_DURATION_MS) return;
+    workNotifiedRef.current = true;
+
+    const meta = workMeta;
+    finishWorkSession(
+      meta ? `5-min chunk #1 on "${meta.importantTask}": ${meta.chunks}` : '5-min chunk work session'
+    );
+    setWorkMeta(prev => (prev ? { ...prev, sessionId: '' } : prev));
+    setWorkCompleteOpen(true);
+  }, [workMeta, currentSession, finishWorkSession]);
+
+  useEffect(() => {
+    if (!blockPrepAutoEnd) return;
+    if (openCountdownLeft !== 0) return;
+    notifyPrepComplete();
+  }, [blockPrepAutoEnd, openCountdownLeft, notifyPrepComplete]);
+
+  useEffect(() => {
+    if (!blockWorkAutoEnd) return;
+    if (openCountdownLeft !== 0) return;
+    notifyWorkComplete();
+  }, [blockWorkAutoEnd, openCountdownLeft, notifyWorkComplete]);
+
+  const extendWorkSession = useCallback(
+    (minutes: number, lockMode: FocusLockMode) => {
+      const meta = workMetaRef.current;
+      if (minutes <= 0 || !meta) return;
+
+      setIsContinuingStuckWork(true);
+      setWorkCompleteOpen(false);
+      workNotifiedRef.current = false;
+
+      continueStuckWorkSession({
+        project: meta.importantTask,
+        minutes,
+        lockMode,
+        sessionNotes: `${STUCK_WORK_NOTES_PREFIX}:extended`,
+        pendingKickstartNotes: `5-min chunk #1 on "${meta.importantTask}": ${meta.chunks}`,
+      });
+
+      setWorkMeta(prev => (prev ? { ...prev, sessionId: '' } : prev));
+      requestOpen();
+      if (hoverTimerSupported) {
+        void openHoverTimer();
+      }
+
+      window.setTimeout(() => {
+        setIsContinuingStuckWork(false);
+      }, 0);
+    },
+    [continueStuckWorkSession, requestOpen, openHoverTimer, hoverTimerSupported]
+  );
+
+  const dismissWorkComplete = useCallback(() => {
+    setWorkCompleteOpen(false);
+    workNotifiedRef.current = false;
+  }, []);
+
+  const endWorkSession = useCallback(() => {
+    const meta = workMeta;
+    if (status === 'working' && isWorkSession(currentSession)) {
+      finishWorkSession(
+        meta ? `continued work on "${meta.importantTask}"` : 'continued chunk work session'
+      );
+    }
+    if (meta) {
+      addDoneToday({
+        text: meta.chunks,
+        detail: meta.importantTask,
+        source: 'manual',
+      });
+    }
+    setWorkCompleteOpen(false);
+    setWorkLoggedOpen(true);
+    setWorkMeta(null);
+    workNotifiedRef.current = false;
+  }, [finishWorkSession, workMeta, addDoneToday, status, currentSession]);
+
+  const dismissWorkLogged = useCallback(() => {
+    setWorkLoggedOpen(false);
+    clearStartingFlow();
+  }, [clearStartingFlow]);
+
+  const value = useMemo(
+    () => ({
+      open,
+      openStuckHelp,
+      closeStuckHelp,
+      startingFlow,
+      startStartingFlow,
+      clearStartingFlow,
+      setStartingPhase,
+      setStartingFields,
+      appendStartingMessages,
+      postPrepResume,
+      clearPostPrepResume,
+      prepOverlayOpen,
+      beginPrepTimer,
+      finishPrepTimer,
+      cancelPrepTimer,
+      beginWorkTimer,
+      blockStuckSessionAutoEnd,
+      isContinuingStuckWork,
+      extendWorkSession,
+      dismissWorkComplete,
+      endWorkSession,
+      workCompleteOpen,
+      workLoggedOpen,
+      dismissWorkLogged,
+    }),
+    [
+      open,
+      openStuckHelp,
+      closeStuckHelp,
+      startingFlow,
+      startStartingFlow,
+      clearStartingFlow,
+      setStartingPhase,
+      setStartingFields,
+      appendStartingMessages,
+      postPrepResume,
+      clearPostPrepResume,
+      prepOverlayOpen,
+      beginPrepTimer,
+      finishPrepTimer,
+      cancelPrepTimer,
+      beginWorkTimer,
+      blockStuckSessionAutoEnd,
+      isContinuingStuckWork,
+      extendWorkSession,
+      dismissWorkComplete,
+      endWorkSession,
+      workCompleteOpen,
+      workLoggedOpen,
+      dismissWorkLogged,
+    ]
+  );
+
+  return <StuckHelpContext.Provider value={value}>{children}</StuckHelpContext.Provider>;
+}
+
+export function useStuckHelp(): StuckHelpContextValue {
+  const ctx = useContext(StuckHelpContext);
+  if (!ctx) throw new Error('useStuckHelp must be used within StuckHelpProvider');
+  return ctx;
+}

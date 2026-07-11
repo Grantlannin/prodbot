@@ -1,21 +1,22 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { normalizeSupabaseUrl } from '@/lib/supabase/url';
+import { getSupabaseConfig } from '@/lib/supabase/config';
 
 /**
  * Server Supabase client — Server Components, Server Actions, Route Handlers.
  * Refreshes auth cookies when using Supabase Auth.
  */
 export function createServerSupabaseClient() {
-  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  if (!url || !key) {
-    throw new Error('Missing or invalid NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY (use https://…ref….supabase.co only)');
+  const { url, anonKey } = getSupabaseConfig();
+  if (!url || !anonKey) {
+    throw new Error(
+      'Missing or invalid NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY (use https://…ref….supabase.co only)'
+    );
   }
 
   const cookieStore = cookies();
 
-  return createServerClient(url, key, {
+  return createServerClient(url, anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();

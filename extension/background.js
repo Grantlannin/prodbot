@@ -9,6 +9,8 @@ async function getStoredState() {
       sessionEndsAt: null,
       lockMode: null,
       sessionId: null,
+      timerPaused: false,
+      remainingMs: null,
     }
   );
 }
@@ -49,16 +51,23 @@ async function applySync(payload) {
   const state = {
     blocking: !!payload.blocking,
     domains: Array.isArray(payload.domains) ? payload.domains : [],
-    sessionEndsAt: payload.sessionEndsAt || null,
+    sessionEndsAt: payload.timerPaused ? null : payload.sessionEndsAt || null,
     lockMode: payload.lockMode || null,
     sessionId: payload.sessionId || null,
+    timerPaused: !!payload.timerPaused,
+    remainingMs: payload.timerPaused ? payload.remainingMs ?? null : null,
   };
 
   await chrome.storage.local.set({ focusState: state });
   await updateRules(state);
 
   await chrome.alarms.clear('sessionEnd');
-  if (state.blocking && state.sessionEndsAt && state.sessionEndsAt > Date.now()) {
+  if (
+    !state.timerPaused &&
+    state.blocking &&
+    state.sessionEndsAt &&
+    state.sessionEndsAt > Date.now()
+  ) {
     chrome.alarms.create('sessionEnd', { when: state.sessionEndsAt });
   }
 }
@@ -80,19 +89,30 @@ async function logInfraction(domain) {
 
 async function restoreFromStorage() {
   const state = await getStoredState();
-  if (state.sessionEndsAt && state.sessionEndsAt <= Date.now()) {
+  if (
+    !state.timerPaused &&
+    state.sessionEndsAt &&
+    state.sessionEndsAt <= Date.now()
+  ) {
     await applySync({
       blocking: false,
       domains: [],
       sessionEndsAt: null,
       lockMode: null,
       sessionId: null,
+      timerPaused: false,
+      remainingMs: null,
     });
     return;
   }
 
   await updateRules(state);
-  if (state.blocking && state.sessionEndsAt && state.sessionEndsAt > Date.now()) {
+  if (
+    !state.timerPaused &&
+    state.blocking &&
+    state.sessionEndsAt &&
+    state.sessionEndsAt > Date.now()
+  ) {
     chrome.alarms.create('sessionEnd', { when: state.sessionEndsAt });
   }
 }
@@ -144,6 +164,8 @@ chrome.alarms.onAlarm.addListener(alarm => {
     sessionEndsAt: null,
     lockMode: null,
     sessionId: null,
+    timerPaused: false,
+    remainingMs: null,
   });
 });
 

@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Today',
-  description: 'Chat and dashboard',
+  title: 'Daywinner',
+  description: 'Accountability for deep work — timer, projects, and end-of-day check-ins.',
 };
 
 export default function RootLayout({
