@@ -314,13 +314,7 @@ export function useWorkTracker() {
       const s = stateRef.current;
       let kickstartToArchive: WorkSession | null = null;
 
-      if (
-        s.status === 'working' &&
-        s.currentSession &&
-        !s.currentSession.endTime &&
-        isStuckWorkSessionNotes(s.currentSession.sessionNotes) &&
-        s.currentSession.countdownTargetMs === KICKSTART_DURATION_MS
-      ) {
+      if (s.status === 'working' && s.currentSession && !s.currentSession.endTime) {
         const workMs = computeActiveWorkMs({
           session: s.currentSession,
           status: s.status,

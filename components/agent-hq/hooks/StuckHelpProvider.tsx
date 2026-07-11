@@ -49,6 +49,49 @@ interface WorkSessionMeta {
   chunks: string;
 }
 
+const STUCK_WORK_CTX_KEY = 'stuckHelp_workCtx';
+
+function saveWorkCtx(meta: WorkSessionMeta) {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(STUCK_WORK_CTX_KEY, JSON.stringify(meta));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+function loadWorkCtx(): WorkSessionMeta | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(STUCK_WORK_CTX_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as WorkSessionMeta;
+    if (!parsed?.importantTask?.trim()) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearWorkCtx() {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.removeItem(STUCK_WORK_CTX_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function resolveWorkContext(
+  meta: WorkSessionMeta | null,
+  flow: StartingFlowState | null
+): { importantTask: string; chunks: string } | null {
+  const importantTask = (meta?.importantTask || flow?.importantTask || '').trim();
+  const chunks = (meta?.chunks || flow?.chunks || '').trim();
+  if (!importantTask) return null;
+  return { importantTask, chunks };
+}
+
 interface StuckHelpContextValue {
   open: boolean;
   openStuckHelp: () => void;
@@ -90,7 +133,15 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
   const prepNotifiedRef = useRef(false);
   const workNotifiedRef = useRef(false);
   const workMetaRef = useRef<WorkSessionMeta | null>(null);
+  const startingFlowRef = useRef<StartingFlowState | null>(null);
   workMetaRef.current = workMeta;
+  startingFlowRef.current = startingFlow;
+
+  useEffect(() => {
+    if (workMeta) return;
+    const saved = loadWorkCtx();
+    if (saved) setWorkMeta(saved);
+  }, [workMeta]);
 
   const { startSession, continueStuckWorkSession, finishWorkSession, abortActiveSession, status, openCountdownLeft, currentSession } =
     useWorkTrackerContext();
@@ -217,11 +268,13 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
       });
       requestOpen();
       workNotifiedRef.current = false;
-      setWorkMeta({
+      const nextMeta = {
         sessionId: '',
         importantTask: task,
         chunks: chunkText,
-      });
+      };
+      setWorkMeta(nextMeta);
+      saveWorkCtx(nextMeta);
       setOpen(false);
     },
     [status, startSession, requestOpen]
@@ -251,6 +304,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     finishWorkSession(
       meta ? `5-min chunk #1 on "${meta.importantTask}": ${meta.chunks}` : '5-min chunk work session'
     );
+    if (meta) saveWorkCtx(meta);
     setWorkMeta(prev => (prev ? { ...prev, sessionId: '' } : prev));
     setWorkCompleteOpen(true);
   }, [workMeta, currentSession, finishWorkSession]);
@@ -269,22 +323,46 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
 
   const extendWorkSession = useCallback(
     (minutes: number, lockMode: FocusLockMode) => {
-      const meta = workMetaRef.current;
-      if (minutes <= 0 || !meta) return;
+      if (minutes <= 0) return;
+
+      const ctx =
+        resolveWorkContext(workMetaRef.current, startingFlowRef.current) || loadWorkCtx();
+      if (!ctx) return;
 
       setIsContinuingStuckWork(true);
       setWorkCompleteOpen(false);
       workNotifiedRef.current = false;
 
-      continueStuckWorkSession({
-        project: meta.importantTask,
-        minutes,
+      const nextMeta: WorkSessionMeta = {
+        sessionId: '',
+        importantTask: ctx.importantTask,
+        chunks: ctx.chunks,
+      };
+      setWorkMeta(nextMeta);
+      saveWorkCtx(nextMeta);
+
+      const sessionPayload = {
+        project: ctx.importantTask,
+        type: 'open' as const,
+        countdownTargetMs: minutes * 60 * 1000,
         lockMode,
         sessionNotes: `${STUCK_WORK_NOTES_PREFIX}:extended`,
-        pendingKickstartNotes: `5-min chunk #1 on "${meta.importantTask}": ${meta.chunks}`,
-      });
+      };
 
-      setWorkMeta(prev => (prev ? { ...prev, sessionId: '' } : prev));
+      if (status === 'working' && currentSession) {
+        continueStuckWorkSession({
+          project: ctx.importantTask,
+          minutes,
+          lockMode,
+          sessionNotes: sessionPayload.sessionNotes,
+          pendingKickstartNotes: ctx.chunks
+            ? `5-min chunk #1 on "${ctx.importantTask}": ${ctx.chunks}`
+            : undefined,
+        });
+      } else {
+        startSession(sessionPayload);
+      }
+
       requestOpen();
       if (hoverTimerSupported) {
         void openHoverTimer();
@@ -292,9 +370,17 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
 
       window.setTimeout(() => {
         setIsContinuingStuckWork(false);
-      }, 0);
+      }, 250);
     },
-    [continueStuckWorkSession, requestOpen, openHoverTimer, hoverTimerSupported]
+    [
+      status,
+      currentSession,
+      startSession,
+      continueStuckWorkSession,
+      requestOpen,
+      openHoverTimer,
+      hoverTimerSupported,
+    ]
   );
 
   const dismissWorkComplete = useCallback(() => {
@@ -319,6 +405,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     setWorkCompleteOpen(false);
     setWorkLoggedOpen(true);
     setWorkMeta(null);
+    clearWorkCtx();
     workNotifiedRef.current = false;
   }, [finishWorkSession, workMeta, addDoneToday, status, currentSession]);
 
