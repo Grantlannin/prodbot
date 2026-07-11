@@ -21,6 +21,8 @@ export const STUCK_HELP_NAV_BUTTON = "i'm stuck, help me bot";
 
 export const STUCK_PREP_NOTES_PREFIX = 'stuck-help:prep';
 export const STUCK_WORK_NOTES_PREFIX = 'stuck-help:work';
+/** Continued sessions after kickstart — time-only, no user task attached */
+export const STUCK_POST_PREP_WORK_PROJECT = 'postprepwork';
 
 export function isStuckPrepSessionNotes(notes: string | null | undefined): boolean {
   return !!notes?.startsWith(STUCK_PREP_NOTES_PREFIX);

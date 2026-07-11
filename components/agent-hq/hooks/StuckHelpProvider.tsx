@@ -16,6 +16,7 @@ import { useHoverTimer } from './HoverTimerProvider';
 import {
   KICKSTART_DURATION_MS,
   STARTING_FLOW_COPY,
+  STUCK_POST_PREP_WORK_PROJECT,
   STUCK_PREP_NOTES_PREFIX,
   STUCK_WORK_NOTES_PREFIX,
   type StartingFlowPhase,
@@ -65,9 +66,7 @@ function loadWorkCtx(): WorkSessionMeta | null {
   try {
     const raw = sessionStorage.getItem(STUCK_WORK_CTX_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as WorkSessionMeta;
-    if (!parsed?.importantTask?.trim()) return null;
-    return parsed;
+    return JSON.parse(raw) as WorkSessionMeta;
   } catch {
     return null;
   }
@@ -82,14 +81,8 @@ function clearWorkCtx() {
   }
 }
 
-function resolveWorkContext(
-  meta: WorkSessionMeta | null,
-  flow: StartingFlowState | null
-): { importantTask: string; chunks: string } | null {
-  const importantTask = (meta?.importantTask || flow?.importantTask || '').trim();
-  const chunks = (meta?.chunks || flow?.chunks || '').trim();
-  if (!importantTask) return null;
-  return { importantTask, chunks };
+function continuedWorkProject(): string {
+  return STUCK_POST_PREP_WORK_PROJECT;
 }
 
 interface StuckHelpContextValue {
@@ -132,10 +125,6 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
   const [isContinuingStuckWork, setIsContinuingStuckWork] = useState(false);
   const prepNotifiedRef = useRef(false);
   const workNotifiedRef = useRef(false);
-  const workMetaRef = useRef<WorkSessionMeta | null>(null);
-  const startingFlowRef = useRef<StartingFlowState | null>(null);
-  workMetaRef.current = workMeta;
-  startingFlowRef.current = startingFlow;
 
   useEffect(() => {
     if (workMeta) return;
@@ -325,9 +314,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     (minutes: number, lockMode: FocusLockMode) => {
       if (minutes <= 0) return;
 
-      const ctx =
-        resolveWorkContext(workMetaRef.current, startingFlowRef.current) || loadWorkCtx();
-      if (!ctx) return;
+      const project = continuedWorkProject();
 
       setIsContinuingStuckWork(true);
       setWorkCompleteOpen(false);
@@ -335,29 +322,27 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
 
       const nextMeta: WorkSessionMeta = {
         sessionId: '',
-        importantTask: ctx.importantTask,
-        chunks: ctx.chunks,
+        importantTask: project,
+        chunks: '',
       };
       setWorkMeta(nextMeta);
       saveWorkCtx(nextMeta);
 
       const sessionPayload = {
-        project: ctx.importantTask,
+        project,
         type: 'open' as const,
         countdownTargetMs: minutes * 60 * 1000,
         lockMode,
-        sessionNotes: `${STUCK_WORK_NOTES_PREFIX}:extended`,
+        sessionNotes: `${STUCK_WORK_NOTES_PREFIX}:extended:postprepwork`,
       };
 
       if (status === 'working' && currentSession) {
         continueStuckWorkSession({
-          project: ctx.importantTask,
+          project,
           minutes,
           lockMode,
           sessionNotes: sessionPayload.sessionNotes,
-          pendingKickstartNotes: ctx.chunks
-            ? `5-min chunk #1 on "${ctx.importantTask}": ${ctx.chunks}`
-            : undefined,
+          pendingKickstartNotes: 'stuck-help kickstart complete',
         });
       } else {
         startSession(sessionPayload);
@@ -397,8 +382,8 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     }
     if (meta) {
       addDoneToday({
-        text: meta.chunks,
-        detail: meta.importantTask,
+        text: meta.chunks || STUCK_POST_PREP_WORK_PROJECT,
+        detail: meta.importantTask === STUCK_POST_PREP_WORK_PROJECT ? undefined : meta.importantTask,
         source: 'manual',
       });
     }
