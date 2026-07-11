@@ -12,9 +12,11 @@ Install from the Chrome Web Store listing (one click). No unpacked load required
 2. Click **Load unpacked**
 3. Select this `extension/` folder
 4. Optional: enable **Allow in incognito**
-5. Open [Produc](https://produc-xi.vercel.app) → **Focus extension** → start a focus session
+5. Open [Daywinner](https://daywinnerbot.com/app) → **Focus extension** → start a session with soft or hard lock
 
-Or download the zip from Produc: `/produc-focus-extension.zip`
+Or download the zip from the app: `/daywinner.zip`
+
+If blocking stops working after a domain change, open `chrome://extensions` and click **Reload** on Daywinner bot.
 
 ## Publish to Chrome Web Store
 
@@ -26,13 +28,13 @@ Build the upload zip:
 node scripts/package-extension-store.mjs
 ```
 
-Privacy policy (required): https://produc-xi.vercel.app/privacy/focus-extension
+Privacy policy (required): https://daywinnerbot.com/privacy/focus-extension
 
 ## How it works
 
-- Produc syncs blocklist + session state to the extension via a content script on produc-xi.vercel.app
-- While `status === working`, matching domains redirect to `blocked.html`
-- Blocking is off during breaks and when no session is active
+- Daywinner syncs blocklist + session state to the extension via a content script on daywinnerbot.com (and produc-xi.vercel.app for legacy)
+- While a focus session is active with **soft or hard lock**, matching domains redirect to `blocked.html`
+- Blocking is off during breaks, no-lock sessions, and when no session is active
 - Block hits log infractions in Produc (`Blocked site: …`)
 - All extension data stays in `chrome.storage.local` — nothing sent to external servers
 

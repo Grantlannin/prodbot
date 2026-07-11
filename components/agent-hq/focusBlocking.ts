@@ -110,7 +110,9 @@ export function buildFocusSyncPayload(input: {
   openCountdownLeft: number | null;
   timerPaused: boolean;
 }): FocusSyncPayload {
-  const blocking = input.status === 'working';
+  const lockMode = input.session?.lockMode ?? 'none';
+  const blocking =
+    input.status === 'working' && (lockMode === 'soft' || lockMode === 'hard');
   const timerPaused = blocking && input.timerPaused;
   const remainingMs =
     blocking && input.openCountdownLeft != null ? input.openCountdownLeft : null;

@@ -84,7 +84,7 @@ async function logInfraction(domain) {
   const pending = data.pendingInfractions || [];
   pending.push(infraction);
   await chrome.storage.local.set({ pendingInfractions: pending });
-  // produc content script polls GET_PENDING_INFRACTIONS — no tabs permission needed
+  // Daywinner content script polls GET_PENDING_INFRACTIONS — no tabs permission needed
 }
 
 async function restoreFromStorage() {

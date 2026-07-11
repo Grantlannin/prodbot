@@ -83,14 +83,19 @@ export default function FocusExtensionModal() {
               <div style={styles.section}>
                 <div style={styles.sectionLabel}>Setup</div>
                 <p style={styles.body}>
-                  Blocks sites during focus sessions (not on breaks). Install once in Chrome, then start a session here.
+                  Blocks sites during focus sessions with soft or hard lock (not on breaks or no-lock sessions).
+                  Works on <strong>daywinnerbot.com</strong> — keep this app tab open while you work.
                 </p>
-                <a href="/produc-focus-extension.zip" download="produc-focus-extension.zip" style={styles.downloadLink}>
-                  Download extension
+                <a href="/daywinner.zip" download="daywinner.zip" style={styles.downloadLink}>
+                  Download extension (v1.0.3)
                 </a>
                 <ol style={styles.steps}>
-                  <li>Unzip → open chrome://extensions → Developer mode → Load unpacked → pick the extension folder.</li>
-                  <li>Start a focus session with a countdown. Blocked sites redirect until the session ends.</li>
+                  <li>Unzip → chrome://extensions → Developer mode → Load unpacked → select the extension folder.</li>
+                  <li>
+                    If you already installed an older copy, click <strong>Reload</strong> on the extension card (or
+                    remove and load unpacked again) so daywinnerbot.com is included.
+                  </li>
+                  <li>Start a countdown session here with soft or hard lock. Blocked sites redirect until the session ends.</li>
                 </ol>
               </div>
 
