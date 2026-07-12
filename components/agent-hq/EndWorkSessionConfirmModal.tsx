@@ -217,6 +217,12 @@ export default function EndWorkSessionConfirmModal({ open, onClose }: EndWorkSes
   const escapeReady =
     holdProgress >= 1 && escapePhrase.trim().toLowerCase() === HARD_LOCK_ESCAPE_PHRASE;
 
+  useEffect(() => {
+    if (open && !hasActiveSession) {
+      onClose();
+    }
+  }, [open, hasActiveSession, onClose]);
+
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
@@ -242,14 +248,7 @@ export default function EndWorkSessionConfirmModal({ open, onClose }: EndWorkSes
               This session ends when the countdown reaches zero
               {openCountdownLeft != null ? ` (${formatCooldown(openCountdownLeft)} left)` : ''}.
             </p>
-            {hardPhase === 'locked' ? (
-              <>
-                <p style={styles.hint}>To end early, use the escape flow below.</p>
-                <button type="button" onClick={() => setHardPhase('escape')} style={styles.secondaryBtn}>
-                  End session early…
-                </button>
-              </>
-            ) : (
+            {hardPhase === 'locked' ? null : (
               <>
                 <p style={styles.hint}>
                   Hold the button for 10 seconds, then type the phrase exactly to confirm.
@@ -300,46 +299,59 @@ export default function EndWorkSessionConfirmModal({ open, onClose }: EndWorkSes
         )}
 
         <div style={styles.actions}>
-          <button type="button" onClick={handleDismiss} style={styles.secondaryBtn}>
-            Keep working
-          </button>
-          {!isHardLock && !isSoftLock ? (
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={!hasActiveSession}
-              style={{
-                ...styles.dangerBtn,
-                ...(!hasActiveSession ? styles.dangerBtnDisabled : {}),
-              }}
-            >
-              End session
-            </button>
-          ) : !isHardLock ? (
-            <button
-              type="button"
-              onClick={handleSoftEndClick}
-              disabled={!hasActiveSession || softPhase === 'cooldown'}
-              style={{
-                ...styles.dangerBtn,
-                ...(!hasActiveSession || softPhase === 'cooldown' ? styles.dangerBtnDisabled : {}),
-              }}
-            >
-              {softPhase === 'confirm' ? 'Confirm end session' : 'End session'}
-            </button>
-          ) : hardPhase === 'escape' ? (
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={!hasActiveSession || !escapeReady}
-              style={{
-                ...styles.dangerBtn,
-                ...(!hasActiveSession || !escapeReady ? styles.dangerBtnDisabled : {}),
-              }}
-            >
-              End session early
-            </button>
-          ) : null}
+          {isHardLock && hardPhase === 'locked' ? (
+            <>
+              <button type="button" onClick={() => setHardPhase('escape')} style={styles.secondaryBtn}>
+                End session early…
+              </button>
+              <button type="button" onClick={handleDismiss} style={styles.secondaryBtn}>
+                Keep working
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={handleDismiss} style={styles.secondaryBtn}>
+                Keep working
+              </button>
+              {!isHardLock && !isSoftLock ? (
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={!hasActiveSession}
+                  style={{
+                    ...styles.dangerBtn,
+                    ...(!hasActiveSession ? styles.dangerBtnDisabled : {}),
+                  }}
+                >
+                  End session
+                </button>
+              ) : !isHardLock ? (
+                <button
+                  type="button"
+                  onClick={handleSoftEndClick}
+                  disabled={!hasActiveSession || softPhase === 'cooldown'}
+                  style={{
+                    ...styles.dangerBtn,
+                    ...(!hasActiveSession || softPhase === 'cooldown' ? styles.dangerBtnDisabled : {}),
+                  }}
+                >
+                  {softPhase === 'confirm' ? 'Confirm end session' : 'End session'}
+                </button>
+              ) : hardPhase === 'escape' ? (
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={!hasActiveSession || !escapeReady}
+                  style={{
+                    ...styles.dangerBtn,
+                    ...(!hasActiveSession || !escapeReady ? styles.dangerBtnDisabled : {}),
+                  }}
+                >
+                  End session early
+                </button>
+              ) : null}
+            </>
+          )}
         </div>
       </div>
     </div>,

@@ -16,6 +16,7 @@ import { StuckHelpProvider } from './hooks/StuckHelpProvider';
 import StuckHelpModal from './StuckHelpModal';
 import StuckHelpOverlays from './StuckHelpOverlays';
 import StuckHelpNavButton from './StuckHelpNavButton';
+import EndSessionWorkCompleteDismiss from './EndSessionWorkCompleteDismiss';
 import { clearNightPrepDeepLinkParam, readNightPrepDeepLink } from './nightPrepReminder';
 import { fetchProfileDisplayName } from '@/lib/supabase/profile';
 import OnboardingNameModal from './OnboardingNameModal';
@@ -94,6 +95,7 @@ function AgentHQInner() {
   return (
     <HoverTimerProvider onAddInfraction={(k, l) => addInfraction(k, l, 'dashboard')}>
       <StuckHelpProvider>
+        <EndSessionWorkCompleteDismiss />
         <FocusExtensionBridge onAddInfraction={addInfraction} />
         <StuckHelpModal />
         <StuckHelpOverlays />

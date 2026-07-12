@@ -5,6 +5,7 @@ import EndWorkSessionConfirmModal from '../EndWorkSessionConfirmModal';
 
 interface EndSessionContextValue {
   requestEndSession: () => void;
+  dismissEndSession: () => void;
 }
 
 const EndSessionContext = createContext<EndSessionContextValue | null>(null);
@@ -21,7 +22,7 @@ export function EndSessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <EndSessionContext.Provider value={{ requestEndSession }}>
+    <EndSessionContext.Provider value={{ requestEndSession, dismissEndSession: handleClose }}>
       {children}
       <EndWorkSessionConfirmModal open={open} onClose={handleClose} />
     </EndSessionContext.Provider>
