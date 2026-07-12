@@ -65,6 +65,8 @@ export const STARTING_FLOW_COPY = {
   prepStopYes: 'yes',
   prepStopNo: 'no',
   completeTitle: 'should we just keep going?',
+  completeBody:
+    "Nice work — you put in the full kickstart block. Might as well throw down another 15. You're already here. The world can wait for you to grind here for a sec.",
   completeYes: 'Yes',
   completeNo: 'no, end it now',
   keepGoing: 'keep going',

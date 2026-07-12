@@ -109,10 +109,10 @@ export default function StuckHelpOverlays() {
         <div style={styles.backdrop}>
           <div style={styles.panel} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
             <h3 style={styles.panelTitle}>{STARTING_FLOW_COPY.completeTitle}</h3>
-            <p style={styles.panelBody}>Nice work — you put in the full kickstart block.</p>
+            <p style={styles.panelBody}>{STARTING_FLOW_COPY.completeBody}</p>
 
             {!showDurationPicker ? (
-              <div style={styles.panelActions}>
+              <div style={styles.panelActionsCentered}>
                 <button type="button" onClick={endWorkSession} style={styles.panelSecondaryBtn}>
                   {STARTING_FLOW_COPY.completeNo}
                 </button>
@@ -334,6 +334,13 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: 'flex-end',
     gap: 8,
     marginTop: 18,
+  },
+  panelActionsCentered: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 18,
+    flexWrap: 'wrap',
   },
   panelPrimaryBtn: {
     border: 'none',
