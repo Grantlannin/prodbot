@@ -38,6 +38,8 @@ export default function EndWorkSessionConfirmModal({ open, onClose }: EndWorkSes
   const [holdProgress, setHoldProgress] = useState(0);
   const holdStartRef = useRef<number | null>(null);
   const holdFrameRef = useRef<number | null>(null);
+  const accumulatedHoldMsRef = useRef(0);
+  const hardLockProgressRef = useRef<{ sessionId: string; holdMs: number } | null>(null);
   const softLockProgressRef = useRef<{
     sessionId: string;
     phase: SoftPhase;
@@ -77,9 +79,14 @@ export default function EndWorkSessionConfirmModal({ open, onClose }: EndWorkSes
       softLockProgressRef.current = null;
     }
 
-    setHardPhase('locked');
+    const savedHard =
+      sessionId && hardLockProgressRef.current?.sessionId === sessionId
+        ? hardLockProgressRef.current.holdMs
+        : 0;
+    setHardPhase(savedHard > 0 ? 'escape' : 'locked');
     setEscapePhrase('');
-    setHoldProgress(0);
+    accumulatedHoldMsRef.current = savedHard;
+    setHoldProgress(Math.min(1, savedHard / HARD_LOCK_HOLD_MS));
     holdStartRef.current = null;
   }, [open, currentSession?.id]);
 
@@ -113,13 +120,27 @@ export default function EndWorkSessionConfirmModal({ open, onClose }: EndWorkSes
   }, [open, isSoftLock, softPhase, currentSession?.id]);
 
   const stopHold = useCallback(() => {
+    if (holdStartRef.current != null) {
+      const currentHoldMs = Date.now() - holdStartRef.current;
+      accumulatedHoldMsRef.current = Math.min(
+        HARD_LOCK_HOLD_MS,
+        accumulatedHoldMsRef.current + currentHoldMs
+      );
+      setHoldProgress(accumulatedHoldMsRef.current / HARD_LOCK_HOLD_MS);
+      const sessionId = currentSession?.id;
+      if (sessionId) {
+        hardLockProgressRef.current = {
+          sessionId,
+          holdMs: accumulatedHoldMsRef.current,
+        };
+      }
+    }
     holdStartRef.current = null;
     if (holdFrameRef.current != null) {
       cancelAnimationFrame(holdFrameRef.current);
       holdFrameRef.current = null;
     }
-    setHoldProgress(0);
-  }, []);
+  }, [currentSession?.id]);
 
   useEffect(() => {
     if (!open) stopHold();
@@ -127,16 +148,28 @@ export default function EndWorkSessionConfirmModal({ open, onClose }: EndWorkSes
   }, [open, stopHold]);
 
   const startHold = () => {
-    stopHold();
+    if (accumulatedHoldMsRef.current >= HARD_LOCK_HOLD_MS) return;
+    if (holdFrameRef.current != null) {
+      cancelAnimationFrame(holdFrameRef.current);
+      holdFrameRef.current = null;
+    }
     holdStartRef.current = Date.now();
 
     const step = () => {
       const start = holdStartRef.current;
       if (start == null) return;
-      const progress = Math.min(1, (Date.now() - start) / HARD_LOCK_HOLD_MS);
+      const currentHoldMs = Date.now() - start;
+      const totalMs = Math.min(HARD_LOCK_HOLD_MS, accumulatedHoldMsRef.current + currentHoldMs);
+      const progress = totalMs / HARD_LOCK_HOLD_MS;
       setHoldProgress(progress);
       if (progress >= 1) {
+        accumulatedHoldMsRef.current = HARD_LOCK_HOLD_MS;
+        holdStartRef.current = null;
         holdFrameRef.current = null;
+        const sessionId = currentSession?.id;
+        if (sessionId) {
+          hardLockProgressRef.current = { sessionId, holdMs: HARD_LOCK_HOLD_MS };
+        }
         return;
       }
       holdFrameRef.current = requestAnimationFrame(step);
@@ -148,6 +181,7 @@ export default function EndWorkSessionConfirmModal({ open, onClose }: EndWorkSes
   const handleConfirm = () => {
     if (!hasActiveSession) return;
     softLockProgressRef.current = null;
+    hardLockProgressRef.current = null;
     finishWorkSession();
     onClose();
   };
@@ -244,7 +278,9 @@ export default function EndWorkSessionConfirmModal({ open, onClose }: EndWorkSes
                     background: `linear-gradient(90deg, #dc2626 ${holdProgress * 100}%, #fecaca ${holdProgress * 100}%)`,
                   }}
                 >
-                  {holdProgress >= 1 ? 'Held — release to adjust' : `Hold to confirm (${Math.ceil((1 - holdProgress) * 10)}s)`}
+                  {holdProgress >= 1
+                    ? 'Hold complete — type phrase below'
+                    : `Hold to confirm (${Math.ceil(((1 - holdProgress) * HARD_LOCK_HOLD_MS) / 1000)}s)`}
                 </button>
               </>
             )}

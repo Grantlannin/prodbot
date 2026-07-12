@@ -32,7 +32,7 @@ export default function StuckHelpOverlays() {
   } = useStuckHelp();
   const { openCountdownLeft } = useWorkTrackerContext();
   const [extendMinutes, setExtendMinutes] = useState(25);
-  const [extendLockMode, setExtendLockMode] = useState<FocusLockMode>('hard');
+  const [extendLockMode, setExtendLockMode] = useState<FocusLockMode>('soft');
   const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [prepStopConfirmOpen, setPrepStopConfirmOpen] = useState(false);
   const [, setTick] = useState(0);
@@ -50,7 +50,7 @@ export default function StuckHelpOverlays() {
     if (workCompleteOpen) {
       fireCelebrationConfetti();
       setShowDurationPicker(false);
-      setExtendLockMode('hard');
+      setExtendLockMode('soft');
     }
   }, [workCompleteOpen]);
 
