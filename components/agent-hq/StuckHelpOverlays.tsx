@@ -107,84 +107,68 @@ export default function StuckHelpOverlays() {
 
       {workCompleteOpen ? (
         <div style={styles.backdrop}>
-          <div style={styles.shell}>
-            <header style={styles.header}>
-              <span style={styles.headerSpacer} />
-              <div style={styles.headerCenter}>
-                <div style={styles.avatar}>b</div>
-                <span style={styles.headerTitle}>bot</span>
-              </div>
-              <span style={styles.headerSpacer} />
-            </header>
+          <div style={styles.panel} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+            <h3 style={styles.panelTitle}>{STARTING_FLOW_COPY.completeTitle}</h3>
+            <p style={styles.panelBody}>Nice work — you put in the full kickstart block.</p>
 
-            <div style={styles.thread}>
-              <div style={{ ...styles.msgRow, ...styles.msgRowBot }}>
-                <div style={{ ...styles.bubble, ...styles.botBubble }}>{STARTING_FLOW_COPY.completeTitle}</div>
+            {!showDurationPicker ? (
+              <div style={styles.panelActions}>
+                <button type="button" onClick={endWorkSession} style={styles.panelSecondaryBtn}>
+                  {STARTING_FLOW_COPY.completeNo}
+                </button>
+                <button type="button" onClick={() => setShowDurationPicker(true)} style={styles.panelPrimaryBtn}>
+                  {STARTING_FLOW_COPY.completeYes}
+                </button>
               </div>
-            </div>
-
-            <footer style={styles.footer}>
-              {!showDurationPicker ? (
-                <div style={styles.chipWrap}>
-                  <button type="button" onClick={() => setShowDurationPicker(true)} style={styles.chip}>
-                    {STARTING_FLOW_COPY.completeYes}
-                  </button>
-                  <button type="button" onClick={endWorkSession} style={styles.chipSecondary}>
-                    {STARTING_FLOW_COPY.completeNo}
-                  </button>
+            ) : (
+              <div style={styles.pickerSection}>
+                <div style={styles.presetRow}>
+                  {KICKSTART_DURATION_PRESETS.map(min => (
+                    <button
+                      key={min}
+                      type="button"
+                      onClick={() => setExtendMinutes(min)}
+                      style={{
+                        ...styles.presetBtn,
+                        ...(extendMinutes === min ? styles.presetBtnActive : {}),
+                      }}
+                    >
+                      {min} min
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                <>
-                  <div style={styles.presetRow}>
-                    {KICKSTART_DURATION_PRESETS.map(min => (
+                <div style={styles.lockSection}>
+                  <div style={styles.lockLabel}>Lock mode</div>
+                  <div style={styles.lockRow}>
+                    {(['none', 'soft', 'hard'] as FocusLockMode[]).map(mode => (
                       <button
-                        key={min}
+                        key={mode}
                         type="button"
-                        onClick={() => setExtendMinutes(min)}
+                        onClick={() => setExtendLockMode(mode)}
                         style={{
-                          ...styles.presetBtn,
-                          ...(extendMinutes === min ? styles.presetBtnActive : {}),
+                          ...styles.lockBtn,
+                          ...(extendLockMode === mode ? styles.lockBtnActive : {}),
                         }}
                       >
-                        {min} min
+                        {mode === 'none' ? 'No lock' : mode === 'soft' ? 'Soft' : 'Hard'}
                       </button>
                     ))}
                   </div>
-                  <div style={styles.lockSection}>
-                    <div style={styles.lockLabel}>Lock mode</div>
-                    <div style={styles.lockRow}>
-                      {(['none', 'soft', 'hard'] as FocusLockMode[]).map(mode => (
-                        <button
-                          key={mode}
-                          type="button"
-                          onClick={() => setExtendLockMode(mode)}
-                          style={{
-                            ...styles.lockBtn,
-                            ...(extendLockMode === mode ? styles.lockBtnActive : {}),
-                          }}
-                        >
-                          {mode === 'none' ? 'No lock' : mode === 'soft' ? 'Soft' : 'Hard'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                </div>
+                <div style={styles.panelActions}>
+                  <button type="button" onClick={() => setShowDurationPicker(false)} style={styles.panelSecondaryBtn}>
+                    {STARTING_FLOW_COPY.close}
+                  </button>
                   <button
                     type="button"
                     onClick={() => extendWorkSession(extendMinutes, extendLockMode)}
-                    style={styles.chip}
+                    style={styles.panelPrimaryBtn}
                   >
                     {STARTING_FLOW_COPY.keepGoing}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowDurationPicker(false)}
-                    style={styles.chipSecondary}
-                  >
-                    {STARTING_FLOW_COPY.close}
-                  </button>
-                </>
-              )}
-            </footer>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : null}
@@ -193,21 +177,15 @@ export default function StuckHelpOverlays() {
         <div
           style={styles.backdrop}
           onClick={e => e.target === e.currentTarget && dismissWorkLogged()}
+          role="presentation"
         >
-          <div style={styles.shell}>
-            <header style={styles.header}>
-              <span style={styles.headerSpacer} />
-              <div style={styles.headerCenter}>
-                <div style={styles.avatar}>b</div>
-                <span style={styles.headerTitle}>bot</span>
-              </div>
-              <span style={styles.headerSpacer} />
-            </header>
-
-            <div style={styles.thread}>
-              <div style={{ ...styles.msgRow, ...styles.msgRowBot }}>
-                <div style={{ ...styles.bubble, ...styles.botBubble }}>{STARTING_FLOW_COPY.logged}</div>
-              </div>
+          <div style={styles.panel} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+            <h3 style={styles.panelTitle}>Session logged</h3>
+            <p style={styles.panelBody}>{STARTING_FLOW_COPY.logged}</p>
+            <div style={styles.panelActions}>
+              <button type="button" onClick={dismissWorkLogged} style={styles.panelPrimaryBtn}>
+                Done
+              </button>
             </div>
           </div>
         </div>
@@ -321,124 +299,69 @@ const styles: Record<string, CSSProperties> = {
   backdrop: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(15, 23, 42, 0.5)',
+    background: 'rgba(15, 23, 42, 0.35)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: 24,
     zIndex: 100001,
     fontFamily: font,
+    boxSizing: 'border-box',
   },
-  shell: {
-    width: '100%',
-    maxWidth: 420,
-    background: '#f2f2f7',
-    borderRadius: 20,
-    border: '1px solid #d1d5db',
-    boxShadow: '0 20px 50px rgba(15, 23, 42, 0.2)',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '10px 12px',
+  panel: {
+    width: 'min(100%, 420px)',
     background: '#fff',
-    borderBottom: '1px solid #e5e7eb',
-    flexShrink: 0,
+    borderRadius: 12,
+    padding: '20px 22px',
+    boxShadow: '0 24px 48px rgba(15, 23, 42, 0.18)',
+    fontFamily: font,
   },
-  headerSpacer: {
-    width: 32,
-  },
-  headerCenter: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  },
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: '50%',
-    background: '#0f172a',
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: 800,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textTransform: 'lowercase',
-  },
-  headerTitle: {
-    fontSize: 15,
+  panelTitle: {
+    margin: 0,
+    fontSize: 17,
     fontWeight: 700,
     color: '#0f172a',
-    textTransform: 'lowercase',
+    lineHeight: 1.35,
   },
-  thread: {
-    padding: '18px 12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-  },
-  msgRow: {
-    display: 'flex',
-    width: '100%',
-  },
-  msgRowBot: {
-    justifyContent: 'flex-start',
-  },
-  bubble: {
-    maxWidth: '88%',
-    padding: '10px 14px',
-    fontSize: 15,
-    lineHeight: 1.45,
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-  },
-  botBubble: {
-    background: '#e9e9eb',
-    color: '#0f172a',
-    borderRadius: '18px 18px 18px 4px',
-    fontWeight: 700,
-  },
-  footer: {
-    background: '#fff',
-    borderTop: '1px solid #e5e7eb',
-    padding: '10px 12px 12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-  },
-  chipWrap: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-  },
-  chip: {
-    textAlign: 'center',
-    border: '1px solid #007aff',
-    borderRadius: 18,
-    padding: '10px 13px',
+  panelBody: {
+    margin: '10px 0 0',
     fontSize: 14,
+    color: '#64748b',
+    lineHeight: 1.45,
+  },
+  panelActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 18,
+  },
+  panelPrimaryBtn: {
+    border: 'none',
+    borderRadius: 8,
+    padding: '8px 16px',
+    fontSize: 13,
     fontWeight: 600,
     fontFamily: font,
-    background: '#fff',
-    color: '#007aff',
+    background: '#0f172a',
+    color: '#fff',
     cursor: 'pointer',
   },
-  chipSecondary: {
-    textAlign: 'center',
-    border: '1px solid #cbd5e1',
-    borderRadius: 18,
-    padding: '10px 13px',
-    fontSize: 14,
+  panelSecondaryBtn: {
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    padding: '8px 14px',
+    fontSize: 13,
     fontWeight: 600,
     fontFamily: font,
     background: '#fff',
     color: '#475569',
     cursor: 'pointer',
+  },
+  pickerSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+    marginTop: 16,
   },
   presetRow: {
     display: 'flex',
