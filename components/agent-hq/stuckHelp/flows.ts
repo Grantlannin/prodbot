@@ -32,6 +32,16 @@ export function isStuckWorkSessionNotes(notes: string | null | undefined): boole
   return !!notes?.startsWith(STUCK_WORK_NOTES_PREFIX);
 }
 
+export function isStuckPostPrepContinueSession(
+  session: { sessionNotes?: string | null; project?: string } | null | undefined
+): boolean {
+  if (!session) return false;
+  return (
+    session.project === STUCK_POST_PREP_WORK_PROJECT ||
+    !!session.sessionNotes?.includes('postprepwork')
+  );
+}
+
 export const STARTING_FLOW_COPY = {
   intro:
     'Easy fix. We need to figure out the most important task, break it down, & create a 5-minute timer to get the ball rolling. We’ll do this together. If nothing else today, we will have the most baller/productive 5 minutes ever. This will be fun, and productive.',

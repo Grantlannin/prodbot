@@ -19,6 +19,7 @@ import {
   STUCK_POST_PREP_WORK_PROJECT,
   STUCK_PREP_NOTES_PREFIX,
   STUCK_WORK_NOTES_PREFIX,
+  isStuckPostPrepContinueSession,
   type StartingFlowPhase,
   type StartingFlowState,
   type StuckChatMessage,
@@ -125,6 +126,8 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
   const [isContinuingStuckWork, setIsContinuingStuckWork] = useState(false);
   const prepNotifiedRef = useRef(false);
   const workNotifiedRef = useRef(false);
+  const stuckLoopContinueActiveRef = useRef(false);
+  const sawContinueSessionRef = useRef(false);
 
   useEffect(() => {
     if (workMeta) return;
@@ -173,6 +176,20 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     setStartingFlow(null);
     setPostPrepResume(false);
   }, []);
+
+  const completeStuckHelpLoop = useCallback(() => {
+    clearStartingFlow();
+    setWorkMeta(null);
+    clearWorkCtx();
+    setWorkCompleteOpen(false);
+    setWorkLoggedOpen(false);
+    setPrepOverlayOpen(false);
+    setOpen(false);
+    workNotifiedRef.current = false;
+    prepNotifiedRef.current = false;
+    stuckLoopContinueActiveRef.current = false;
+    sawContinueSessionRef.current = false;
+  }, [clearStartingFlow]);
 
   const setStartingPhase = useCallback((phase: StartingFlowPhase) => {
     setStartingFlow(prev => (prev ? { ...prev, phase } : prev));
@@ -319,6 +336,8 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
       setIsContinuingStuckWork(true);
       setWorkCompleteOpen(false);
       workNotifiedRef.current = false;
+      stuckLoopContinueActiveRef.current = true;
+      sawContinueSessionRef.current = false;
 
       const nextMeta: WorkSessionMeta = {
         sessionId: '',
@@ -368,6 +387,17 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     ]
   );
 
+  useEffect(() => {
+    if (!stuckLoopContinueActiveRef.current) return;
+    if (status === 'working' && isStuckPostPrepContinueSession(currentSession)) {
+      sawContinueSessionRef.current = true;
+      return;
+    }
+    if (!sawContinueSessionRef.current) return;
+    if (status !== 'idle') return;
+    completeStuckHelpLoop();
+  }, [status, currentSession, completeStuckHelpLoop]);
+
   const dismissWorkComplete = useCallback(() => {
     setWorkCompleteOpen(false);
     workNotifiedRef.current = false;
@@ -392,12 +422,14 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     setWorkMeta(null);
     clearWorkCtx();
     workNotifiedRef.current = false;
-  }, [finishWorkSession, workMeta, addDoneToday, status, currentSession]);
+    stuckLoopContinueActiveRef.current = false;
+    sawContinueSessionRef.current = false;
+    clearStartingFlow();
+  }, [finishWorkSession, workMeta, addDoneToday, status, currentSession, clearStartingFlow]);
 
   const dismissWorkLogged = useCallback(() => {
     setWorkLoggedOpen(false);
-    clearStartingFlow();
-  }, [clearStartingFlow]);
+  }, []);
 
   const value = useMemo(
     () => ({
