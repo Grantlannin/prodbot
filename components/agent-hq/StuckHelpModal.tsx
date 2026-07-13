@@ -257,10 +257,10 @@ export default function StuckHelpModal() {
     if (typing) return;
     organizingFieldsRef.current.projectMode = 'input';
     setOrganizingFields({ projectMode: 'input' });
-    appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.inputProject });
     setOrganizingPhase('await_project_name');
     setDraft('');
     draftRef.current = '';
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   const addOrganizingTaskText = (text: string) => {
