@@ -21,6 +21,27 @@ import type { AppleNote } from './types';
 const font =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+function DiagonalCollapseIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M2.5 11.5 L11.5 2.5" />
+      <path d="M9 2.5 H11.5 V5" />
+      <path d="M11.5 11.5 L2.5 2.5" />
+      <path d="M5 11.5 H2.5 V9" />
+    </svg>
+  );
+}
+
 interface HoverNotesContentProps {
   pipWindow: Window;
 }
@@ -147,24 +168,22 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
 
   if (minimized) {
     return (
-      <button type="button" onClick={expand} style={styles.minimizedShell} aria-label="Expand notes">
-        <div style={styles.minimizedBody}>
+      <div style={styles.minimizedShell}>
+        <button type="button" onClick={expand} style={styles.minimizedMain} aria-label="Expand notes">
           <div style={styles.minimizedText}>
             <span style={styles.minimizedTitle}>Notes</span>
             <span style={styles.minimizedPreview}>&quot;{preview}&quot;</span>
           </div>
-          <span
-            style={styles.minimizedEditBtn}
-            onClick={e => {
-              e.stopPropagation();
-              expand();
-            }}
-            role="presentation"
-          >
+        </button>
+        <div style={styles.minimizedActions}>
+          <button type="button" onClick={expand} style={styles.iconBtn} title="Expand" aria-label="Expand">
+            <DiagonalCollapseIcon />
+          </button>
+          <button type="button" onClick={expand} style={styles.iconBtn} title="Edit" aria-label="Edit note">
             ✎
-          </span>
+          </button>
         </div>
-      </button>
+      </div>
     );
   }
 
@@ -177,7 +196,7 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
         </div>
         <div style={styles.headerActions}>
           <button type="button" onClick={minimize} style={styles.iconBtn} title="Collapse" aria-label="Collapse">
-            ⊟
+            <DiagonalCollapseIcon />
           </button>
           <button type="button" onClick={addNote} style={styles.iconBtn} title="New note" aria-label="New note">
             ✎
@@ -227,25 +246,31 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
 
 const styles: Record<string, CSSProperties> = {
   minimizedShell: {
-    display: 'block',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
     width: '100%',
     height: '100vh',
+    padding: '12px 14px',
+    boxSizing: 'border-box',
+    background: '#fff',
+    fontFamily: font,
+  },
+  minimizedMain: {
+    flex: 1,
+    minWidth: 0,
     margin: 0,
     padding: 0,
     border: 'none',
-    background: '#fff',
+    background: 'transparent',
     cursor: 'pointer',
-    fontFamily: font,
     textAlign: 'left',
+    fontFamily: font,
   },
-  minimizedBody: {
+  minimizedActions: {
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    height: '100%',
-    padding: '12px 14px',
-    boxSizing: 'border-box',
+    gap: 4,
+    flexShrink: 0,
   },
   minimizedText: {
     display: 'flex',
@@ -265,19 +290,6 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-  },
-  minimizedEditBtn: {
-    width: 28,
-    height: 28,
-    border: '1px solid #e2e8f0',
-    borderRadius: 6,
-    background: '#fff',
-    color: '#475569',
-    fontSize: 13,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
   },
   shell: {
     position: 'relative',
