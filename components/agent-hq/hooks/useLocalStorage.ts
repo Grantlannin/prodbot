@@ -5,6 +5,30 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 const SYNC_CHANNEL = 'agentHQ_localStorage_sync';
 let broadcastChannel: BroadcastChannel | null = null;
 
+type SameTabListener = (serialized: string) => void;
+const sameTabSubscribers = new Map<string, Set<SameTabListener>>();
+
+function subscribeSameTab(key: string, listener: SameTabListener): () => void {
+  let listeners = sameTabSubscribers.get(key);
+  if (!listeners) {
+    listeners = new Set();
+    sameTabSubscribers.set(key, listeners);
+  }
+  listeners.add(listener);
+  return () => {
+    listeners?.delete(listener);
+    if (listeners?.size === 0) sameTabSubscribers.delete(key);
+  };
+}
+
+function publishSameTab(key: string, serialized: string) {
+  const listeners = sameTabSubscribers.get(key);
+  if (!listeners) return;
+  for (const listener of listeners) {
+    listener(serialized);
+  }
+}
+
 function getBroadcastChannel(): BroadcastChannel | null {
   if (typeof BroadcastChannel === 'undefined') return null;
   if (!broadcastChannel) broadcastChannel = new BroadcastChannel(SYNC_CHANNEL);
@@ -14,7 +38,7 @@ function getBroadcastChannel(): BroadcastChannel | null {
 /**
  * Persists state to localStorage. SSR-safe for Next.js.
  * Uses lazy initializer so localStorage is read once on mount.
- * BroadcastChannel keeps PiP / other same-origin windows in sync immediately.
+ * Same-tab subscribers + BroadcastChannel keep all hooks/windows in sync immediately.
  */
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(() => {
@@ -27,12 +51,21 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     }
   });
   const skipBroadcastRef = useRef(false);
+  const lastSerializedRef = useRef<string | null>(null);
 
   useEffect(() => {
     try {
       const serialized = JSON.stringify(value);
+      if (lastSerializedRef.current === serialized) {
+        skipBroadcastRef.current = false;
+        return;
+      }
+
       localStorage.setItem(key, serialized);
+      lastSerializedRef.current = serialized;
+
       if (!skipBroadcastRef.current) {
+        publishSameTab(key, serialized);
         getBroadcastChannel()?.postMessage({ key, value: serialized });
       }
       skipBroadcastRef.current = false;
@@ -42,33 +75,37 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   }, [key, value]);
 
   useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== key || e.newValue === null) return;
+    const applySerialized = (serialized: string) => {
+      if (lastSerializedRef.current === serialized) return;
       try {
+        lastSerializedRef.current = serialized;
         skipBroadcastRef.current = true;
-        setValue(JSON.parse(e.newValue) as T);
-      } catch {
-        /* ignore corrupt cross-tab payload */
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, [key]);
-
-  useEffect(() => {
-    const channel = getBroadcastChannel();
-    if (!channel) return;
-    const onMessage = (e: MessageEvent<{ key?: string; value?: string }>) => {
-      if (e.data?.key !== key || e.data.value == null) return;
-      try {
-        skipBroadcastRef.current = true;
-        setValue(JSON.parse(e.data.value) as T);
+        setValue(JSON.parse(serialized) as T);
       } catch {
         /* ignore corrupt payload */
       }
     };
-    channel.addEventListener('message', onMessage);
-    return () => channel.removeEventListener('message', onMessage);
+
+    const unsubscribeSameTab = subscribeSameTab(key, applySerialized);
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== key || e.newValue === null) return;
+      applySerialized(e.newValue);
+    };
+    window.addEventListener('storage', onStorage);
+
+    const channel = getBroadcastChannel();
+    const onMessage = (e: MessageEvent<{ key?: string; value?: string }>) => {
+      if (e.data?.key !== key || e.data.value == null) return;
+      applySerialized(e.data.value);
+    };
+    channel?.addEventListener('message', onMessage);
+
+    return () => {
+      unsubscribeSameTab();
+      window.removeEventListener('storage', onStorage);
+      channel?.removeEventListener('message', onMessage);
+    };
   }, [key]);
 
   const setValueSafe = useCallback(

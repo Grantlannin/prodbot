@@ -11,6 +11,7 @@ import { sessionLabel } from './quickstartTask';
 import StartWorkModal from './StartWorkModal';
 import { useUserProfile } from './hooks/UserProfileProvider';
 import { triggerCelebration } from './celebrationEffects';
+import { FOCUS_PROJECT_KEY } from './stuckHelp/projectMutations';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const STORAGE_KEY = 'agentHQ_projects';
@@ -252,6 +253,37 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       setSelectedId(sorted[0]?.id ?? null);
     }
   }, [projects, selectedId, sorted]);
+
+  const focusProjectInPanel = useCallback(
+    (projectId: string) => {
+      if (!projects.some(project => project.id === projectId)) return;
+      setSelectedId(projectId);
+      try {
+        localStorage.removeItem(FOCUS_PROJECT_KEY);
+      } catch {
+        /* ignore */
+      }
+    },
+    [projects]
+  );
+
+  useEffect(() => {
+    const onFocusProject = (event: Event) => {
+      const projectId = (event as CustomEvent<{ projectId?: string }>).detail?.projectId;
+      if (projectId) focusProjectInPanel(projectId);
+    };
+    window.addEventListener('agentHQ:focusProject', onFocusProject);
+    return () => window.removeEventListener('agentHQ:focusProject', onFocusProject);
+  }, [focusProjectInPanel]);
+
+  useEffect(() => {
+    try {
+      const projectId = localStorage.getItem(FOCUS_PROJECT_KEY);
+      if (projectId) focusProjectInPanel(projectId);
+    } catch {
+      /* ignore */
+    }
+  }, [projects, focusProjectInPanel]);
 
   useEffect(() => {
     if (!focusTaskId) return;

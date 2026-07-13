@@ -1,6 +1,17 @@
 import type { ProjectBoard, ProjectTask } from '../types';
 
 export const PROJECTS_STORAGE_KEY = 'agentHQ_projects';
+export const FOCUS_PROJECT_KEY = 'agentHQ_focusProjectId';
+
+export function requestFocusProject(projectId: string) {
+  if (typeof window === 'undefined' || !projectId) return;
+  try {
+    localStorage.setItem(FOCUS_PROJECT_KEY, projectId);
+    window.dispatchEvent(new CustomEvent('agentHQ:focusProject', { detail: { projectId } }));
+  } catch {
+    /* ignore */
+  }
+}
 
 function makeId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);

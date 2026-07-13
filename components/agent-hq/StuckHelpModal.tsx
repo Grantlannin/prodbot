@@ -20,6 +20,7 @@ import {
   addProjectTask,
   getOpenProjectTaskTexts,
   mergeTaskTextOptions,
+  requestFocusProject,
   upsertProject,
 } from './stuckHelp/projectMutations';
 
@@ -278,6 +279,7 @@ export default function StuckHelpModal() {
       taskTexts: [],
     });
     appendOrganizingMessages({ role: 'user', text: name });
+    requestFocusProject(project.id);
     sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qMvp);
     setOrganizingPhase('await_mvp_tasks');
     setDraft('');
@@ -367,8 +369,12 @@ export default function StuckHelpModal() {
     if (!text || typing || !organizingPhase) return;
 
     if (organizingPhase === 'await_project_name') {
-      const { projects: nextProjects, project } = upsertProject(projects, text);
-      setProjects(nextProjects);
+      let project!: ProjectBoard;
+      setProjects(prev => {
+        const result = upsertProject(prev, text);
+        project = result.project;
+        return result.projects;
+      });
       organizingFieldsRef.current.projectMode = 'input';
       organizingFieldsRef.current.projectId = project.id;
       organizingFieldsRef.current.projectName = project.name.trim();
@@ -380,6 +386,7 @@ export default function StuckHelpModal() {
         taskTexts: [],
       });
       appendOrganizingMessages({ role: 'user', text: project.name.trim() });
+      requestFocusProject(project.id);
       sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qMvp);
       setOrganizingPhase('await_mvp_tasks');
       setDraft('');
@@ -392,6 +399,7 @@ export default function StuckHelpModal() {
       if (!projectId) return;
       appendOrganizingMessages({ role: 'user', text });
       setProjects(prev => addProjectTask(prev, projectId, text));
+      requestFocusProject(projectId);
       addOrganizingTaskText(text);
       setDraft('');
       draftRef.current = '';
