@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
   APPLE_NOTES_KEY,
@@ -8,8 +8,11 @@ import {
   createAppleNote,
   DEFAULT_HOVER_NOTES_SIZE,
   firstNoteLine,
+  HOVER_NOTES_BOUNDS_KEY,
+  HOVER_NOTES_MINIMIZED_SIZE,
   HOVER_NOTES_SIZE_KEY,
   sortNotesByUpdated,
+  type HoverNotesBounds,
 } from './appleNotesUtils';
 import { CornerResizeHandles, useCornerResize } from './hooks/useCornerResize';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -22,10 +25,32 @@ interface HoverNotesContentProps {
   pipWindow: Window;
 }
 
+function readWindowBounds(win: Window): HoverNotesBounds {
+  return {
+    x: win.screenX,
+    y: win.screenY,
+    w: win.outerWidth,
+    h: win.outerHeight,
+  };
+}
+
+function minimizedCornerPosition(win: Window, w: number, h: number): { x: number; y: number } {
+  const margin = 20;
+  const dockPadding = 72;
+  const x = Math.max(margin, win.screen.availWidth - w - margin);
+  const y = Math.max(margin, win.screen.availHeight - h - dockPadding);
+  return { x, y };
+}
+
 export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps) {
   const [notes, setNotes] = useLocalStorage<AppleNote[]>(APPLE_NOTES_KEY, []);
   const [selectedId, setSelectedId] = useLocalStorage<string | null>(APPLE_NOTES_SELECTED_KEY, null);
   const [size, setSize] = useLocalStorage(HOVER_NOTES_SIZE_KEY, DEFAULT_HOVER_NOTES_SIZE);
+  const [expandedBounds, setExpandedBounds] = useLocalStorage<HoverNotesBounds | null>(
+    HOVER_NOTES_BOUNDS_KEY,
+    null
+  );
+  const [minimized, setMinimized] = useState(false);
 
   const sorted = useMemo(() => sortNotesByUpdated(notes), [notes]);
   const selected = useMemo(
@@ -40,12 +65,15 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
     }
   }, [notes, selectedId, sorted, setSelectedId]);
 
-  const applyWindowSize = useCallback(
-    (next: { w: number; h: number }) => {
+  const applyWindowBounds = useCallback(
+    (bounds: { w: number; h: number; x?: number; y?: number }) => {
       try {
-        pipWindow.resizeTo(Math.round(next.w), Math.round(next.h));
+        pipWindow.resizeTo(Math.round(bounds.w), Math.round(bounds.h));
+        if (bounds.x != null && bounds.y != null) {
+          pipWindow.moveTo(Math.round(bounds.x), Math.round(bounds.y));
+        }
       } catch {
-        /* resizeTo may be blocked */
+        /* moveTo/resizeTo may be blocked */
       }
     },
     [pipWindow]
@@ -55,7 +83,7 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
     size,
     onSizeChange: next => {
       setSize(next);
-      applyWindowSize(next);
+      if (!minimized) applyWindowBounds(next);
     },
     minW: 280,
     maxW: 720,
@@ -64,8 +92,39 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
   });
 
   useEffect(() => {
-    applyWindowSize(size);
-  }, [applyWindowSize, size]);
+    if (minimized) return;
+    if (expandedBounds) {
+      applyWindowBounds(expandedBounds);
+      return;
+    }
+    applyWindowBounds(size);
+  }, [applyWindowBounds, expandedBounds, minimized, size]);
+
+  const minimize = useCallback(() => {
+    const bounds = readWindowBounds(pipWindow);
+    setExpandedBounds(bounds);
+    setSize({ w: bounds.w, h: bounds.h });
+    const corner = minimizedCornerPosition(pipWindow, HOVER_NOTES_MINIMIZED_SIZE.w, HOVER_NOTES_MINIMIZED_SIZE.h);
+    applyWindowBounds({
+      w: HOVER_NOTES_MINIMIZED_SIZE.w,
+      h: HOVER_NOTES_MINIMIZED_SIZE.h,
+      x: corner.x,
+      y: corner.y,
+    });
+    setMinimized(true);
+  }, [applyWindowBounds, pipWindow, setExpandedBounds, setSize]);
+
+  const expand = useCallback(() => {
+    const restore = expandedBounds ?? {
+      ...readWindowBounds(pipWindow),
+      w: size.w,
+      h: size.h,
+    };
+    setExpandedBounds(restore);
+    setSize({ w: restore.w, h: restore.h });
+    applyWindowBounds(restore);
+    setMinimized(false);
+  }, [applyWindowBounds, expandedBounds, pipWindow, setExpandedBounds, setSize, size.h, size.w]);
 
   const updateContent = useCallback(
     (content: string) => {
@@ -84,16 +143,42 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
     setSelectedId(n.id);
   }, [setNotes, setSelectedId]);
 
+  const preview = selected ? firstNoteLine(selected.content) : 'New Note';
+
+  if (minimized) {
+    return (
+      <button type="button" onClick={expand} style={styles.minimizedShell} aria-label="Expand notes">
+        <div style={styles.minimizedBody}>
+          <div style={styles.minimizedText}>
+            <span style={styles.minimizedTitle}>Notes</span>
+            <span style={styles.minimizedPreview}>&quot;{preview}&quot;</span>
+          </div>
+          <span
+            style={styles.minimizedEditBtn}
+            onClick={e => {
+              e.stopPropagation();
+              expand();
+            }}
+            role="presentation"
+          >
+            ✎
+          </span>
+        </div>
+      </button>
+    );
+  }
+
   return (
     <div style={styles.shell}>
       <header style={styles.header}>
         <div style={styles.headerLeft}>
           <span style={styles.headerTitle}>Notes</span>
-          {selected ? (
-            <span style={styles.headerSubtitle}>{firstNoteLine(selected.content)}</span>
-          ) : null}
+          {selected ? <span style={styles.headerSubtitle}>{preview}</span> : null}
         </div>
         <div style={styles.headerActions}>
+          <button type="button" onClick={minimize} style={styles.iconBtn} title="Minimize" aria-label="Minimize">
+            −
+          </button>
           <button type="button" onClick={addNote} style={styles.iconBtn} title="New note" aria-label="New note">
             ✎
           </button>
@@ -141,6 +226,59 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
 }
 
 const styles: Record<string, CSSProperties> = {
+  minimizedShell: {
+    display: 'block',
+    width: '100%',
+    height: '100vh',
+    margin: 0,
+    padding: 0,
+    border: 'none',
+    background: '#fff',
+    cursor: 'pointer',
+    fontFamily: font,
+    textAlign: 'left',
+  },
+  minimizedBody: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    height: '100%',
+    padding: '12px 14px',
+    boxSizing: 'border-box',
+  },
+  minimizedText: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    minWidth: 0,
+    flex: 1,
+  },
+  minimizedTitle: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: '#0f172a',
+  },
+  minimizedPreview: {
+    fontSize: 12,
+    color: '#64748b',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  minimizedEditBtn: {
+    width: 28,
+    height: 28,
+    border: '1px solid #e2e8f0',
+    borderRadius: 6,
+    background: '#fff',
+    color: '#475569',
+    fontSize: 13,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
   shell: {
     position: 'relative',
     display: 'flex',

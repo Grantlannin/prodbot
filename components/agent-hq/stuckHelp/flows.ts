@@ -78,7 +78,7 @@ export const KICKSTART_DURATION_PRESETS = [5, 10, 15, 25, 30, 45, 60, 90] as con
 
 export const KICKSTART_MINUTES = 5;
 /** TEMP: 10s for testing — restore to KICKSTART_MINUTES * 60 * 1000 before shipping */
-export const KICKSTART_DURATION_MS = 10_000;
+export const KICKSTART_DURATION_MS = 5 * 60 * 1000;
 
 export type StartingFlowPhase =
   | 'await_task'
@@ -100,4 +100,38 @@ export interface StartingFlowState {
   importantTask: string;
   prepPlan: string;
   chunks: string;
+}
+
+export const ORGANIZING_FLOW_COPY = {
+  intro:
+    "Ok, great. let's tee-up the most important task for you right now & get you organized quickly.",
+  qProject: 'What project/goal are you working on?',
+  qMvp:
+    'Great. Now, take a second and think about what can get us to the finish line for this project in 48 hours with the most ghetto MVP (minimum viable product) imaginable. It just needs to WORK, not be pretty. Thinking/overanalyzing gets us nothing, shitty action gets us everything. So if we HAD to get this finished & "up" or "in motion" in 48 hrs (product launched, outreach message sent, funnel finished, thing completed etc), what is the single most important thing we\'d work on or do?',
+  doneAddingTasks: 'done adding tasks',
+  qHardest:
+    "Great. Now - let's choose the hardest part of what we just wrote & and quickly prep it so when we start there's zero friction for us. We're not doing it yet, we're just going to set it up for when we're ready to do it. What is the hardest part?",
+  prepManual:
+    "Really? That's easy af. You're way bigger than that little task. Okay - let's go ahead and get everything set up to complete this task. Open required windows, get necessary documents, log into accounts, get yourself in position. Go ahead and do that now, i'll wait for you. Then click \"done prepping\" when you're done prepping it.",
+  donePrepping: 'done prepping',
+  kickstartReady:
+    "Welp, here we are. You've identified the most important task & you've just prepped it perfectly. Let's just put in 5 minutes on this thing like a psycho. We don't need to finish it, let's just put in the best 5 minutes imaginable, right here right now. There's nothing else to do, this is the exact moment where your dream life is carved. Win these, and you're balling. Most quit here. Also - i'm pumped lol - so let's destroy this f***** thing. Click \"I literally give zero f*cks & i'm taking imperfect action right now\" & i'll start a 5-minute timer with a hard lock for you.",
+  kickstartYes: "I literally give zero f*cks & i'm taking imperfect action right now",
+  addNewProject: 'Add new project',
+} as const;
+
+export type OrganizingFlowPhase =
+  | 'await_project'
+  | 'await_mvp_tasks'
+  | 'await_hardest_pick'
+  | 'await_manual_prep'
+  | 'await_kickstart_yes';
+
+export interface OrganizingFlowState {
+  phase: OrganizingFlowPhase;
+  messages: StuckChatMessage[];
+  projectId: string;
+  projectName: string;
+  taskTexts: string[];
+  hardestTask: string;
 }

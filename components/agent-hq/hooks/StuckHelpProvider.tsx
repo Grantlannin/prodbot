@@ -20,6 +20,8 @@ import {
   STUCK_PREP_NOTES_PREFIX,
   STUCK_WORK_NOTES_PREFIX,
   isStuckPostPrepContinueSession,
+  type OrganizingFlowPhase,
+  type OrganizingFlowState,
   type StartingFlowPhase,
   type StartingFlowState,
   type StuckChatMessage,
@@ -91,11 +93,18 @@ interface StuckHelpContextValue {
   openStuckHelp: () => void;
   closeStuckHelp: () => void;
   startingFlow: StartingFlowState | null;
+  organizingFlow: OrganizingFlowState | null;
   startStartingFlow: () => void;
+  startOrganizingFlow: () => void;
   clearStartingFlow: () => void;
   setStartingPhase: (phase: StartingFlowPhase) => void;
+  setOrganizingPhase: (phase: OrganizingFlowPhase) => void;
   setStartingFields: (fields: Partial<Pick<StartingFlowState, 'importantTask' | 'prepPlan' | 'chunks'>>) => void;
+  setOrganizingFields: (
+    fields: Partial<Pick<OrganizingFlowState, 'projectId' | 'projectName' | 'taskTexts' | 'hardestTask'>>
+  ) => void;
   appendStartingMessages: (...items: Omit<StuckChatMessage, 'id'>[]) => void;
+  appendOrganizingMessages: (...items: Omit<StuckChatMessage, 'id'>[]) => void;
   postPrepResume: boolean;
   clearPostPrepResume: () => void;
   prepOverlayOpen: boolean;
@@ -118,6 +127,7 @@ const StuckHelpContext = createContext<StuckHelpContextValue | null>(null);
 export function StuckHelpProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [startingFlow, setStartingFlow] = useState<StartingFlowState | null>(null);
+  const [organizingFlow, setOrganizingFlow] = useState<OrganizingFlowState | null>(null);
   const [postPrepResume, setPostPrepResume] = useState(false);
   const [prepOverlayOpen, setPrepOverlayOpen] = useState(false);
   const [workMeta, setWorkMeta] = useState<WorkSessionMeta | null>(null);
@@ -163,6 +173,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
   const closeStuckHelp = useCallback(() => setOpen(false), []);
 
   const startStartingFlow = useCallback(() => {
+    setOrganizingFlow(null);
     setStartingFlow({
       phase: 'await_task',
       messages: [],
@@ -172,8 +183,21 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const startOrganizingFlow = useCallback(() => {
+    setStartingFlow(null);
+    setOrganizingFlow({
+      phase: 'await_project',
+      messages: [],
+      projectId: '',
+      projectName: '',
+      taskTexts: [],
+      hardestTask: '',
+    });
+  }, []);
+
   const clearStartingFlow = useCallback(() => {
     setStartingFlow(null);
+    setOrganizingFlow(null);
     setPostPrepResume(false);
   }, []);
 
@@ -201,6 +225,30 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     },
     []
   );
+
+  const setOrganizingPhase = useCallback((phase: OrganizingFlowPhase) => {
+    setOrganizingFlow(prev => (prev ? { ...prev, phase } : prev));
+  }, []);
+
+  const setOrganizingFields = useCallback(
+    (
+      fields: Partial<Pick<OrganizingFlowState, 'projectId' | 'projectName' | 'taskTexts' | 'hardestTask'>>
+    ) => {
+      setOrganizingFlow(prev => (prev ? { ...prev, ...fields } : prev));
+    },
+    []
+  );
+
+  const appendOrganizingMessages = useCallback((...items: Omit<StuckChatMessage, 'id'>[]) => {
+    setOrganizingFlow(prev =>
+      prev
+        ? {
+            ...prev,
+            messages: [...prev.messages, ...items.map(item => ({ ...item, id: makeId() }))],
+          }
+        : prev
+    );
+  }, []);
 
   const appendStartingMessages = useCallback((...items: Omit<StuckChatMessage, 'id'>[]) => {
     setStartingFlow(prev =>
@@ -437,11 +485,16 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
       openStuckHelp,
       closeStuckHelp,
       startingFlow,
+      organizingFlow,
       startStartingFlow,
+      startOrganizingFlow,
       clearStartingFlow,
       setStartingPhase,
+      setOrganizingPhase,
       setStartingFields,
+      setOrganizingFields,
       appendStartingMessages,
+      appendOrganizingMessages,
       postPrepResume,
       clearPostPrepResume,
       prepOverlayOpen,
@@ -463,11 +516,16 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
       openStuckHelp,
       closeStuckHelp,
       startingFlow,
+      organizingFlow,
       startStartingFlow,
+      startOrganizingFlow,
       clearStartingFlow,
       setStartingPhase,
+      setOrganizingPhase,
       setStartingFields,
+      setOrganizingFields,
       appendStartingMessages,
+      appendOrganizingMessages,
       postPrepResume,
       clearPostPrepResume,
       prepOverlayOpen,

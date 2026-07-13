@@ -5,16 +5,30 @@ import { createPortal } from 'react-dom';
 import type { CSSProperties, KeyboardEvent } from 'react';
 import { useStuckHelp } from './hooks/StuckHelpProvider';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import type { ProjectBoard } from './types';
 import {
+  ORGANIZING_FLOW_COPY,
   STARTING_FLOW_COPY,
   STUCK_HELP_OPTIONS,
+  type OrganizingFlowPhase,
   type StartingFlowPhase,
   type StuckHelpPath,
 } from './stuckHelp/flows';
+import {
+  PROJECTS_STORAGE_KEY,
+  addProjectTask,
+  upsertProject,
+} from './stuckHelp/projectMutations';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 const BOT_TYPING_MS = 1300;
+
+const STARTING_COMPOSE_PHASES: StartingFlowPhase[] = ['await_task', 'await_prep_plan', 'await_chunks'];
+const STARTING_YES_PHASES: StartingFlowPhase[] = ['await_prep_yes', 'await_chunk_yes'];
+
+const ORGANIZING_COMPOSE_PHASES: OrganizingFlowPhase[] = ['await_project', 'await_mvp_tasks'];
 
 function TypingBubble() {
   return (
@@ -28,25 +42,28 @@ function TypingBubble() {
   );
 }
 
-const COMPOSE_PHASES: StartingFlowPhase[] = ['await_task', 'await_prep_plan', 'await_chunks'];
-const YES_PHASES: StartingFlowPhase[] = ['await_prep_yes', 'await_chunk_yes'];
-
 export default function StuckHelpModal() {
   const {
     open,
     closeStuckHelp,
     startingFlow,
+    organizingFlow,
     startStartingFlow,
+    startOrganizingFlow,
     clearStartingFlow,
     setStartingPhase,
+    setOrganizingPhase,
     setStartingFields,
+    setOrganizingFields,
     appendStartingMessages,
+    appendOrganizingMessages,
     postPrepResume,
     clearPostPrepResume,
     beginPrepTimer,
     beginWorkTimer,
   } = useStuckHelp();
   const { status } = useWorkTrackerContext();
+  const [projects, setProjects] = useLocalStorage<ProjectBoard[]>(PROJECTS_STORAGE_KEY, []);
   const [typing, setTyping] = useState(false);
 
   const threadRef = useRef<HTMLDivElement>(null);
@@ -54,12 +71,21 @@ export default function StuckHelpModal() {
   const draftRef = useRef('');
   const [draft, setDraft] = useState('');
   const flowFieldsRef = useRef({ importantTask: '', prepPlan: '', chunks: '' });
+  const organizingFieldsRef = useRef({
+    projectId: '',
+    projectName: '',
+    taskTexts: [] as string[],
+    hardestTask: '',
+  });
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const busy = status === 'working' || status === 'on_break';
-  const inChat = startingFlow !== null;
-  const phase = startingFlow?.phase;
-  const messages = startingFlow?.messages ?? [];
+  const inStarting = startingFlow !== null;
+  const inOrganizing = organizingFlow !== null;
+  const inChat = inStarting || inOrganizing;
+  const startingPhase = startingFlow?.phase;
+  const organizingPhase = organizingFlow?.phase;
+  const messages = inStarting ? (startingFlow?.messages ?? []) : (organizingFlow?.messages ?? []);
 
   const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
@@ -85,15 +111,9 @@ export default function StuckHelpModal() {
   useEffect(() => {
     if (!inChat) return;
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, phase, inChat, typing]);
+  }, [messages, startingPhase, organizingPhase, inChat, typing]);
 
-  useEffect(() => {
-    if (!open || !inChat || !phase || YES_PHASES.includes(phase) || typing) return;
-    if (!COMPOSE_PHASES.includes(phase)) return;
-    inputRef.current?.focus();
-  }, [open, inChat, phase, messages.length, typing]);
-
-  const sendBotReply = (
+  const sendStartingBotReply = (
     text: string,
     typingMs = BOT_TYPING_MS,
     link?: { label: string; href: string }
@@ -105,7 +125,15 @@ export default function StuckHelpModal() {
     }, typingMs);
   };
 
-  const sendOpeningBotSequence = (first: string, second: string) => {
+  const sendOrganizingBotReply = (text: string, typingMs = BOT_TYPING_MS) => {
+    setTyping(true);
+    schedule(() => {
+      appendOrganizingMessages({ role: 'bot', text });
+      setTyping(false);
+    }, typingMs);
+  };
+
+  const sendStartingOpeningSequence = (first: string, second: string) => {
     clearTimers();
     setTyping(true);
     schedule(() => {
@@ -117,20 +145,39 @@ export default function StuckHelpModal() {
     }, BOT_TYPING_MS);
   };
 
+  const sendOrganizingOpeningSequence = (first: string, second: string) => {
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendOrganizingMessages({ role: 'bot', text: first });
+      schedule(() => {
+        appendOrganizingMessages({ role: 'bot', text: second });
+        setTyping(false);
+      }, BOT_TYPING_MS);
+    }, BOT_TYPING_MS);
+  };
+
   useEffect(() => {
     if (!open || !postPrepResume || !startingFlow) return;
     clearPostPrepResume();
-    sendBotReply(STARTING_FLOW_COPY.qChunks);
+    sendStartingBotReply(STARTING_FLOW_COPY.qChunks);
   }, [open, postPrepResume, startingFlow, clearPostPrepResume]);
+
+  useEffect(() => {
+    if (!open || !inStarting || !startingPhase || STARTING_YES_PHASES.includes(startingPhase) || typing) return;
+    if (!STARTING_COMPOSE_PHASES.includes(startingPhase)) return;
+    inputRef.current?.focus();
+  }, [open, inStarting, startingPhase, messages.length, typing]);
+
+  useEffect(() => {
+    if (!open || !inOrganizing || !organizingPhase || typing) return;
+    if (!ORGANIZING_COMPOSE_PHASES.includes(organizingPhase)) return;
+    inputRef.current?.focus();
+  }, [open, inOrganizing, organizingPhase, messages.length, typing]);
 
   if (!open || typeof document === 'undefined') return null;
 
   const hide = () => closeStuckHelp();
-
-  const abandon = () => {
-    clearStartingFlow();
-    closeStuckHelp();
-  };
 
   const backToPicker = () => {
     clearTimers();
@@ -139,61 +186,134 @@ export default function StuckHelpModal() {
     setDraft('');
     draftRef.current = '';
     flowFieldsRef.current = { importantTask: '', prepPlan: '', chunks: '' };
+    organizingFieldsRef.current = { projectId: '', projectName: '', taskTexts: [], hardestTask: '' };
   };
 
   const pickPath = (id: StuckHelpPath) => {
-    if (id !== 'starting') return;
-    flowFieldsRef.current = { importantTask: '', prepPlan: '', chunks: '' };
-    startStartingFlow();
-    setDraft('');
-    draftRef.current = '';
-    sendOpeningBotSequence(STARTING_FLOW_COPY.intro, STARTING_FLOW_COPY.q1);
+    if (id === 'starting') {
+      flowFieldsRef.current = { importantTask: '', prepPlan: '', chunks: '' };
+      startStartingFlow();
+      setDraft('');
+      draftRef.current = '';
+      sendStartingOpeningSequence(STARTING_FLOW_COPY.intro, STARTING_FLOW_COPY.q1);
+      return;
+    }
+    if (id === 'organizing') {
+      organizingFieldsRef.current = { projectId: '', projectName: '', taskTexts: [], hardestTask: '' };
+      startOrganizingFlow();
+      setDraft('');
+      draftRef.current = '';
+      sendOrganizingOpeningSequence(ORGANIZING_FLOW_COPY.intro, ORGANIZING_FLOW_COPY.qProject);
+    }
   };
 
-  const sendDraft = () => {
+  const selectOrganizingProject = (project: ProjectBoard) => {
+    if (typing) return;
+    organizingFieldsRef.current.projectId = project.id;
+    organizingFieldsRef.current.projectName = project.name.trim() || 'Unnamed project';
+    setOrganizingFields({
+      projectId: project.id,
+      projectName: organizingFieldsRef.current.projectName,
+    });
+    appendOrganizingMessages({ role: 'user', text: organizingFieldsRef.current.projectName });
+    sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qMvp);
+    setOrganizingPhase('await_mvp_tasks');
+    setDraft('');
+    draftRef.current = '';
+  };
+
+  const sendStartingDraft = () => {
     const text = draft.trim();
-    if (!text || typing || !phase) return;
+    if (!text || typing || !startingPhase) return;
 
     appendStartingMessages({ role: 'user', text });
     setDraft('');
     draftRef.current = '';
 
-    if (phase === 'await_task') {
+    if (startingPhase === 'await_task') {
       flowFieldsRef.current.importantTask = text;
       setStartingFields({ importantTask: text });
       const courseUrl = STARTING_FLOW_COPY.prepCourseUrl.trim();
       if (courseUrl) {
-        sendBotReply(STARTING_FLOW_COPY.q2, BOT_TYPING_MS, {
+        sendStartingBotReply(STARTING_FLOW_COPY.q2, BOT_TYPING_MS, {
           label: STARTING_FLOW_COPY.q2CourseLinkLabel,
           href: courseUrl,
         });
       } else {
-        sendBotReply(STARTING_FLOW_COPY.q2 + STARTING_FLOW_COPY.q2CourseLinkLabel);
+        sendStartingBotReply(STARTING_FLOW_COPY.q2 + STARTING_FLOW_COPY.q2CourseLinkLabel);
       }
       setStartingPhase('await_prep_plan');
       return;
     }
 
-    if (phase === 'await_prep_plan') {
+    if (startingPhase === 'await_prep_plan') {
       flowFieldsRef.current.prepPlan = text;
       setStartingFields({ prepPlan: text });
-      sendBotReply(STARTING_FLOW_COPY.prepReady);
+      sendStartingBotReply(STARTING_FLOW_COPY.prepReady);
       setStartingPhase('await_prep_yes');
       return;
     }
 
-    if (phase === 'await_chunks') {
+    if (startingPhase === 'await_chunks') {
       flowFieldsRef.current.chunks = text;
       setStartingFields({ chunks: text });
-      sendBotReply(STARTING_FLOW_COPY.chunkWorkReady);
+      sendStartingBotReply(STARTING_FLOW_COPY.chunkWorkReady);
       setStartingPhase('await_chunk_yes');
     }
   };
 
-  const sendYes = () => {
-    if (!phase || !startingFlow) return;
+  const sendOrganizingDraft = () => {
+    const text = draft.trim();
+    if (!text || typing || !organizingPhase) return;
 
-    if (phase === 'await_prep_yes') {
+    if (organizingPhase === 'await_project') {
+      const { projects: nextProjects, project } = upsertProject(projects, text);
+      setProjects(nextProjects);
+      selectOrganizingProject(project);
+      return;
+    }
+
+    if (organizingPhase === 'await_mvp_tasks') {
+      const projectId = organizingFlow?.projectId || organizingFieldsRef.current.projectId;
+      if (!projectId) return;
+      appendOrganizingMessages({ role: 'user', text });
+      setProjects(prev => addProjectTask(prev, projectId, text));
+      const nextTasks = [...(organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts), text];
+      organizingFieldsRef.current.taskTexts = nextTasks;
+      setOrganizingFields({ taskTexts: nextTasks });
+      setDraft('');
+      draftRef.current = '';
+    }
+  };
+
+  const finishAddingTasks = () => {
+    const tasks = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
+    if (!tasks.length || typing) return;
+    appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.doneAddingTasks });
+    sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qHardest);
+    setOrganizingPhase('await_hardest_pick');
+  };
+
+  const pickHardestTask = (task: string) => {
+    if (typing) return;
+    organizingFieldsRef.current.hardestTask = task;
+    setOrganizingFields({ hardestTask: task });
+    appendOrganizingMessages({ role: 'user', text: task });
+    sendOrganizingBotReply(ORGANIZING_FLOW_COPY.prepManual);
+    setOrganizingPhase('await_manual_prep');
+  };
+
+  const finishManualPrep = () => {
+    if (typing) return;
+    appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.donePrepping });
+    sendOrganizingBotReply(ORGANIZING_FLOW_COPY.kickstartReady);
+    setOrganizingPhase('await_kickstart_yes');
+  };
+
+  const sendStartingYes = () => {
+    if (!startingPhase || !startingFlow) return;
+
+    if (startingPhase === 'await_prep_yes') {
       if (typing) return;
       const task = (startingFlow.importantTask || flowFieldsRef.current.importantTask).trim();
       const prep = (startingFlow.prepPlan || flowFieldsRef.current.prepPlan).trim();
@@ -203,7 +323,7 @@ export default function StuckHelpModal() {
       return;
     }
 
-    if (phase === 'await_chunk_yes') {
+    if (startingPhase === 'await_chunk_yes') {
       if (typing || busy) return;
       const task = (startingFlow.importantTask || flowFieldsRef.current.importantTask).trim();
       const chunks = (startingFlow.chunks || flowFieldsRef.current.chunks).trim();
@@ -213,6 +333,21 @@ export default function StuckHelpModal() {
     }
   };
 
+  const sendOrganizingKickstart = () => {
+    if (!organizingPhase || !organizingFlow || organizingPhase !== 'await_kickstart_yes') return;
+    if (typing || busy) return;
+    const projectName = (organizingFlow.projectName || organizingFieldsRef.current.projectName).trim();
+    const hardest = (organizingFlow.hardestTask || organizingFieldsRef.current.hardestTask).trim();
+    if (!projectName || !hardest) return;
+    appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.kickstartYes });
+    beginWorkTimer(projectName, hardest);
+  };
+
+  const sendDraft = () => {
+    if (inStarting) sendStartingDraft();
+    else if (inOrganizing) sendOrganizingDraft();
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -220,8 +355,21 @@ export default function StuckHelpModal() {
     }
   };
 
-  const showCompose = phase ? COMPOSE_PHASES.includes(phase) && !typing : false;
-  const showYesChip = phase ? YES_PHASES.includes(phase) && !typing : false;
+  const showStartingCompose =
+    inStarting && startingPhase
+      ? STARTING_COMPOSE_PHASES.includes(startingPhase) && !typing
+      : false;
+  const showOrganizingCompose =
+    inOrganizing && organizingPhase
+      ? ORGANIZING_COMPOSE_PHASES.includes(organizingPhase) && !typing
+      : false;
+  const showCompose = showStartingCompose || showOrganizingCompose;
+
+  const showStartingYes =
+    inStarting && startingPhase ? STARTING_YES_PHASES.includes(startingPhase) && !typing : false;
+
+  const projectOptions = projects.filter(p => p.name.trim());
+  const organizingTasks = organizingFlow?.taskTexts ?? [];
 
   return createPortal(
     <>
@@ -248,7 +396,7 @@ export default function StuckHelpModal() {
             </button>
             <div style={styles.optionList}>
               {STUCK_HELP_OPTIONS.map(option => {
-                const available = option.id === 'starting';
+                const available = option.id === 'starting' || option.id === 'organizing';
                 return (
                   <button
                     key={option.id}
@@ -267,16 +415,16 @@ export default function StuckHelpModal() {
             </div>
           </div>
         ) : (
-        <div style={styles.shell} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
-          <header style={styles.header}>
-            <button type="button" onClick={backToPicker} style={styles.headerBack}>
-              ←
-            </button>
-            <div style={styles.headerCenter}>
-              <div style={styles.avatar}>b</div>
-              <span style={styles.headerTitle}>bot</span>
-            </div>
-            <button type="button" onClick={hide} style={styles.headerClose} aria-label="Close">
+          <div style={styles.shell} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+            <header style={styles.header}>
+              <button type="button" onClick={backToPicker} style={styles.headerBack}>
+                ←
+              </button>
+              <div style={styles.headerCenter}>
+                <div style={styles.avatar}>b</div>
+                <span style={styles.headerTitle}>bot</span>
+              </div>
+              <button type="button" onClick={hide} style={styles.headerClose} aria-label="Close">
                 ✕
               </button>
             </header>
@@ -317,9 +465,58 @@ export default function StuckHelpModal() {
             </div>
 
             <footer style={styles.footer}>
-              {showYesChip ? (
+              {inOrganizing && organizingPhase === 'await_project' && !typing ? (
                 <div style={styles.chipWrap}>
-                  <button type="button" disabled={busy} onClick={sendYes} style={styles.chip}>
+                  {projectOptions.map(project => (
+                    <button
+                      key={project.id}
+                      type="button"
+                      onClick={() => selectOrganizingProject(project)}
+                      style={styles.chip}
+                    >
+                      {project.name.trim()}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {inOrganizing && organizingPhase === 'await_hardest_pick' && !typing ? (
+                <div style={styles.chipWrap}>
+                  {organizingTasks.map(task => (
+                    <button key={task} type="button" onClick={() => pickHardestTask(task)} style={styles.chip}>
+                      {task}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {inOrganizing && organizingPhase === 'await_mvp_tasks' && !typing && organizingTasks.length > 0 ? (
+                <div style={styles.chipWrap}>
+                  <button type="button" onClick={finishAddingTasks} style={styles.chip}>
+                    {ORGANIZING_FLOW_COPY.doneAddingTasks}
+                  </button>
+                </div>
+              ) : null}
+
+              {inOrganizing && organizingPhase === 'await_manual_prep' && !typing ? (
+                <div style={styles.chipWrap}>
+                  <button type="button" onClick={finishManualPrep} style={styles.chip}>
+                    {ORGANIZING_FLOW_COPY.donePrepping}
+                  </button>
+                </div>
+              ) : null}
+
+              {inOrganizing && organizingPhase === 'await_kickstart_yes' && !typing ? (
+                <div style={styles.chipWrap}>
+                  <button type="button" disabled={busy} onClick={sendOrganizingKickstart} style={styles.chip}>
+                    {ORGANIZING_FLOW_COPY.kickstartYes}
+                  </button>
+                </div>
+              ) : null}
+
+              {showStartingYes ? (
+                <div style={styles.chipWrap}>
+                  <button type="button" disabled={busy} onClick={sendStartingYes} style={styles.chip}>
                     {STARTING_FLOW_COPY.yesBegin}
                   </button>
                 </div>
@@ -336,7 +533,11 @@ export default function StuckHelpModal() {
                     }}
                     onKeyDown={handleKeyDown}
                     rows={1}
-                    placeholder="Message"
+                    placeholder={
+                      inOrganizing && organizingPhase === 'await_project'
+                        ? ORGANIZING_FLOW_COPY.addNewProject
+                        : 'Message'
+                    }
                     style={styles.input}
                   />
                   <button
