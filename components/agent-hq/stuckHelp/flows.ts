@@ -38,7 +38,8 @@ export function isStuckPostPrepContinueSession(
   if (!session) return false;
   return (
     session.project === STUCK_POST_PREP_WORK_PROJECT ||
-    !!session.sessionNotes?.includes('postprepwork')
+    !!session.sessionNotes?.includes('postprepwork') ||
+    !!session.sessionNotes?.includes(`${STUCK_WORK_NOTES_PREFIX}:extended`)
   );
 }
 

@@ -84,7 +84,14 @@ function clearWorkCtx() {
   }
 }
 
-function continuedWorkProject(): string {
+function resolveContinuedWorkProject(
+  workMeta: WorkSessionMeta | null,
+  currentSession: { project?: string } | null | undefined
+): string {
+  const fromMeta = workMeta?.importantTask?.trim();
+  if (fromMeta) return fromMeta;
+  const fromSession = currentSession?.project?.trim();
+  if (fromSession) return fromSession;
   return STUCK_POST_PREP_WORK_PROJECT;
 }
 
@@ -416,7 +423,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     (minutes: number, lockMode: FocusLockMode) => {
       if (minutes <= 0) return;
 
-      const project = continuedWorkProject();
+      const project = resolveContinuedWorkProject(workMeta, currentSession);
 
       setIsContinuingStuckWork(true);
       setWorkCompleteOpen(false);
@@ -427,7 +434,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
       const nextMeta: WorkSessionMeta = {
         sessionId: '',
         importantTask: project,
-        chunks: '',
+        chunks: workMeta?.chunks || '',
       };
       setWorkMeta(nextMeta);
       saveWorkCtx(nextMeta);
@@ -437,7 +444,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
         type: 'open' as const,
         countdownTargetMs: minutes * 60 * 1000,
         lockMode,
-        sessionNotes: `${STUCK_WORK_NOTES_PREFIX}:extended:postprepwork`,
+        sessionNotes: `${STUCK_WORK_NOTES_PREFIX}:extended:${project}`,
       };
 
       if (status === 'working' && currentSession) {
@@ -464,6 +471,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     [
       status,
       currentSession,
+      workMeta,
       startSession,
       continueStuckWorkSession,
       requestOpen,
