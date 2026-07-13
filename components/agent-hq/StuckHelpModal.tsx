@@ -454,7 +454,7 @@ export default function StuckHelpModal() {
     const hardest = (organizingFlow.hardestTask || organizingFieldsRef.current.hardestTask).trim();
     if (!projectName || !hardest) return;
     appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.kickstartYes });
-    beginWorkTimer(projectName, hardest);
+    beginWorkTimer(hardest, projectName);
   };
 
   const sendDraft = () => {
