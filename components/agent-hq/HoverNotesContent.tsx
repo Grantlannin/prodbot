@@ -170,15 +170,18 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
 
   return (
     <div style={styles.shell}>
+      <div style={styles.chromeBar}>
+        <button type="button" onClick={minimize} style={styles.chromeBtn} title="Minimize" aria-label="Minimize">
+          −
+        </button>
+      </div>
+
       <header style={styles.header}>
         <div style={styles.headerLeft}>
           <span style={styles.headerTitle}>Notes</span>
           {selected ? <span style={styles.headerSubtitle}>{preview}</span> : null}
         </div>
         <div style={styles.headerActions}>
-          <button type="button" onClick={minimize} style={styles.iconBtn} title="Minimize" aria-label="Minimize">
-            −
-          </button>
           <button type="button" onClick={addNote} style={styles.iconBtn} title="New note" aria-label="New note">
             ✎
           </button>
@@ -287,6 +290,29 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
     background: '#fff',
     color: '#0f172a',
+  },
+  chromeBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: 32,
+    padding: '0 8px',
+    background: '#0f0f0f',
+    flexShrink: 0,
+  },
+  chromeBtn: {
+    width: 24,
+    height: 24,
+    border: 'none',
+    borderRadius: 4,
+    background: 'transparent',
+    color: '#fff',
+    fontSize: 16,
+    lineHeight: 1,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     display: 'flex',
