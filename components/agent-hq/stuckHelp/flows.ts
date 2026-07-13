@@ -78,7 +78,8 @@ export const KICKSTART_DURATION_PRESETS = [5, 10, 15, 25, 30, 45, 60, 90] as con
 
 export const KICKSTART_MINUTES = 5;
 /** TEMP: 10s for testing — restore to KICKSTART_MINUTES * 60 * 1000 before shipping */
-export const KICKSTART_DURATION_MS = 5 * 60 * 1000;
+/** TEMP: 5s for testing — restore to KICKSTART_MINUTES * 60 * 1000 before shipping */
+export const KICKSTART_DURATION_MS = 5_000;
 
 export type StartingFlowPhase =
   | 'await_task'
