@@ -110,11 +110,31 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
   const setValueSafe = useCallback(
     (updater: T | ((prev: T) => T)) => {
-      setValue(prev =>
-        typeof updater === 'function' ? (updater as (p: T) => T)(prev) : updater
-      );
+      setValue(prev => {
+        const next =
+          typeof updater === 'function' ? (updater as (p: T) => T)(prev) : updater;
+
+        if (typeof window !== 'undefined') {
+          try {
+            const serialized = JSON.stringify(next);
+            if (lastSerializedRef.current !== serialized) {
+              localStorage.setItem(key, serialized);
+              lastSerializedRef.current = serialized;
+              if (!skipBroadcastRef.current) {
+                publishSameTab(key, serialized);
+                getBroadcastChannel()?.postMessage({ key, value: serialized });
+              }
+              skipBroadcastRef.current = false;
+            }
+          } catch (e) {
+            console.error(`[useLocalStorage] Failed to write "${key}":`, e);
+          }
+        }
+
+        return next;
+      });
     },
-    []
+    [key]
   );
 
   return [value, setValueSafe] as const;

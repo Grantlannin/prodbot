@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, type CSSProperties } from 'react';
 import type { ProjectBoard, ProjectSubTask, ProjectTask, TaskContextLink } from './types';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { useProjects } from './hooks/ProjectsProvider';
 import TaskContextLinksBox from './TaskContextLinksBox';
 import AppleNotesEditorModal from './AppleNotesEditorModal';
 import ProjectCompletionOverlay from './ProjectCompletionOverlay';
@@ -14,7 +14,6 @@ import { triggerCelebration } from './celebrationEffects';
 import { FOCUS_PROJECT_KEY } from './stuckHelp/projectMutations';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-const STORAGE_KEY = 'agentHQ_projects';
 const LEGACY_THINGS_KEY = 'agentHQ_things';
 const TASK_LIST_VISIBLE_ROWS = 5;
 const TASK_ROW_HEIGHT_PX = 34;
@@ -177,7 +176,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   { onProjectCompleted, onSelectedProgressChange },
   ref
 ) {
-  const [projects, setProjects] = useLocalStorage<ProjectBoard[]>(STORAGE_KEY, []);
+  const { projects, setProjects } = useProjects();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
   const [focusSubTaskKey, setFocusSubTaskKey] = useState<string | null>(null);

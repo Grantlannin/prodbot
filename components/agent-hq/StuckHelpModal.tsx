@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties, KeyboardEvent } from 'react';
 import { useStuckHelp } from './hooks/StuckHelpProvider';
+import { useProjects } from './hooks/ProjectsProvider';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
-import { useLocalStorage } from './hooks/useLocalStorage';
 import type { ProjectBoard } from './types';
 import {
   ORGANIZING_FLOW_COPY,
@@ -16,7 +16,6 @@ import {
   type StuckHelpPath,
 } from './stuckHelp/flows';
 import {
-  PROJECTS_STORAGE_KEY,
   addProjectTask,
   getOpenProjectTaskTexts,
   mergeTaskTextOptions,
@@ -71,7 +70,7 @@ export default function StuckHelpModal() {
     beginWorkTimer,
   } = useStuckHelp();
   const { status } = useWorkTrackerContext();
-  const [projects, setProjects] = useLocalStorage<ProjectBoard[]>(PROJECTS_STORAGE_KEY, []);
+  const { projects, setProjects } = useProjects();
   const [typing, setTyping] = useState(false);
 
   const threadRef = useRef<HTMLDivElement>(null);
@@ -107,17 +106,6 @@ export default function StuckHelpModal() {
   };
 
   useEffect(() => () => clearTimers(), []);
-
-  useEffect(() => {
-    if (!open) return;
-    try {
-      const raw = localStorage.getItem(PROJECTS_STORAGE_KEY);
-      if (raw == null) return;
-      setProjects(JSON.parse(raw) as ProjectBoard[]);
-    } catch {
-      /* ignore corrupt projects payload */
-    }
-  }, [open, setProjects]);
 
   useEffect(() => {
     if (!organizingFlow?.projectId) return;
