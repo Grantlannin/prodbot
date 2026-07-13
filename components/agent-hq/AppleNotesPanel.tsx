@@ -3,43 +3,22 @@
 import { useState, useEffect, useMemo, useCallback, type CSSProperties } from 'react';
 import type { AppleNote } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useHoverNotes } from './hooks/HoverNotesProvider';
+import {
+  APPLE_NOTES_KEY,
+  APPLE_NOTES_SELECTED_KEY,
+  createAppleNote,
+  firstNoteLine,
+  formatNoteTime,
+  migrateLegacyAppleNotes,
+  noteBodyPreview,
+  sortNotesByUpdated,
+} from './appleNotesUtils';
 
 const font =
   '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 const DAY = 86400000;
-
-function makeId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
-function firstLine(text: string): string {
-  const line = text.split(/\r?\n/)[0]?.trim() ?? '';
-  if (!line) return 'New Note';
-  return line.length > 72 ? line.slice(0, 69) + '…' : line;
-}
-
-function bodyPreview(text: string): string {
-  const raw = text.split(/\r?\n/);
-  const first = raw[0]?.trim() ?? '';
-  if (raw.length >= 2) {
-    const rest = raw.slice(1).join(' ').trim();
-    if (!rest) return '';
-    return rest.length > 56 ? rest.slice(0, 53) + '…' : rest;
-  }
-  if (first.length > 72) return first.slice(72, 130) + (first.length > 130 ? '…' : '');
-  return '';
-}
-
-function formatNoteTime(ts: number): string {
-  const d = new Date(ts);
-  const now = new Date();
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  if (ts >= startToday) {
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  }
-  return d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' });
-}
 
 type GroupKey = 'today' | 'prev30' | 'older';
 
@@ -49,7 +28,7 @@ function groupNotes(notes: AppleNote[]): { key: GroupKey; label: string; items: 
   const t0 = startToday.getTime();
   const t30 = t0 - 30 * DAY;
 
-  const sorted = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
+  const sorted = sortNotesByUpdated(notes);
   const today: AppleNote[] = [];
   const prev30: AppleNote[] = [];
   const older: AppleNote[] = [];
@@ -68,31 +47,18 @@ function groupNotes(notes: AppleNote[]): { key: GroupKey; label: string; items: 
 }
 
 export default function AppleNotesPanel() {
-  const [notes, setNotes] = useLocalStorage<AppleNote[]>('agentHQ_appleNotes', []);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [notes, setNotes] = useLocalStorage<AppleNote[]>(APPLE_NOTES_KEY, []);
+  const [selectedId, setSelectedId] = useLocalStorage<string | null>(APPLE_NOTES_SELECTED_KEY, null);
   const [view, setView] = useState<'list' | 'gallery'>('list');
   const [migrated, setMigrated] = useState(false);
+  const { open: openHoverNotes, toggle: toggleHoverNotes, isOpen: hoverNotesOpen, supported: hoverNotesSupported } =
+    useHoverNotes();
 
   useEffect(() => {
     if (migrated) return;
     setMigrated(true);
-    try {
-      const legacy = localStorage.getItem('agentHQ_notes');
-      if (legacy?.trim() && notes.length === 0) {
-        const n: AppleNote = {
-          id: makeId(),
-          content: legacy.trim(),
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-        setNotes([n]);
-        setSelectedId(n.id);
-        localStorage.removeItem('agentHQ_notes');
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [migrated, notes.length, setNotes]);
+    migrateLegacyAppleNotes(notes, setNotes);
+  }, [migrated, notes, setNotes]);
 
   useEffect(() => {
     if (notes.length === 0) {
@@ -100,9 +66,9 @@ export default function AppleNotesPanel() {
       return;
     }
     if (!selectedId || !notes.some(n => n.id === selectedId)) {
-      setSelectedId(notes.sort((a, b) => b.updatedAt - a.updatedAt)[0].id);
+      setSelectedId(sortNotesByUpdated(notes)[0]?.id ?? null);
     }
-  }, [notes, selectedId]);
+  }, [notes, selectedId, setSelectedId]);
 
   const selected = useMemo(() => notes.find(n => n.id === selectedId) ?? null, [notes, selectedId]);
 
@@ -118,22 +84,29 @@ export default function AppleNotesPanel() {
   );
 
   const addNote = useCallback(() => {
-    const n: AppleNote = {
-      id: makeId(),
-      content: '',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+    const n = createAppleNote();
     setNotes(prev => [n, ...prev]);
     setSelectedId(n.id);
-  }, [setNotes]);
+  }, [setNotes, setSelectedId]);
 
   const deleteSelected = useCallback(() => {
     if (!selectedId) return;
     if (!confirm('Delete this note?')) return;
     setNotes(prev => prev.filter(n => n.id !== selectedId));
     setSelectedId(null);
-  }, [selectedId, setNotes]);
+  }, [selectedId, setNotes, setSelectedId]);
+
+  const handlePopOut = useCallback(() => {
+    if (!hoverNotesSupported) return;
+    if (notes.length === 0) {
+      const n = createAppleNote();
+      setNotes([n]);
+      setSelectedId(n.id);
+    } else if (!selectedId) {
+      setSelectedId(sortNotesByUpdated(notes)[0]?.id ?? null);
+    }
+    void openHoverNotes();
+  }, [hoverNotesSupported, notes, selectedId, setNotes, setSelectedId, openHoverNotes]);
 
   const sidebarBg = '#fff';
   const editorBg = '#fff';
@@ -156,7 +129,6 @@ export default function AppleNotesPanel() {
         background: editorBg,
       }}
     >
-      {/* Sidebar */}
       <div
         style={{
           width: 'min(100%, 300px)',
@@ -194,6 +166,20 @@ export default function AppleNotesPanel() {
           <div style={{ width: 1, height: 20, background: borderSub, margin: '0 4px' }} />
           <ToolbarBtn label="Delete" onClick={deleteSelected} icon="⌫" disabled={!selectedId} theme="light" />
           <div style={{ flex: 1 }} />
+          <ToolbarBtn
+            label={
+              hoverNotesSupported
+                ? hoverNotesOpen
+                  ? 'Dock notes'
+                  : 'Pop out notes'
+                : 'Pop out notes (Chrome only)'
+            }
+            onClick={() => (hoverNotesOpen ? void toggleHoverNotes() : handlePopOut())}
+            icon="⧉"
+            disabled={!hoverNotesSupported}
+            active={hoverNotesOpen}
+            theme="light"
+          />
           <ToolbarBtn label="New note" onClick={addNote} icon="✎" primary theme="light" />
         </div>
 
@@ -230,41 +216,42 @@ export default function AppleNotesPanel() {
             ))
           ) : (
             <div style={{ padding: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {notes
-                .sort((a, b) => b.updatedAt - a.updatedAt)
-                .map(note => (
-                  <button
-                    key={note.id}
-                    type="button"
-                    onClick={() => setSelectedId(note.id)}
-                    style={{
-                      textAlign: 'left',
-                      padding: 10,
-                      borderRadius: 8,
-                      border: `1px solid ${note.id === selectedId ? accentBorder : borderSub}`,
-                      background: note.id === selectedId ? accentSelect : '#f8fafc',
-                      color: textPrimary,
-                      cursor: 'pointer',
-                      fontFamily: font,
-                    }}
-                  >
-                    <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{firstLine(note.content)}</div>
-                    <div style={{ fontSize: 11, color: textSecondary }}>
-                      {formatNoteTime(note.updatedAt)} · {bodyPreview(note.content)}
-                    </div>
-                  </button>
-                ))}
+              {sortNotesByUpdated(notes).map(note => (
+                <button
+                  key={note.id}
+                  type="button"
+                  onClick={() => setSelectedId(note.id)}
+                  style={{
+                    textAlign: 'left',
+                    padding: 10,
+                    borderRadius: 8,
+                    border: `1px solid ${note.id === selectedId ? accentBorder : borderSub}`,
+                    background: note.id === selectedId ? accentSelect : '#f8fafc',
+                    color: textPrimary,
+                    cursor: 'pointer',
+                    fontFamily: font,
+                  }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{firstNoteLine(note.content)}</div>
+                  <div style={{ fontSize: 11, color: textSecondary }}>
+                    {formatNoteTime(note.updatedAt)} · {noteBodyPreview(note.content)}
+                  </div>
+                </button>
+              ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Editor */}
       <div style={{ flex: 1, background: editorBg, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {selected ? (
           <>
             <div
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
                 padding: '8px 14px',
                 borderBottom: `1px solid ${borderLight}`,
                 color: textSecondary,
@@ -272,10 +259,21 @@ export default function AppleNotesPanel() {
                 background: '#fff',
               }}
             >
-              {new Date(selected.updatedAt).toLocaleString([], {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-              })}
+              <span>
+                {new Date(selected.updatedAt).toLocaleString([], {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+              </span>
+              {hoverNotesSupported ? (
+                <button
+                  type="button"
+                  onClick={() => (hoverNotesOpen ? void toggleHoverNotes() : handlePopOut())}
+                  style={styles.popOutLink}
+                >
+                  {hoverNotesOpen ? 'Dock floating notes' : 'Pop out next to you'}
+                </button>
+              ) : null}
             </div>
             <textarea
               value={selected.content}
@@ -307,6 +305,20 @@ export default function AppleNotesPanel() {
     </div>
   );
 }
+
+const styles: Record<string, CSSProperties> = {
+  popOutLink: {
+    border: 'none',
+    background: 'transparent',
+    color: '#6366f1',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    cursor: 'pointer',
+    padding: 0,
+    textDecoration: 'underline',
+  },
+};
 
 function ToolbarBtn({
   icon,
@@ -381,8 +393,8 @@ function NoteRow({
   textPrimary: string;
   textSecondary: string;
 }) {
-  const title = firstLine(note.content);
-  const preview = bodyPreview(note.content);
+  const title = firstNoteLine(note.content);
+  const preview = noteBodyPreview(note.content);
   const time = formatNoteTime(note.updatedAt);
 
   return (
@@ -414,7 +426,7 @@ function NoteRow({
       >
         {title}
       </div>
-      <div style={{ fontSize: 11, color: selected ? textSecondary : textSecondary, marginBottom: 4, lineHeight: 1.35 }}>
+      <div style={{ fontSize: 11, color: textSecondary, marginBottom: 4, lineHeight: 1.35 }}>
         {preview ? `${time} · ${preview}` : time}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: textSecondary }}>

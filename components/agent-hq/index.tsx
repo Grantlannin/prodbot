@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './hooks/AuthProvider';
 import { WorkTrackerProvider } from './hooks/WorkTrackerProvider';
 import { EndSessionProvider } from './hooks/EndSessionProvider';
 import { HoverTimerProvider } from './hooks/HoverTimerProvider';
+import { HoverNotesProvider } from './hooks/HoverNotesProvider';
 import { UserProfileProvider, useUserProfile } from './hooks/UserProfileProvider';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import type { Infraction } from './types';
@@ -94,6 +95,7 @@ function AgentHQInner() {
 
   return (
     <HoverTimerProvider onAddInfraction={(k, l) => addInfraction(k, l, 'dashboard')}>
+      <HoverNotesProvider>
       <StuckHelpProvider>
         <EndSessionWorkCompleteDismiss />
         <FocusExtensionBridge onAddInfraction={addInfraction} />
@@ -138,6 +140,7 @@ function AgentHQInner() {
           </div>
         </div>
       </StuckHelpProvider>
+      </HoverNotesProvider>
     </HoverTimerProvider>
   );
 }
