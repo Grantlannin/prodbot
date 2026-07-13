@@ -72,6 +72,7 @@ export default function StuckHelpModal() {
   const { status } = useWorkTrackerContext();
   const { projects, setProjects } = useProjects();
   const [typing, setTyping] = useState(false);
+  const [chooseProjectError, setChooseProjectError] = useState(false);
 
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -139,6 +140,7 @@ export default function StuckHelpModal() {
       setTyping(false);
       setDraft('');
       draftRef.current = '';
+      setChooseProjectError(false);
     }
   }, [open]);
 
@@ -227,6 +229,7 @@ export default function StuckHelpModal() {
       taskTexts: [],
       hardestTask: '',
     };
+    setChooseProjectError(false);
   };
 
   const pickPath = (id: StuckHelpPath) => {
@@ -276,6 +279,12 @@ export default function StuckHelpModal() {
 
   const beginChooseProject = () => {
     if (typing) return;
+    const options = projects.filter(p => p.name.trim());
+    if (options.length === 0) {
+      setChooseProjectError(true);
+      return;
+    }
+    setChooseProjectError(false);
     organizingFieldsRef.current.projectMode = 'choose';
     setOrganizingFields({ projectMode: 'choose' });
     appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.chooseProject });
@@ -286,6 +295,7 @@ export default function StuckHelpModal() {
 
   const beginInputProject = () => {
     if (typing) return;
+    setChooseProjectError(false);
     organizingFieldsRef.current.projectMode = 'input';
     setOrganizingFields({ projectMode: 'input' });
     setOrganizingPhase('await_project_name');
@@ -483,6 +493,7 @@ export default function StuckHelpModal() {
         taskTexts: [],
         hardestTask: '',
       };
+      setChooseProjectError(false);
       resetOrganizingChat();
       sendOrganizingOpeningSequence(ORGANIZING_FLOW_COPY.intro, ORGANIZING_FLOW_COPY.qProject);
       return;
@@ -618,6 +629,9 @@ export default function StuckHelpModal() {
             <footer style={styles.footer}>
               {inOrganizing && organizingPhase === 'await_project_mode' && !typing ? (
                 <div style={styles.chipWrap}>
+                  {chooseProjectError ? (
+                    <p style={styles.errorText}>{ORGANIZING_FLOW_COPY.noSavedProjects}</p>
+                  ) : null}
                   <button type="button" onClick={beginChooseProject} style={styles.chip}>
                     {ORGANIZING_FLOW_COPY.chooseProject}
                   </button>
@@ -627,22 +641,18 @@ export default function StuckHelpModal() {
                 </div>
               ) : null}
 
-              {inOrganizing && organizingPhase === 'await_project_pick' && !typing ? (
+              {inOrganizing && organizingPhase === 'await_project_pick' && !typing && projectOptions.length > 0 ? (
                 <div style={styles.chipWrap}>
-                  {projectOptions.length ? (
-                    projectOptions.map(project => (
-                      <button
-                        key={project.id}
-                        type="button"
-                        onClick={() => selectOrganizingProject(project)}
-                        style={styles.chip}
-                      >
-                        {project.name.trim()}
-                      </button>
-                    ))
-                  ) : (
-                    <p style={styles.helperText}>{ORGANIZING_FLOW_COPY.noSavedProjects}</p>
-                  )}
+                  {projectOptions.map(project => (
+                    <button
+                      key={project.id}
+                      type="button"
+                      onClick={() => selectOrganizingProject(project)}
+                      style={styles.chip}
+                    >
+                      {project.name.trim()}
+                    </button>
+                  ))}
                 </div>
               ) : null}
 
@@ -965,6 +975,14 @@ const styles: Record<string, CSSProperties> = {
     color: '#007aff',
     cursor: 'pointer',
     lineHeight: 1.4,
+  },
+  errorText: {
+    margin: 0,
+    fontSize: 12,
+    color: '#dc2626',
+    textAlign: 'center',
+    lineHeight: 1.45,
+    padding: '2px 2px 0',
   },
   helperText: {
     margin: 0,
