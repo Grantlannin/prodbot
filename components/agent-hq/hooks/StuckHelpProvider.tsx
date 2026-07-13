@@ -101,7 +101,9 @@ interface StuckHelpContextValue {
   setOrganizingPhase: (phase: OrganizingFlowPhase) => void;
   setStartingFields: (fields: Partial<Pick<StartingFlowState, 'importantTask' | 'prepPlan' | 'chunks'>>) => void;
   setOrganizingFields: (
-    fields: Partial<Pick<OrganizingFlowState, 'projectId' | 'projectName' | 'taskTexts' | 'hardestTask'>>
+    fields: Partial<
+      Pick<OrganizingFlowState, 'projectId' | 'projectName' | 'projectMode' | 'taskTexts' | 'hardestTask'>
+    >
   ) => void;
   appendStartingMessages: (...items: Omit<StuckChatMessage, 'id'>[]) => void;
   appendOrganizingMessages: (...items: Omit<StuckChatMessage, 'id'>[]) => void;
@@ -186,8 +188,9 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
   const startOrganizingFlow = useCallback(() => {
     setStartingFlow(null);
     setOrganizingFlow({
-      phase: 'await_project',
+      phase: 'await_project_mode',
       messages: [],
+      projectMode: null,
       projectId: '',
       projectName: '',
       taskTexts: [],
@@ -232,7 +235,9 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
 
   const setOrganizingFields = useCallback(
     (
-      fields: Partial<Pick<OrganizingFlowState, 'projectId' | 'projectName' | 'taskTexts' | 'hardestTask'>>
+      fields: Partial<
+        Pick<OrganizingFlowState, 'projectId' | 'projectName' | 'projectMode' | 'taskTexts' | 'hardestTask'>
+      >
     ) => {
       setOrganizingFlow(prev => (prev ? { ...prev, ...fields } : prev));
     },

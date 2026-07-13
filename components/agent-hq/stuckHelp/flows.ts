@@ -117,19 +117,28 @@ export const ORGANIZING_FLOW_COPY = {
   kickstartReady:
     "Welp, here we are. You've identified the most important task & you've just prepped it perfectly. Let's just put in 5 minutes on this thing like a psycho. We don't need to finish it, let's just put in the best 5 minutes imaginable, right here right now. There's nothing else to do, this is the exact moment where your dream life is carved. Win these, and you're balling. Most quit here. Also - i'm pumped lol - so let's destroy this f***** thing. Click \"I literally give zero f*cks & i'm taking imperfect action right now\" & i'll start a 5-minute timer with a hard lock for you.",
   kickstartYes: "I literally give zero f*cks & i'm taking imperfect action right now",
-  addNewProject: 'Add new project',
+  chooseProject: 'choose project',
+  inputProject: 'input project',
+  projectNamePlaceholder: 'Project name',
+  addTaskPlaceholder: 'Add a task',
+  noSavedProjects: 'No saved projects yet — use input project to add one.',
 } as const;
 
 export type OrganizingFlowPhase =
-  | 'await_project'
+  | 'await_project_mode'
+  | 'await_project_pick'
+  | 'await_project_name'
   | 'await_mvp_tasks'
   | 'await_hardest_pick'
   | 'await_manual_prep'
   | 'await_kickstart_yes';
 
+export type OrganizingProjectMode = 'choose' | 'input' | null;
+
 export interface OrganizingFlowState {
   phase: OrganizingFlowPhase;
   messages: StuckChatMessage[];
+  projectMode: OrganizingProjectMode;
   projectId: string;
   projectName: string;
   taskTexts: string[];

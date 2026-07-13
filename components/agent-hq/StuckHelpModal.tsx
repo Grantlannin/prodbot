@@ -28,7 +28,10 @@ const BOT_TYPING_MS = 1300;
 const STARTING_COMPOSE_PHASES: StartingFlowPhase[] = ['await_task', 'await_prep_plan', 'await_chunks'];
 const STARTING_YES_PHASES: StartingFlowPhase[] = ['await_prep_yes', 'await_chunk_yes'];
 
-const ORGANIZING_COMPOSE_PHASES: OrganizingFlowPhase[] = ['await_project', 'await_mvp_tasks'];
+const ORGANIZING_COMPOSE_PHASES: OrganizingFlowPhase[] = [
+  'await_project_name',
+  'await_mvp_tasks',
+];
 
 function TypingBubble() {
   return (
@@ -72,6 +75,7 @@ export default function StuckHelpModal() {
   const [draft, setDraft] = useState('');
   const flowFieldsRef = useRef({ importantTask: '', prepPlan: '', chunks: '' });
   const organizingFieldsRef = useRef({
+    projectMode: null as 'choose' | 'input' | null,
     projectId: '',
     projectName: '',
     taskTexts: [] as string[],
@@ -186,7 +190,13 @@ export default function StuckHelpModal() {
     setDraft('');
     draftRef.current = '';
     flowFieldsRef.current = { importantTask: '', prepPlan: '', chunks: '' };
-    organizingFieldsRef.current = { projectId: '', projectName: '', taskTexts: [], hardestTask: '' };
+    organizingFieldsRef.current = {
+      projectMode: null,
+      projectId: '',
+      projectName: '',
+      taskTexts: [],
+      hardestTask: '',
+    };
   };
 
   const pickPath = (id: StuckHelpPath) => {
@@ -199,7 +209,13 @@ export default function StuckHelpModal() {
       return;
     }
     if (id === 'organizing') {
-      organizingFieldsRef.current = { projectId: '', projectName: '', taskTexts: [], hardestTask: '' };
+      organizingFieldsRef.current = {
+      projectMode: null,
+      projectId: '',
+      projectName: '',
+      taskTexts: [],
+      hardestTask: '',
+    };
       startOrganizingFlow();
       setDraft('');
       draftRef.current = '';
@@ -209,17 +225,60 @@ export default function StuckHelpModal() {
 
   const selectOrganizingProject = (project: ProjectBoard) => {
     if (typing) return;
+    const name = project.name.trim() || 'Unnamed project';
+    organizingFieldsRef.current.projectMode = 'choose';
     organizingFieldsRef.current.projectId = project.id;
-    organizingFieldsRef.current.projectName = project.name.trim() || 'Unnamed project';
+    organizingFieldsRef.current.projectName = name;
+    organizingFieldsRef.current.taskTexts = [];
     setOrganizingFields({
+      projectMode: 'choose',
       projectId: project.id,
-      projectName: organizingFieldsRef.current.projectName,
+      projectName: name,
+      taskTexts: [],
     });
-    appendOrganizingMessages({ role: 'user', text: organizingFieldsRef.current.projectName });
+    appendOrganizingMessages({ role: 'user', text: name });
     sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qMvp);
     setOrganizingPhase('await_mvp_tasks');
     setDraft('');
     draftRef.current = '';
+  };
+
+  const beginChooseProject = () => {
+    if (typing) return;
+    organizingFieldsRef.current.projectMode = 'choose';
+    setOrganizingFields({ projectMode: 'choose' });
+    appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.chooseProject });
+    setOrganizingPhase('await_project_pick');
+    setDraft('');
+    draftRef.current = '';
+  };
+
+  const beginInputProject = () => {
+    if (typing) return;
+    organizingFieldsRef.current.projectMode = 'input';
+    setOrganizingFields({ projectMode: 'input' });
+    appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.inputProject });
+    setOrganizingPhase('await_project_name');
+    setDraft('');
+    draftRef.current = '';
+  };
+
+  const addOrganizingTaskText = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const nextTasks = [...(organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts), trimmed];
+    organizingFieldsRef.current.taskTexts = nextTasks;
+    setOrganizingFields({ taskTexts: nextTasks });
+  };
+
+  const selectExistingProjectTask = (taskText: string) => {
+    if (typing) return;
+    const trimmed = taskText.trim();
+    if (!trimmed) return;
+    const current = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
+    if (current.includes(trimmed)) return;
+    appendOrganizingMessages({ role: 'user', text: trimmed });
+    addOrganizingTaskText(trimmed);
   };
 
   const sendStartingDraft = () => {
@@ -266,10 +325,24 @@ export default function StuckHelpModal() {
     const text = draft.trim();
     if (!text || typing || !organizingPhase) return;
 
-    if (organizingPhase === 'await_project') {
+    if (organizingPhase === 'await_project_name') {
       const { projects: nextProjects, project } = upsertProject(projects, text);
       setProjects(nextProjects);
-      selectOrganizingProject(project);
+      organizingFieldsRef.current.projectMode = 'input';
+      organizingFieldsRef.current.projectId = project.id;
+      organizingFieldsRef.current.projectName = project.name.trim();
+      organizingFieldsRef.current.taskTexts = [];
+      setOrganizingFields({
+        projectMode: 'input',
+        projectId: project.id,
+        projectName: project.name.trim(),
+        taskTexts: [],
+      });
+      appendOrganizingMessages({ role: 'user', text: project.name.trim() });
+      sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qMvp);
+      setOrganizingPhase('await_mvp_tasks');
+      setDraft('');
+      draftRef.current = '';
       return;
     }
 
@@ -278,9 +351,7 @@ export default function StuckHelpModal() {
       if (!projectId) return;
       appendOrganizingMessages({ role: 'user', text });
       setProjects(prev => addProjectTask(prev, projectId, text));
-      const nextTasks = [...(organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts), text];
-      organizingFieldsRef.current.taskTexts = nextTasks;
-      setOrganizingFields({ taskTexts: nextTasks });
+      addOrganizingTaskText(text);
       setDraft('');
       draftRef.current = '';
     }
@@ -366,10 +437,20 @@ export default function StuckHelpModal() {
   const showCompose = showStartingCompose || showOrganizingCompose;
 
   const showStartingYes =
-    inStarting && startingPhase ? STARTING_YES_PHASES.includes(startingPhase) && !typing : false;
+    inStarting && !inOrganizing && startingPhase
+      ? STARTING_YES_PHASES.includes(startingPhase) && !typing
+      : false;
 
   const projectOptions = projects.filter(p => p.name.trim());
   const organizingTasks = organizingFlow?.taskTexts ?? [];
+  const selectedProject = projects.find(p => p.id === organizingFlow?.projectId);
+  const existingProjectTasks =
+    organizingFlow?.projectMode === 'choose' && selectedProject
+      ? selectedProject.tasks
+          .filter(task => !task.done && task.text.trim())
+          .map(task => task.text.trim())
+          .filter(taskText => !organizingTasks.includes(taskText))
+      : [];
 
   return createPortal(
     <>
@@ -465,16 +546,46 @@ export default function StuckHelpModal() {
             </div>
 
             <footer style={styles.footer}>
-              {inOrganizing && organizingPhase === 'await_project' && !typing ? (
+              {inOrganizing && organizingPhase === 'await_project_mode' && !typing ? (
                 <div style={styles.chipWrap}>
-                  {projectOptions.map(project => (
+                  <button type="button" onClick={beginChooseProject} style={styles.chip}>
+                    {ORGANIZING_FLOW_COPY.chooseProject}
+                  </button>
+                  <button type="button" onClick={beginInputProject} style={styles.chip}>
+                    {ORGANIZING_FLOW_COPY.inputProject}
+                  </button>
+                </div>
+              ) : null}
+
+              {inOrganizing && organizingPhase === 'await_project_pick' && !typing ? (
+                <div style={styles.chipWrap}>
+                  {projectOptions.length ? (
+                    projectOptions.map(project => (
+                      <button
+                        key={project.id}
+                        type="button"
+                        onClick={() => selectOrganizingProject(project)}
+                        style={styles.chip}
+                      >
+                        {project.name.trim()}
+                      </button>
+                    ))
+                  ) : (
+                    <p style={styles.helperText}>{ORGANIZING_FLOW_COPY.noSavedProjects}</p>
+                  )}
+                </div>
+              ) : null}
+
+              {inOrganizing && organizingPhase === 'await_mvp_tasks' && !typing && existingProjectTasks.length > 0 ? (
+                <div style={styles.chipWrap}>
+                  {existingProjectTasks.map(task => (
                     <button
-                      key={project.id}
+                      key={task}
                       type="button"
-                      onClick={() => selectOrganizingProject(project)}
+                      onClick={() => selectExistingProjectTask(task)}
                       style={styles.chip}
                     >
-                      {project.name.trim()}
+                      {task}
                     </button>
                   ))}
                 </div>
@@ -534,9 +645,11 @@ export default function StuckHelpModal() {
                     onKeyDown={handleKeyDown}
                     rows={1}
                     placeholder={
-                      inOrganizing && organizingPhase === 'await_project'
-                        ? ORGANIZING_FLOW_COPY.addNewProject
-                        : 'Message'
+                      organizingPhase === 'await_project_name'
+                        ? ORGANIZING_FLOW_COPY.projectNamePlaceholder
+                        : inOrganizing && organizingPhase === 'await_mvp_tasks'
+                          ? ORGANIZING_FLOW_COPY.addTaskPlaceholder
+                          : 'Message'
                     }
                     style={styles.input}
                   />
@@ -764,6 +877,14 @@ const styles: Record<string, CSSProperties> = {
     color: '#007aff',
     cursor: 'pointer',
     lineHeight: 1.4,
+  },
+  helperText: {
+    margin: 0,
+    fontSize: 13,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 1.45,
+    padding: '4px 2px',
   },
   compose: {
     display: 'flex',
