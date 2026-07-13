@@ -107,6 +107,8 @@ interface StuckHelpContextValue {
   ) => void;
   appendStartingMessages: (...items: Omit<StuckChatMessage, 'id'>[]) => void;
   appendOrganizingMessages: (...items: Omit<StuckChatMessage, 'id'>[]) => void;
+  resetStartingChat: () => void;
+  resetOrganizingChat: () => void;
   postPrepResume: boolean;
   clearPostPrepResume: () => void;
   prepOverlayOpen: boolean;
@@ -261,6 +263,36 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
         ? {
             ...prev,
             messages: [...prev.messages, ...items.map(item => ({ ...item, id: makeId() }))],
+          }
+        : prev
+    );
+  }, []);
+
+  const resetOrganizingChat = useCallback(() => {
+    setOrganizingFlow(prev =>
+      prev
+        ? {
+            phase: 'await_project_mode',
+            messages: [],
+            projectMode: null,
+            projectId: '',
+            projectName: '',
+            taskTexts: [],
+            hardestTask: '',
+          }
+        : prev
+    );
+  }, []);
+
+  const resetStartingChat = useCallback(() => {
+    setStartingFlow(prev =>
+      prev
+        ? {
+            phase: 'await_task',
+            messages: [],
+            importantTask: '',
+            prepPlan: '',
+            chunks: '',
           }
         : prev
     );
@@ -500,6 +532,8 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
       setOrganizingFields,
       appendStartingMessages,
       appendOrganizingMessages,
+      resetStartingChat,
+      resetOrganizingChat,
       postPrepResume,
       clearPostPrepResume,
       prepOverlayOpen,
@@ -531,6 +565,8 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
       setOrganizingFields,
       appendStartingMessages,
       appendOrganizingMessages,
+      resetStartingChat,
+      resetOrganizingChat,
       postPrepResume,
       clearPostPrepResume,
       prepOverlayOpen,

@@ -48,3 +48,22 @@ export function upsertProject(
   const project = createProjectBoard(trimmed);
   return { projects: [project, ...projects], project };
 }
+
+export function getOpenProjectTaskTexts(project: ProjectBoard | undefined): string[] {
+  if (!project) return [];
+  return project.tasks
+    .filter(task => !task.done && task.text.trim())
+    .map(task => task.text.trim());
+}
+
+export function mergeTaskTextOptions(projectTasks: string[], chatTasks: string[]): string[] {
+  const seen = new Set<string>();
+  const merged: string[] = [];
+  for (const task of [...projectTasks, ...chatTasks]) {
+    const trimmed = task.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    merged.push(trimmed);
+  }
+  return merged;
+}

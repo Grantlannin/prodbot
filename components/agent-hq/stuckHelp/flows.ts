@@ -122,6 +122,7 @@ export const ORGANIZING_FLOW_COPY = {
   projectNamePlaceholder: 'Project name',
   addTaskPlaceholder: 'Add a task',
   noSavedProjects: 'No saved projects yet — use input project to add one.',
+  clearChat: 'clear chat',
 } as const;
 
 export type OrganizingFlowPhase =

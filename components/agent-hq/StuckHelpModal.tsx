@@ -18,6 +18,8 @@ import {
 import {
   PROJECTS_STORAGE_KEY,
   addProjectTask,
+  getOpenProjectTaskTexts,
+  mergeTaskTextOptions,
   upsertProject,
 } from './stuckHelp/projectMutations';
 
@@ -60,6 +62,8 @@ export default function StuckHelpModal() {
     setOrganizingFields,
     appendStartingMessages,
     appendOrganizingMessages,
+    resetStartingChat,
+    resetOrganizingChat,
     postPrepResume,
     clearPostPrepResume,
     beginPrepTimer,
@@ -102,6 +106,43 @@ export default function StuckHelpModal() {
   };
 
   useEffect(() => () => clearTimers(), []);
+
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const raw = localStorage.getItem(PROJECTS_STORAGE_KEY);
+      if (raw == null) return;
+      setProjects(JSON.parse(raw) as ProjectBoard[]);
+    } catch {
+      /* ignore corrupt projects payload */
+    }
+  }, [open, setProjects]);
+
+  useEffect(() => {
+    if (!organizingFlow?.projectId) return;
+    const exists = projects.some(project => project.id === organizingFlow.projectId);
+    if (exists) return;
+
+    organizingFieldsRef.current.projectId = '';
+    organizingFieldsRef.current.projectName = '';
+    organizingFieldsRef.current.taskTexts = [];
+    organizingFieldsRef.current.hardestTask = '';
+    setOrganizingFields({
+      projectId: '',
+      projectName: '',
+      taskTexts: [],
+      hardestTask: '',
+    });
+
+    const earlyPhases = new Set<OrganizingFlowPhase>([
+      'await_project_mode',
+      'await_project_pick',
+      'await_project_name',
+    ]);
+    if (!earlyPhases.has(organizingFlow.phase)) {
+      setOrganizingPhase('await_project_mode');
+    }
+  }, [organizingFlow?.phase, organizingFlow?.projectId, projects, setOrganizingFields, setOrganizingPhase]);
 
   useEffect(() => {
     if (!open) {
@@ -358,8 +399,14 @@ export default function StuckHelpModal() {
   };
 
   const finishAddingTasks = () => {
-    const tasks = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
+    const chatTasks = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
+    const projectId = organizingFlow?.projectId || organizingFieldsRef.current.projectId;
+    const project = projects.find(p => p.id === projectId);
+    const projectTasks = getOpenProjectTaskTexts(project);
+    const tasks = mergeTaskTextOptions(projectTasks, chatTasks);
     if (!tasks.length || typing) return;
+    organizingFieldsRef.current.taskTexts = tasks;
+    setOrganizingFields({ taskTexts: tasks });
     appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.doneAddingTasks });
     sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qHardest);
     setOrganizingPhase('await_hardest_pick');
@@ -426,6 +473,32 @@ export default function StuckHelpModal() {
     }
   };
 
+  const clearChat = () => {
+    clearTimers();
+    setTyping(false);
+    setDraft('');
+    draftRef.current = '';
+
+    if (inOrganizing) {
+      organizingFieldsRef.current = {
+        projectMode: null,
+        projectId: '',
+        projectName: '',
+        taskTexts: [],
+        hardestTask: '',
+      };
+      resetOrganizingChat();
+      sendOrganizingOpeningSequence(ORGANIZING_FLOW_COPY.intro, ORGANIZING_FLOW_COPY.qProject);
+      return;
+    }
+
+    if (inStarting) {
+      flowFieldsRef.current = { importantTask: '', prepPlan: '', chunks: '' };
+      resetStartingChat();
+      sendStartingOpeningSequence(STARTING_FLOW_COPY.intro, STARTING_FLOW_COPY.q1);
+    }
+  };
+
   const showStartingCompose =
     inStarting && startingPhase
       ? STARTING_COMPOSE_PHASES.includes(startingPhase) && !typing
@@ -444,13 +517,9 @@ export default function StuckHelpModal() {
   const projectOptions = projects.filter(p => p.name.trim());
   const organizingTasks = organizingFlow?.taskTexts ?? [];
   const selectedProject = projects.find(p => p.id === organizingFlow?.projectId);
-  const existingProjectTasks =
-    organizingFlow?.projectMode === 'choose' && selectedProject
-      ? selectedProject.tasks
-          .filter(task => !task.done && task.text.trim())
-          .map(task => task.text.trim())
-          .filter(taskText => !organizingTasks.includes(taskText))
-      : [];
+  const projectTaskTexts = getOpenProjectTaskTexts(selectedProject);
+  const hardestPickOptions = mergeTaskTextOptions(projectTaskTexts, organizingTasks);
+  const existingProjectTasks = projectTaskTexts.filter(taskText => !organizingTasks.includes(taskText));
 
   return createPortal(
     <>
@@ -505,9 +574,14 @@ export default function StuckHelpModal() {
                 <div style={styles.avatar}>b</div>
                 <span style={styles.headerTitle}>bot</span>
               </div>
-              <button type="button" onClick={hide} style={styles.headerClose} aria-label="Close">
-                ✕
-              </button>
+              <div style={styles.headerRight}>
+                <button type="button" onClick={clearChat} style={styles.headerClear}>
+                  {ORGANIZING_FLOW_COPY.clearChat}
+                </button>
+                <button type="button" onClick={hide} style={styles.headerClose} aria-label="Close">
+                  ✕
+                </button>
+              </div>
             </header>
 
             <div ref={threadRef} style={styles.thread}>
@@ -593,7 +667,7 @@ export default function StuckHelpModal() {
 
               {inOrganizing && organizingPhase === 'await_hardest_pick' && !typing ? (
                 <div style={styles.chipWrap}>
-                  {organizingTasks.map(task => (
+                  {hardestPickOptions.map(task => (
                     <button key={task} type="button" onClick={() => pickHardestTask(task)} style={styles.chip}>
                       {task}
                     </button>
@@ -601,7 +675,7 @@ export default function StuckHelpModal() {
                 </div>
               ) : null}
 
-              {inOrganizing && organizingPhase === 'await_mvp_tasks' && !typing && organizingTasks.length > 0 ? (
+              {inOrganizing && organizingPhase === 'await_mvp_tasks' && !typing && (organizingTasks.length > 0 || projectTaskTexts.length > 0) ? (
                 <div style={styles.chipWrap}>
                   <button type="button" onClick={finishAddingTasks} style={styles.chip}>
                     {ORGANIZING_FLOW_COPY.doneAddingTasks}
@@ -790,6 +864,24 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 15,
     fontWeight: 700,
     color: '#0f172a',
+    textTransform: 'lowercase',
+  },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
+  headerClear: {
+    border: 'none',
+    background: 'transparent',
+    color: '#64748b',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    cursor: 'pointer',
+    padding: '4px 0',
+    whiteSpace: 'nowrap',
     textTransform: 'lowercase',
   },
   headerClose: {
