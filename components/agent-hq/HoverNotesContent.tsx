@@ -20,10 +20,9 @@ const font =
 
 interface HoverNotesContentProps {
   pipWindow: Window;
-  onClose: () => void;
 }
 
-export default function HoverNotesContent({ pipWindow, onClose }: HoverNotesContentProps) {
+export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps) {
   const [notes, setNotes] = useLocalStorage<AppleNote[]>(APPLE_NOTES_KEY, []);
   const [selectedId, setSelectedId] = useLocalStorage<string | null>(APPLE_NOTES_SELECTED_KEY, null);
   const [size, setSize] = useLocalStorage(HOVER_NOTES_SIZE_KEY, DEFAULT_HOVER_NOTES_SIZE);
@@ -97,9 +96,6 @@ export default function HoverNotesContent({ pipWindow, onClose }: HoverNotesCont
         <div style={styles.headerActions}>
           <button type="button" onClick={addNote} style={styles.iconBtn} title="New note" aria-label="New note">
             ✎
-          </button>
-          <button type="button" onClick={() => void onClose()} style={styles.iconBtn} title="Close" aria-label="Close">
-            ✕
           </button>
         </div>
       </header>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import type { AppleNote } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useHoverNotes } from './hooks/HoverNotesProvider';
@@ -51,6 +52,8 @@ export default function AppleNotesPanel() {
   const [selectedId, setSelectedId] = useLocalStorage<string | null>(APPLE_NOTES_SELECTED_KEY, null);
   const [view, setView] = useState<'list' | 'gallery'>('list');
   const [migrated, setMigrated] = useState(false);
+  const [deleteMenuOpen, setDeleteMenuOpen] = useState(false);
+  const [deleteIds, setDeleteIds] = useState<Set<string>>(new Set());
   const { open: openHoverNotes, toggle: toggleHoverNotes, isOpen: hoverNotesOpen, supported: hoverNotesSupported } =
     useHoverNotes();
 
@@ -89,12 +92,33 @@ export default function AppleNotesPanel() {
     setSelectedId(n.id);
   }, [setNotes, setSelectedId]);
 
-  const deleteSelected = useCallback(() => {
-    if (!selectedId) return;
-    if (!confirm('Delete this note?')) return;
-    setNotes(prev => prev.filter(n => n.id !== selectedId));
-    setSelectedId(null);
-  }, [selectedId, setNotes, setSelectedId]);
+  const openDeleteMenu = useCallback(() => {
+    const initial = new Set<string>();
+    if (selectedId) initial.add(selectedId);
+    setDeleteIds(initial);
+    setDeleteMenuOpen(true);
+  }, [selectedId]);
+
+  const toggleDeleteId = useCallback((id: string) => {
+    setDeleteIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const confirmMassDelete = useCallback(() => {
+    if (deleteIds.size === 0) return;
+    setNotes(prev => prev.filter(n => !deleteIds.has(n.id)));
+    if (selectedId && deleteIds.has(selectedId)) {
+      setSelectedId(null);
+    }
+    setDeleteMenuOpen(false);
+    setDeleteIds(new Set());
+  }, [deleteIds, selectedId, setNotes, setSelectedId]);
+
+  const sortedForDelete = useMemo(() => sortNotesByUpdated(notes), [notes]);
 
   const handlePopOut = useCallback(() => {
     if (!hoverNotesSupported) return;
@@ -164,7 +188,7 @@ export default function AppleNotesPanel() {
             theme="light"
           />
           <div style={{ width: 1, height: 20, background: borderSub, margin: '0 4px' }} />
-          <ToolbarBtn label="Delete" onClick={deleteSelected} icon="⌫" disabled={!selectedId} theme="light" />
+          <ToolbarBtn label="Delete" onClick={openDeleteMenu} icon="⌫" disabled={notes.length === 0} theme="light" />
           <div style={{ flex: 1 }} />
           <ToolbarBtn
             label={
@@ -302,6 +326,59 @@ export default function AppleNotesPanel() {
           </div>
         )}
       </div>
+
+      {deleteMenuOpen && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              style={styles.deleteBackdrop}
+              onClick={e => e.target === e.currentTarget && setDeleteMenuOpen(false)}
+              role="presentation"
+            >
+              <div style={styles.deletePanel} role="dialog" aria-modal="true" aria-labelledby="delete-notes-title">
+                <h3 id="delete-notes-title" style={styles.deleteTitle}>
+                  Delete notes
+                </h3>
+                <p style={styles.deleteHint}>Check the notes you want to remove.</p>
+                <div style={styles.deleteList}>
+                  {sortedForDelete.map(note => (
+                    <label key={note.id} style={styles.deleteRow}>
+                      <input
+                        type="checkbox"
+                        checked={deleteIds.has(note.id)}
+                        onChange={() => toggleDeleteId(note.id)}
+                        style={styles.deleteCheckbox}
+                      />
+                      <span style={styles.deleteRowBody}>
+                        <span style={styles.deleteRowTitle}>{firstNoteLine(note.content)}</span>
+                        <span style={styles.deleteRowMeta}>
+                          {formatNoteTime(note.updatedAt)}
+                          {noteBodyPreview(note.content) ? ` · ${noteBodyPreview(note.content)}` : ''}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <div style={styles.deleteActions}>
+                  <button type="button" onClick={() => setDeleteMenuOpen(false)} style={styles.deleteCancelBtn}>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmMassDelete}
+                    disabled={deleteIds.size === 0}
+                    style={{
+                      ...styles.deleteConfirmBtn,
+                      ...(deleteIds.size === 0 ? styles.deleteConfirmBtnDisabled : {}),
+                    }}
+                  >
+                    Delete{deleteIds.size > 0 ? ` (${deleteIds.size})` : ''}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
@@ -317,6 +394,111 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     padding: 0,
     textDecoration: 'underline',
+  },
+  deleteBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 100003,
+    background: 'rgba(15, 23, 42, 0.35)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    boxSizing: 'border-box',
+    fontFamily: font,
+  },
+  deletePanel: {
+    width: 'min(100%, 400px)',
+    maxHeight: 'min(70vh, 520px)',
+    background: '#fff',
+    borderRadius: 12,
+    padding: '18px 20px',
+    boxShadow: '0 24px 48px rgba(15, 23, 42, 0.18)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+  },
+  deleteTitle: {
+    margin: 0,
+    fontSize: 16,
+    fontWeight: 700,
+    color: '#0f172a',
+  },
+  deleteHint: {
+    margin: 0,
+    fontSize: 12,
+    color: '#64748b',
+  },
+  deleteList: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    padding: '4px 0',
+  },
+  deleteRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: '10px 12px',
+    cursor: 'pointer',
+    borderBottom: '1px solid #f1f5f9',
+  },
+  deleteCheckbox: {
+    marginTop: 3,
+    flexShrink: 0,
+    cursor: 'pointer',
+  },
+  deleteRowBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    minWidth: 0,
+  },
+  deleteRowTitle: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#0f172a',
+    lineHeight: 1.3,
+  },
+  deleteRowMeta: {
+    fontSize: 11,
+    color: '#94a3b8',
+    lineHeight: 1.35,
+    wordBreak: 'break-word',
+  },
+  deleteActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: 8,
+    paddingTop: 4,
+  },
+  deleteCancelBtn: {
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    padding: '8px 14px',
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: font,
+    background: '#fff',
+    color: '#475569',
+    cursor: 'pointer',
+  },
+  deleteConfirmBtn: {
+    border: 'none',
+    borderRadius: 8,
+    padding: '8px 16px',
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: font,
+    background: '#dc2626',
+    color: '#fff',
+    cursor: 'pointer',
+  },
+  deleteConfirmBtnDisabled: {
+    opacity: 0.45,
+    cursor: 'not-allowed',
   },
 };
 

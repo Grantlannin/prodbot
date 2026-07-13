@@ -32,7 +32,7 @@ export function HoverNotesProvider({ children }: { children: ReactNode }) {
   const pipPortal =
     pipWindow && typeof document !== 'undefined'
       ? createPortal(
-          <HoverNotesContent pipWindow={pipWindow} onClose={close} />,
+          <HoverNotesContent pipWindow={pipWindow} />,
           pipWindow.document.body
         )
       : null;
