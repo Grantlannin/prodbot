@@ -3,17 +3,8 @@ import type { AppleNote } from './types';
 export const APPLE_NOTES_KEY = 'agentHQ_appleNotes';
 export const APPLE_NOTES_SELECTED_KEY = 'agentHQ_appleNotes_selectedId';
 export const HOVER_NOTES_SIZE_KEY = 'agentHQ_hoverNotesSize';
-export const HOVER_NOTES_BOUNDS_KEY = 'agentHQ_hoverNotesExpandedBounds';
 
 export const DEFAULT_HOVER_NOTES_SIZE = { w: 360, h: 420 };
-export const HOVER_NOTES_MINIMIZED_SIZE = { w: 300, h: 76 };
-
-export interface HoverNotesBounds {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
 
 const DAY = 86400000;
 
