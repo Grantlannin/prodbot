@@ -13,6 +13,7 @@ import AppleNotesPanel from './AppleNotesPanel';
 import ProjectsPanel, { addProjectBtnStyle, type ProjectsPanelHandle } from './ProjectsPanel';
 import ProjectProgressBar from './ProjectProgressBar';
 import type { ProjectProgress } from './projectProgress';
+import DayAtGlancePanel from './DayAtGlancePanel';
 import OpenLoopsPanel from './OpenLoopsPanel';
 import NightPrepPanel from './NightPrepPanel';
 import { DoneTodayBanner } from './DoneTodaySection';
@@ -327,9 +328,14 @@ export default function DashboardTab({
         </div>
 
         <div style={styles.lowerHalf}>
-          <DashCard title="Notes" noPad>
-            <AppleNotesPanel />
-          </DashCard>
+          <div style={styles.lowerLeft}>
+            <DashCard title="Notes" noPad>
+              <AppleNotesPanel />
+            </DashCard>
+            <DashCard title="Day at a glance">
+              <DayAtGlancePanel />
+            </DashCard>
+          </div>
           <DashCard title="Open loops">
             <OpenLoopsPanel />
           </DashCard>
@@ -686,6 +692,12 @@ const styles: Record<string, CSSProperties> = {
     gridTemplateColumns: 'repeat(2, minmax(340px, 1fr))',
     gap: 16,
     alignItems: 'start',
+  },
+  lowerLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+    minWidth: 0,
   },
   nightPrepCell: {
     scrollMarginTop: 24,

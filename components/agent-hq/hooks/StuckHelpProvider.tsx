@@ -24,6 +24,8 @@ import {
   type OrganizingFlowState,
   type StartingFlowPhase,
   type StartingFlowState,
+  type StructureFlowPhase,
+  type StructureFlowState,
   type StuckChatMessage,
 } from '../stuckHelp/flows';
 import type { FocusLockMode } from '../types';
@@ -101,21 +103,27 @@ interface StuckHelpContextValue {
   closeStuckHelp: () => void;
   startingFlow: StartingFlowState | null;
   organizingFlow: OrganizingFlowState | null;
+  structureFlow: StructureFlowState | null;
   startStartingFlow: () => void;
   startOrganizingFlow: () => void;
+  startStructureFlow: () => void;
   clearStartingFlow: () => void;
   setStartingPhase: (phase: StartingFlowPhase) => void;
   setOrganizingPhase: (phase: OrganizingFlowPhase) => void;
+  setStructurePhase: (phase: StructureFlowPhase) => void;
   setStartingFields: (fields: Partial<Pick<StartingFlowState, 'importantTask' | 'prepPlan' | 'chunks'>>) => void;
   setOrganizingFields: (
     fields: Partial<
       Pick<OrganizingFlowState, 'projectId' | 'projectName' | 'projectMode' | 'taskTexts' | 'hardestTask'>
     >
   ) => void;
+  setStructureBlocks: (blocks: StructureFlowState['blocks']) => void;
   appendStartingMessages: (...items: Omit<StuckChatMessage, 'id'>[]) => void;
   appendOrganizingMessages: (...items: Omit<StuckChatMessage, 'id'>[]) => void;
+  appendStructureMessages: (...items: Omit<StuckChatMessage, 'id'>[]) => void;
   resetStartingChat: () => void;
   resetOrganizingChat: () => void;
+  resetStructureChat: () => void;
   postPrepResume: boolean;
   clearPostPrepResume: () => void;
   prepOverlayOpen: boolean;
@@ -139,6 +147,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [startingFlow, setStartingFlow] = useState<StartingFlowState | null>(null);
   const [organizingFlow, setOrganizingFlow] = useState<OrganizingFlowState | null>(null);
+  const [structureFlow, setStructureFlow] = useState<StructureFlowState | null>(null);
   const [postPrepResume, setPostPrepResume] = useState(false);
   const [prepOverlayOpen, setPrepOverlayOpen] = useState(false);
   const [workMeta, setWorkMeta] = useState<WorkSessionMeta | null>(null);
@@ -185,6 +194,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
 
   const startStartingFlow = useCallback(() => {
     setOrganizingFlow(null);
+    setStructureFlow(null);
     setStartingFlow({
       phase: 'await_task',
       messages: [],
@@ -196,6 +206,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
 
   const startOrganizingFlow = useCallback(() => {
     setStartingFlow(null);
+    setStructureFlow(null);
     setOrganizingFlow({
       phase: 'await_project_mode',
       messages: [],
@@ -207,9 +218,20 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const startStructureFlow = useCallback(() => {
+    setStartingFlow(null);
+    setOrganizingFlow(null);
+    setStructureFlow({
+      phase: 'await_commitments',
+      messages: [],
+      blocks: [],
+    });
+  }, []);
+
   const clearStartingFlow = useCallback(() => {
     setStartingFlow(null);
     setOrganizingFlow(null);
+    setStructureFlow(null);
     setPostPrepResume(false);
   }, []);
 
@@ -300,6 +322,37 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
             importantTask: '',
             prepPlan: '',
             chunks: '',
+          }
+        : prev
+    );
+  }, []);
+
+  const setStructurePhase = useCallback((phase: StructureFlowPhase) => {
+    setStructureFlow(prev => (prev ? { ...prev, phase } : prev));
+  }, []);
+
+  const setStructureBlocks = useCallback((blocks: StructureFlowState['blocks']) => {
+    setStructureFlow(prev => (prev ? { ...prev, blocks } : prev));
+  }, []);
+
+  const appendStructureMessages = useCallback((...items: Omit<StuckChatMessage, 'id'>[]) => {
+    setStructureFlow(prev =>
+      prev
+        ? {
+            ...prev,
+            messages: [...prev.messages, ...items.map(item => ({ ...item, id: makeId() }))],
+          }
+        : prev
+    );
+  }, []);
+
+  const resetStructureChat = useCallback(() => {
+    setStructureFlow(prev =>
+      prev
+        ? {
+            phase: 'await_commitments',
+            messages: [],
+            blocks: [],
           }
         : prev
     );
@@ -531,17 +584,23 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
       closeStuckHelp,
       startingFlow,
       organizingFlow,
+      structureFlow,
       startStartingFlow,
       startOrganizingFlow,
+      startStructureFlow,
       clearStartingFlow,
       setStartingPhase,
       setOrganizingPhase,
+      setStructurePhase,
       setStartingFields,
       setOrganizingFields,
+      setStructureBlocks,
       appendStartingMessages,
       appendOrganizingMessages,
+      appendStructureMessages,
       resetStartingChat,
       resetOrganizingChat,
+      resetStructureChat,
       postPrepResume,
       clearPostPrepResume,
       prepOverlayOpen,
@@ -564,17 +623,23 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
       closeStuckHelp,
       startingFlow,
       organizingFlow,
+      structureFlow,
       startStartingFlow,
       startOrganizingFlow,
+      startStructureFlow,
       clearStartingFlow,
       setStartingPhase,
       setOrganizingPhase,
+      setStructurePhase,
       setStartingFields,
       setOrganizingFields,
+      setStructureBlocks,
       appendStartingMessages,
       appendOrganizingMessages,
+      appendStructureMessages,
       resetStartingChat,
       resetOrganizingChat,
+      resetStructureChat,
       postPrepResume,
       clearPostPrepResume,
       prepOverlayOpen,

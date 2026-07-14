@@ -1,3 +1,5 @@
+import type { DayBlock } from './dailyStructureUtils';
+
 export type StuckHelpPath =
   | 'starting'
   | 'organizing'
@@ -146,4 +148,40 @@ export interface OrganizingFlowState {
   projectName: string;
   taskTexts: string[];
   hardestTask: string;
+}
+
+export const STRUCTURE_FLOW_COPY = {
+  intro:
+    "No worries. let's create that for you now & create some space. Here's what we're about to plug in:\n\n- Your big time commitments that are already scheduled in that you cant change (job, appointment, meeting etc)\n- Any smaller things (open loops) that also have to get done today specifically (text johnny back, send a package, etc that are dragging your attention/mental space)\n- The important work blocks we want to add in",
+  qCommitments:
+    'The first thing we need to do is plug in the large set-in-stone time commitments today that are unavoidable and already scheduled in. What hours of the day today are you already time-committed? (job, appointment, etc). List them out so we know what we have to work around. Enter in the name, and then click the times.',
+  doneCommitments: 'done with commitments',
+  doneOpenLoops: 'done with open loops',
+  openLoopsIntro:
+    "Awesome. Now that we know what you HAVE to do, we can now design your day. We already have your mandatory pre-committed blocks added, now let's add in the necessary open loops tugging your attention.",
+  qOpenLoops: 'what do you need to handle today that isn\'t "important work related"?',
+  noOpenLoops: "i don't have any open loops",
+  workIntro:
+    'Great. Now that we have the open loops set in place as well as what you have to do, let\'s now add in "important work" blocks where they make sense. This should be an hour or 2, doesn\'t have to be crazy unless you want it to be. Go ahead and add those in where you see fit.',
+  dayLooksGreat: 'this day looks great',
+  addToGoogleCalendar: 'add to google calendar',
+  organizingHint:
+    'If you need help figuring out what to do in your work blocks later, use the "im having trouble organizing my task list today" chat.',
+  namePlaceholder: 'Name',
+  startTime: 'Start',
+  endTime: 'End',
+  addBlock: 'Add to day',
+  clearChat: 'clear chat',
+} as const;
+
+export type StructureFlowPhase =
+  | 'await_commitments'
+  | 'await_open_loops'
+  | 'await_work_blocks'
+  | 'await_finish';
+
+export interface StructureFlowState {
+  phase: StructureFlowPhase;
+  messages: StuckChatMessage[];
+  blocks: DayBlock[];
 }

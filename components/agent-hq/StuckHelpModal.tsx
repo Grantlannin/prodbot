@@ -10,9 +10,11 @@ import type { ProjectBoard } from './types';
 import {
   ORGANIZING_FLOW_COPY,
   STARTING_FLOW_COPY,
+  STRUCTURE_FLOW_COPY,
   STUCK_HELP_OPTIONS,
   type OrganizingFlowPhase,
   type StartingFlowPhase,
+  type StructureFlowPhase,
   type StuckHelpPath,
 } from './stuckHelp/flows';
 import {
@@ -22,6 +24,26 @@ import {
   requestFocusProject,
   upsertProject,
 } from './stuckHelp/projectMutations';
+import DailyStructureCalendar from './DailyStructureCalendar';
+import StructureBlockForm from './stuckHelp/StructureBlockForm';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import type { CaptureNote } from './types';
+import { localDateKey } from './eodReports';
+import {
+  createOpenLoopNote,
+  DAILY_STRUCTURE_KEY,
+  exportDayToGoogleCalendar,
+  formatMinutesLabel,
+  makeDayBlockId,
+  RECURRING_COMMITMENTS_KEY,
+  sortBlocks,
+  upsertRecurringCommitment,
+  upsertTodayPlan,
+  type DailyStructureStore,
+  type DayBlock,
+  type DayBlockKind,
+  type RecurringCommitment,
+} from './stuckHelp/dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -47,23 +69,31 @@ function TypingBubble() {
   );
 }
 
+const STRUCTURE_COMPOSE_PHASES: StructureFlowPhase[] = [];
+
 export default function StuckHelpModal() {
   const {
     open,
     closeStuckHelp,
     startingFlow,
     organizingFlow,
+    structureFlow,
     startStartingFlow,
     startOrganizingFlow,
+    startStructureFlow,
     clearStartingFlow,
     setStartingPhase,
     setOrganizingPhase,
+    setStructurePhase,
     setStartingFields,
     setOrganizingFields,
+    setStructureBlocks,
     appendStartingMessages,
     appendOrganizingMessages,
+    appendStructureMessages,
     resetStartingChat,
     resetOrganizingChat,
+    resetStructureChat,
     postPrepResume,
     clearPostPrepResume,
     beginPrepTimer,
@@ -71,6 +101,12 @@ export default function StuckHelpModal() {
   } = useStuckHelp();
   const { status } = useWorkTrackerContext();
   const { projects, setProjects } = useProjects();
+  const [dailyStore, setDailyStore] = useLocalStorage<DailyStructureStore>(DAILY_STRUCTURE_KEY, {});
+  const [recurringCommitments, setRecurringCommitments] = useLocalStorage<RecurringCommitment[]>(
+    RECURRING_COMMITMENTS_KEY,
+    []
+  );
+  const [openLoops, setOpenLoops] = useLocalStorage<CaptureNote[]>('agentHQ_openLoops', []);
   const [typing, setTyping] = useState(false);
   const [chooseProjectError, setChooseProjectError] = useState(false);
 
@@ -91,10 +127,20 @@ export default function StuckHelpModal() {
   const busy = status === 'working' || status === 'on_break';
   const inStarting = startingFlow !== null;
   const inOrganizing = organizingFlow !== null;
-  const inChat = inStarting || inOrganizing;
+  const inStructure = structureFlow !== null;
+  const inChat = inStarting || inOrganizing || inStructure;
   const startingPhase = startingFlow?.phase;
   const organizingPhase = organizingFlow?.phase;
-  const messages = inStarting ? (startingFlow?.messages ?? []) : (organizingFlow?.messages ?? []);
+  const structurePhase = structureFlow?.phase;
+  const messages = inStarting
+    ? (startingFlow?.messages ?? [])
+    : inOrganizing
+      ? (organizingFlow?.messages ?? [])
+      : (structureFlow?.messages ?? []);
+  const structureBlocks = structureFlow?.blocks ?? [];
+  const showStructureCalendar =
+    inStructure && structurePhase != null && structurePhase !== 'await_commitments';
+  const openLoopCount = structureBlocks.filter(block => block.kind === 'open_loop').length;
 
   const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
@@ -147,7 +193,7 @@ export default function StuckHelpModal() {
   useEffect(() => {
     if (!inChat) return;
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, startingPhase, organizingPhase, inChat, typing]);
+  }, [messages, startingPhase, organizingPhase, structurePhase, inChat, typing]);
 
   const sendStartingBotReply = (
     text: string,
@@ -191,6 +237,118 @@ export default function StuckHelpModal() {
         setTyping(false);
       }, BOT_TYPING_MS);
     }, BOT_TYPING_MS);
+  };
+
+  const sendStructureBotReply = (text: string, typingMs = BOT_TYPING_MS) => {
+    setTyping(true);
+    schedule(() => {
+      appendStructureMessages({ role: 'bot', text });
+      setTyping(false);
+    }, typingMs);
+  };
+
+  const sendStructureOpeningSequence = (first: string, second: string) => {
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendStructureMessages({ role: 'bot', text: first });
+      schedule(() => {
+        appendStructureMessages({ role: 'bot', text: second });
+        setTyping(false);
+      }, BOT_TYPING_MS);
+    }, BOT_TYPING_MS);
+  };
+
+  const persistStructureBlocks = (blocks: DayBlock[]) => {
+    const sorted = sortBlocks(blocks);
+    setStructureBlocks(sorted);
+    setDailyStore(prev => upsertTodayPlan(prev, sorted, localDateKey()));
+  };
+
+  const addStructureBlock = (
+    kind: DayBlockKind,
+    title: string,
+    startMinutes: number,
+    durationMinutes: number
+  ) => {
+    if (typing) return;
+    const trimmed = title.trim();
+    if (!trimmed) return;
+
+    const block: DayBlock = {
+      id: makeDayBlockId(),
+      title: trimmed,
+      startMinutes,
+      durationMinutes,
+      kind,
+    };
+
+    if (kind === 'open_loop') {
+      const note = createOpenLoopNote(trimmed, startMinutes, durationMinutes);
+      block.openLoopId = note.id;
+      setOpenLoops(prev => [note, ...prev]);
+    }
+
+    if (kind === 'commitment') {
+      setRecurringCommitments(prev => upsertRecurringCommitment(prev, block));
+    }
+
+    const next = sortBlocks([...structureBlocks, block]);
+    appendStructureMessages({
+      role: 'user',
+      text: `${trimmed} (${formatMinutesLabel(startMinutes)} – ${formatMinutesLabel(startMinutes + durationMinutes)})`,
+    });
+    persistStructureBlocks(next);
+  };
+
+  const addRecurringCommitmentBlock = (item: RecurringCommitment) => {
+    addStructureBlock('commitment', item.title, item.startMinutes, item.durationMinutes);
+  };
+
+  const finishCommitments = () => {
+    if (typing) return;
+    appendStructureMessages({ role: 'user', text: STRUCTURE_FLOW_COPY.doneCommitments });
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendStructureMessages({ role: 'bot', text: STRUCTURE_FLOW_COPY.openLoopsIntro });
+      schedule(() => {
+        appendStructureMessages({ role: 'bot', text: STRUCTURE_FLOW_COPY.qOpenLoops });
+        setTyping(false);
+        setStructurePhase('await_open_loops');
+      }, BOT_TYPING_MS);
+    }, BOT_TYPING_MS);
+  };
+
+  const finishOpenLoops = () => {
+    if (typing) return;
+    appendStructureMessages({ role: 'user', text: STRUCTURE_FLOW_COPY.doneOpenLoops });
+    sendStructureBotReply(STRUCTURE_FLOW_COPY.workIntro);
+    setStructurePhase('await_work_blocks');
+  };
+
+  const skipOpenLoops = () => {
+    if (typing) return;
+    appendStructureMessages({ role: 'user', text: STRUCTURE_FLOW_COPY.noOpenLoops });
+    sendStructureBotReply(STRUCTURE_FLOW_COPY.workIntro);
+    setStructurePhase('await_work_blocks');
+  };
+
+  const finishStructureDay = () => {
+    if (typing) return;
+    appendStructureMessages({ role: 'user', text: STRUCTURE_FLOW_COPY.dayLooksGreat });
+    sendStructureBotReply(STRUCTURE_FLOW_COPY.organizingHint);
+    setStructurePhase('await_finish');
+  };
+
+  const addToGoogleCalendar = () => {
+    if (typing || structureBlocks.length === 0) return;
+    appendStructureMessages({ role: 'user', text: STRUCTURE_FLOW_COPY.addToGoogleCalendar });
+    exportDayToGoogleCalendar(structureBlocks, localDateKey());
+  };
+
+  const handleStructureBlocksChange = (blocks: DayBlock[]) => {
+    persistStructureBlocks(blocks);
   };
 
   useEffect(() => {
@@ -253,6 +411,13 @@ export default function StuckHelpModal() {
       setDraft('');
       draftRef.current = '';
       sendOrganizingOpeningSequence(ORGANIZING_FLOW_COPY.intro, ORGANIZING_FLOW_COPY.qProject);
+      return;
+    }
+    if (id === 'structure') {
+      startStructureFlow();
+      setDraft('');
+      draftRef.current = '';
+      sendStructureOpeningSequence(STRUCTURE_FLOW_COPY.intro, STRUCTURE_FLOW_COPY.qCommitments);
     }
   };
 
@@ -472,6 +637,10 @@ export default function StuckHelpModal() {
     else if (inOrganizing) sendOrganizingDraft();
   };
 
+  const clearChatLabel = inStructure
+    ? STRUCTURE_FLOW_COPY.clearChat
+    : ORGANIZING_FLOW_COPY.clearChat;
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -499,6 +668,12 @@ export default function StuckHelpModal() {
       return;
     }
 
+    if (inStructure) {
+      resetStructureChat();
+      sendStructureOpeningSequence(STRUCTURE_FLOW_COPY.intro, STRUCTURE_FLOW_COPY.qCommitments);
+      return;
+    }
+
     if (inStarting) {
       flowFieldsRef.current = { importantTask: '', prepPlan: '', chunks: '' };
       resetStartingChat();
@@ -514,7 +689,11 @@ export default function StuckHelpModal() {
     inOrganizing && organizingPhase
       ? ORGANIZING_COMPOSE_PHASES.includes(organizingPhase) && !typing
       : false;
-  const showCompose = showStartingCompose || showOrganizingCompose;
+  const showStructureCompose =
+    inStructure && structurePhase
+      ? STRUCTURE_COMPOSE_PHASES.includes(structurePhase) && !typing
+      : false;
+  const showCompose = showStartingCompose || showOrganizingCompose || showStructureCompose;
 
   const showStartingYes =
     inStarting && !inOrganizing && startingPhase
@@ -553,7 +732,7 @@ export default function StuckHelpModal() {
             </button>
             <div style={styles.optionList}>
               {STUCK_HELP_OPTIONS.map(option => {
-                const available = option.id === 'starting' || option.id === 'organizing';
+                const available = option.id === 'starting' || option.id === 'organizing' || option.id === 'structure';
                 return (
                   <button
                     key={option.id}
@@ -572,7 +751,13 @@ export default function StuckHelpModal() {
             </div>
           </div>
         ) : (
-          <div style={styles.shell} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+          <div
+            style={showStructureCalendar ? styles.comboShell : styles.shell}
+            role="dialog"
+            aria-modal="true"
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={styles.chatCol}>
             <header style={styles.header}>
               <button type="button" onClick={backToPicker} style={styles.headerBack}>
                 ←
@@ -583,7 +768,7 @@ export default function StuckHelpModal() {
               </div>
               <div style={styles.headerRight}>
                 <button type="button" onClick={clearChat} style={styles.headerClear}>
-                  {ORGANIZING_FLOW_COPY.clearChat}
+                  {clearChatLabel}
                 </button>
                 <button type="button" onClick={hide} style={styles.headerClose} aria-label="Close">
                   ✕
@@ -713,6 +898,95 @@ export default function StuckHelpModal() {
                 </div>
               ) : null}
 
+              {inStructure && structurePhase === 'await_commitments' && !typing ? (
+                <>
+                  {recurringCommitments.length > 0 ? (
+                    <div style={styles.chipWrap}>
+                      {recurringCommitments.map(item => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => addRecurringCommitmentBlock(item)}
+                          style={styles.chip}
+                        >
+                          {item.title} ({formatMinutesLabel(item.startMinutes)})
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  <StructureBlockForm
+                    namePlaceholder={STRUCTURE_FLOW_COPY.namePlaceholder}
+                    addLabel={STRUCTURE_FLOW_COPY.addBlock}
+                    defaultStartMinutes={9 * 60}
+                    defaultDurationMinutes={8 * 60}
+                    onAdd={(title, startMinutes, durationMinutes) =>
+                      addStructureBlock('commitment', title, startMinutes, durationMinutes)
+                    }
+                  />
+                  <div style={styles.chipWrap}>
+                    <button type="button" onClick={finishCommitments} style={styles.chip}>
+                      {STRUCTURE_FLOW_COPY.doneCommitments}
+                    </button>
+                  </div>
+                </>
+              ) : null}
+
+              {inStructure && structurePhase === 'await_open_loops' && !typing ? (
+                <>
+                  <StructureBlockForm
+                    namePlaceholder={STRUCTURE_FLOW_COPY.namePlaceholder}
+                    addLabel={STRUCTURE_FLOW_COPY.addBlock}
+                    defaultStartMinutes={12 * 60}
+                    defaultDurationMinutes={30}
+                    onAdd={(title, startMinutes, durationMinutes) =>
+                      addStructureBlock('open_loop', title, startMinutes, durationMinutes)
+                    }
+                  />
+                  <div style={styles.chipWrap}>
+                    <button type="button" onClick={skipOpenLoops} style={styles.chip}>
+                      {STRUCTURE_FLOW_COPY.noOpenLoops}
+                    </button>
+                    {openLoopCount > 0 ? (
+                      <button type="button" onClick={finishOpenLoops} style={styles.chip}>
+                        {STRUCTURE_FLOW_COPY.doneOpenLoops}
+                      </button>
+                    ) : null}
+                  </div>
+                </>
+              ) : null}
+
+              {inStructure && structurePhase === 'await_work_blocks' && !typing ? (
+                <>
+                  <StructureBlockForm
+                    namePlaceholder={STRUCTURE_FLOW_COPY.namePlaceholder}
+                    addLabel={STRUCTURE_FLOW_COPY.addBlock}
+                    defaultStartMinutes={10 * 60}
+                    defaultDurationMinutes={2 * 60}
+                    onAdd={(title, startMinutes, durationMinutes) =>
+                      addStructureBlock('work', title, startMinutes, durationMinutes)
+                    }
+                  />
+                  <div style={styles.chipWrap}>
+                    <button type="button" onClick={finishStructureDay} style={styles.chip}>
+                      {STRUCTURE_FLOW_COPY.dayLooksGreat}
+                    </button>
+                  </div>
+                </>
+              ) : null}
+
+              {inStructure && structurePhase === 'await_finish' && !typing ? (
+                <div style={styles.chipWrap}>
+                  <button
+                    type="button"
+                    disabled={structureBlocks.length === 0}
+                    onClick={addToGoogleCalendar}
+                    style={styles.chip}
+                  >
+                    {STRUCTURE_FLOW_COPY.addToGoogleCalendar}
+                  </button>
+                </div>
+              ) : null}
+
               {showCompose ? (
                 <div style={styles.compose}>
                   <textarea
@@ -748,6 +1022,15 @@ export default function StuckHelpModal() {
                 </div>
               ) : null}
             </footer>
+            </div>
+            {showStructureCalendar ? (
+              <div style={styles.calendarCol}>
+                <DailyStructureCalendar
+                  blocks={structureBlocks}
+                  onBlocksChange={handleStructureBlocksChange}
+                />
+              </div>
+            ) : null}
           </div>
         )}
       </div>
@@ -826,6 +1109,35 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: '0 20px 50px rgba(15, 23, 42, 0.2)',
     display: 'flex',
     flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  comboShell: {
+    width: '100%',
+    maxWidth: 760,
+    height: 'min(640px, 85vh)',
+    background: '#f2f2f7',
+    borderRadius: 20,
+    border: '1px solid #d1d5db',
+    boxShadow: '0 20px 50px rgba(15, 23, 42, 0.2)',
+    display: 'flex',
+    flexDirection: 'row',
+    overflow: 'hidden',
+    gap: 0,
+  },
+  chatCol: {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    background: '#f2f2f7',
+  },
+  calendarCol: {
+    flexShrink: 0,
+    padding: '12px 12px 12px 0',
+    display: 'flex',
+    alignItems: 'stretch',
+    background: '#f2f2f7',
     overflow: 'hidden',
   },
   header: {
