@@ -916,9 +916,9 @@ export default function StuckHelpModal() {
                   ) : null}
                   <StructureBlockForm
                     namePlaceholder={STRUCTURE_FLOW_COPY.namePlaceholder}
+                    timeRangePlaceholder={STRUCTURE_FLOW_COPY.timeRangePlaceholder}
+                    quickEntryPlaceholder="Job 9am-5pm"
                     addLabel={STRUCTURE_FLOW_COPY.addBlock}
-                    defaultStartMinutes={9 * 60}
-                    defaultDurationMinutes={8 * 60}
                     onAdd={(title, startMinutes, durationMinutes) =>
                       addStructureBlock('commitment', title, startMinutes, durationMinutes)
                     }
@@ -935,9 +935,9 @@ export default function StuckHelpModal() {
                 <>
                   <StructureBlockForm
                     namePlaceholder={STRUCTURE_FLOW_COPY.namePlaceholder}
+                    timeRangePlaceholder={STRUCTURE_FLOW_COPY.timeRangePlaceholder}
+                    quickEntryPlaceholder="Text Johnny 2pm-2:15pm"
                     addLabel={STRUCTURE_FLOW_COPY.addBlock}
-                    defaultStartMinutes={12 * 60}
-                    defaultDurationMinutes={30}
                     onAdd={(title, startMinutes, durationMinutes) =>
                       addStructureBlock('open_loop', title, startMinutes, durationMinutes)
                     }
@@ -959,9 +959,9 @@ export default function StuckHelpModal() {
                 <>
                   <StructureBlockForm
                     namePlaceholder={STRUCTURE_FLOW_COPY.namePlaceholder}
+                    timeRangePlaceholder={STRUCTURE_FLOW_COPY.timeRangePlaceholder}
+                    quickEntryPlaceholder="Deep work 10am-12pm"
                     addLabel={STRUCTURE_FLOW_COPY.addBlock}
-                    defaultStartMinutes={10 * 60}
-                    defaultDurationMinutes={2 * 60}
                     onAdd={(title, startMinutes, durationMinutes) =>
                       addStructureBlock('work', title, startMinutes, durationMinutes)
                     }

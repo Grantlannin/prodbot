@@ -48,13 +48,78 @@ export function minutesToTimeInput(minutes: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+export function parseFlexibleTime(value: string): number | null {
+  const trimmed = value.trim().toLowerCase().replace(/\./g, '');
+  if (!trimmed) return null;
+
+  const clock = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
+  if (clock) {
+    const h = Number(clock[1]);
+    const m = Number(clock[2]);
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) return h * 60 + m;
+  }
+
+  const twelveHour = /^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/.exec(trimmed);
+  if (twelveHour) {
+    let h = Number(twelveHour[1]);
+    const m = Number(twelveHour[2] ?? 0);
+    const period = twelveHour[3];
+    if (h < 1 || h > 12 || m < 0 || m > 59) return null;
+    if (period === 'pm' && h !== 12) h += 12;
+    if (period === 'am' && h === 12) h = 0;
+    return h * 60 + m;
+  }
+
+  const hourOnly = /^(\d{1,2})$/.exec(trimmed);
+  if (hourOnly) {
+    const h = Number(hourOnly[1]);
+    if (h >= 0 && h <= 23) return h * 60;
+  }
+
+  return null;
+}
+
 export function parseTimeInput(value: string): number | null {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
-  if (!match) return null;
-  const h = Number(match[1]);
-  const m = Number(match[2]);
-  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
-  return h * 60 + m;
+  return parseFlexibleTime(value);
+}
+
+export function parseTimeRangeInput(
+  value: string
+): { startMinutes: number; durationMinutes: number } | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const parts = trimmed.split(/\s*(?:-|–|—|\bto\b|\buntil\b)\s*/i).filter(Boolean);
+  if (parts.length !== 2) return null;
+
+  const startMinutes = parseFlexibleTime(parts[0]);
+  const endMinutes = parseFlexibleTime(parts[1]);
+  if (startMinutes == null || endMinutes == null) return null;
+
+  return {
+    startMinutes,
+    durationMinutes: durationFromTimes(startMinutes, endMinutes),
+  };
+}
+
+export function parseStructureBlockLine(
+  text: string
+): { title: string; startMinutes: number; durationMinutes: number } | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  const rangeAtEnd =
+    /^(.+?)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:-|–|—|\bto\b|\buntil\b)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)$/i.exec(
+      trimmed
+    );
+  if (rangeAtEnd) {
+    const title = rangeAtEnd[1].trim().replace(/[,:]$/, '');
+    const range = parseTimeRangeInput(`${rangeAtEnd[2]}-${rangeAtEnd[3]}`);
+    if (!title || !range) return null;
+    return { title, ...range };
+  }
+
+  return null;
 }
 
 export function formatMinutesLabel(minutes: number): string {

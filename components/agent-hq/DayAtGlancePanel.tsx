@@ -24,8 +24,7 @@ export default function DayAtGlancePanel() {
     <div style={styles.root}>
       {blocks.length === 0 ? (
         <p style={styles.empty}>
-          No blocks planned for today yet. Use &quot;I&apos;m having trouble giving myself daily structure&quot; to
-          build your day.
+          No blocks planned for today yet. Use &quot;lets quickly build my day&quot; to build your day.
         </p>
       ) : (
         <DailyStructureCalendar blocks={sortBlocks(blocks)} interactive={false} compact />

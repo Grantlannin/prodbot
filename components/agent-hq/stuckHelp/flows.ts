@@ -10,7 +10,7 @@ export type StuckHelpPath =
 export const STUCK_HELP_OPTIONS: { id: StuckHelpPath; label: string }[] = [
   { id: 'starting', label: "I'm having trouble starting" },
   { id: 'organizing', label: 'im having trouble organizing my task list today' },
-  { id: 'structure', label: "I'm having trouble giving myself daily structure" },
+  { id: 'structure', label: 'lets quickly build my day' },
   { id: 'finishing', label: "I'm having trouble finishing & putting this out there" },
   {
     id: 'grounding',
@@ -154,7 +154,7 @@ export const STRUCTURE_FLOW_COPY = {
   intro:
     "No worries. let's create that for you now & create some space. Here's what we're about to plug in:\n\n- Your big time commitments that are already scheduled in that you cant change (job, appointment, meeting etc)\n- Any smaller things (open loops) that also have to get done today specifically (text johnny back, send a package, etc that are dragging your attention/mental space)\n- The important work blocks we want to add in",
   qCommitments:
-    'The first thing we need to do is plug in the large set-in-stone time commitments today that are unavoidable and already scheduled in. What hours of the day today are you already time-committed? (job, appointment, etc). List them out so we know what we have to work around. Enter in the name, and then click the times.',
+    'The first thing we need to do is plug in the large set-in-stone time commitments today that are unavoidable and already scheduled in. What hours of the day today are you already time-committed? (job, appointment, etc). List them out so we know what we have to work around. Type the name and times (e.g. Job 9am-5pm).',
   doneCommitments: 'done with commitments',
   doneOpenLoops: 'done with open loops',
   openLoopsIntro:
@@ -167,7 +167,9 @@ export const STRUCTURE_FLOW_COPY = {
   addToGoogleCalendar: 'add to google calendar',
   organizingHint:
     'If you need help figuring out what to do in your work blocks later, use the "im having trouble organizing my task list today" chat.',
-  namePlaceholder: 'Name',
+  namePlaceholder: 'Event name (e.g. Job)',
+  timeRangePlaceholder: '9am-5pm',
+  quickEntryPlaceholder: 'Job 9am-5pm',
   startTime: 'Start',
   endTime: 'End',
   addBlock: 'Add to day',
