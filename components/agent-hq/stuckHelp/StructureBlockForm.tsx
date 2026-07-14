@@ -2,18 +2,30 @@
 
 import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import {
+  parseOpenLoopLine,
   parseStructureBlockLine,
+  parseTimeOrRangeInput,
   parseTimeRangeInput,
 } from './dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+export interface StructureBlockAddOptions {
+  singleTime?: boolean;
+}
 
 interface StructureBlockFormProps {
   namePlaceholder: string;
   timeRangePlaceholder: string;
   quickEntryPlaceholder: string;
   addLabel: string;
-  onAdd: (title: string, startMinutes: number, durationMinutes: number) => void;
+  allowSingleTime?: boolean;
+  onAdd: (
+    title: string,
+    startMinutes: number,
+    durationMinutes: number,
+    options?: StructureBlockAddOptions
+  ) => void;
 }
 
 export default function StructureBlockForm({
@@ -21,6 +33,7 @@ export default function StructureBlockForm({
   timeRangePlaceholder,
   quickEntryPlaceholder,
   addLabel,
+  allowSingleTime = false,
   onAdd,
 }: StructureBlockFormProps) {
   const [title, setTitle] = useState('');
@@ -28,33 +41,65 @@ export default function StructureBlockForm({
   const [quickEntry, setQuickEntry] = useState('');
   const [error, setError] = useState('');
 
+  const rangeError = allowSingleTime
+    ? 'Type a time like 2pm or a range like 2pm-2:15pm.'
+    : 'Type a time range like 9am-5pm or 9:00-17:00.';
+  const quickError = allowSingleTime
+    ? 'Type one line like text johnny at 2pm or text johnny 2pm-2:15pm.'
+    : 'Type one line like Job 9am-5pm.';
+
   const submitSplit = () => {
     const trimmedTitle = title.trim();
-    const range = parseTimeRangeInput(timeRange);
     if (!trimmedTitle) {
       setError('Add an event name.');
       return;
     }
-    if (!range) {
-      setError('Type a time range like 9am-5pm or 9:00-17:00.');
+
+    let result: { startMinutes: number; durationMinutes: number; singleTime?: boolean } | null = null;
+    if (allowSingleTime) {
+      result = parseTimeOrRangeInput(timeRange);
+    } else {
+      const range = parseTimeRangeInput(timeRange);
+      result = range ? { ...range, singleTime: false } : null;
+    }
+
+    if (!result) {
+      setError(rangeError);
       return;
     }
+
     setError('');
-    onAdd(trimmedTitle, range.startMinutes, range.durationMinutes);
+    onAdd(trimmedTitle, result.startMinutes, result.durationMinutes, {
+      singleTime: result.singleTime,
+    });
     setTitle('');
+    setTimeRange('');
     setQuickEntry('');
   };
 
   const submitQuick = () => {
-    const parsed = parseStructureBlockLine(quickEntry);
-    if (!parsed) {
-      setError('Type one line like Job 9am-5pm.');
-      return;
+    if (allowSingleTime) {
+      const parsed = parseOpenLoopLine(quickEntry);
+      if (!parsed) {
+        setError(quickError);
+        return;
+      }
+      setError('');
+      onAdd(parsed.title, parsed.startMinutes, parsed.durationMinutes, {
+        singleTime: parsed.singleTime,
+      });
+    } else {
+      const parsed = parseStructureBlockLine(quickEntry);
+      if (!parsed) {
+        setError(quickError);
+        return;
+      }
+      setError('');
+      onAdd(parsed.title, parsed.startMinutes, parsed.durationMinutes, { singleTime: false });
     }
-    setError('');
-    onAdd(parsed.title, parsed.startMinutes, parsed.durationMinutes);
     setQuickEntry('');
     setTitle('');
+    setTimeRange('');
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, mode: 'split' | 'quick') => {

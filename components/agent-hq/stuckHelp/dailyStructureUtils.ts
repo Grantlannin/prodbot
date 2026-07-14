@@ -42,6 +42,8 @@ export function makeDayBlockId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
+export const OPEN_LOOP_POINT_DURATION_MINUTES = 15;
+
 export function minutesToTimeInput(minutes: number): string {
   const h = Math.floor(minutes / 60) % 24;
   const m = minutes % 60;
@@ -117,6 +119,58 @@ export function parseStructureBlockLine(
     const range = parseTimeRangeInput(`${rangeAtEnd[2]}-${rangeAtEnd[3]}`);
     if (!title || !range) return null;
     return { title, ...range };
+  }
+
+  return null;
+}
+
+export function parseSingleTimeAtEnd(text: string): { title: string; startMinutes: number } | null {
+  const trimmed = text.trim();
+  const atMatch = /^(.+?)\s+at\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)$/i.exec(trimmed);
+  if (!atMatch) return null;
+
+  const title = atMatch[1].trim().replace(/[,:]$/, '');
+  const startMinutes = parseFlexibleTime(atMatch[2]);
+  if (!title || startMinutes == null) return null;
+  return { title, startMinutes };
+}
+
+export function parseOpenLoopLine(
+  text: string,
+  pointDurationMinutes = OPEN_LOOP_POINT_DURATION_MINUTES
+): { title: string; startMinutes: number; durationMinutes: number; singleTime: boolean } | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  const range = parseStructureBlockLine(trimmed);
+  if (range) return { ...range, singleTime: false };
+
+  const single = parseSingleTimeAtEnd(trimmed);
+  if (single) {
+    return {
+      title: single.title,
+      startMinutes: single.startMinutes,
+      durationMinutes: pointDurationMinutes,
+      singleTime: true,
+    };
+  }
+
+  return null;
+}
+
+export function parseTimeOrRangeInput(
+  value: string,
+  pointDurationMinutes = OPEN_LOOP_POINT_DURATION_MINUTES
+): { startMinutes: number; durationMinutes: number; singleTime: boolean } | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const range = parseTimeRangeInput(trimmed);
+  if (range) return { ...range, singleTime: false };
+
+  const startMinutes = parseFlexibleTime(trimmed);
+  if (startMinutes != null) {
+    return { startMinutes, durationMinutes: pointDurationMinutes, singleTime: true };
   }
 
   return null;
@@ -200,15 +254,18 @@ export function createOpenLoopNote(
   title: string,
   startMinutes: number,
   durationMinutes: number,
-  dateKey = localDateKey()
+  dateKey = localDateKey(),
+  singleTime = false
 ): CaptureNote {
   const now = Date.now();
   const start = formatMinutesLabel(startMinutes);
-  const end = formatMinutesLabel(startMinutes + durationMinutes);
+  const body = singleTime
+    ? `Scheduled today (${dateKey}): at ${start}`
+    : `Scheduled today (${dateKey}): ${start} – ${formatMinutesLabel(startMinutes + durationMinutes)}`;
   return {
     id: makeDayBlockId(),
     title: title.trim(),
-    body: `Scheduled today (${dateKey}): ${start} – ${end}`,
+    body,
     createdAt: now,
     updatedAt: now,
   };

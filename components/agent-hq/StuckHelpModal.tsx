@@ -269,11 +269,13 @@ export default function StuckHelpModal() {
     kind: DayBlockKind,
     title: string,
     startMinutes: number,
-    durationMinutes: number
+    durationMinutes: number,
+    options?: { singleTime?: boolean }
   ) => {
     if (typing) return;
     const trimmed = title.trim();
     if (!trimmed) return;
+    const singleTime = !!options?.singleTime && kind === 'open_loop';
 
     const block: DayBlock = {
       id: makeDayBlockId(),
@@ -284,7 +286,7 @@ export default function StuckHelpModal() {
     };
 
     if (kind === 'open_loop') {
-      const note = createOpenLoopNote(trimmed, startMinutes, durationMinutes);
+      const note = createOpenLoopNote(trimmed, startMinutes, durationMinutes, localDateKey(), singleTime);
       block.openLoopId = note.id;
       setOpenLoops(prev => [note, ...prev]);
     }
@@ -293,10 +295,14 @@ export default function StuckHelpModal() {
       setRecurringCommitments(prev => upsertRecurringCommitment(prev, block));
     }
 
+    const timeLabel = singleTime
+      ? `at ${formatMinutesLabel(startMinutes)}`
+      : `${formatMinutesLabel(startMinutes)} – ${formatMinutesLabel(startMinutes + durationMinutes)}`;
+
     const next = sortBlocks([...structureBlocks, block]);
     appendStructureMessages({
       role: 'user',
-      text: `${trimmed} (${formatMinutesLabel(startMinutes)} – ${formatMinutesLabel(startMinutes + durationMinutes)})`,
+      text: `${trimmed} (${timeLabel})`,
     });
     persistStructureBlocks(next);
   };
@@ -935,11 +941,12 @@ export default function StuckHelpModal() {
                 <>
                   <StructureBlockForm
                     namePlaceholder={STRUCTURE_FLOW_COPY.namePlaceholder}
-                    timeRangePlaceholder={STRUCTURE_FLOW_COPY.timeRangePlaceholder}
-                    quickEntryPlaceholder="Text Johnny 2pm-2:15pm"
+                    timeRangePlaceholder={STRUCTURE_FLOW_COPY.openLoopTimePlaceholder}
+                    quickEntryPlaceholder={STRUCTURE_FLOW_COPY.openLoopQuickEntryPlaceholder}
                     addLabel={STRUCTURE_FLOW_COPY.addBlock}
-                    onAdd={(title, startMinutes, durationMinutes) =>
-                      addStructureBlock('open_loop', title, startMinutes, durationMinutes)
+                    allowSingleTime
+                    onAdd={(title, startMinutes, durationMinutes, options) =>
+                      addStructureBlock('open_loop', title, startMinutes, durationMinutes, options)
                     }
                   />
                   <div style={styles.chipWrap}>
