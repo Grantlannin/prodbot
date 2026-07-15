@@ -321,8 +321,11 @@ export default function DashboardTab({
             />
           </DashCard>
           <div ref={nightPrepRef} id="night-prep" style={styles.nightPrepCell}>
-            <DashCard title="NIGHT PREP: what you're going to get done tomorrow (10 minutes max)">
-              <NightPrepPanel />
+            <DashCard title="WIND DOWN & NIGHT PREP">
+              <NightPrepPanel
+                autoStartWindDown={focusNightPrep}
+                onAutoStartHandled={onNightPrepFocused}
+              />
             </DashCard>
           </div>
         </div>

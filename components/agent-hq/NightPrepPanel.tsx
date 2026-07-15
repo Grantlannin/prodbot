@@ -1,7 +1,10 @@
 'use client';
 
-import { useCallback, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useDoneToday } from './hooks/useDoneToday';
+import { useNightPrep } from './hooks/NightPrepProvider';
+import { WIND_DOWN_FLOW_COPY } from './nightPrep/flows';
 import {
   DEFAULT_NIGHT_PREP_TIME,
   NIGHT_PREP_TIME_KEY,
@@ -12,53 +15,39 @@ import {
   timeToInput,
   type NightPrepReminderTime,
 } from './nightPrepReminder';
+import { readNightPrepPlan, formatNightPrepPlanSummary, NIGHT_PREP_PLAN_KEY, type NightPrepTomorrowPlan } from './nightPrep/storage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-const STORAGE_KEY = 'agentHQ_nightPrep';
-
-interface NightPrepState {
-  tomorrowTasks: string;
-  previousDayContext: string;
-}
 
 const QUESTIONS = [
   'have i prioritized my sleep/energy',
   "do i know where I'm working tomorrow / roughly when",
-  'Is my task list finished for tomorrow (can create below)',
+  'Is my task list finished for tomorrow (set up below)',
 ];
 
-function normalizeState(state: Partial<NightPrepState> | NightPrepState): NightPrepState {
-  return {
-    tomorrowTasks: typeof state.tomorrowTasks === 'string' ? state.tomorrowTasks : '',
-    previousDayContext: typeof state.previousDayContext === 'string' ? state.previousDayContext : '',
-  };
+interface NightPrepPanelProps {
+  autoStartWindDown?: boolean;
+  onAutoStartHandled?: () => void;
 }
 
-export default function NightPrepPanel() {
-  const [state, setState] = useLocalStorage<NightPrepState>(STORAGE_KEY, {
-    tomorrowTasks: '',
-    previousDayContext: '',
-  });
+export default function NightPrepPanel({
+  autoStartWindDown = false,
+  onAutoStartHandled,
+}: NightPrepPanelProps) {
+  const { items: doneTodayItems } = useDoneToday();
+  const { openNightPrepChat } = useNightPrep();
   const [reminderTime, setReminderTime] = useLocalStorage<NightPrepReminderTime>(
     NIGHT_PREP_TIME_KEY,
     DEFAULT_NIGHT_PREP_TIME
   );
   const [reminderNote, setReminderNote] = useState<string | null>(null);
-  const current = normalizeState(state);
+  const [plan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
 
-  const setTomorrowTasks = useCallback(
-    (tomorrowTasks: string) => {
-      setState(prev => ({ ...normalizeState(prev), tomorrowTasks }));
-    },
-    [setState]
-  );
-
-  const setPreviousDayContext = useCallback(
-    (previousDayContext: string) => {
-      setState(prev => ({ ...normalizeState(prev), previousDayContext }));
-    },
-    [setState]
-  );
+  useEffect(() => {
+    if (!autoStartWindDown) return;
+    openNightPrepChat(doneTodayItems);
+    onAutoStartHandled?.();
+  }, [autoStartWindDown, doneTodayItems, openNightPrepChat, onAutoStartHandled]);
 
   const onTimeChange = useCallback(
     (value: string) => {
@@ -87,6 +76,16 @@ export default function NightPrepPanel() {
 
   return (
     <div style={styles.root}>
+      <button type="button" onClick={() => openNightPrepChat(doneTodayItems)} style={styles.windDownBtn}>
+        {WIND_DOWN_FLOW_COPY.windDownButton}
+      </button>
+
+      {plan ? (
+        <p style={styles.planSummary}>
+          Tomorrow: {formatNightPrepPlanSummary(plan)}
+        </p>
+      ) : null}
+
       <div style={styles.checksBlock}>
         <p style={styles.subheadline}>
           If you can take 10 minutes to answer YES to these 3 questions the night before, you&apos;re all set
@@ -100,32 +99,6 @@ export default function NightPrepPanel() {
             </li>
           ))}
         </ul>
-      </div>
-
-      <div style={styles.notesWrap}>
-        <div style={styles.notesToolbar}>
-          <span style={styles.notesToolbarTitle}>Tomorrow&apos;s main tasks</span>
-        </div>
-        <textarea
-          value={current.tomorrowTasks}
-          onChange={e => setTomorrowTasks(e.target.value)}
-          style={styles.notesArea}
-          spellCheck
-        />
-      </div>
-
-      <div style={styles.notesWrap}>
-        <div style={styles.notesToolbar}>
-          <span style={styles.notesToolbarTitle}>
-            Previous day&apos;s context (avoid paying clarity tax)
-          </span>
-        </div>
-        <textarea
-          value={current.previousDayContext}
-          onChange={e => setPreviousDayContext(e.target.value)}
-          style={styles.notesArea}
-          spellCheck
-        />
       </div>
 
       <div style={styles.reminderSection}>
@@ -163,6 +136,29 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: 'column',
     gap: 10,
   },
+  windDownBtn: {
+    border: '1px solid #007aff',
+    borderRadius: 12,
+    padding: '12px 14px',
+    fontSize: 14,
+    fontWeight: 700,
+    fontFamily: font,
+    background: '#007aff',
+    color: '#fff',
+    cursor: 'pointer',
+    textTransform: 'lowercase',
+    width: '100%',
+  },
+  planSummary: {
+    margin: 0,
+    fontSize: 12,
+    color: '#0f172a',
+    lineHeight: 1.45,
+    padding: '8px 10px',
+    borderRadius: 8,
+    background: '#f8fafc',
+    border: '1px solid #e2e8f0',
+  },
   checksBlock: {
     display: 'flex',
     flexDirection: 'column',
@@ -190,39 +186,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 11,
     color: '#0f172a',
     lineHeight: 1.35,
-  },
-  notesWrap: {
-    borderRadius: 8,
-    overflow: 'hidden',
-    border: '1px solid #e2e8f0',
-    background: '#fff',
-  },
-  notesToolbar: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '6px 10px',
-    background: '#fff',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  notesToolbarTitle: {
-    fontSize: 11,
-    fontWeight: 600,
-    color: '#64748b',
-    letterSpacing: '0.01em',
-  },
-  notesArea: {
-    width: '100%',
-    minHeight: 120,
-    padding: '10px 12px 12px',
-    border: 'none',
-    outline: 'none',
-    resize: 'vertical',
-    background: '#fff',
-    color: '#0f172a',
-    fontFamily: font,
-    fontSize: 13,
-    lineHeight: 1.5,
-    boxSizing: 'border-box',
   },
   reminderSection: {
     display: 'flex',

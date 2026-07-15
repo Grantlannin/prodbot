@@ -2,6 +2,7 @@ import { startOfLocalDayMs } from './infractions';
 import { formatDuration, formatHoursWorked } from './chatLogic';
 import type { DoneTodayItem, EodReport, Infraction, WorkSession } from './types';
 import { sessionWorkMs } from './workTime';
+import { readNightPrepPlan, formatNightPrepPlanSummary } from './nightPrep/storage';
 
 export const EOD_REPORTS_KEY = 'agentHQ_eodReports';
 const NIGHT_PREP_KEY = 'agentHQ_nightPrep';
@@ -45,12 +46,21 @@ function readNightPrepRaw(): { tomorrowTasks?: string; previousDayContext?: stri
 }
 
 export function readNightPrepTomorrowTasks(): string | null {
+  const plan = readNightPrepPlan();
+  if (plan) return formatNightPrepPlanSummary(plan);
   const parsed = readNightPrepRaw();
   const text = parsed?.tomorrowTasks?.trim();
   return text || null;
 }
 
 export function readNightPrepForEod(): NightPrepSnapshot {
+  const plan = readNightPrepPlan();
+  if (plan) {
+    return {
+      tomorrow: formatNightPrepPlanSummary(plan),
+      previousDayContext: '',
+    };
+  }
   const parsed = readNightPrepRaw();
   return {
     tomorrow: parsed?.tomorrowTasks?.trim() ?? '',

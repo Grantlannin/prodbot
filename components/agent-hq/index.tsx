@@ -15,7 +15,9 @@ import type { Infraction } from './types';
 import { INFRACTIONS_STORAGE_KEY } from './infractions';
 import FocusExtensionBridge from './FocusExtensionBridge';
 import { StuckHelpProvider } from './hooks/StuckHelpProvider';
+import { NightPrepProvider } from './hooks/NightPrepProvider';
 import StuckHelpModal from './StuckHelpModal';
+import NightPrepModal from './NightPrepModal';
 import StuckHelpOverlays from './StuckHelpOverlays';
 import StuckHelpNavButton from './StuckHelpNavButton';
 import EndSessionWorkCompleteDismiss from './EndSessionWorkCompleteDismiss';
@@ -98,10 +100,12 @@ function AgentHQInner() {
     <HoverTimerProvider onAddInfraction={(k, l) => addInfraction(k, l, 'dashboard')}>
       <HoverNotesProvider>
       <ProjectsProvider>
+      <NightPrepProvider>
       <StuckHelpProvider>
         <EndSessionWorkCompleteDismiss />
         <FocusExtensionBridge onAddInfraction={addInfraction} />
         <StuckHelpModal />
+        <NightPrepModal />
         <StuckHelpOverlays />
         <OnboardingNameModal
           open={!profile.onboardingComplete || !profile.displayName.trim()}
@@ -142,6 +146,7 @@ function AgentHQInner() {
           </div>
         </div>
       </StuckHelpProvider>
+      </NightPrepProvider>
       </ProjectsProvider>
       </HoverNotesProvider>
     </HoverTimerProvider>
