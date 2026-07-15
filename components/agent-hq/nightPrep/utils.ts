@@ -1,6 +1,7 @@
 import type { DoneTodayItem, ProjectBoard } from '../types';
 import { formatReportDateLabel, localDateKey } from '../eodReports';
 import { parseFlexibleTime } from '../stuckHelp/dailyStructureUtils';
+import type { WindDownItem } from './windDownItems';
 
 export function formatWindDownNoteEntry(dateKey: string, context: string): string {
   const label = formatReportDateLabel(dateKey);
@@ -10,6 +11,33 @@ export function formatWindDownNoteEntry(dateKey: string, context: string): strin
 export function appendStructuredTaskNote(existing: string | undefined, entry: string): string {
   const prev = existing?.trim();
   return prev ? `${prev}\n\n${entry}` : entry;
+}
+
+function applyNoteToTaskTargets(
+  projects: ProjectBoard[],
+  targets: { projectId: string; taskId: string }[],
+  entry: string
+): ProjectBoard[] {
+  if (!targets.length) return projects;
+  const targetSet = new Set(targets.map(t => `${t.projectId}:${t.taskId}`));
+
+  return projects.map(project => {
+    const projectTargets = targets.filter(t => t.projectId === project.id);
+    if (!projectTargets.length) return project;
+
+    return {
+      ...project,
+      updatedAt: Date.now(),
+      tasks: project.tasks.map(task => {
+        const key = `${project.id}:${task.id}`;
+        if (!targetSet.has(key)) return task;
+        return {
+          ...task,
+          notes: appendStructuredTaskNote(task.notes, entry),
+        };
+      }),
+    };
+  });
 }
 
 export function resolveDoneItemTaskTargets(
@@ -50,35 +78,56 @@ export function resolveDoneItemTaskTargets(
   return targets;
 }
 
+function resolveTrackerTaskTargets(
+  projects: ProjectBoard[],
+  trackerLabel: string
+): { projectId: string; taskId: string }[] {
+  const name = trackerLabel.trim().toLowerCase();
+  if (!name) return [];
+
+  const targets: { projectId: string; taskId: string }[] = [];
+  for (const project of projects) {
+    const task = project.tasks.find(t => t.text.trim().toLowerCase() === name);
+    if (task) targets.push({ projectId: project.id, taskId: task.id });
+  }
+  return targets;
+}
+
 export function appendWindDownContextToProjects(
   projects: ProjectBoard[],
-  item: DoneTodayItem,
+  item: WindDownItem,
   context: string,
   dateKey = localDateKey()
 ): ProjectBoard[] {
   const entry = formatWindDownNoteEntry(dateKey, context);
-  const targets = resolveDoneItemTaskTargets(projects, item);
-  if (!targets.length) return projects;
 
-  const targetSet = new Set(targets.map(t => `${t.projectId}:${t.taskId}`));
+  if (item.source === 'done_today' && item.doneTodayItem) {
+    const targets = resolveDoneItemTaskTargets(projects, item.doneTodayItem);
+    return applyNoteToTaskTargets(projects, targets, entry);
+  }
 
-  return projects.map(project => {
-    const projectTargets = targets.filter(t => t.projectId === project.id);
-    if (!projectTargets.length) return project;
+  const name = item.label.trim();
+  if (!name) return projects;
 
-    return {
-      ...project,
-      updatedAt: Date.now(),
-      tasks: project.tasks.map(task => {
-        const key = `${project.id}:${task.id}`;
-        if (!targetSet.has(key)) return task;
-        return {
-          ...task,
-          notes: appendStructuredTaskNote(task.notes, entry),
-        };
-      }),
-    };
-  });
+  const taskTargets = resolveTrackerTaskTargets(projects, name);
+  if (taskTargets.length) {
+    return applyNoteToTaskTargets(projects, taskTargets, entry);
+  }
+
+  const board = projects.find(p => p.name.trim().toLowerCase() === name.toLowerCase());
+  if (board) {
+    return projects.map(p =>
+      p.id === board.id
+        ? {
+            ...p,
+            notes: appendStructuredTaskNote(p.notes, entry),
+            updatedAt: Date.now(),
+          }
+        : p
+    );
+  }
+
+  return projects;
 }
 
 export function parseTomorrowTimeLabel(value: string): string {

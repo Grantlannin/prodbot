@@ -1,4 +1,5 @@
-import type { DoneTodayItem } from '../types';
+import type { WindDownItem } from './windDownItems';
+import { windDownItemLabel } from './windDownItems';
 
 export interface NightPrepChatMessage {
   id: string;
@@ -48,7 +49,7 @@ export type NightPrepProjectMode = 'choose' | 'input' | null;
 export interface NightPrepFlowState {
   phase: NightPrepFlowPhase;
   messages: NightPrepChatMessage[];
-  windDownItems: DoneTodayItem[];
+  windDownItems: WindDownItem[];
   windDownIndex: number;
   firstWorkBlockTime: string;
   workLocation: string;
@@ -59,8 +60,4 @@ export interface NightPrepFlowState {
   taskText: string;
 }
 
-export function doneItemLabel(item: DoneTodayItem): string {
-  const text = item.text.trim();
-  const detail = item.detail?.trim();
-  return detail ? `${text} — ${detail}` : text;
-}
+export { windDownItemLabel };

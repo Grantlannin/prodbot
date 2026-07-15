@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { DoneTodayItem } from '../types';
+import type { WindDownItem } from '../nightPrep/windDownItems';
 import {
   type NightPrepChatMessage,
   type NightPrepFlowPhase,
@@ -19,7 +19,7 @@ function makeId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-function initialFlowState(items: DoneTodayItem[]): NightPrepFlowState {
+function initialFlowState(items: WindDownItem[]): NightPrepFlowState {
   return {
     phase: 'wind_down_intro',
     messages: [],
@@ -38,9 +38,9 @@ function initialFlowState(items: DoneTodayItem[]): NightPrepFlowState {
 interface NightPrepContextValue {
   open: boolean;
   flow: NightPrepFlowState | null;
-  openNightPrepChat: (doneTodayItems: DoneTodayItem[]) => void;
+  openNightPrepChat: (windDownItems: WindDownItem[]) => void;
   closeNightPrepChat: () => void;
-  resetNightPrepChat: (doneTodayItems: DoneTodayItem[]) => void;
+  resetNightPrepChat: (windDownItems: WindDownItem[]) => void;
   setNightPrepPhase: (phase: NightPrepFlowPhase) => void;
   setNightPrepFields: (
     fields: Partial<
@@ -66,8 +66,8 @@ export function NightPrepProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [flow, setFlow] = useState<NightPrepFlowState | null>(null);
 
-  const openNightPrepChat = useCallback((doneTodayItems: DoneTodayItem[]) => {
-    setFlow(initialFlowState(doneTodayItems));
+  const openNightPrepChat = useCallback((windDownItems: WindDownItem[]) => {
+    setFlow(initialFlowState(windDownItems));
     setOpen(true);
   }, []);
 
@@ -75,8 +75,8 @@ export function NightPrepProvider({ children }: { children: ReactNode }) {
     setOpen(false);
   }, []);
 
-  const resetNightPrepChat = useCallback((doneTodayItems: DoneTodayItem[]) => {
-    setFlow(initialFlowState(doneTodayItems));
+  const resetNightPrepChat = useCallback((windDownItems: WindDownItem[]) => {
+    setFlow(initialFlowState(windDownItems));
   }, []);
 
   const setNightPrepPhase = useCallback((phase: NightPrepFlowPhase) => {

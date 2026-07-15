@@ -6,13 +6,15 @@ import type { CSSProperties, KeyboardEvent } from 'react';
 import { useNightPrep } from './hooks/NightPrepProvider';
 import { useProjects } from './hooks/ProjectsProvider';
 import { useDoneToday } from './hooks/useDoneToday';
+import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import type { ProjectBoard } from './types';
 import {
   WIND_DOWN_FLOW_COPY,
-  doneItemLabel,
+  windDownItemLabel,
   type NightPrepFlowPhase,
 } from './nightPrep/flows';
+import { buildWindDownItems } from './nightPrep/windDownItems';
 import {
   addProjectTask,
   requestFocusProject,
@@ -63,6 +65,7 @@ export default function NightPrepModal() {
     appendNightPrepMessages,
   } = useNightPrep();
   const { items: doneTodayItems } = useDoneToday();
+  const { getTodayStats } = useWorkTrackerContext();
   const { projects, setProjects } = useProjects();
   const [, setNightPrepPlan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
 
@@ -90,6 +93,9 @@ export default function NightPrepModal() {
   const windDownItems = flow?.windDownItems ?? [];
   const windDownIndex = flow?.windDownIndex ?? 0;
   const currentWindDownItem = windDownItems[windDownIndex];
+
+  const buildCurrentWindDownItems = () =>
+    buildWindDownItems(getTodayStats().projectStats, doneTodayItems);
 
   const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
@@ -128,7 +134,7 @@ export default function NightPrepModal() {
         } else {
           appendNightPrepMessages({
             role: 'bot',
-            text: WIND_DOWN_FLOW_COPY.taskPrompt(doneItemLabel(windDownItems[0])),
+            text: WIND_DOWN_FLOW_COPY.taskPrompt(windDownItemLabel(windDownItems[0])),
           });
           setNightPrepPhase('wind_down_item');
         }
@@ -183,13 +189,13 @@ export default function NightPrepModal() {
 
     const nextItem = windDownItems[nextIndex];
     if (!skipContext) {
-      sendBotReply(WIND_DOWN_FLOW_COPY.taskPrompt(doneItemLabel(nextItem)));
+      sendBotReply(WIND_DOWN_FLOW_COPY.taskPrompt(windDownItemLabel(nextItem)));
     } else {
       setTyping(true);
       schedule(() => {
         appendNightPrepMessages({
           role: 'bot',
-          text: WIND_DOWN_FLOW_COPY.taskPrompt(doneItemLabel(nextItem)),
+          text: WIND_DOWN_FLOW_COPY.taskPrompt(windDownItemLabel(nextItem)),
         });
         setTyping(false);
       }, BOT_TYPING_MS);
@@ -395,7 +401,7 @@ export default function NightPrepModal() {
     };
     setChooseProjectError(false);
     openedRef.current = false;
-    resetNightPrepChat(doneTodayItems);
+    resetNightPrepChat(buildCurrentWindDownItems());
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
