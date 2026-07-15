@@ -156,6 +156,12 @@ export default function MorningFlowModal() {
     if (typing || busy) return;
     setMorningFlowFields({ selectedTask: task });
     appendMorningFlowMessages({ role: 'user', text: task.taskText.trim() });
+    sendBotReply(MORNING_FLOW_COPY.phoneConfirm, 'phone_confirm');
+  };
+
+  const confirmPhone = () => {
+    if (typing || busy) return;
+    appendMorningFlowMessages({ role: 'user', text: MORNING_FLOW_COPY.phoneConfirmYes });
     sendBotReply(MORNING_FLOW_COPY.chooseTimer, 'timer_pick');
   };
 
@@ -257,6 +263,22 @@ export default function MorningFlowModal() {
                     ) : null}
                   </button>
                 ))}
+              </div>
+            ) : null}
+
+            {phase === 'phone_confirm' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={confirmPhone}
+                  style={{
+                    ...styles.chip,
+                    ...(busy ? styles.chipDisabled : {}),
+                  }}
+                >
+                  {MORNING_FLOW_COPY.phoneConfirmYes}
+                </button>
               </div>
             ) : null}
 

@@ -31,6 +31,9 @@ export const MORNING_FLOW_COPY = {
   introGreeting: (name: string) => `hey ${name}. Let's begin your work day.`,
   introTaskList: (lines: string) =>
     `This is your task list for the day based on what you prepared:\n\n${lines}\n\nPlease choose the one you'd like to begin with.`,
+  phoneConfirm:
+    "great. please confirm your phone is in another room. If not, i'll wait here for you to put it out of reach.",
+  phoneConfirmYes: 'yes',
   chooseTimer: 'please choose your timer length',
   chooseLock: 'Choose lock mode',
   busy: 'You already have a session running. Stop it first to start something new.',
@@ -46,6 +49,7 @@ export const TIMER_PRESETS = [15, 25, 30, 45, 60, 90] as const;
 export type MorningFlowPhase =
   | 'intro'
   | 'task_pick'
+  | 'phone_confirm'
   | 'timer_pick'
   | 'lock_pick'
   | 'complete';
