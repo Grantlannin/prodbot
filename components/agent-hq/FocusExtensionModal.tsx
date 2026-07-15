@@ -179,7 +179,7 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
         onClick={() => setOpen(true)}
         style={variant === 'nav' ? styles.navTriggerBtn : styles.triggerBtn}
       >
-        Focus extension
+        add focus extension
       </button>
       {modal}
     </>
