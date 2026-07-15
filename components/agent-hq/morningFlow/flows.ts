@@ -22,11 +22,11 @@ export const SIMULATED_MORNING_TASKS: NightPrepTomorrowTask[] = [
 ];
 
 export const MORNING_FLOW_COPY = {
-  beginButton: 'begin my day',
-  beginTest: 'begin my day (test)',
+  beginButton: 'begin work',
+  beginTest: 'begin work (test)',
   resetTest: 'reset morning flow (test)',
   testModeOn: 'Morning flow test mode on — button stays visible and you can run it repeatedly.',
-  headerTitle: 'begin my day',
+  headerTitle: 'begin work',
   clearChat: 'clear chat',
   introGreeting: (name: string) => `hey ${name}. Let's begin your work day.`,
   introTaskList: (lines: string) =>
