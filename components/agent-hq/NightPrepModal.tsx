@@ -41,7 +41,6 @@ const COMPOSE_PHASES: NightPrepFlowPhase[] = [
   'prep_time',
   'prep_location',
   'prep_project_name',
-  'prep_task_name',
 ];
 
 function TypingBubble() {
@@ -148,6 +147,10 @@ export default function NightPrepModal() {
 
   useEffect(() => {
     if (!open || !phase || typing) return;
+    if (phase === 'prep_task_name') {
+      inputRef.current?.focus();
+      return;
+    }
     if (!COMPOSE_PHASES.includes(phase)) return;
     inputRef.current?.focus();
   }, [open, phase, messages.length, typing]);
@@ -295,6 +298,7 @@ export default function NightPrepModal() {
       fieldsRef.current.taskId = createdTaskId;
       fieldsRef.current.taskText = text;
       setNightPrepFields({ taskId: createdTaskId, taskText: text });
+      requestFocusProject(projectId);
       appendTomorrowTask({
         projectId,
         projectName: (flow.projectName || fieldsRef.current.projectName).trim(),
@@ -340,6 +344,8 @@ export default function NightPrepModal() {
 
   const beginAddAnotherTask = () => {
     if (typing) return;
+    setDraft('');
+    draftRef.current = '';
     appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.addAnotherTask });
     fieldsRef.current.projectMode = null;
     fieldsRef.current.projectId = '';
@@ -421,7 +427,6 @@ export default function NightPrepModal() {
 
   const beginAddTask = () => {
     if (typing) return;
-    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.addNewTask });
     setNightPrepPhase('prep_task_name');
     requestAnimationFrame(() => inputRef.current?.focus());
   };
@@ -478,6 +483,7 @@ export default function NightPrepModal() {
     tomorrowTasks.filter(t => t.projectId === selectedProjectId).map(t => t.taskId)
   );
   const hasTomorrowTasks = tomorrowTasks.length > 0;
+  const inProjectTaskPick = phase === 'prep_task_pick' || phase === 'prep_task_name';
 
   return createPortal(
     <>
@@ -587,7 +593,7 @@ export default function NightPrepModal() {
               </div>
             ) : null}
 
-            {phase === 'prep_task_pick' && !typing ? (
+            {inProjectTaskPick && !typing ? (
               <div style={styles.chipWrap}>
                 {openTasks.map(task => {
                   const picked = selectedTaskIds.has(task.id);
@@ -622,6 +628,34 @@ export default function NightPrepModal() {
                 >
                   {WIND_DOWN_FLOW_COPY.taskListFinished}
                 </button>
+                {phase === 'prep_task_name' ? (
+                  <div style={styles.compose}>
+                    <textarea
+                      ref={inputRef}
+                      value={draft}
+                      onChange={e => {
+                        setDraft(e.target.value);
+                        draftRef.current = e.target.value;
+                      }}
+                      onKeyDown={handleKeyDown}
+                      rows={1}
+                      placeholder={WIND_DOWN_FLOW_COPY.taskNamePlaceholder}
+                      style={styles.input}
+                    />
+                    <button
+                      type="button"
+                      disabled={!draft.trim()}
+                      onClick={sendDraft}
+                      style={{
+                        ...styles.sendBtn,
+                        ...(!draft.trim() ? styles.sendBtnDisabled : {}),
+                      }}
+                      aria-label="Send"
+                    >
+                      ↑
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
