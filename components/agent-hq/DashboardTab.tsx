@@ -16,6 +16,7 @@ import type { ProjectProgress } from './projectProgress';
 import DayAtGlancePanel from './DayAtGlancePanel';
 import OpenLoopsPanel from './OpenLoopsPanel';
 import NightPrepPanel from './NightPrepPanel';
+import BeginMyDayButton from './BeginMyDayButton';
 import { DoneTodayBanner } from './DoneTodaySection';
 import EodReportsCalendar from './EodReportsCalendar';
 import EodSendModal from './EodSendModal';
@@ -148,6 +149,7 @@ export default function DashboardTab({
 
   return (
     <div style={{ background: '#f8fafc', minHeight: '100%', overflowY: 'auto', fontFamily: font, position: 'relative' }}>
+      <BeginMyDayButton />
       <StartWorkModal open={startWorkOpen} onClose={() => setStartWorkOpen(false)} />
       <StartWorkModal open={setTimerOpen} onClose={() => setSetTimerOpen(false)} mode="set-timer" />
       <EodSendModal

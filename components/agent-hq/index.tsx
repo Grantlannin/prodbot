@@ -16,8 +16,10 @@ import { INFRACTIONS_STORAGE_KEY } from './infractions';
 import FocusExtensionBridge from './FocusExtensionBridge';
 import { StuckHelpProvider } from './hooks/StuckHelpProvider';
 import { NightPrepProvider } from './hooks/NightPrepProvider';
+import { MorningFlowProvider } from './hooks/MorningFlowProvider';
 import StuckHelpModal from './StuckHelpModal';
 import NightPrepModal from './NightPrepModal';
+import MorningFlowModal from './MorningFlowModal';
 import StuckHelpOverlays from './StuckHelpOverlays';
 import StuckHelpNavButton from './StuckHelpNavButton';
 import EndSessionWorkCompleteDismiss from './EndSessionWorkCompleteDismiss';
@@ -101,11 +103,13 @@ function AgentHQInner() {
       <HoverNotesProvider>
       <ProjectsProvider>
       <NightPrepProvider>
+      <MorningFlowProvider>
       <StuckHelpProvider>
         <EndSessionWorkCompleteDismiss />
         <FocusExtensionBridge onAddInfraction={addInfraction} />
         <StuckHelpModal />
         <NightPrepModal />
+        <MorningFlowModal />
         <StuckHelpOverlays />
         <OnboardingNameModal
           open={!profile.onboardingComplete || !profile.displayName.trim()}
@@ -146,6 +150,7 @@ function AgentHQInner() {
           </div>
         </div>
       </StuckHelpProvider>
+      </MorningFlowProvider>
       </NightPrepProvider>
       </ProjectsProvider>
       </HoverNotesProvider>
