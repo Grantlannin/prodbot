@@ -18,6 +18,7 @@ import {
 } from './morningFlow/flows';
 import {
   morningFlowUsedDateKey,
+  MORNING_FLOW_TEST_MODE_KEY,
   MORNING_FLOW_USED_KEY,
 } from './morningFlow/storage';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
@@ -56,6 +57,7 @@ export default function MorningFlowModal() {
   const { startSession, status } = useWorkTrackerContext();
   const { requestOpen } = useHoverTimer();
   const [, setMorningFlowUsed] = useLocalStorage<string | null>(MORNING_FLOW_USED_KEY, null);
+  const [testMode] = useLocalStorage<boolean>(MORNING_FLOW_TEST_MODE_KEY, false);
 
   const [typing, setTyping] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
@@ -143,7 +145,9 @@ export default function MorningFlowModal() {
       });
     }
     requestOpen();
-    setMorningFlowUsed(morningFlowUsedDateKey());
+    if (!testMode) {
+      setMorningFlowUsed(morningFlowUsedDateKey());
+    }
     setMorningFlowPhase('complete');
     closeMorningFlow();
   };

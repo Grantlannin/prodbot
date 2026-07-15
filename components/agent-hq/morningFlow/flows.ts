@@ -6,8 +6,26 @@ export interface MorningFlowChatMessage {
   text: string;
 }
 
+export const SIMULATED_MORNING_TASKS: NightPrepTomorrowTask[] = [
+  {
+    projectId: 'morning-test-p1',
+    projectName: 'Test project',
+    taskId: 'morning-test-t1',
+    taskText: 'Ship morning flow',
+  },
+  {
+    projectId: 'morning-test-p2',
+    projectName: 'Admin',
+    taskId: 'morning-test-t2',
+    taskText: 'Review inbox',
+  },
+];
+
 export const MORNING_FLOW_COPY = {
   beginButton: 'begin my day',
+  beginTest: 'begin my day (test)',
+  resetTest: 'reset morning flow (test)',
+  testModeOn: 'Morning flow test mode on — button stays visible and you can run it repeatedly.',
   headerTitle: 'begin my day',
   clearChat: 'clear chat',
   introGreeting: (name: string) => `hey ${name}. Let's begin your work day.`,

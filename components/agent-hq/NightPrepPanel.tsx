@@ -5,6 +5,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useDoneToday } from './hooks/useDoneToday';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import { useNightPrep } from './hooks/NightPrepProvider';
+import { useMorningFlow } from './hooks/MorningFlowProvider';
 import { WIND_DOWN_FLOW_COPY } from './nightPrep/flows';
 import { buildWindDownItems } from './nightPrep/windDownItems';
 import {
@@ -17,7 +18,9 @@ import {
   timeToInput,
   type NightPrepReminderTime,
 } from './nightPrepReminder';
-import { formatNightPrepPlanSummary, NIGHT_PREP_PLAN_KEY, promoteNightPrepPlanToToday, type NightPrepTomorrowPlan } from './nightPrep/storage';
+import { formatNightPrepPlanSummary, getActiveNightPrepPlan, NIGHT_PREP_PLAN_KEY, promoteNightPrepPlanToToday, type NightPrepTomorrowPlan } from './nightPrep/storage';
+import { SIMULATED_MORNING_TASKS, MORNING_FLOW_COPY } from './morningFlow/flows';
+import { MORNING_FLOW_TEST_MODE_KEY, MORNING_FLOW_USED_KEY } from './morningFlow/storage';
 import { SIMULATED_WIND_DOWN_ITEMS } from './nightPrep/windDownItems';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -40,12 +43,15 @@ export default function NightPrepPanel({
   const { items: doneTodayItems } = useDoneToday();
   const { getTodayStats } = useWorkTrackerContext();
   const { openNightPrepChat } = useNightPrep();
+  const { openMorningFlow } = useMorningFlow();
   const [reminderTime, setReminderTime] = useLocalStorage<NightPrepReminderTime>(
     NIGHT_PREP_TIME_KEY,
     DEFAULT_NIGHT_PREP_TIME
   );
   const [reminderNote, setReminderNote] = useState<string | null>(null);
   const [plan, setPlan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
+  const [, setMorningFlowUsed] = useLocalStorage<string | null>(MORNING_FLOW_USED_KEY, null);
+  const [morningTestMode, setMorningTestMode] = useLocalStorage<boolean>(MORNING_FLOW_TEST_MODE_KEY, false);
   const [testNote, setTestNote] = useState<string | null>(null);
 
   const startWindDown = useCallback(() => {
@@ -68,6 +74,25 @@ export default function NightPrepPanel({
     setPlan(promoteNightPrepPlanToToday(plan));
     setTestNote('Plan is active for today — ready for morning flow testing.');
   }, [plan, setPlan]);
+
+  const startBeginMyDayTest = useCallback(() => {
+    setMorningTestMode(true);
+    setMorningFlowUsed(null);
+    let active = getActiveNightPrepPlan(plan);
+    if (!active?.tasks?.length && plan?.tasks?.length) {
+      const promoted = promoteNightPrepPlanToToday(plan);
+      setPlan(promoted);
+      active = getActiveNightPrepPlan(promoted);
+    }
+    const tasks = active?.tasks?.length ? active.tasks : SIMULATED_MORNING_TASKS;
+    openMorningFlow(tasks);
+    setTestNote(MORNING_FLOW_COPY.testModeOn);
+  }, [plan, setPlan, setMorningTestMode, setMorningFlowUsed, openMorningFlow]);
+
+  const resetMorningFlowTest = useCallback(() => {
+    setMorningFlowUsed(null);
+    setTestNote('Morning flow reset — green button is available again.');
+  }, [setMorningFlowUsed]);
 
   useEffect(() => {
     if (!autoStartWindDown) return;
@@ -114,6 +139,17 @@ export default function NightPrepPanel({
           {WIND_DOWN_FLOW_COPY.nightPrepOnly}
         </button>
       </div>
+
+      <div style={styles.testRow}>
+        <button type="button" onClick={startBeginMyDayTest} style={styles.testBtnGreen}>
+          {MORNING_FLOW_COPY.beginTest}
+        </button>
+        <button type="button" onClick={resetMorningFlowTest} style={styles.testBtn}>
+          {MORNING_FLOW_COPY.resetTest}
+        </button>
+      </div>
+
+      {morningTestMode ? <p style={styles.testNote}>{MORNING_FLOW_COPY.testModeOn}</p> : null}
 
       {plan ? (
         <>
@@ -209,6 +245,20 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
     background: '#f8fafc',
     color: '#475569',
+    cursor: 'pointer',
+    textTransform: 'lowercase',
+  },
+  testBtnGreen: {
+    flex: 1,
+    minWidth: 120,
+    border: '1px dashed #86efac',
+    borderRadius: 10,
+    padding: '8px 10px',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    background: '#f0fdf4',
+    color: '#15803d',
     cursor: 'pointer',
     textTransform: 'lowercase',
   },
