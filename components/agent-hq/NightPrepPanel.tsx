@@ -53,6 +53,7 @@ export default function NightPrepPanel({
   const [, setMorningFlowUsed] = useLocalStorage<string | null>(MORNING_FLOW_USED_KEY, null);
   const [morningTestMode, setMorningTestMode] = useLocalStorage<boolean>(MORNING_FLOW_TEST_MODE_KEY, false);
   const [testNote, setTestNote] = useState<string | null>(null);
+  const [windDownHovered, setWindDownHovered] = useState(false);
 
   const startWindDown = useCallback(() => {
     const items = buildWindDownItems(getTodayStats().projectStats, doneTodayItems);
@@ -127,9 +128,23 @@ export default function NightPrepPanel({
 
   return (
     <div style={styles.root}>
-      <button type="button" onClick={startWindDown} style={styles.windDownBtn}>
-        {WIND_DOWN_FLOW_COPY.windDownButton}
-      </button>
+      <div style={styles.windDownWrap}>
+        <button
+          type="button"
+          onClick={startWindDown}
+          onMouseEnter={() => setWindDownHovered(true)}
+          onMouseLeave={() => setWindDownHovered(false)}
+          style={{
+            ...styles.windDownBtn,
+            ...(windDownHovered ? styles.windDownBtnHover : {}),
+          }}
+        >
+          <span style={styles.windDownLabel}>{WIND_DOWN_FLOW_COPY.windDownButton}</span>
+          <span style={styles.windDownChevron} aria-hidden>
+            →
+          </span>
+        </button>
+      </div>
 
       <div style={styles.testRow}>
         <button type="button" onClick={startSimulatedWindDown} style={styles.testBtn}>
@@ -216,18 +231,42 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: 'column',
     gap: 10,
   },
+  windDownWrap: {
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '2px 0 4px',
+  },
   windDownBtn: {
-    border: '1px solid #007aff',
-    borderRadius: 12,
-    padding: '12px 14px',
-    fontSize: 14,
-    fontWeight: 700,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 10,
+    border: '1px solid #c7d2fe',
+    borderRadius: 999,
+    padding: '9px 16px 9px 18px',
+    fontSize: 13,
+    fontWeight: 500,
     fontFamily: font,
-    background: '#007aff',
-    color: '#fff',
+    letterSpacing: '-0.01em',
+    background: '#fff',
+    color: '#0f172a',
     cursor: 'pointer',
     textTransform: 'lowercase',
-    width: '100%',
+    transition: 'background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
+    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+  },
+  windDownBtnHover: {
+    background: '#eef2ff',
+    borderColor: '#a5b4fc',
+    boxShadow: '0 2px 8px rgba(99, 102, 241, 0.1)',
+  },
+  windDownLabel: {
+    lineHeight: 1,
+  },
+  windDownChevron: {
+    fontSize: 14,
+    color: '#94a3b8',
+    lineHeight: 1,
+    marginLeft: 2,
   },
   testRow: {
     display: 'flex',
