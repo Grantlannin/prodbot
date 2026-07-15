@@ -15,7 +15,11 @@ import {
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
-export default function FocusExtensionModal() {
+interface FocusExtensionModalProps {
+  variant?: 'default' | 'nav';
+}
+
+export default function FocusExtensionModal({ variant = 'default' }: FocusExtensionModalProps) {
   const [open, setOpen] = useState(false);
   const [store, setStore] = useLocalStorage<FocusBlocklistStore>(FOCUS_BLOCKLIST_KEY, DEFAULT_FOCUS_BLOCKLIST);
   const [customInput, setCustomInput] = useState('');
@@ -170,7 +174,11 @@ export default function FocusExtensionModal() {
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} style={styles.triggerBtn}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        style={variant === 'nav' ? styles.navTriggerBtn : styles.triggerBtn}
+      >
         Focus extension
       </button>
       {modal}
@@ -183,6 +191,18 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid #cbd5e1',
     borderRadius: 8,
     padding: '5px 10px',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    color: '#475569',
+    background: '#fff',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  navTriggerBtn: {
+    border: '1px solid #e2e8f0',
+    borderRadius: 999,
+    padding: '6px 11px',
     fontSize: 11,
     fontWeight: 600,
     fontFamily: font,

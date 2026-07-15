@@ -22,6 +22,7 @@ import NightPrepModal from './NightPrepModal';
 import MorningFlowModal from './MorningFlowModal';
 import StuckHelpOverlays from './StuckHelpOverlays';
 import StuckHelpNavButton from './StuckHelpNavButton';
+import FocusExtensionModal from './FocusExtensionModal';
 import EndSessionWorkCompleteDismiss from './EndSessionWorkCompleteDismiss';
 import { clearNightPrepDeepLinkParam, readNightPrepDeepLink } from './nightPrepReminder';
 import { fetchProfileDisplayName } from '@/lib/supabase/profile';
@@ -138,7 +139,10 @@ function AgentHQInner() {
             }}
           >
             <AccountMenu />
-            <StuckHelpNavButton />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <FocusExtensionModal variant="nav" />
+              <StuckHelpNavButton />
+            </div>
           </nav>
 
           <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>

@@ -21,7 +21,6 @@ import { DoneTodayBanner } from './DoneTodaySection';
 import EodReportsCalendar from './EodReportsCalendar';
 import EodSendModal from './EodSendModal';
 import StartWorkModal from './StartWorkModal';
-import FocusExtensionModal from './FocusExtensionModal';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -265,9 +264,6 @@ export default function DashboardTab({
           </div>
           <div style={styles.divider} />
           <div style={styles.doneTodayColumn}>
-            <div style={styles.focusExtensionRow}>
-              <FocusExtensionModal />
-            </div>
             <DoneTodayBanner
               items={doneTodayItems}
               onRemove={removeDoneToday}
@@ -647,11 +643,6 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
-  },
-  focusExtensionRow: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginBottom: 6,
   },
   eodAnchor: {
     display: 'flex',
