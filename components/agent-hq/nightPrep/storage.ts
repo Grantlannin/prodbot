@@ -14,6 +14,8 @@ export interface NightPrepTomorrowPlan {
   taskId: string;
   taskText: string;
   updatedAt: number;
+  /** Dev/testing: plan was promoted to today so morning flow can be tested immediately */
+  testMode?: boolean;
 }
 
 export function buildNightPrepPlan(fields: {
@@ -56,4 +58,33 @@ export function formatNightPrepPlanSummary(plan: NightPrepTomorrowPlan): string 
   if (plan.workLocation.trim()) parts.push(`@ ${plan.workLocation.trim()}`);
   if (plan.firstWorkBlockTime.trim()) parts.push(`(${plan.firstWorkBlockTime.trim()})`);
   return parts.join(' ');
+}
+
+export function isNightPrepPlanActiveToday(
+  plan: NightPrepTomorrowPlan | null,
+  now = Date.now()
+): boolean {
+  if (!plan) return false;
+  return plan.targetDateKey === localDateKey(now);
+}
+
+/** Plan saved last night for today, or promoted via test mode */
+export function getActiveNightPrepPlan(
+  plan: NightPrepTomorrowPlan | null,
+  now = Date.now()
+): NightPrepTomorrowPlan | null {
+  if (!plan) return null;
+  return isNightPrepPlanActiveToday(plan, now) ? plan : null;
+}
+
+export function promoteNightPrepPlanToToday(
+  plan: NightPrepTomorrowPlan,
+  now = Date.now()
+): NightPrepTomorrowPlan {
+  return {
+    ...plan,
+    targetDateKey: localDateKey(now),
+    testMode: true,
+    updatedAt: now,
+  };
 }

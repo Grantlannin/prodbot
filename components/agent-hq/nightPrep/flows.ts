@@ -29,6 +29,9 @@ export const WIND_DOWN_FLOW_COPY = {
   clearChat: 'clear chat',
   projectNamePlaceholder: 'Project name',
   taskNamePlaceholder: 'Task name',
+  simulateWindDown: 'simulate wind down (test)',
+  nightPrepOnly: 'night prep only (test)',
+  usePlanForToday: 'use plan for today (test)',
 } as const;
 
 export type NightPrepFlowPhase =

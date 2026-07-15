@@ -17,7 +17,8 @@ import {
   timeToInput,
   type NightPrepReminderTime,
 } from './nightPrepReminder';
-import { formatNightPrepPlanSummary, NIGHT_PREP_PLAN_KEY, type NightPrepTomorrowPlan } from './nightPrep/storage';
+import { formatNightPrepPlanSummary, NIGHT_PREP_PLAN_KEY, promoteNightPrepPlanToToday, type NightPrepTomorrowPlan } from './nightPrep/storage';
+import { SIMULATED_WIND_DOWN_ITEMS } from './nightPrep/windDownItems';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -44,12 +45,29 @@ export default function NightPrepPanel({
     DEFAULT_NIGHT_PREP_TIME
   );
   const [reminderNote, setReminderNote] = useState<string | null>(null);
-  const [plan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
+  const [plan, setPlan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
+  const [testNote, setTestNote] = useState<string | null>(null);
 
   const startWindDown = useCallback(() => {
     const items = buildWindDownItems(getTodayStats().projectStats, doneTodayItems);
     openNightPrepChat(items);
   }, [getTodayStats, doneTodayItems, openNightPrepChat]);
+
+  const startSimulatedWindDown = useCallback(() => {
+    setTestNote(null);
+    openNightPrepChat(SIMULATED_WIND_DOWN_ITEMS);
+  }, [openNightPrepChat]);
+
+  const startNightPrepOnly = useCallback(() => {
+    setTestNote(null);
+    openNightPrepChat([]);
+  }, [openNightPrepChat]);
+
+  const usePlanForToday = useCallback(() => {
+    if (!plan) return;
+    setPlan(promoteNightPrepPlanToToday(plan));
+    setTestNote('Plan is active for today — ready for morning flow testing.');
+  }, [plan, setPlan]);
 
   useEffect(() => {
     if (!autoStartWindDown) return;
@@ -88,11 +106,29 @@ export default function NightPrepPanel({
         {WIND_DOWN_FLOW_COPY.windDownButton}
       </button>
 
+      <div style={styles.testRow}>
+        <button type="button" onClick={startSimulatedWindDown} style={styles.testBtn}>
+          {WIND_DOWN_FLOW_COPY.simulateWindDown}
+        </button>
+        <button type="button" onClick={startNightPrepOnly} style={styles.testBtn}>
+          {WIND_DOWN_FLOW_COPY.nightPrepOnly}
+        </button>
+      </div>
+
       {plan ? (
-        <p style={styles.planSummary}>
-          Tomorrow: {formatNightPrepPlanSummary(plan)}
-        </p>
+        <>
+          <p style={styles.planSummary}>
+            {plan.testMode ? 'Today (test)' : 'Tomorrow'}: {formatNightPrepPlanSummary(plan)}
+          </p>
+          {!plan.testMode ? (
+            <button type="button" onClick={usePlanForToday} style={styles.testBtnWide}>
+              {WIND_DOWN_FLOW_COPY.usePlanForToday}
+            </button>
+          ) : null}
+        </>
       ) : null}
+
+      {testNote ? <p style={styles.testNote}>{testNote}</p> : null}
 
       <div style={styles.checksBlock}>
         <p style={styles.subheadline}>
@@ -156,6 +192,44 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     textTransform: 'lowercase',
     width: '100%',
+  },
+  testRow: {
+    display: 'flex',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  testBtn: {
+    flex: 1,
+    minWidth: 120,
+    border: '1px dashed #cbd5e1',
+    borderRadius: 10,
+    padding: '8px 10px',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    background: '#f8fafc',
+    color: '#475569',
+    cursor: 'pointer',
+    textTransform: 'lowercase',
+  },
+  testBtnWide: {
+    border: '1px dashed #cbd5e1',
+    borderRadius: 10,
+    padding: '8px 10px',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    background: '#f8fafc',
+    color: '#475569',
+    cursor: 'pointer',
+    textTransform: 'lowercase',
+    width: '100%',
+  },
+  testNote: {
+    margin: 0,
+    fontSize: 11,
+    color: '#15803d',
+    lineHeight: 1.4,
   },
   planSummary: {
     margin: 0,

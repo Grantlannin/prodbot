@@ -27,6 +27,7 @@ import {
 import {
   buildNightPrepPlan,
   NIGHT_PREP_PLAN_KEY,
+  promoteNightPrepPlanToToday,
   type NightPrepTomorrowPlan,
 } from './nightPrep/storage';
 import { parseFlexibleTime } from './stuckHelp/dailyStructureUtils';
@@ -315,6 +316,13 @@ export default function NightPrepModal() {
     setNightPrepPhase('complete');
   };
 
+  const usePlanForToday = () => {
+    if (typing) return;
+    setNightPrepPlan(prev => (prev ? promoteNightPrepPlanToToday(prev) : prev));
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.usePlanForToday });
+    sendBotReply('Plan is active for today — you can test the morning flow now.');
+  };
+
   const beginChooseProject = () => {
     if (typing) return;
     const options = projects.filter(p => p.name.trim());
@@ -535,6 +543,14 @@ export default function NightPrepModal() {
                 ))}
                 <button type="button" onClick={beginAddTask} style={styles.chip}>
                   {WIND_DOWN_FLOW_COPY.addNewTask}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'complete' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={usePlanForToday} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.usePlanForToday}
                 </button>
               </div>
             ) : null}
