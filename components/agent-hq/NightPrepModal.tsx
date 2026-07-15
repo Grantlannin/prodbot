@@ -307,11 +307,14 @@ export default function NightPrepModal() {
   };
 
   const appendTomorrowTask = (task: NightPrepTomorrowTask) => {
-    const next = [...(flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks), task];
+    const current = flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+    if (current.some(t => t.projectId === task.projectId && t.taskId === task.taskId)) return;
+
+    const next = [...current, task];
     fieldsRef.current.tomorrowTasks = next;
     setNightPrepFields({ tomorrowTasks: next });
     appendNightPrepMessages({ role: 'user', text: task.taskText });
-    setNightPrepPhase('prep_after_task');
+    setNightPrepPhase('prep_task_pick');
   };
 
   const finishNightPrep = () => {
@@ -469,6 +472,12 @@ export default function NightPrepModal() {
   const openTasks = selectedProject
     ? selectedProject.tasks.filter(t => !t.done && t.text.trim())
     : [];
+  const tomorrowTasks = flow.tomorrowTasks ?? [];
+  const selectedProjectId = flow.projectId || fieldsRef.current.projectId;
+  const selectedTaskIds = new Set(
+    tomorrowTasks.filter(t => t.projectId === selectedProjectId).map(t => t.taskId)
+  );
+  const hasTomorrowTasks = tomorrowTasks.length > 0;
 
   return createPortal(
     <>
@@ -555,6 +564,11 @@ export default function NightPrepModal() {
                 <button type="button" onClick={beginInputProject} style={styles.chip}>
                   {WIND_DOWN_FLOW_COPY.inputProject}
                 </button>
+                {hasTomorrowTasks ? (
+                  <button type="button" onClick={finishTaskList} style={styles.chip}>
+                    {WIND_DOWN_FLOW_COPY.taskListFinished}
+                  </button>
+                ) : null}
               </div>
             ) : null}
 
@@ -575,28 +589,37 @@ export default function NightPrepModal() {
 
             {phase === 'prep_task_pick' && !typing ? (
               <div style={styles.chipWrap}>
-                {openTasks.map(task => (
-                  <button
-                    key={task.id}
-                    type="button"
-                    onClick={() => selectTask(task.text.trim(), task.id)}
-                    style={styles.chip}
-                  >
-                    {task.text.trim()}
-                  </button>
-                ))}
+                {openTasks.map(task => {
+                  const picked = selectedTaskIds.has(task.id);
+                  return (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => selectTask(task.text.trim(), task.id)}
+                      style={{
+                        ...styles.chip,
+                        ...(picked ? styles.chipSelected : {}),
+                      }}
+                    >
+                      {picked ? `✓ ${task.text.trim()}` : task.text.trim()}
+                    </button>
+                  );
+                })}
                 <button type="button" onClick={beginAddTask} style={styles.chip}>
                   {WIND_DOWN_FLOW_COPY.addNewTask}
                 </button>
-              </div>
-            ) : null}
-
-            {phase === 'prep_after_task' && !typing ? (
-              <div style={styles.chipWrap}>
                 <button type="button" onClick={beginAddAnotherTask} style={styles.chip}>
                   {WIND_DOWN_FLOW_COPY.addAnotherTask}
                 </button>
-                <button type="button" onClick={finishTaskList} style={styles.chip}>
+                <button
+                  type="button"
+                  disabled={!hasTomorrowTasks}
+                  onClick={finishTaskList}
+                  style={{
+                    ...styles.chip,
+                    ...(!hasTomorrowTasks ? styles.chipDisabled : {}),
+                  }}
+                >
                   {WIND_DOWN_FLOW_COPY.taskListFinished}
                 </button>
               </div>
@@ -792,6 +815,15 @@ const styles: Record<string, CSSProperties> = {
     color: '#007aff',
     cursor: 'pointer',
     lineHeight: 1.4,
+  },
+  chipSelected: {
+    background: '#e0f2fe',
+    borderColor: '#0284c7',
+    color: '#0369a1',
+  },
+  chipDisabled: {
+    opacity: 0.4,
+    cursor: 'not-allowed',
   },
   errorText: {
     margin: 0,
