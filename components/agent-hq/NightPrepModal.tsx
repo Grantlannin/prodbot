@@ -346,7 +346,7 @@ export default function NightPrepModal() {
     if (typing) return;
     setDraft('');
     draftRef.current = '';
-    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.addAnotherTask });
+    setChooseProjectError(false);
     fieldsRef.current.projectMode = null;
     fieldsRef.current.projectId = '';
     fieldsRef.current.projectName = '';
@@ -359,6 +359,12 @@ export default function NightPrepModal() {
       taskId: '',
       taskText: '',
     });
+    const options = projects.filter(p => p.name.trim());
+    if (options.length > 0) {
+      setNightPrepPhase('prep_project_pick');
+      return;
+    }
+    setChooseProjectError(true);
     setNightPrepPhase('prep_project_mode');
   };
 
@@ -379,7 +385,6 @@ export default function NightPrepModal() {
     setChooseProjectError(false);
     fieldsRef.current.projectMode = 'choose';
     setNightPrepFields({ projectMode: 'choose' });
-    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.chooseProject });
     setNightPrepPhase('prep_project_pick');
   };
 
@@ -590,6 +595,11 @@ export default function NightPrepModal() {
                     {project.name.trim()}
                   </button>
                 ))}
+                {hasTomorrowTasks ? (
+                  <button type="button" onClick={finishTaskList} style={styles.chip}>
+                    {WIND_DOWN_FLOW_COPY.taskListFinished}
+                  </button>
+                ) : null}
               </div>
             ) : null}
 
