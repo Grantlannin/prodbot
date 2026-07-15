@@ -1,5 +1,6 @@
 import type { WindDownItem } from './windDownItems';
 import { windDownItemLabel } from './windDownItems';
+import type { NightPrepTomorrowTask } from './storage';
 
 export interface NightPrepChatMessage {
   id: string;
@@ -21,10 +22,13 @@ export const WIND_DOWN_FLOW_COPY = {
     'great. Context added. Now let\'s prep your tasks/work for tomorrow, so you can begin quickly & clearly',
   qFirstBlockTime: 'roughly what time are you putting in your 1st work block tomorrow?',
   qWorkLocation: 'where are you going to be doing this work?',
-  qWhatWorkingOn: "Great. Now let's figure out what you're working on.",
+  qWhatWorkingOn:
+    'Great. Now let\'s figure out what you\'re working on. For the "perfect task list", we can use a 2-question seqeunce. You can first ask yourself "what, if finished tomorrow, would make me feel like it was a productive day?". The 2nd question is "do i have high confidence that i can finish these?". The best task lists make you feel good, and are manageable.',
   chooseProject: 'choose project',
   inputProject: 'input project',
   addNewTask: 'add new task',
+  addAnotherTask: 'add another task',
+  taskListFinished: 'task list finished',
   doneSeeTomorrow: (time: string) => `great. See you tomorrow around ${time}.`,
   clearChat: 'clear chat',
   projectNamePlaceholder: 'Project name',
@@ -45,6 +49,7 @@ export type NightPrepFlowPhase =
   | 'prep_project_name'
   | 'prep_task_pick'
   | 'prep_task_name'
+  | 'prep_after_task'
   | 'complete';
 
 export type NightPrepProjectMode = 'choose' | 'input' | null;
@@ -61,6 +66,7 @@ export interface NightPrepFlowState {
   projectName: string;
   taskId: string;
   taskText: string;
+  tomorrowTasks: NightPrepTomorrowTask[];
 }
 
 export { windDownItemLabel };

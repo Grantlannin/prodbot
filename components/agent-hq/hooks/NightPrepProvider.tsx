@@ -32,6 +32,7 @@ function initialFlowState(items: WindDownItem[]): NightPrepFlowState {
     projectName: '',
     taskId: '',
     taskText: '',
+    tomorrowTasks: [],
   };
 }
 
@@ -54,6 +55,7 @@ interface NightPrepContextValue {
         | 'projectName'
         | 'taskId'
         | 'taskText'
+        | 'tomorrowTasks'
       >
     >
   ) => void;
@@ -96,6 +98,7 @@ export function NightPrepProvider({ children }: { children: ReactNode }) {
           | 'projectName'
           | 'taskId'
           | 'taskText'
+          | 'tomorrowTasks'
         >
       >
     ) => {

@@ -3,42 +3,72 @@ import { localDateKey } from '../eodReports';
 
 export const NIGHT_PREP_PLAN_KEY = 'agentHQ_nightPrepPlan';
 
+export interface NightPrepTomorrowTask {
+  projectId: string;
+  projectName: string;
+  taskId: string;
+  taskText: string;
+}
+
 export interface NightPrepTomorrowPlan {
   prepDateKey: string;
   targetDateKey: string;
   firstWorkBlockTime: string;
   firstWorkBlockMinutes: number | null;
   workLocation: string;
-  projectId: string;
-  projectName: string;
-  taskId: string;
-  taskText: string;
+  tasks: NightPrepTomorrowTask[];
   updatedAt: number;
   /** Dev/testing: plan was promoted to today so morning flow can be tested immediately */
   testMode?: boolean;
+  /** @deprecated migrated to tasks[] */
+  projectId?: string;
+  projectName?: string;
+  taskId?: string;
+  taskText?: string;
+}
+
+export function normalizeNightPrepPlan(
+  plan: NightPrepTomorrowPlan | null
+): NightPrepTomorrowPlan | null {
+  if (!plan) return null;
+  if (plan.tasks?.length) return plan;
+  if (plan.taskText?.trim() && plan.projectId && plan.taskId) {
+    return {
+      ...plan,
+      tasks: [
+        {
+          projectId: plan.projectId,
+          projectName: plan.projectName?.trim() || '',
+          taskId: plan.taskId,
+          taskText: plan.taskText.trim(),
+        },
+      ],
+    };
+  }
+  return { ...plan, tasks: [] };
 }
 
 export function buildNightPrepPlan(fields: {
   firstWorkBlockTime: string;
   firstWorkBlockMinutes: number | null;
   workLocation: string;
-  projectId: string;
-  projectName: string;
-  taskId: string;
-  taskText: string;
+  tasks: NightPrepTomorrowTask[];
 }): NightPrepTomorrowPlan {
   const now = Date.now();
+  const tasks = fields.tasks.filter(t => t.taskText.trim());
+  const primary = tasks[0];
   return {
     prepDateKey: localDateKey(now),
     targetDateKey: tomorrowDateKey(now),
     firstWorkBlockTime: fields.firstWorkBlockTime.trim(),
     firstWorkBlockMinutes: fields.firstWorkBlockMinutes,
     workLocation: fields.workLocation.trim(),
-    projectId: fields.projectId,
-    projectName: fields.projectName.trim(),
-    taskId: fields.taskId,
-    taskText: fields.taskText.trim(),
+    tasks,
     updatedAt: now,
+    projectId: primary?.projectId,
+    projectName: primary?.projectName,
+    taskId: primary?.taskId,
+    taskText: primary?.taskText,
   };
 }
 
@@ -47,17 +77,20 @@ export function readNightPrepPlan(): NightPrepTomorrowPlan | null {
   try {
     const raw = localStorage.getItem(NIGHT_PREP_PLAN_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as NightPrepTomorrowPlan;
+    return normalizeNightPrepPlan(JSON.parse(raw) as NightPrepTomorrowPlan);
   } catch {
     return null;
   }
 }
 
 export function formatNightPrepPlanSummary(plan: NightPrepTomorrowPlan): string {
-  const parts = [plan.taskText.trim()];
-  if (plan.workLocation.trim()) parts.push(`@ ${plan.workLocation.trim()}`);
-  if (plan.firstWorkBlockTime.trim()) parts.push(`(${plan.firstWorkBlockTime.trim()})`);
-  return parts.join(' ');
+  const normalized = normalizeNightPrepPlan(plan);
+  if (!normalized) return '';
+  const taskPart = normalized.tasks.map(t => t.taskText.trim()).filter(Boolean).join(' · ');
+  const parts = [taskPart];
+  if (normalized.workLocation.trim()) parts.push(`@ ${normalized.workLocation.trim()}`);
+  if (normalized.firstWorkBlockTime.trim()) parts.push(`(${normalized.firstWorkBlockTime.trim()})`);
+  return parts.filter(Boolean).join(' ');
 }
 
 export function isNightPrepPlanActiveToday(
@@ -73,8 +106,9 @@ export function getActiveNightPrepPlan(
   plan: NightPrepTomorrowPlan | null,
   now = Date.now()
 ): NightPrepTomorrowPlan | null {
-  if (!plan) return null;
-  return isNightPrepPlanActiveToday(plan, now) ? plan : null;
+  const normalized = normalizeNightPrepPlan(plan);
+  if (!normalized) return null;
+  return isNightPrepPlanActiveToday(normalized, now) ? normalized : null;
 }
 
 export function promoteNightPrepPlanToToday(
@@ -82,7 +116,7 @@ export function promoteNightPrepPlanToToday(
   now = Date.now()
 ): NightPrepTomorrowPlan {
   return {
-    ...plan,
+    ...normalizeNightPrepPlan(plan)!,
     targetDateKey: localDateKey(now),
     testMode: true,
     updatedAt: now,

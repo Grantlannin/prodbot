@@ -29,6 +29,7 @@ import {
   NIGHT_PREP_PLAN_KEY,
   promoteNightPrepPlanToToday,
   type NightPrepTomorrowPlan,
+  type NightPrepTomorrowTask,
 } from './nightPrep/storage';
 import { parseFlexibleTime } from './stuckHelp/dailyStructureUtils';
 
@@ -87,6 +88,7 @@ export default function NightPrepModal() {
     taskId: '',
     taskText: '',
     windDownIndex: 0,
+    tomorrowTasks: [] as NightPrepTomorrowTask[],
   });
 
   const phase = flow?.phase;
@@ -293,27 +295,62 @@ export default function NightPrepModal() {
       fieldsRef.current.taskId = createdTaskId;
       fieldsRef.current.taskText = text;
       setNightPrepFields({ taskId: createdTaskId, taskText: text });
-      appendNightPrepMessages({ role: 'user', text });
-      finishNightPrep(text);
+      appendTomorrowTask({
+        projectId,
+        projectName: (flow.projectName || fieldsRef.current.projectName).trim(),
+        taskId: createdTaskId,
+        taskText: text,
+      });
       setDraft('');
       draftRef.current = '';
     }
   };
 
-  const finishNightPrep = (taskText: string) => {
+  const appendTomorrowTask = (task: NightPrepTomorrowTask) => {
+    const next = [...(flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks), task];
+    fieldsRef.current.tomorrowTasks = next;
+    setNightPrepFields({ tomorrowTasks: next });
+    appendNightPrepMessages({ role: 'user', text: task.taskText });
+    setNightPrepPhase('prep_after_task');
+  };
+
+  const finishNightPrep = () => {
+    const tasks = flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+    if (!tasks.length) return;
     const time = flow.firstWorkBlockTime || fieldsRef.current.firstWorkBlockTime;
     const plan = buildNightPrepPlan({
       firstWorkBlockTime: time,
       firstWorkBlockMinutes: parseFlexibleTime(time),
       workLocation: flow.workLocation || fieldsRef.current.workLocation,
-      projectId: flow.projectId || fieldsRef.current.projectId,
-      projectName: flow.projectName || fieldsRef.current.projectName,
-      taskId: flow.taskId || fieldsRef.current.taskId,
-      taskText,
+      tasks,
     });
     setNightPrepPlan(plan);
     sendBotReply(WIND_DOWN_FLOW_COPY.doneSeeTomorrow(time));
     setNightPrepPhase('complete');
+  };
+
+  const finishTaskList = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.taskListFinished });
+    finishNightPrep();
+  };
+
+  const beginAddAnotherTask = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.addAnotherTask });
+    fieldsRef.current.projectMode = null;
+    fieldsRef.current.projectId = '';
+    fieldsRef.current.projectName = '';
+    fieldsRef.current.taskId = '';
+    fieldsRef.current.taskText = '';
+    setNightPrepFields({
+      projectMode: null,
+      projectId: '',
+      projectName: '',
+      taskId: '',
+      taskText: '',
+    });
+    setNightPrepPhase('prep_project_mode');
   };
 
   const usePlanForToday = () => {
@@ -366,11 +403,17 @@ export default function NightPrepModal() {
 
   const selectTask = (taskText: string, taskId: string) => {
     if (typing) return;
+    const projectId = flow.projectId || fieldsRef.current.projectId;
+    const projectName = flow.projectName || fieldsRef.current.projectName;
     fieldsRef.current.taskId = taskId;
     fieldsRef.current.taskText = taskText;
     setNightPrepFields({ taskId, taskText });
-    appendNightPrepMessages({ role: 'user', text: taskText });
-    finishNightPrep(taskText);
+    appendTomorrowTask({
+      projectId,
+      projectName,
+      taskId,
+      taskText,
+    });
   };
 
   const beginAddTask = () => {
@@ -406,6 +449,7 @@ export default function NightPrepModal() {
       taskId: '',
       taskText: '',
       windDownIndex: 0,
+      tomorrowTasks: [],
     };
     setChooseProjectError(false);
     openedRef.current = false;
@@ -543,6 +587,17 @@ export default function NightPrepModal() {
                 ))}
                 <button type="button" onClick={beginAddTask} style={styles.chip}>
                   {WIND_DOWN_FLOW_COPY.addNewTask}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_after_task' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={beginAddAnotherTask} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.addAnotherTask}
+                </button>
+                <button type="button" onClick={finishTaskList} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.taskListFinished}
                 </button>
               </div>
             ) : null}
