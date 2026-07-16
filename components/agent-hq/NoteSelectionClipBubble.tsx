@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -41,22 +41,18 @@ function readSelection(el: HTMLTextAreaElement) {
   return { from, to, picked: el.value.slice(from, to).trim() };
 }
 
-function selectionBubblePosition(el: HTMLTextAreaElement): { left: number; top: number } | null {
+function chipAnchor(el: HTMLTextAreaElement): { left: number; top: number } | null {
   const { picked } = readSelection(el);
   if (!picked) return null;
 
-  const style = getComputedStyle(el);
-  const lineHeight = Number.parseFloat(style.lineHeight) || (Number.parseFloat(style.fontSize) || 14) * 1.6;
-  const paddingTop = Number.parseFloat(style.paddingTop) || 16;
-  const paddingLeft = Number.parseFloat(style.paddingLeft) || 16;
-  const linesBefore = el.value.slice(0, Math.max(el.selectionStart, el.selectionEnd)).split('\n').length;
-  const relativeTop = paddingTop + (linesBefore - 1) * lineHeight - el.scrollTop;
   const rect = el.getBoundingClientRect();
+  const chipSize = 26;
+  const inset = 10;
 
-  const left = Math.max(12, Math.min(window.innerWidth - 272, rect.left + paddingLeft));
-  const top = Math.max(12, Math.min(window.innerHeight - 160, rect.top + relativeTop));
-
-  return { left, top };
+  return {
+    left: rect.right - chipSize - inset,
+    top: rect.top + inset,
+  };
 }
 
 export function useNoteClipBubble({
@@ -70,9 +66,11 @@ export function useNoteClipBubble({
   const projects = projectsProp ?? storedProjects;
   const setProjects = setProjectsProp ?? setStoredProjects;
 
-  const [bubble, setBubble] = useState<{ left: number; top: number } | null>(null);
+  const [anchor, setAnchor] = useState<{ left: number; top: number } | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const [projectId, setProjectId] = useState('');
   const [sectionKey, setSectionKey] = useState('project');
+  const selectionRef = useRef<{ from: number; to: number } | null>(null);
 
   const sortedProjects = useMemo(() => [...projects].sort(byUpdatedDesc), [projects]);
   const hasProjects = sortedProjects.length > 0;
@@ -91,41 +89,58 @@ export function useNoteClipBubble({
     ? sectionKey
     : sectionOptions[0]?.key ?? 'project';
 
+  const clearClipUi = useCallback(() => {
+    setAnchor(null);
+    setExpanded(false);
+    selectionRef.current = null;
+  }, []);
+
   const updateBubble = useCallback(() => {
     const el = textareaRef.current;
     if (!el) {
-      setBubble(null);
+      clearClipUi();
       return;
     }
-    setBubble(selectionBubblePosition(el));
-  }, [textareaRef]);
 
-  const hideBubbleIfNeeded = useCallback(() => {
-    window.setTimeout(() => {
-      const active = document.activeElement;
-      const el = textareaRef.current;
-      if (active === el) return;
-      if (active?.closest('[data-note-clip-bubble]')) return;
-      setBubble(null);
-    }, 0);
+    const { from, to, picked } = readSelection(el);
+    if (!picked) {
+      clearClipUi();
+      return;
+    }
+
+    selectionRef.current = { from, to };
+    setAnchor(chipAnchor(el));
+  }, [clearClipUi, textareaRef]);
+
+  const openExpanded = useCallback(() => {
+    const el = textareaRef.current;
+    if (el) {
+      const { from, to, picked } = readSelection(el);
+      if (picked) selectionRef.current = { from, to };
+    }
+    setExpanded(true);
   }, [textareaRef]);
 
   const addSelection = useCallback(() => {
     const el = textareaRef.current;
     if (!el || !selectedProject) return;
 
-    const { from, to, picked } = readSelection(el);
+    const saved = selectionRef.current;
+    const from = saved?.from ?? Math.min(el.selectionStart, el.selectionEnd);
+    const to = saved?.to ?? Math.max(el.selectionStart, el.selectionEnd);
+    const picked = noteText.slice(from, to).trim();
     if (!picked) return;
 
     const section = sectionOptions.find(o => o.key === activeSectionKey);
     if (!section) return;
 
-    const entry = formatNoteClipEntry(sourceLabel, noteText.slice(from, to));
+    const entry = formatNoteClipEntry(sourceLabel, picked);
     setProjects(prev => applyNoteClip(prev, section.target, entry));
-    setBubble(null);
+    clearClipUi();
     el.focus();
   }, [
     activeSectionKey,
+    clearClipUi,
     noteText,
     sectionOptions,
     selectedProject,
@@ -135,7 +150,7 @@ export function useNoteClipBubble({
   ]);
 
   useEffect(() => {
-    if (!bubble) return;
+    if (!anchor) return;
     const onScroll = () => updateBubble();
     window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', onScroll);
@@ -143,7 +158,18 @@ export function useNoteClipBubble({
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onScroll);
     };
-  }, [bubble, updateBubble]);
+  }, [anchor, updateBubble]);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const onDocDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-note-clip-ui]')) return;
+      setExpanded(false);
+    };
+    document.addEventListener('mousedown', onDocDown);
+    return () => document.removeEventListener('mousedown', onDocDown);
+  }, [expanded]);
 
   const textareaHandlers = {
     onPointerUp: updateBubble,
@@ -156,53 +182,88 @@ export function useNoteClipBubble({
       if (readSelection(el).picked) {
         e.preventDefault();
         updateBubble();
+        openExpanded();
       }
     },
-    onBlur: hideBubbleIfNeeded,
   };
 
+  const panelLeft = anchor ? Math.min(anchor.left, window.innerWidth - 268) : 0;
+  const panelTop = anchor ? anchor.top + 32 : 0;
+
   const bubbleNode =
-    bubble && typeof document !== 'undefined'
+    anchor && typeof document !== 'undefined'
       ? createPortal(
-          <div
-            data-note-clip-bubble
-            style={{ ...styles.bubble, left: bubble.left, top: bubble.top }}
-            onMouseDown={e => e.preventDefault()}
-          >
-            <div style={styles.bubbleTitle}>Add to project</div>
-            {hasProjects ? (
-              <>
-                <select
-                  value={selectedProject?.id ?? ''}
-                  onChange={e => {
-                    setProjectId(e.target.value);
-                    setSectionKey('project');
-                  }}
-                  style={styles.select}
-                >
-                  {sortedProjects.map(project => (
-                    <option key={project.id} value={project.id}>
-                      {projectDisplayName(project)}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={activeSectionKey}
-                  onChange={e => setSectionKey(e.target.value)}
-                  style={styles.select}
-                >
-                  {sectionOptions.map(option => (
-                    <option key={option.key} value={option.key}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <button type="button" onClick={addSelection} style={styles.btn}>
-                  Add
-                </button>
-              </>
+          <div data-note-clip-ui>
+            {!expanded ? (
+              <button
+                type="button"
+                title="Add to project"
+                aria-label="Add selection to project"
+                style={{ ...styles.chip, left: anchor.left, top: anchor.top }}
+                onMouseDown={e => {
+                  e.preventDefault();
+                  openExpanded();
+                }}
+              >
+                +
+              </button>
             ) : (
-              <p style={styles.emptyHint}>Create a project in the Projects card first.</p>
+              <div
+                data-note-clip-ui
+                style={{ ...styles.panel, left: panelLeft, top: panelTop }}
+              >
+                <div style={styles.panelHeader}>
+                  <span style={styles.panelTitle}>Add to</span>
+                  <button
+                    type="button"
+                    onClick={() => setExpanded(false)}
+                    style={styles.closeBtn}
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+                {hasProjects ? (
+                  <>
+                    <label style={styles.fieldLabel}>
+                      Project
+                      <select
+                        value={selectedProject?.id ?? ''}
+                        onChange={e => {
+                          setProjectId(e.target.value);
+                          setSectionKey('project');
+                        }}
+                        style={styles.select}
+                      >
+                        {sortedProjects.map(project => (
+                          <option key={project.id} value={project.id}>
+                            {projectDisplayName(project)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label style={styles.fieldLabel}>
+                      Section
+                      <select
+                        value={activeSectionKey}
+                        onChange={e => setSectionKey(e.target.value)}
+                        style={styles.select}
+                      >
+                        {sectionOptions.map(option => (
+                          <option key={option.key} value={option.key}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button type="button" onClick={addSelection} style={styles.btn}>
+                      Add
+                    </button>
+                  </>
+                ) : (
+                  <p style={styles.emptyHint}>Create a project in the Projects card first.</p>
+                )}
+              </div>
             )}
           </div>,
           document.body
@@ -213,43 +274,89 @@ export function useNoteClipBubble({
 }
 
 const styles: Record<string, CSSProperties> = {
-  bubble: {
+  chip: {
+    position: 'fixed',
+    width: 26,
+    height: 26,
+    borderRadius: 999,
+    border: '1px solid #cbd5e1',
+    background: '#0f172a',
+    color: '#fff',
+    fontSize: 16,
+    lineHeight: 1,
+    fontWeight: 500,
+    fontFamily: font,
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(15,23,42,0.18)',
+    zIndex: 10050,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+  },
+  panel: {
     position: 'fixed',
     display: 'flex',
     flexDirection: 'column',
-    gap: 6,
+    gap: 8,
     background: '#ffffff',
     border: '1px solid #cbd5e1',
     borderRadius: 10,
     boxShadow: '0 10px 24px rgba(15,23,42,0.14)',
-    padding: 8,
+    padding: 10,
     zIndex: 10050,
-    width: 256,
+    width: 248,
   },
-  bubbleTitle: {
+  panelHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  panelTitle: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#0f172a',
+    fontFamily: font,
+  },
+  closeBtn: {
+    border: 'none',
+    background: 'transparent',
+    color: '#94a3b8',
+    fontSize: 18,
+    lineHeight: 1,
+    cursor: 'pointer',
+    padding: 0,
+    width: 20,
+    height: 20,
+  },
+  fieldLabel: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
     fontSize: 11,
     fontWeight: 600,
     color: '#64748b',
     fontFamily: font,
-    letterSpacing: '0.02em',
-    textTransform: 'uppercase',
   },
   select: {
     border: '1px solid #cbd5e1',
     borderRadius: 6,
-    padding: '6px 8px',
+    padding: '7px 8px',
     fontSize: 12,
+    fontWeight: 400,
     fontFamily: font,
     color: '#334155',
     background: '#fff',
     width: '100%',
+    cursor: 'pointer',
   },
   btn: {
     background: '#0f172a',
     color: '#fff',
     border: 'none',
     borderRadius: 6,
-    padding: '7px 10px',
+    padding: '8px 10px',
     fontSize: 12,
     fontWeight: 600,
     fontFamily: font,
