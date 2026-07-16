@@ -28,7 +28,6 @@ export const MORNING_FLOW_COPY = {
   testModeOn: 'Morning flow test mode on — button stays visible and you can run it repeatedly.',
   headerTitle: 'begin work',
   clearChat: 'clear chat',
-  introGreeting: (name: string) => `hey ${name}. Let's begin your work day.`,
   introTaskList: (lines: string) =>
     `This is your task list for the day based on what you prepared:\n\n${lines}\n\nPlease choose the one you'd like to begin with.`,
   phoneConfirm:

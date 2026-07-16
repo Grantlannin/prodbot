@@ -22,6 +22,7 @@ import {
   MORNING_FLOW_USED_KEY,
 } from './morningFlow/storage';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
+import { welcomeLabel } from './userProfile';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const BOT_TYPING_MS = 1300;
@@ -36,11 +37,6 @@ function TypingBubble() {
       </div>
     </div>
   );
-}
-
-function displayNameForGreeting(displayName: string): string {
-  const name = displayName.trim();
-  return name || 'there';
 }
 
 export default function MorningFlowModal() {
@@ -96,10 +92,9 @@ export default function MorningFlowModal() {
     openedRef.current = true;
     clearTimers();
     setTyping(true);
-    const name = displayNameForGreeting(profile.displayName);
     const taskLines = formatMorningTaskList(tasks);
     schedule(() => {
-      appendMorningFlowMessages({ role: 'bot', text: MORNING_FLOW_COPY.introGreeting(name) });
+      appendMorningFlowMessages({ role: 'bot', text: welcomeLabel(profile.displayName) });
       schedule(() => {
         appendMorningFlowMessages({
           role: 'bot',
