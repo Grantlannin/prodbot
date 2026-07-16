@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
+import { editableHtmlToNoteText, noteTextToEditableHtml } from './noteFormatUtils';
 
 const font =
   '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -22,7 +23,8 @@ export default function AppleNotesEditorModal({
   onChange,
   onClose,
 }: AppleNotesEditorModalProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const syncedValueRef = useRef('');
 
   useEffect(() => {
     if (!open) return;
@@ -34,10 +36,21 @@ export default function AppleNotesEditorModal({
   }, [open, onClose]);
 
   useEffect(() => {
-    if (!open) return;
-    const timer = window.setTimeout(() => textareaRef.current?.focus(), 0);
+    if (!open || !editorRef.current) return;
+    if (syncedValueRef.current === value) return;
+    editorRef.current.innerHTML = noteTextToEditableHtml(value);
+    syncedValueRef.current = value;
+    const timer = window.setTimeout(() => editorRef.current?.focus(), 0);
     return () => window.clearTimeout(timer);
-  }, [open]);
+  }, [open, value]);
+
+  const handleInput = () => {
+    const el = editorRef.current;
+    if (!el) return;
+    const next = editableHtmlToNoteText(el);
+    syncedValueRef.current = next;
+    onChange(next);
+  };
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -56,12 +69,13 @@ export default function AppleNotesEditorModal({
             Done
           </button>
         </div>
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder="Start typing…"
-          style={styles.textarea}
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={handleInput}
+          data-placeholder="Start typing…"
+          style={styles.editor}
         />
       </div>
     </div>,
@@ -121,19 +135,21 @@ const styles: Record<string, CSSProperties> = {
     padding: '4px 0',
     flexShrink: 0,
   },
-  textarea: {
+  editor: {
     flex: 1,
     width: '100%',
     minHeight: 0,
     padding: 16,
     border: 'none',
     outline: 'none',
-    resize: 'none',
+    overflowY: 'auto',
     background: '#fff',
     color: '#0f172a',
     fontFamily: font,
     fontSize: 14,
     lineHeight: 1.6,
     boxSizing: 'border-box',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
   },
 };

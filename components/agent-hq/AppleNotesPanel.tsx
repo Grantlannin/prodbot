@@ -79,20 +79,10 @@ export default function AppleNotesPanel() {
 
   const selected = useMemo(() => notes.find(n => n.id === selectedId) ?? null, [notes, selectedId]);
 
-  const clipSourceLabel = useMemo(() => {
-    if (!selected) return 'note';
-    const title = firstNoteLine(selected.content);
-    const when = new Date(selected.updatedAt).toLocaleDateString([], {
-      month: 'short',
-      day: 'numeric',
-    });
-    return `note · ${title} · ${when}`;
-  }, [selected]);
-
   const { textareaHandlers: clipHandlers, bubbleNode: clipBubble } = useNoteClipBubble({
     textareaRef,
     noteText: selected?.content ?? '',
-    sourceLabel: clipSourceLabel,
+    clipDateMs: selected?.updatedAt,
     projects,
     setProjects,
   });

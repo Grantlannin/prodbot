@@ -58,7 +58,7 @@ type SetProjects = (
 interface UseNoteClipBubbleOptions {
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   noteText: string;
-  sourceLabel: string;
+  clipDateMs?: number;
   projects?: ProjectBoard[];
   setProjects?: SetProjects;
   /** PiP / secondary window — portal + coords must use this document */
@@ -154,7 +154,7 @@ function chipAnchor(
 export function useNoteClipBubble({
   textareaRef,
   noteText,
-  sourceLabel,
+  clipDateMs,
   projects: projectsProp,
   setProjects: setProjectsProp,
   portalDocument,
@@ -171,6 +171,8 @@ export function useNoteClipBubble({
   const [expanded, setExpanded] = useState(false);
   const [projectId, setProjectId] = useState('');
   const [sectionKey, setSectionKey] = useState('project');
+  const [addContext, setAddContext] = useState(false);
+  const [contextText, setContextText] = useState('');
   const selectionRef = useRef<{ from: number; to: number } | null>(null);
   const expandedRef = useRef(false);
   expandedRef.current = expanded;
@@ -195,6 +197,8 @@ export function useNoteClipBubble({
   const clearClipUi = useCallback(() => {
     setAnchor(null);
     setExpanded(false);
+    setAddContext(false);
+    setContextText('');
     selectionRef.current = null;
   }, []);
 
@@ -239,18 +243,24 @@ export function useNoteClipBubble({
     const section = sectionOptions.find(o => o.key === activeSectionKey);
     if (!section) return;
 
-    const entry = formatNoteClipEntry(sourceLabel, picked);
+    const entry = formatNoteClipEntry({
+      text: picked,
+      dateMs: clipDateMs,
+      context: addContext ? contextText : undefined,
+    });
     setProjects(prev => applyNoteClip(prev, section.target, entry));
     clearClipUi();
     el.focus();
   }, [
     activeSectionKey,
+    addContext,
     clearClipUi,
+    clipDateMs,
+    contextText,
     noteText,
     sectionOptions,
     selectedProject,
     setProjects,
-    sourceLabel,
     textareaRef,
   ]);
 
@@ -380,6 +390,23 @@ export function useNoteClipBubble({
                         ))}
                       </select>
                     </label>
+                    <label style={styles.checkRow}>
+                      <input
+                        type="checkbox"
+                        checked={addContext}
+                        onChange={e => setAddContext(e.target.checked)}
+                      />
+                      Add context
+                    </label>
+                    {addContext ? (
+                      <input
+                        type="text"
+                        value={contextText}
+                        onChange={e => setContextText(e.target.value)}
+                        placeholder="Short label for this clip"
+                        style={styles.textInput}
+                      />
+                    ) : null}
                     <button type="button" onClick={addSelection} style={styles.btn}>
                       Add
                     </button>
@@ -478,6 +505,27 @@ const styles: Record<string, CSSProperties> = {
     background: '#fff',
     width: '100%',
     cursor: 'pointer',
+  },
+  checkRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 12,
+    fontWeight: 500,
+    color: '#334155',
+    fontFamily: font,
+    cursor: 'pointer',
+  },
+  textInput: {
+    border: '1px solid #cbd5e1',
+    borderRadius: 6,
+    padding: '7px 8px',
+    fontSize: 12,
+    fontFamily: font,
+    color: '#334155',
+    background: '#fff',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   btn: {
     background: '#0f172a',

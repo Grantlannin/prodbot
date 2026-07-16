@@ -6,10 +6,31 @@ export type NoteClipTarget =
   | { kind: 'task'; projectId: string; taskId: string }
   | { kind: 'subTask'; projectId: string; taskId: string; subTaskId: string };
 
-export function formatNoteClipEntry(sourceLabel: string, text: string): string {
-  const trimmed = text.trim();
-  const stamp = `[From ${sourceLabel.trim()}]`;
-  return `${stamp}\n${trimmed}`;
+export function formatClipDateLabel(ts: number): string {
+  return new Date(ts).toLocaleDateString(undefined, {
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+function formatClipBoldLine(line: string): string {
+  return `**${line.trim()}**`;
+}
+
+export function formatNoteClipEntry(options: {
+  text: string;
+  dateMs?: number;
+  context?: string;
+}): string {
+  const trimmed = options.text.trim();
+  const dateLabel = formatClipDateLabel(options.dateMs ?? Date.now());
+  const lines = [formatClipBoldLine(dateLabel)];
+
+  const context = options.context?.trim();
+  if (context) lines.push(formatClipBoldLine(context));
+
+  lines.push(trimmed);
+  return lines.join('\n');
 }
 
 export function applyNoteClip(
