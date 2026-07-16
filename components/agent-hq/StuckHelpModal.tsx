@@ -607,6 +607,7 @@ export default function StuckHelpModal() {
 
   const sendStartingYes = () => {
     if (!startingPhase || !startingFlow) return;
+    if (busy) return;
 
     if (startingPhase === 'await_prep_yes') {
       if (typing) return;
@@ -619,7 +620,7 @@ export default function StuckHelpModal() {
     }
 
     if (startingPhase === 'await_chunk_yes') {
-      if (typing || busy) return;
+      if (typing) return;
       const task = (startingFlow.importantTask || flowFieldsRef.current.importantTask).trim();
       const chunks = (startingFlow.chunks || flowFieldsRef.current.chunks).trim();
       if (!task || !chunks) return;
@@ -891,7 +892,8 @@ export default function StuckHelpModal() {
 
               {showStartingYes ? (
                 <div style={styles.chipWrap}>
-                  <button type="button" disabled={busy} onClick={sendStartingYes} style={styles.chip}>
+                  {busy ? <p style={styles.errorText}>{STARTING_FLOW_COPY.busySession}</p> : null}
+                  <button type="button" onClick={sendStartingYes} style={styles.chip}>
                     {STARTING_FLOW_COPY.yesBegin}
                   </button>
                 </div>

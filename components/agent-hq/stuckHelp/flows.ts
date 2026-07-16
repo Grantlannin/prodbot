@@ -55,6 +55,7 @@ export const STARTING_FLOW_COPY = {
   chunkWorkReady:
     'great. Now let\'s only focus on chunk #1 & put in a good 5 minutes on it. Completing chunk #1 (or moving the ball forward) is tremendously better than nothing, especially since you\'ve already prepped for it. Can you commit to just doing 5 minutes on the 1st chunk of this task right now? Remember, there is no other higher ROI activity for your progress that you could be doing right now. This is it. This is the real sh*t that will get you what you want. Everyone else quits right here, and doing this right now, in these moments, is your competitive advantage. Ready to put in 5 good minutes on this chunk?',
   yesBegin: 'YES',
+  busySession: 'Please stop your current session before starting a new one.',
   prepTimerLabel: 'prep timer',
   donePrepping: 'done prepping',
   prepStopConfirm: 'do you want to stop the prep process?',
