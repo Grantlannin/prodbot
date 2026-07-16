@@ -737,23 +737,16 @@ export default function StuckHelpModal() {
               ✕
             </button>
             <div style={styles.optionList}>
-              {STUCK_HELP_OPTIONS.map(option => {
-                const available = option.id === 'starting' || option.id === 'organizing' || option.id === 'structure';
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    disabled={!available}
-                    onClick={() => pickPath(option.id)}
-                    style={{
-                      ...styles.optionBtn,
-                      ...(!available ? styles.optionBtnDisabled : {}),
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
+              {STUCK_HELP_OPTIONS.map(option => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => pickPath(option.id)}
+                  style={styles.optionBtn}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
           </div>
         ) : (

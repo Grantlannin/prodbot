@@ -10,13 +10,6 @@ export type StuckHelpPath =
 export const STUCK_HELP_OPTIONS: { id: StuckHelpPath; label: string }[] = [
   { id: 'starting', label: "I'm having trouble starting" },
   { id: 'organizing', label: 'im having trouble organizing my task list today' },
-  { id: 'structure', label: 'lets quickly build my day' },
-  { id: 'finishing', label: "I'm having trouble finishing & putting this out there" },
-  {
-    id: 'grounding',
-    label:
-      "I'm feeling like I missed my window for the day or the day is too far gone. Help ground me.",
-  },
 ];
 
 export const STUCK_HELP_NAV_BUTTON = "i'm stuck, help me bot";

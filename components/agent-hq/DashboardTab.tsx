@@ -13,7 +13,6 @@ import AppleNotesPanel from './AppleNotesPanel';
 import ProjectsPanel, { addProjectBtnStyle, type ProjectsPanelHandle } from './ProjectsPanel';
 import ProjectProgressBar from './ProjectProgressBar';
 import type { ProjectProgress } from './projectProgress';
-import DayAtGlancePanel from './DayAtGlancePanel';
 import OpenLoopsPanel from './OpenLoopsPanel';
 import NightPrepPanel from './NightPrepPanel';
 import BeginMyDayButton from './BeginMyDayButton';
@@ -307,9 +306,6 @@ export default function DashboardTab({
           <div style={styles.lowerLeft}>
             <DashCard title="Notes" noPad>
               <AppleNotesPanel />
-            </DashCard>
-            <DashCard title="Day at a glance">
-              <DayAtGlancePanel />
             </DashCard>
           </div>
           <DashCard title="Open loops">
