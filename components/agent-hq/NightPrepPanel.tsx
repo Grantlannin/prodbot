@@ -12,6 +12,7 @@ import {
   normalizeNightPrepPlan,
   NIGHT_PREP_PLAN_KEY,
   type NightPrepTomorrowPlan,
+  type NightPrepTomorrowTask,
 } from './nightPrep/storage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -34,11 +35,15 @@ function WindDownMoonIcon() {
 interface NightPrepPanelProps {
   autoStartWindDown?: boolean;
   onAutoStartHandled?: () => void;
+  onStartTask?: (task: NightPrepTomorrowTask) => void;
+  sessionBusy?: boolean;
 }
 
 export default function NightPrepPanel({
   autoStartWindDown = false,
   onAutoStartHandled,
+  onStartTask,
+  sessionBusy = false,
 }: NightPrepPanelProps) {
   const { items: doneTodayItems } = useDoneToday();
   const { getTodayStats } = useWorkTrackerContext();
@@ -90,7 +95,22 @@ export default function NightPrepPanel({
           <div style={styles.planTasks}>
             {planTasks.map(task => (
               <div key={`${task.projectId}-${task.taskId}`} style={styles.planTaskRow}>
-                - {task.taskText.trim()}
+                <span style={styles.planTaskText}>- {task.taskText.trim()}</span>
+                {onStartTask ? (
+                  <button
+                    type="button"
+                    onClick={() => onStartTask(task)}
+                    disabled={sessionBusy}
+                    style={{
+                      ...styles.planTaskStart,
+                      ...(sessionBusy ? styles.planTaskStartDisabled : {}),
+                    }}
+                    aria-label={`Start ${task.taskText.trim()}`}
+                    title={sessionBusy ? 'Stop your current session first' : `Start ${task.taskText.trim()}`}
+                  >
+                    (start)
+                  </button>
+                ) : null}
               </div>
             ))}
           </div>
@@ -171,9 +191,33 @@ const styles: Record<string, CSSProperties> = {
     gap: 4,
   },
   planTaskRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
     fontSize: 12,
     color: '#334155',
     lineHeight: 1.45,
+  },
+  planTaskText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  planTaskStart: {
+    flexShrink: 0,
+    border: 'none',
+    background: 'transparent',
+    padding: 0,
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    color: '#047857',
+    cursor: 'pointer',
+    lineHeight: 1.2,
+  },
+  planTaskStartDisabled: {
+    color: '#94a3b8',
+    cursor: 'not-allowed',
   },
   planTime: {
     marginTop: 10,

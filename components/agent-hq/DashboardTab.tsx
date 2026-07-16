@@ -18,7 +18,9 @@ import NightPrepPanel from './NightPrepPanel';
 import BeginMyDayButton from './BeginMyDayButton';
 import EodReportsCalendar from './EodReportsCalendar';
 import EodSendModal from './EodSendModal';
-import StartWorkModal from './StartWorkModal';
+import StartWorkModal, { type StartWorkPreset } from './StartWorkModal';
+import { sessionLabel } from './quickstartTask';
+import type { NightPrepTomorrowTask } from './nightPrep/storage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -36,6 +38,7 @@ export default function DashboardTab({
   const projectsRef = useRef<ProjectsPanelHandle>(null);
   const [selectedProjectProgress, setSelectedProjectProgress] = useState<ProjectProgress | null>(null);
   const [startWorkOpen, setStartWorkOpen] = useState(false);
+  const [startWorkPreset, setStartWorkPreset] = useState<StartWorkPreset | null>(null);
   const [eodSendOpen, setEodSendOpen] = useState(false);
   const nightPrepRef = useRef<HTMLDivElement>(null);
   const { requestEndSession } = useEndSession();
@@ -82,6 +85,15 @@ export default function DashboardTab({
   const canResumeTimer = hasActiveSession && timerPaused;
 
   const handleStartTimer = () => {
+    setStartWorkPreset(null);
+    setStartWorkOpen(true);
+  };
+
+  const handleStartPlanTask = (task: NightPrepTomorrowTask) => {
+    setStartWorkPreset({
+      label: sessionLabel(task.projectName, task.taskText),
+      taskRef: { projectId: task.projectId, taskId: task.taskId },
+    });
     setStartWorkOpen(true);
   };
 
@@ -142,7 +154,14 @@ export default function DashboardTab({
   return (
     <div style={{ background: '#f8fafc', minHeight: '100%', overflowY: 'auto', fontFamily: font, position: 'relative' }}>
       <BeginMyDayButton />
-      <StartWorkModal open={startWorkOpen} onClose={() => setStartWorkOpen(false)} />
+      <StartWorkModal
+        open={startWorkOpen}
+        onClose={() => {
+          setStartWorkOpen(false);
+          setStartWorkPreset(null);
+        }}
+        preset={startWorkPreset}
+      />
       <EodSendModal
         open={eodSendOpen}
         onClose={() => setEodSendOpen(false)}
@@ -297,6 +316,8 @@ export default function DashboardTab({
               <NightPrepPanel
                 autoStartWindDown={focusNightPrep}
                 onAutoStartHandled={onNightPrepFocused}
+                onStartTask={handleStartPlanTask}
+                sessionBusy={hasActiveSession}
               />
             </DashCard>
           </div>

@@ -21,6 +21,8 @@ interface PendingSession {
   taskRef?: { projectId: string; taskId: string; subTaskId?: string };
 }
 
+export type StartWorkPreset = PendingSession;
+
 interface StartWorkModalProps {
   open: boolean;
   onClose: () => void;
