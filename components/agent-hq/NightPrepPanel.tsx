@@ -8,8 +8,8 @@ import { useNightPrep } from './hooks/NightPrepProvider';
 import { WIND_DOWN_FLOW_COPY } from './nightPrep/flows';
 import { buildWindDownItems } from './nightPrep/windDownItems';
 import {
-  formatNightPrepPlanSummary,
   isNightPrepPlanActiveToday,
+  normalizeNightPrepPlan,
   NIGHT_PREP_PLAN_KEY,
   type NightPrepTomorrowPlan,
 } from './nightPrep/storage';
@@ -57,6 +57,10 @@ export default function NightPrepPanel({
     onAutoStartHandled?.();
   }, [autoStartWindDown, startWindDown, onAutoStartHandled]);
 
+  const normalizedPlan = plan ? normalizeNightPrepPlan(plan) : null;
+  const planTasks = normalizedPlan?.tasks.filter(t => t.taskText.trim()) ?? [];
+  const planTime = normalizedPlan?.firstWorkBlockTime.trim() ?? '';
+
   return (
     <div style={styles.root}>
       <button
@@ -78,10 +82,20 @@ export default function NightPrepPanel({
         </span>
       </button>
 
-      {plan ? (
-        <p style={styles.planSummary}>
-          {isNightPrepPlanActiveToday(plan) ? 'Today' : 'Tomorrow'}: {formatNightPrepPlanSummary(plan)}
-        </p>
+      {normalizedPlan && planTasks.length > 0 ? (
+        <div style={styles.planCard}>
+          <div style={styles.planTitle}>
+            {isNightPrepPlanActiveToday(plan) ? "Today's task list" : "Tomorrow's task list"}
+          </div>
+          <div style={styles.planTasks}>
+            {planTasks.map(task => (
+              <div key={`${task.projectId}-${task.taskId}`} style={styles.planTaskRow}>
+                - {task.taskText.trim()}
+              </div>
+            ))}
+          </div>
+          {planTime ? <div style={styles.planTime}>{planTime}</div> : null}
+        </div>
       ) : null}
     </div>
   );
@@ -138,14 +152,33 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'right',
     flexShrink: 0,
   },
-  planSummary: {
-    margin: 0,
-    fontSize: 12,
-    color: '#0f172a',
-    lineHeight: 1.45,
-    padding: '8px 10px',
+  planCard: {
+    padding: '10px 12px',
     borderRadius: 8,
     background: '#f8fafc',
     border: '1px solid #e2e8f0',
+  },
+  planTitle: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: '#0f172a',
+    lineHeight: 1.35,
+    marginBottom: 8,
+  },
+  planTasks: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+  },
+  planTaskRow: {
+    fontSize: 12,
+    color: '#334155',
+    lineHeight: 1.45,
+  },
+  planTime: {
+    marginTop: 10,
+    fontSize: 12,
+    color: '#64748b',
+    lineHeight: 1.35,
   },
 };
