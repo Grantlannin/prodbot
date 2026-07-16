@@ -105,16 +105,20 @@ export function listNoteClipSections(project: ProjectBoard): NoteClipSectionOpti
   ];
 
   for (const task of project.tasks) {
-    const partLabel = taskLabel(task.text, 'Untitled part');
-    options.push({
-      key: `task:${task.id}`,
-      label: partLabel,
-      tier: 'part',
-      target: { kind: 'task', projectId: project.id, taskId: task.id },
-    });
+    const partText = task.text.trim();
+    const subs = task.subTasks ?? [];
 
-    for (const sub of task.subTasks ?? []) {
-      const subLabel = taskLabel(sub.text, 'Untitled task');
+    if (partText) {
+      options.push({
+        key: `task:${task.id}`,
+        label: partText,
+        tier: 'part',
+        target: { kind: 'task', projectId: project.id, taskId: task.id },
+      });
+    }
+
+    for (const sub of subs) {
+      const subLabel = taskLabel(sub.text, 'Untitled');
       options.push({
         key: `sub:${task.id}:${sub.id}`,
         label: subLabel,
