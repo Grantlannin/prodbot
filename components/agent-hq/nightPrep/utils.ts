@@ -48,23 +48,19 @@ export function resolveDoneItemTaskTargets(
     const project = projects.find(p => p.id === item.projectId);
     if (!project) return [];
 
-    const taskNames =
-      item.detail
-        ?.split('·')
-        .map(s => s.trim())
-        .filter(Boolean) ?? [];
-
-    if (taskNames.length) {
-      const targets: { projectId: string; taskId: string }[] = [];
-      for (const name of taskNames) {
-        const task = project.tasks.find(t => t.text.trim().toLowerCase() === name.toLowerCase());
-        if (task) targets.push({ projectId: item.projectId, taskId: task.id });
-      }
-      return targets;
+    const trimmed = item.text.trim();
+    if (trimmed) {
+      const task = project.tasks.find(t => t.text.trim().toLowerCase() === trimmed.toLowerCase());
+      if (task) return [{ projectId: item.projectId, taskId: task.id }];
     }
 
-    const doneTasks = project.tasks.filter(t => t.done && t.text.trim());
-    return doneTasks.map(t => ({ projectId: item.projectId!, taskId: t.id }));
+    const detail = item.detail?.trim();
+    if (detail && !detail.includes('·')) {
+      const task = project.tasks.find(t => t.text.trim().toLowerCase() === detail.toLowerCase());
+      if (task) return [{ projectId: item.projectId, taskId: task.id }];
+    }
+
+    return [];
   }
 
   const trimmed = item.text.trim().toLowerCase();
@@ -82,15 +78,33 @@ function resolveTrackerTaskTargets(
   projects: ProjectBoard[],
   trackerLabel: string
 ): { projectId: string; taskId: string }[] {
-  const name = trackerLabel.trim().toLowerCase();
-  if (!name) return [];
+  const trimmed = trackerLabel.trim();
+  if (!trimmed) return [];
 
-  const targets: { projectId: string; taskId: string }[] = [];
+  const dash = trimmed.indexOf(' — ');
+  if (dash >= 0) {
+    const partText = trimmed.slice(0, dash).trim();
+    const subText = trimmed.slice(dash + 3).trim();
+    if (!partText) return [];
+
+    for (const project of projects) {
+      const task = project.tasks.find(t => t.text.trim().toLowerCase() === partText.toLowerCase());
+      if (!task) continue;
+      if (subText) {
+        const sub = task.subTasks?.find(s => s.text.trim().toLowerCase() === subText.toLowerCase());
+        if (!sub) continue;
+      }
+      return [{ projectId: project.id, taskId: task.id }];
+    }
+    return [];
+  }
+
+  const name = trimmed.toLowerCase();
   for (const project of projects) {
     const task = project.tasks.find(t => t.text.trim().toLowerCase() === name);
-    if (task) targets.push({ projectId: project.id, taskId: task.id });
+    if (task) return [{ projectId: project.id, taskId: task.id }];
   }
-  return targets;
+  return [];
 }
 
 export function appendWindDownContextToProjects(
@@ -106,25 +120,9 @@ export function appendWindDownContextToProjects(
     return applyNoteToTaskTargets(projects, targets, entry);
   }
 
-  const name = item.label.trim();
-  if (!name) return projects;
-
-  const taskTargets = resolveTrackerTaskTargets(projects, name);
+  const taskTargets = resolveTrackerTaskTargets(projects, item.label.trim());
   if (taskTargets.length) {
     return applyNoteToTaskTargets(projects, taskTargets, entry);
-  }
-
-  const board = projects.find(p => p.name.trim().toLowerCase() === name.toLowerCase());
-  if (board) {
-    return projects.map(p =>
-      p.id === board.id
-        ? {
-            ...p,
-            notes: appendStructuredTaskNote(p.notes, entry),
-            updatedAt: Date.now(),
-          }
-        : p
-    );
   }
 
   return projects;

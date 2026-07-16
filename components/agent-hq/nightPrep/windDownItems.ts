@@ -39,6 +39,7 @@ export function buildWindDownItems(
   }
 
   for (const done of doneTodayItems) {
+    if (done.source === 'project') continue;
     const text = done.text.trim();
     if (!text) continue;
     const key = text.toLowerCase();
@@ -59,6 +60,5 @@ export function windDownItemLabel(item: WindDownItem): string {
   if (item.source === 'tracker' && item.trackerMs) {
     return `${item.label} (${formatDuration(item.trackerMs)} tracked)`;
   }
-  const detail = item.doneTodayItem?.detail?.trim();
-  return detail ? `${item.label} — ${detail}` : item.label;
+  return item.label;
 }
