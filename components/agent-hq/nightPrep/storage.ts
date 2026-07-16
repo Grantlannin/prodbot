@@ -18,7 +18,7 @@ export interface NightPrepTomorrowPlan {
   workLocation: string;
   tasks: NightPrepTomorrowTask[];
   updatedAt: number;
-  /** Dev/testing: plan was promoted to today so morning flow can be tested immediately */
+  /** @deprecated legacy test promotion flag */
   testMode?: boolean;
   /** @deprecated migrated to tasks[] */
   projectId?: string;
@@ -101,7 +101,7 @@ export function isNightPrepPlanActiveToday(
   return plan.targetDateKey === localDateKey(now);
 }
 
-/** Plan saved last night for today, or promoted via test mode */
+/** Plan saved last night for today */
 export function getActiveNightPrepPlan(
   plan: NightPrepTomorrowPlan | null,
   now = Date.now()
@@ -109,16 +109,4 @@ export function getActiveNightPrepPlan(
   const normalized = normalizeNightPrepPlan(plan);
   if (!normalized) return null;
   return isNightPrepPlanActiveToday(normalized, now) ? normalized : null;
-}
-
-export function promoteNightPrepPlanToToday(
-  plan: NightPrepTomorrowPlan,
-  now = Date.now()
-): NightPrepTomorrowPlan {
-  return {
-    ...normalizeNightPrepPlan(plan)!,
-    targetDateKey: localDateKey(now),
-    testMode: true,
-    updatedAt: now,
-  };
 }

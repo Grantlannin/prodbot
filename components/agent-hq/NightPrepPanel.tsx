@@ -5,7 +5,6 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useDoneToday } from './hooks/useDoneToday';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import { useNightPrep } from './hooks/NightPrepProvider';
-import { useMorningFlow } from './hooks/MorningFlowProvider';
 import { WIND_DOWN_FLOW_COPY } from './nightPrep/flows';
 import { buildWindDownItems } from './nightPrep/windDownItems';
 import {
@@ -18,10 +17,12 @@ import {
   timeToInput,
   type NightPrepReminderTime,
 } from './nightPrepReminder';
-import { formatNightPrepPlanSummary, getActiveNightPrepPlan, NIGHT_PREP_PLAN_KEY, promoteNightPrepPlanToToday, type NightPrepTomorrowPlan } from './nightPrep/storage';
-import { SIMULATED_MORNING_TASKS, MORNING_FLOW_COPY } from './morningFlow/flows';
-import { MORNING_FLOW_TEST_MODE_KEY, MORNING_FLOW_USED_KEY } from './morningFlow/storage';
-import { SIMULATED_WIND_DOWN_ITEMS } from './nightPrep/windDownItems';
+import {
+  formatNightPrepPlanSummary,
+  isNightPrepPlanActiveToday,
+  NIGHT_PREP_PLAN_KEY,
+  type NightPrepTomorrowPlan,
+} from './nightPrep/storage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -58,57 +59,18 @@ export default function NightPrepPanel({
   const { items: doneTodayItems } = useDoneToday();
   const { getTodayStats } = useWorkTrackerContext();
   const { openNightPrepChat } = useNightPrep();
-  const { openMorningFlow } = useMorningFlow();
   const [reminderTime, setReminderTime] = useLocalStorage<NightPrepReminderTime>(
     NIGHT_PREP_TIME_KEY,
     DEFAULT_NIGHT_PREP_TIME
   );
   const [reminderNote, setReminderNote] = useState<string | null>(null);
-  const [plan, setPlan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
-  const [, setMorningFlowUsed] = useLocalStorage<string | null>(MORNING_FLOW_USED_KEY, null);
-  const [morningTestMode, setMorningTestMode] = useLocalStorage<boolean>(MORNING_FLOW_TEST_MODE_KEY, false);
-  const [testNote, setTestNote] = useState<string | null>(null);
+  const [plan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
   const [windDownHovered, setWindDownHovered] = useState(false);
 
   const startWindDown = useCallback(() => {
     const items = buildWindDownItems(getTodayStats().projectStats, doneTodayItems);
     openNightPrepChat(items);
   }, [getTodayStats, doneTodayItems, openNightPrepChat]);
-
-  const startSimulatedWindDown = useCallback(() => {
-    setTestNote(null);
-    openNightPrepChat(SIMULATED_WIND_DOWN_ITEMS);
-  }, [openNightPrepChat]);
-
-  const startNightPrepOnly = useCallback(() => {
-    setTestNote(null);
-    openNightPrepChat([]);
-  }, [openNightPrepChat]);
-
-  const usePlanForToday = useCallback(() => {
-    if (!plan) return;
-    setPlan(promoteNightPrepPlanToToday(plan));
-    setTestNote('Plan is active for today — ready for morning flow testing.');
-  }, [plan, setPlan]);
-
-  const startBeginMyDayTest = useCallback(() => {
-    setMorningTestMode(true);
-    setMorningFlowUsed(null);
-    let active = getActiveNightPrepPlan(plan);
-    if (!active?.tasks?.length && plan?.tasks?.length) {
-      const promoted = promoteNightPrepPlanToToday(plan);
-      setPlan(promoted);
-      active = getActiveNightPrepPlan(promoted);
-    }
-    const tasks = active?.tasks?.length ? active.tasks : SIMULATED_MORNING_TASKS;
-    openMorningFlow(tasks);
-    setTestNote(MORNING_FLOW_COPY.testModeOn);
-  }, [plan, setPlan, setMorningTestMode, setMorningFlowUsed, openMorningFlow]);
-
-  const resetMorningFlowTest = useCallback(() => {
-    setMorningFlowUsed(null);
-    setTestNote('Morning flow reset — green button is available again.');
-  }, [setMorningFlowUsed]);
 
   useEffect(() => {
     if (!autoStartWindDown) return;
@@ -162,40 +124,11 @@ export default function NightPrepPanel({
         </span>
       </button>
 
-      <div style={styles.testRow}>
-        <button type="button" onClick={startSimulatedWindDown} style={styles.testBtn}>
-          {WIND_DOWN_FLOW_COPY.simulateWindDown}
-        </button>
-        <button type="button" onClick={startNightPrepOnly} style={styles.testBtn}>
-          {WIND_DOWN_FLOW_COPY.nightPrepOnly}
-        </button>
-      </div>
-
-      <div style={styles.testRow}>
-        <button type="button" onClick={startBeginMyDayTest} style={styles.testBtnGreen}>
-          {MORNING_FLOW_COPY.beginTest}
-        </button>
-        <button type="button" onClick={resetMorningFlowTest} style={styles.testBtn}>
-          {MORNING_FLOW_COPY.resetTest}
-        </button>
-      </div>
-
-      {morningTestMode ? <p style={styles.testNote}>{MORNING_FLOW_COPY.testModeOn}</p> : null}
-
       {plan ? (
-        <>
-          <p style={styles.planSummary}>
-            {plan.testMode ? 'Today (test)' : 'Tomorrow'}: {formatNightPrepPlanSummary(plan)}
-          </p>
-          {!plan.testMode ? (
-            <button type="button" onClick={usePlanForToday} style={styles.testBtnWide}>
-              {WIND_DOWN_FLOW_COPY.usePlanForToday}
-            </button>
-          ) : null}
-        </>
+        <p style={styles.planSummary}>
+          {isNightPrepPlanActiveToday(plan) ? 'Today' : 'Tomorrow'}: {formatNightPrepPlanSummary(plan)}
+        </p>
       ) : null}
-
-      {testNote ? <p style={styles.testNote}>{testNote}</p> : null}
 
       <div style={styles.checksBlock}>
         <p style={styles.subheadline}>
@@ -290,58 +223,6 @@ const styles: Record<string, CSSProperties> = {
     width: 22,
     textAlign: 'right',
     flexShrink: 0,
-  },
-  testRow: {
-    display: 'flex',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  testBtn: {
-    flex: 1,
-    minWidth: 120,
-    border: '1px dashed #cbd5e1',
-    borderRadius: 10,
-    padding: '8px 10px',
-    fontSize: 11,
-    fontWeight: 600,
-    fontFamily: font,
-    background: '#f8fafc',
-    color: '#475569',
-    cursor: 'pointer',
-    textTransform: 'lowercase',
-  },
-  testBtnGreen: {
-    flex: 1,
-    minWidth: 120,
-    border: '1px dashed #86efac',
-    borderRadius: 10,
-    padding: '8px 10px',
-    fontSize: 11,
-    fontWeight: 600,
-    fontFamily: font,
-    background: '#f0fdf4',
-    color: '#15803d',
-    cursor: 'pointer',
-    textTransform: 'lowercase',
-  },
-  testBtnWide: {
-    border: '1px dashed #cbd5e1',
-    borderRadius: 10,
-    padding: '8px 10px',
-    fontSize: 11,
-    fontWeight: 600,
-    fontFamily: font,
-    background: '#f8fafc',
-    color: '#475569',
-    cursor: 'pointer',
-    textTransform: 'lowercase',
-    width: '100%',
-  },
-  testNote: {
-    margin: 0,
-    fontSize: 11,
-    color: '#15803d',
-    lineHeight: 1.4,
   },
   planSummary: {
     margin: 0,

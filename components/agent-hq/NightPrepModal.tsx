@@ -27,7 +27,6 @@ import {
 import {
   buildNightPrepPlan,
   NIGHT_PREP_PLAN_KEY,
-  promoteNightPrepPlanToToday,
   type NightPrepTomorrowPlan,
   type NightPrepTomorrowTask,
 } from './nightPrep/storage';
@@ -368,13 +367,6 @@ export default function NightPrepModal() {
     setNightPrepPhase('prep_project_mode');
   };
 
-  const usePlanForToday = () => {
-    if (typing) return;
-    setNightPrepPlan(prev => (prev ? promoteNightPrepPlanToToday(prev) : prev));
-    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.usePlanForToday });
-    sendBotReply('Plan is active for today — you can test the morning flow now.');
-  };
-
   const beginChooseProject = () => {
     if (typing) return;
     const options = projects.filter(p => p.name.trim());
@@ -666,14 +658,6 @@ export default function NightPrepModal() {
                     </button>
                   </div>
                 ) : null}
-              </div>
-            ) : null}
-
-            {phase === 'complete' && !typing ? (
-              <div style={styles.chipWrap}>
-                <button type="button" onClick={usePlanForToday} style={styles.chip}>
-                  {WIND_DOWN_FLOW_COPY.usePlanForToday}
-                </button>
               </div>
             ) : null}
 

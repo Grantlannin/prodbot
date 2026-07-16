@@ -55,24 +55,6 @@ export function buildWindDownItems(
   return items;
 }
 
-/** Fake tracked work for testing wind down without logging sessions */
-export const SIMULATED_WIND_DOWN_ITEMS: WindDownItem[] = [
-  {
-    id: 'sim-project-work',
-    label: 'Test project work',
-    source: 'tracker',
-    trackerMs: 90 * 60 * 1000,
-    trackerSessions: 2,
-  },
-  {
-    id: 'sim-admin',
-    label: 'Admin & email',
-    source: 'tracker',
-    trackerMs: 25 * 60 * 1000,
-    trackerSessions: 1,
-  },
-];
-
 export function windDownItemLabel(item: WindDownItem): string {
   if (item.source === 'tracker' && item.trackerMs) {
     return `${item.label} (${formatDuration(item.trackerMs)} tracked)`;
