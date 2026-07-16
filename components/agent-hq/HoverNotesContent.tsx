@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import {
   APPLE_NOTES_KEY,
@@ -13,6 +13,7 @@ import {
 } from './appleNotesUtils';
 import { CornerResizeHandles, useCornerResize } from './hooks/useCornerResize';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useNoteClipBubble } from './NoteSelectionClipBubble';
 import type { AppleNote } from './types';
 
 const font =
@@ -26,12 +27,29 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
   const [notes, setNotes] = useLocalStorage<AppleNote[]>(APPLE_NOTES_KEY, []);
   const [selectedId, setSelectedId] = useLocalStorage<string | null>(APPLE_NOTES_SELECTED_KEY, null);
   const [size, setSize] = useLocalStorage(HOVER_NOTES_SIZE_KEY, DEFAULT_HOVER_NOTES_SIZE);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const sorted = useMemo(() => sortNotesByUpdated(notes), [notes]);
   const selected = useMemo(
     () => notes.find(n => n.id === selectedId) ?? null,
     [notes, selectedId]
   );
+
+  const clipSourceLabel = useMemo(() => {
+    if (!selected) return 'note';
+    const title = firstNoteLine(selected.content);
+    const when = new Date(selected.updatedAt).toLocaleDateString([], {
+      month: 'short',
+      day: 'numeric',
+    });
+    return `note · ${title} · ${when}`;
+  }, [selected]);
+
+  const { textareaHandlers: clipHandlers, bubbleNode: clipBubble } = useNoteClipBubble({
+    textareaRef,
+    noteText: selected?.content ?? '',
+    sourceLabel: clipSourceLabel,
+  });
 
   useEffect(() => {
     if (notes.length === 0) return;
@@ -118,13 +136,18 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
 
       <div style={styles.editorWrap}>
         {selected ? (
-          <textarea
-            value={selected.content}
-            onChange={e => updateContent(e.target.value)}
-            placeholder="Start typing…"
-            style={styles.textarea}
-            autoFocus
-          />
+          <>
+            <textarea
+              ref={textareaRef}
+              value={selected.content}
+              onChange={e => updateContent(e.target.value)}
+              placeholder="Start typing…"
+              {...clipHandlers}
+              style={styles.textarea}
+              autoFocus
+            />
+            {clipBubble}
+          </>
         ) : (
           <div style={styles.empty}>
             <p style={styles.emptyText}>No notes yet.</p>
@@ -211,6 +234,7 @@ const styles: Record<string, CSSProperties> = {
     background: '#fff',
   },
   editorWrap: {
+    position: 'relative',
     flex: 1,
     minHeight: 0,
     display: 'flex',

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, type CSSProperties } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import type { AppleNote } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useHoverNotes } from './hooks/HoverNotesProvider';
+import { useProjects } from './hooks/ProjectsProvider';
+import { useNoteClipBubble } from './NoteSelectionClipBubble';
 import {
   APPLE_NOTES_KEY,
   APPLE_NOTES_SELECTED_KEY,
@@ -56,6 +58,8 @@ export default function AppleNotesPanel() {
   const [deleteIds, setDeleteIds] = useState<Set<string>>(new Set());
   const { open: openHoverNotes, toggle: toggleHoverNotes, isOpen: hoverNotesOpen, supported: hoverNotesSupported } =
     useHoverNotes();
+  const { projects, setProjects } = useProjects();
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     if (migrated) return;
@@ -74,6 +78,24 @@ export default function AppleNotesPanel() {
   }, [notes, selectedId, setSelectedId]);
 
   const selected = useMemo(() => notes.find(n => n.id === selectedId) ?? null, [notes, selectedId]);
+
+  const clipSourceLabel = useMemo(() => {
+    if (!selected) return 'note';
+    const title = firstNoteLine(selected.content);
+    const when = new Date(selected.updatedAt).toLocaleDateString([], {
+      month: 'short',
+      day: 'numeric',
+    });
+    return `note · ${title} · ${when}`;
+  }, [selected]);
+
+  const { textareaHandlers: clipHandlers, bubbleNode: clipBubble } = useNoteClipBubble({
+    textareaRef,
+    noteText: selected?.content ?? '',
+    sourceLabel: clipSourceLabel,
+    projects,
+    setProjects,
+  });
 
   const groups = useMemo(() => groupNotes(notes), [notes]);
 
@@ -299,26 +321,31 @@ export default function AppleNotesPanel() {
                 </button>
               ) : null}
             </div>
-            <textarea
-              value={selected.content}
-              onChange={e => updateSelectedContent(e.target.value)}
-              placeholder="Start typing…"
-              style={{
-                flex: 1,
-                width: '100%',
-                minHeight: 280,
-                padding: 16,
-                border: 'none',
-                outline: 'none',
-                resize: 'none',
-                background: '#fff',
-                color: textPrimary,
-                fontFamily: font,
-                fontSize: 14,
-                lineHeight: 1.6,
-                boxSizing: 'border-box',
-              }}
-            />
+            <div style={{ position: 'relative', flex: 1, display: 'flex', minHeight: 0 }}>
+              <textarea
+                ref={textareaRef}
+                value={selected.content}
+                onChange={e => updateSelectedContent(e.target.value)}
+                placeholder="Start typing…"
+                {...clipHandlers}
+                style={{
+                  flex: 1,
+                  width: '100%',
+                  minHeight: 280,
+                  padding: 16,
+                  border: 'none',
+                  outline: 'none',
+                  resize: 'none',
+                  background: '#fff',
+                  color: textPrimary,
+                  fontFamily: font,
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  boxSizing: 'border-box',
+                }}
+              />
+              {clipBubble}
+            </div>
           </>
         ) : (
           <div style={{ padding: 24, color: textSecondary, fontSize: 14 }}>
