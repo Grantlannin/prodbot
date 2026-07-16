@@ -1,4 +1,4 @@
-import { tomorrowDateKey } from './utils';
+import { nightPrepTargetDateKey } from './utils';
 import { localDateKey } from '../eodReports';
 
 export const NIGHT_PREP_PLAN_KEY = 'agentHQ_nightPrepPlan';
@@ -59,7 +59,7 @@ export function buildNightPrepPlan(fields: {
   const primary = tasks[0];
   return {
     prepDateKey: localDateKey(now),
-    targetDateKey: tomorrowDateKey(now),
+    targetDateKey: nightPrepTargetDateKey(now),
     firstWorkBlockTime: fields.firstWorkBlockTime.trim(),
     firstWorkBlockMinutes: fields.firstWorkBlockMinutes,
     workLocation: fields.workLocation.trim(),
@@ -97,16 +97,30 @@ export function isNightPrepPlanActiveToday(
   plan: NightPrepTomorrowPlan | null,
   now = Date.now()
 ): boolean {
-  if (!plan) return false;
-  return plan.targetDateKey === localDateKey(now);
+  return getActiveNightPrepPlan(plan, now) !== null;
 }
 
-/** Plan saved last night for today */
+function previousDateKey(dateKey: string): string {
+  const d = new Date(dateKey + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  return localDateKey(d.getTime());
+}
+
+/** Plan for today, or still valid before 5am if it was for yesterday. */
 export function getActiveNightPrepPlan(
   plan: NightPrepTomorrowPlan | null,
   now = Date.now()
 ): NightPrepTomorrowPlan | null {
   const normalized = normalizeNightPrepPlan(plan);
   if (!normalized) return null;
-  return isNightPrepPlanActiveToday(normalized, now) ? normalized : null;
+
+  const today = localDateKey(now);
+  if (normalized.targetDateKey === today) return normalized;
+
+  const d = new Date(now);
+  if (d.getHours() < 5 && normalized.targetDateKey === previousDateKey(today)) {
+    return normalized;
+  }
+
+  return null;
 }

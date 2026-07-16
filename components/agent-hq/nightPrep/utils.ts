@@ -143,3 +143,10 @@ export function tomorrowDateKey(now = Date.now()): string {
   d.setDate(d.getDate() + 1);
   return localDateKey(d.getTime());
 }
+
+/** Wind down after midnight but before 5am still preps for the waking day (today). */
+export function nightPrepTargetDateKey(now = Date.now()): string {
+  const d = new Date(now);
+  if (d.getHours() < 5) return localDateKey(now);
+  return tomorrowDateKey(now);
+}

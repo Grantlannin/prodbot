@@ -17,10 +17,14 @@ import {
   type MorningTimerChoice,
 } from './morningFlow/flows';
 import {
-  morningFlowUsedDateKey,
   MORNING_FLOW_USED_KEY,
 } from './morningFlow/storage';
-import type { NightPrepTomorrowTask } from './nightPrep/storage';
+import {
+  getActiveNightPrepPlan,
+  NIGHT_PREP_PLAN_KEY,
+  type NightPrepTomorrowPlan,
+  type NightPrepTomorrowTask,
+} from './nightPrep/storage';
 import { welcomeLabel } from './userProfile';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -52,6 +56,7 @@ export default function MorningFlowModal() {
   const { startSession, status } = useWorkTrackerContext();
   const { requestOpen } = useHoverTimer();
   const [, setMorningFlowUsed] = useLocalStorage<string | null>(MORNING_FLOW_USED_KEY, null);
+  const [plan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
 
   const [typing, setTyping] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
@@ -138,7 +143,10 @@ export default function MorningFlowModal() {
       });
     }
     requestOpen();
-    setMorningFlowUsed(morningFlowUsedDateKey());
+    const activePlan = getActiveNightPrepPlan(plan);
+    if (activePlan) {
+      setMorningFlowUsed(activePlan.targetDateKey);
+    }
     setMorningFlowPhase('complete');
     closeMorningFlow();
   };
