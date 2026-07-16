@@ -13,12 +13,36 @@ function makeId() {
 
 function displayTitle(note: CaptureNote, skipLines: string[]): string {
   const t = note.title.trim();
-  if (t) return t.length > 36 ? t.slice(0, 33) + '…' : t;
-  const first = note.body
-    .split(/\r?\n/)
-    .find(l => l.trim() && !skipLines.some(s => l.trim().startsWith(s)));
-  const fallback = first?.trim() || 'Untitled';
-  return fallback.length > 36 ? fallback.slice(0, 33) + '…' : fallback;
+  const raw =
+    t ||
+    (note.body
+      .split(/\r?\n/)
+      .find(l => l.trim() && !skipLines.some(s => l.trim().startsWith(s)))
+      ?.trim() ??
+      'Untitled');
+  const label = raw.length > 36 ? raw.slice(0, 33) + '…' : raw;
+  return note.kind === 'decision' ? `◇ ${label}` : label;
+}
+
+function editorFields(note: CaptureNote, defaultBodyPrompt?: string) {
+  if (note.kind === 'decision') {
+    return {
+      titleLabel: 'Decision',
+      titlePlaceholder: 'What do you need to decide?',
+      bodyPrompt: 'Context — options, stakes, what’s making this hard, etc.',
+    };
+  }
+  return {
+    titleLabel: 'Title',
+    titlePlaceholder: 'Name this…',
+    bodyPrompt: defaultBodyPrompt,
+  };
+}
+
+export interface AddNoteAction {
+  label: string;
+  bodyTemplate?: string;
+  kind?: CaptureNote['kind'];
 }
 
 export interface CaptureNotesPanelProps {
@@ -29,6 +53,7 @@ export interface CaptureNotesPanelProps {
   bodyPrompt?: string;
   skipTitleLines?: string[];
   headerExtra?: ReactNode;
+  extraAddActions?: AddNoteAction[];
   renderEditorExtra?: (note: CaptureNote) => ReactNode;
 }
 
@@ -40,6 +65,7 @@ export default function CaptureNotesPanel({
   bodyPrompt,
   skipTitleLines = [],
   headerExtra,
+  extraAddActions = [],
   renderEditorExtra,
 }: CaptureNotesPanelProps) {
   const [notes, setNotes] = useLocalStorage<CaptureNote[]>(storageKey, []);
@@ -56,18 +82,24 @@ export default function CaptureNotesPanel({
     }
   }, [notes, selectedId, sorted]);
 
-  const addNote = useCallback(() => {
-    const note: CaptureNote = {
-      id: makeId(),
-      title: '',
-      body: bodyTemplate,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    setNotes(prev => [note, ...prev]);
-    setSelectedId(note.id);
-    setTimeout(() => titleRef.current?.focus(), 0);
-  }, [bodyTemplate, setNotes]);
+  const addNote = useCallback(
+    (action?: AddNoteAction) => {
+      const note: CaptureNote = {
+        id: makeId(),
+        title: '',
+        body: action?.bodyTemplate ?? bodyTemplate,
+        kind: action?.kind ?? 'open_loop',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      setNotes(prev => [note, ...prev]);
+      setSelectedId(note.id);
+      setTimeout(() => titleRef.current?.focus(), 0);
+    },
+    [bodyTemplate, setNotes]
+  );
+
+  const selectedEditor = selected ? editorFields(selected, bodyPrompt) : null;
 
   const updateNote = useCallback(
     (id: string, patch: Partial<Pick<CaptureNote, 'title' | 'body'>>) => {
@@ -94,7 +126,17 @@ export default function CaptureNotesPanel({
         </span>
         <div style={styles.toolbarActions}>
           {headerExtra}
-          <button type="button" onClick={addNote} style={styles.addBtn}>
+          {extraAddActions.map(action => (
+            <button
+              key={action.label}
+              type="button"
+              onClick={() => addNote(action)}
+              style={styles.secondaryAddBtn}
+            >
+              {action.label}
+            </button>
+          ))}
+          <button type="button" onClick={() => addNote()} style={styles.addBtn}>
             {addLabel}
           </button>
         </div>
@@ -129,7 +171,7 @@ export default function CaptureNotesPanel({
             <>
               <div style={styles.titleBlock}>
                 <label htmlFor={`${storageKey}-title`} style={styles.titleLabel}>
-                  Title
+                  {selectedEditor?.titleLabel}
                 </label>
                 <input
                   id={`${storageKey}-title`}
@@ -138,16 +180,18 @@ export default function CaptureNotesPanel({
                   value={selected.title}
                   onChange={e => updateNote(selected.id, { title: e.target.value })}
                   onKeyDown={e => {
-                    if (e.key === 'Enter' && bodyPrompt) {
+                    if (e.key === 'Enter' && selectedEditor?.bodyPrompt) {
                       e.preventDefault();
                       bodyRef.current?.focus();
                     }
                   }}
-                  placeholder="Name this…"
+                  placeholder={selectedEditor?.titlePlaceholder}
                   style={styles.titleInput}
                 />
               </div>
-              {bodyPrompt ? <div style={styles.bodyPrompt}>{bodyPrompt}</div> : null}
+              {selectedEditor?.bodyPrompt ? (
+                <div style={styles.bodyPrompt}>{selectedEditor.bodyPrompt}</div>
+              ) : null}
               <textarea
                 ref={bodyRef}
                 value={selected.body}
@@ -289,6 +333,18 @@ const styles: Record<string, CSSProperties> = {
     background: '#0f172a',
     color: '#fff',
     border: 'none',
+    borderRadius: 8,
+    padding: '7px 12px',
+    fontSize: 12,
+    fontWeight: 600,
+    fontFamily: font,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  secondaryAddBtn: {
+    background: '#fff',
+    color: '#334155',
+    border: '1px solid #e2e8f0',
     borderRadius: 8,
     padding: '7px 12px',
     fontSize: 12,

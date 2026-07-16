@@ -190,6 +190,7 @@ export interface CaptureNote {
   body: string;
   createdAt: number;
   updatedAt: number;
+  kind?: 'open_loop' | 'decision';
 }
 
 export interface Thing extends CaptureNote {}

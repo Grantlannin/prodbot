@@ -28,12 +28,20 @@ export default function OpenLoopsPanel() {
         bodyPrompt={OPEN_LOOP_BODY_PROMPT}
         addLabel="Add open loop"
         emptyMessage="No open loops yet."
+        extraAddActions={[
+          {
+            label: 'decision i need to make',
+            kind: 'decision',
+          },
+        ]}
         headerExtra={
           <button type="button" onClick={() => setShowQuestions(true)} style={questionsBtnStyle}>
             Prompt questions
           </button>
         }
-        renderEditorExtra={note => <OpenLoopCalendarReminder key={note.id} note={note} />}
+        renderEditorExtra={note =>
+          note.kind === 'decision' ? null : <OpenLoopCalendarReminder key={note.id} note={note} />
+        }
       />
       {showQuestions && (
         <QuestionsModal
