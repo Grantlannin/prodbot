@@ -1,5 +1,5 @@
 import { tomorrowDateKey } from './utils';
-import { localDateKey } from '../eodReports';
+import { localDateKey, parseLocalDateKey } from '../eodReports';
 
 export const NIGHT_PREP_PLAN_KEY = 'agentHQ_nightPrepPlan';
 
@@ -97,16 +97,27 @@ export function isNightPrepPlanActiveToday(
   plan: NightPrepTomorrowPlan | null,
   now = Date.now()
 ): boolean {
-  if (!plan) return false;
-  return plan.targetDateKey === localDateKey(now);
+  return getActiveNightPrepPlan(plan, now) !== null;
 }
 
-/** Night prep plan saved for today (from last night's wind down). */
+function daysBetweenDateKeys(earlierKey: string, laterKey: string): number {
+  const ms = parseLocalDateKey(laterKey).getTime() - parseLocalDateKey(earlierKey).getTime();
+  return Math.round(ms / 86_400_000);
+}
+
+/** Night prep plan for today, or yesterday's plan still available the next morning. */
 export function getActiveNightPrepPlan(
   plan: NightPrepTomorrowPlan | null,
   now = Date.now()
 ): NightPrepTomorrowPlan | null {
   const normalized = normalizeNightPrepPlan(plan);
-  if (!normalized) return null;
-  return isNightPrepPlanActiveToday(normalized, now) ? normalized : null;
+  if (!normalized?.tasks?.length) return null;
+
+  const today = localDateKey(now);
+  if (normalized.targetDateKey === today) return normalized;
+
+  const daysBehind = daysBetweenDateKeys(normalized.targetDateKey, today);
+  if (daysBehind === 1) return normalized;
+
+  return null;
 }

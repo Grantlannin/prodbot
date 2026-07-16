@@ -2,8 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { localDateKey } from '../eodReports';
-import { getActiveNightPrepPlan, NIGHT_PREP_PLAN_KEY, type NightPrepTomorrowPlan } from '../nightPrep/storage';
-import { isMorningFlowUsedToday, MORNING_FLOW_USED_KEY } from '../morningFlow/storage';
+import { NIGHT_PREP_PLAN_KEY, type NightPrepTomorrowPlan } from '../nightPrep/storage';
+import { getActiveNightPrepPlan } from '../nightPrep/storage';
+import {
+  isMorningFlowUsedForActivePlan,
+  MORNING_FLOW_USED_KEY,
+  type MorningFlowUsedRecord,
+} from '../morningFlow/storage';
 import { useLocalStorage } from './useLocalStorage';
 
 function msUntilNextLocalMidnight(now = Date.now()): number {
@@ -14,7 +19,7 @@ function msUntilNextLocalMidnight(now = Date.now()): number {
 
 export function useBeginMyDayVisible(): boolean {
   const [plan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
-  const [usedDateKey] = useLocalStorage<string | null>(MORNING_FLOW_USED_KEY, null);
+  const [used] = useLocalStorage<MorningFlowUsedRecord | string | null>(MORNING_FLOW_USED_KEY, null);
   const [todayKey, setTodayKey] = useState(() => localDateKey());
 
   useEffect(() => {
@@ -42,8 +47,8 @@ export function useBeginMyDayVisible(): boolean {
   }, []);
 
   return useMemo(() => {
-    if (isMorningFlowUsedToday(usedDateKey)) return false;
+    if (isMorningFlowUsedForActivePlan(used, plan)) return false;
     const active = getActiveNightPrepPlan(plan);
     return Boolean(active?.tasks?.length);
-  }, [plan, usedDateKey, todayKey]);
+  }, [plan, used, todayKey]);
 }
