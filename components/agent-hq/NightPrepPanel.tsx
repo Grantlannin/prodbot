@@ -155,7 +155,7 @@ const styles: Record<string, CSSProperties> = {
   planCard: {
     padding: '10px 12px',
     borderRadius: 8,
-    background: '#f8fafc',
+    background: '#fff',
     border: '1px solid #e2e8f0',
   },
   planTitle: {
