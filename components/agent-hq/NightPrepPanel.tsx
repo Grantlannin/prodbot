@@ -192,15 +192,14 @@ const styles: Record<string, CSSProperties> = {
   },
   planTaskRow: {
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
+    gap: 6,
     fontSize: 12,
     color: '#334155',
     lineHeight: 1.45,
   },
   planTaskText: {
-    flex: 1,
     minWidth: 0,
   },
   planTaskStart: {
