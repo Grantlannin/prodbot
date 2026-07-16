@@ -190,7 +190,7 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
             }}
             style={styles.checkbox}
           />
-          <span>sent to myself as well</span>
+          <span>send to myself as well</span>
         </label>
 
         {sendToSelf ? (
