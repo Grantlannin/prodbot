@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { localDateKey } from '../eodReports';
 import { getActiveNightPrepPlan, NIGHT_PREP_PLAN_KEY, type NightPrepTomorrowPlan } from '../nightPrep/storage';
-import { MORNING_FLOW_USED_KEY } from '../morningFlow/storage';
+import { isMorningFlowUsedToday, MORNING_FLOW_USED_KEY } from '../morningFlow/storage';
 import { useLocalStorage } from './useLocalStorage';
 
 function msUntilNextLocalMidnight(now = Date.now()): number {
@@ -42,9 +42,8 @@ export function useBeginMyDayVisible(): boolean {
   }, []);
 
   return useMemo(() => {
+    if (isMorningFlowUsedToday(usedDateKey)) return false;
     const active = getActiveNightPrepPlan(plan);
-    if (!active?.tasks?.length) return false;
-    if (usedDateKey === active.targetDateKey) return false;
-    return true;
+    return Boolean(active?.tasks?.length);
   }, [plan, usedDateKey, todayKey]);
 }

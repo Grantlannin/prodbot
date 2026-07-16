@@ -9,7 +9,7 @@ import { WIND_DOWN_FLOW_COPY } from './nightPrep/flows';
 import { buildWindDownItems } from './nightPrep/windDownItems';
 import {
   formatNightPrepPlanSummary,
-  getActiveNightPrepPlan,
+  isNightPrepPlanActiveToday,
   NIGHT_PREP_PLAN_KEY,
   type NightPrepTomorrowPlan,
 } from './nightPrep/storage';
@@ -80,7 +80,7 @@ export default function NightPrepPanel({
 
       {plan ? (
         <p style={styles.planSummary}>
-          {getActiveNightPrepPlan(plan) ? 'Today' : 'Tomorrow'}: {formatNightPrepPlanSummary(plan)}
+          {isNightPrepPlanActiveToday(plan) ? 'Today' : 'Tomorrow'}: {formatNightPrepPlanSummary(plan)}
         </p>
       ) : null}
     </div>
