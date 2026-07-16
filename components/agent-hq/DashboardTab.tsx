@@ -308,7 +308,7 @@ export default function DashboardTab({
               <AppleNotesPanel />
             </DashCard>
           </div>
-          <DashCard title="Open loops">
+          <DashCard title="open loops / unmade decisions">
             <OpenLoopsPanel />
           </DashCard>
         </div>
