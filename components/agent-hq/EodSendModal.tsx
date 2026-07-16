@@ -5,12 +5,15 @@ import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import {
   buildEodEmailSubject,
+  buildEodRecipients,
   buildGmailComposeUrl,
   buildMailtoUrl,
   isValidEmail,
   openEmailDraft,
   prefillCompletedFromDoneToday,
   ACCOUNTABILITY_PARTNER_EMAIL_KEY,
+  ACCOUNTABILITY_SELF_EMAIL_KEY,
+  ACCOUNTABILITY_SEND_TO_SELF_KEY,
 } from './eodEmail';
 import {
   buildEodReportPreview,
@@ -21,6 +24,7 @@ import {
   reportLearnings,
 } from './eodReports';
 import { useEodReports } from './hooks/useEodReports';
+import { useAuth } from './hooks/AuthProvider';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import type { DoneTodayItem, Infraction } from './types';
@@ -37,7 +41,10 @@ interface EodSendModalProps {
 export default function EodSendModal({ open, onClose, infractions, doneTodayItems }: EodSendModalProps) {
   const { getTodayStats } = useWorkTrackerContext();
   const { saveReport, getReport } = useEodReports();
+  const { email: authEmail } = useAuth();
   const [partnerEmail, setPartnerEmail] = useLocalStorage<string>(ACCOUNTABILITY_PARTNER_EMAIL_KEY, '');
+  const [selfEmail, setSelfEmail] = useLocalStorage<string>(ACCOUNTABILITY_SELF_EMAIL_KEY, '');
+  const [sendToSelf, setSendToSelf] = useLocalStorage<boolean>(ACCOUNTABILITY_SEND_TO_SELF_KEY, false);
   const [completed, setCompleted] = useState('');
   const [learnings, setLearnings] = useState('');
   const [emailBody, setEmailBody] = useState('');
@@ -100,9 +107,14 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
       setEmailError('Enter a valid partner email');
       return;
     }
+    if (sendToSelf && !isValidEmail(selfEmail)) {
+      setEmailError('Enter a valid email for yourself');
+      return;
+    }
     saveReport(reportParams);
     const subject = buildEodEmailSubject(todayKey);
-    openEmailDraft(buildGmailComposeUrl(to, subject, emailBody.trim()));
+    const recipients = buildEodRecipients(to, selfEmail, sendToSelf);
+    openEmailDraft(buildGmailComposeUrl(recipients, subject, emailBody.trim()));
     setSent(true);
   };
 
@@ -112,9 +124,14 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
       setEmailError('Enter a valid partner email');
       return;
     }
+    if (sendToSelf && !isValidEmail(selfEmail)) {
+      setEmailError('Enter a valid email for yourself');
+      return;
+    }
     saveReport(reportParams);
     const subject = buildEodEmailSubject(todayKey);
-    openEmailDraft(buildMailtoUrl(to, subject, emailBody.trim()));
+    const recipients = buildEodRecipients(to, selfEmail, sendToSelf);
+    openEmailDraft(buildMailtoUrl(recipients, subject, emailBody.trim()));
     setSent(true);
   };
 
@@ -158,6 +175,44 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
           style={styles.input}
           autoComplete="email"
         />
+
+        <label style={styles.checkboxRow}>
+          <input
+            type="checkbox"
+            checked={sendToSelf}
+            onChange={e => {
+              const checked = e.target.checked;
+              setSendToSelf(checked);
+              setEmailError(null);
+              if (checked && !selfEmail.trim() && authEmail) {
+                setSelfEmail(authEmail);
+              }
+            }}
+            style={styles.checkbox}
+          />
+          <span>sent to myself as well</span>
+        </label>
+
+        {sendToSelf ? (
+          <>
+            <label style={styles.label} htmlFor="self-email">
+              Your email
+            </label>
+            <input
+              id="self-email"
+              type="email"
+              value={selfEmail}
+              onChange={e => {
+                setSelfEmail(e.target.value);
+                setEmailError(null);
+              }}
+              placeholder="you@example.com"
+              style={styles.input}
+              autoComplete="email"
+            />
+          </>
+        ) : null}
+
         {emailError ? <p style={styles.error}>{emailError}</p> : null}
 
         <label style={styles.label} htmlFor="eod-completed">
@@ -293,6 +348,23 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 13,
     fontFamily: font,
     outline: 'none',
+  },
+  checkboxRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    fontSize: 12,
+    color: '#475569',
+    cursor: 'pointer',
+    userSelect: 'none',
+  },
+  checkbox: {
+    width: 14,
+    height: 14,
+    margin: 0,
+    cursor: 'pointer',
+    flexShrink: 0,
   },
   textarea: {
     width: '100%',

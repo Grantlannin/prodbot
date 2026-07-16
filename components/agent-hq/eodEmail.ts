@@ -1,11 +1,26 @@
 import { formatReportDateLabel, localDateKey } from './eodReports';
 
 export const ACCOUNTABILITY_PARTNER_EMAIL_KEY = 'agentHQ_accountabilityPartnerEmail';
+export const ACCOUNTABILITY_SELF_EMAIL_KEY = 'agentHQ_accountabilitySelfEmail';
+export const ACCOUNTABILITY_SEND_TO_SELF_KEY = 'agentHQ_accountabilitySendToSelf';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function isValidEmail(input: string): boolean {
   return EMAIL_RE.test(input.trim());
+}
+
+export function buildEodRecipients(
+  partnerEmail: string,
+  selfEmail: string,
+  includeSelf: boolean
+): string {
+  const partner = partnerEmail.trim();
+  if (!includeSelf) return partner;
+
+  const self = selfEmail.trim();
+  if (!self || self.toLowerCase() === partner.toLowerCase()) return partner;
+  return `${partner},${self}`;
 }
 
 export function buildEodEmailSubject(dateKey = localDateKey()): string {
