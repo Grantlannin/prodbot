@@ -376,36 +376,20 @@ export function useNoteClipBubble({
                         ))}
                       </select>
                     </label>
-                    <div style={styles.fieldLabel}>
-                      <span>Section</span>
-                      <div style={styles.sectionList} role="listbox" aria-label="Clip destination">
-                        {sectionOptions.map(option => {
-                          const selected = activeSectionKey === option.key;
-                          return (
-                            <button
-                              key={option.key}
-                              type="button"
-                              role="option"
-                              aria-selected={selected}
-                              onClick={() => setSectionKey(option.key)}
-                              style={{
-                                ...styles.sectionOption,
-                                ...(option.tier === 'part' ? styles.sectionOptionPart : {}),
-                                ...(option.tier === 'task' ? styles.sectionOptionTask : {}),
-                                ...(selected ? styles.sectionOptionSelected : {}),
-                              }}
-                            >
-                              {option.tier === 'task' ? (
-                                <span style={styles.sectionBullet} aria-hidden>
-                                  •
-                                </span>
-                              ) : null}
-                              <span style={styles.sectionOptionLabel}>{option.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <label style={styles.fieldLabel}>
+                      Section
+                      <select
+                        value={activeSectionKey}
+                        onChange={e => setSectionKey(e.target.value)}
+                        style={styles.select}
+                      >
+                        {sectionOptions.map(option => (
+                          <option key={option.key} value={option.key}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <label style={styles.checkRow}>
                       <input
                         type="checkbox"
@@ -521,57 +505,6 @@ const styles: Record<string, CSSProperties> = {
     background: '#fff',
     width: '100%',
     cursor: 'pointer',
-  },
-  sectionList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 2,
-    maxHeight: 160,
-    overflowY: 'auto',
-    border: '1px solid #cbd5e1',
-    borderRadius: 6,
-    padding: 4,
-    background: '#fff',
-  },
-  sectionOption: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 6,
-    width: '100%',
-    textAlign: 'left',
-    border: 'none',
-    borderRadius: 4,
-    padding: '6px 8px',
-    fontSize: 12,
-    fontWeight: 500,
-    fontFamily: font,
-    color: '#475569',
-    background: 'transparent',
-    cursor: 'pointer',
-    lineHeight: 1.35,
-  },
-  sectionOptionPart: {
-    fontWeight: 700,
-    color: '#0f172a',
-  },
-  sectionOptionTask: {
-    paddingLeft: 18,
-    fontWeight: 400,
-    color: '#64748b',
-  },
-  sectionOptionSelected: {
-    background: '#f1f5f9',
-    boxShadow: 'inset 0 0 0 1px #cbd5e1',
-  },
-  sectionBullet: {
-    flexShrink: 0,
-    color: '#64748b',
-    fontWeight: 700,
-    lineHeight: 1.35,
-  },
-  sectionOptionLabel: {
-    minWidth: 0,
-    wordBreak: 'break-word',
   },
   checkRow: {
     display: 'flex',
