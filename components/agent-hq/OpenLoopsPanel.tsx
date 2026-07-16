@@ -31,6 +31,7 @@ export default function OpenLoopsPanel() {
         addLabelIcon={OPEN_LOOP_ICON}
         emptyMessage="No open loops yet."
         styledTabsByKind
+        groupedTabsByKind
         enableDragReorder
         extraAddActions={[
           {

@@ -6,12 +6,16 @@ import type { CaptureNote } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import {
   DECISION_ICON,
+  DECISIONS_SECTION_LABEL,
   OPEN_LOOP_ICON,
+  OPEN_LOOPS_SECTION_LABEL,
+  noteKind,
   noteListLabel,
   noteTabIcon,
-  orderedCaptureNotes,
-  prependCaptureNote,
-  reorderCaptureNotes,
+  orderedNotesInSection,
+  prependNoteInSection,
+  reorderNotesInSection,
+  type CaptureNoteKind,
 } from './openLoopsUi';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -23,9 +27,9 @@ function makeId() {
 function editorFields(note: CaptureNote, defaultBodyPrompt?: string) {
   if (note.kind === 'decision') {
     return {
-      titleLabel: 'Decision',
+      titleLabel: 'decision i need to make',
       titlePlaceholder: 'What do you need to decide?',
-      bodyPrompt: 'Context — options, stakes, what’s making this hard, etc.',
+      bodyPrompt: 'relevant context — options, stakes, what\'s making this hard, etc.',
     };
   }
   return {
@@ -76,6 +80,7 @@ export interface CaptureNotesPanelProps {
   headerExtra?: ReactNode;
   extraAddActions?: AddNoteAction[];
   styledTabsByKind?: boolean;
+  groupedTabsByKind?: boolean;
   enableDragReorder?: boolean;
   renderEditorExtra?: (note: CaptureNote) => ReactNode;
 }
@@ -120,19 +125,24 @@ export default function CaptureNotesPanel({
   headerExtra,
   extraAddActions = [],
   styledTabsByKind = false,
+  groupedTabsByKind = false,
   enableDragReorder = false,
   renderEditorExtra,
 }: CaptureNotesPanelProps) {
   const [notes, setNotes] = useLocalStorage<CaptureNote[]>(storageKey, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dropBeforeId, setDropBeforeId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ beforeId: string | null; kind: CaptureNoteKind } | null>(
+    null
+  );
   const titleRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const dragMovedRef = useRef(false);
 
   const selected = notes.find(n => n.id === selectedId) ?? null;
-  const sorted = orderedCaptureNotes(notes);
+  const loopNotes = orderedNotesInSection(notes, 'open_loop');
+  const decisionNotes = orderedNotesInSection(notes, 'decision');
+  const sorted = [...loopNotes, ...decisionNotes];
 
   useEffect(() => {
     if (selectedId && !notes.some(n => n.id === selectedId)) {
@@ -150,7 +160,7 @@ export default function CaptureNotesPanel({
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
-      setNotes(prev => prependCaptureNote(prev, note));
+      setNotes(prev => prependNoteInSection(prev, note));
       setSelectedId(note.id);
       setTimeout(() => titleRef.current?.focus(), 0);
     },
@@ -177,13 +187,140 @@ export default function CaptureNotesPanel({
   );
 
   const finishReorder = useCallback(
-    (fromId: string, beforeId: string | null) => {
-      setNotes(prev => reorderCaptureNotes(prev, fromId, beforeId));
+    (fromId: string, beforeId: string | null, kind: CaptureNoteKind) => {
+      setNotes(prev => reorderNotesInSection(prev, fromId, beforeId, kind));
       setDraggingId(null);
-      setDropBeforeId(null);
+      setDropTarget(null);
       dragMovedRef.current = false;
     },
     [setNotes]
+  );
+
+  const draggingNote = draggingId ? notes.find(n => n.id === draggingId) : null;
+  const draggingKind = draggingNote ? noteKind(draggingNote) : null;
+
+  const renderNoteRow = (note: CaptureNote, sectionKind: CaptureNoteKind) => {
+    const isSelected = note.id === selectedId;
+    const canDropHere =
+      draggingId &&
+      draggingKind === sectionKind &&
+      dropTarget?.kind === sectionKind &&
+      dropTarget.beforeId === note.id &&
+      draggingId !== note.id;
+
+    return (
+      <div key={note.id} style={styles.sidebarRow}>
+        {canDropHere ? <div style={styles.dropIndicator} /> : null}
+        <button
+          type="button"
+          draggable={enableDragReorder}
+          onClick={() => {
+            if (dragMovedRef.current) {
+              dragMovedRef.current = false;
+              return;
+            }
+            setSelectedId(note.id);
+          }}
+          onDragStart={e => {
+            if (!enableDragReorder) return;
+            dragMovedRef.current = false;
+            setDraggingId(note.id);
+            setDropTarget(null);
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', note.id);
+          }}
+          onDragEnd={() => {
+            setDraggingId(null);
+            setDropTarget(null);
+          }}
+          onDragOver={e => {
+            if (!enableDragReorder || !draggingId || draggingId === note.id) return;
+            if (draggingKind !== sectionKind || noteKind(note) !== sectionKind) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            setDropTarget({ beforeId: note.id, kind: sectionKind });
+          }}
+          onDrop={e => {
+            if (!enableDragReorder || !draggingId || draggingKind !== sectionKind) return;
+            e.preventDefault();
+            dragMovedRef.current = true;
+            finishReorder(draggingId, note.id, sectionKind);
+          }}
+          style={{
+            ...tabItemStyle(note, isSelected, styledTabsByKind),
+            ...(draggingId === note.id ? styles.sidebarItemDragging : {}),
+            ...(enableDragReorder ? { cursor: draggingId === note.id ? 'grabbing' : 'grab' } : {}),
+          }}
+          title={noteListLabel(note, skipTitleLines)}
+        >
+          <span style={styles.tabContent}>
+            <span style={styles.tabIcon} aria-hidden>
+              {noteTabIcon(note)}
+            </span>
+            <span style={styles.tabLabel}>{noteListLabel(note, skipTitleLines)}</span>
+          </span>
+        </button>
+      </div>
+    );
+  };
+
+  const renderSectionEndDrop = (sectionKind: CaptureNoteKind) => {
+    const showDrop =
+      draggingId &&
+      draggingKind === sectionKind &&
+      dropTarget?.kind === sectionKind &&
+      dropTarget.beforeId === null;
+
+    return (
+      <>
+        {showDrop ? <div style={styles.dropIndicator} /> : null}
+        <div
+          style={styles.sidebarDropEnd}
+          onDragOver={e => {
+            if (!enableDragReorder || !draggingId || draggingKind !== sectionKind) return;
+            e.preventDefault();
+            setDropTarget({ beforeId: null, kind: sectionKind });
+          }}
+          onDrop={e => {
+            if (!enableDragReorder || !draggingId || draggingKind !== sectionKind) return;
+            e.preventDefault();
+            dragMovedRef.current = true;
+            finishReorder(draggingId, null, sectionKind);
+          }}
+        />
+      </>
+    );
+  };
+
+  const renderGroupedSidebar = () => (
+    <div style={styles.sidebarList}>
+      <div style={styles.sidebarSection}>
+        <div style={styles.sectionLabel}>{OPEN_LOOPS_SECTION_LABEL}</div>
+        {loopNotes.length === 0 ? (
+          <div style={styles.sectionEmpty}>None yet</div>
+        ) : (
+          loopNotes.map(note => renderNoteRow(note, 'open_loop'))
+        )}
+        {renderSectionEndDrop('open_loop')}
+      </div>
+      <div style={styles.sectionDivider} />
+      <div style={styles.sidebarSection}>
+        <div style={styles.sectionLabel}>{DECISIONS_SECTION_LABEL}</div>
+        {decisionNotes.length === 0 ? (
+          <div style={styles.sectionEmpty}>None yet</div>
+        ) : (
+          decisionNotes.map(note => renderNoteRow(note, 'decision'))
+        )}
+        {renderSectionEndDrop('decision')}
+      </div>
+    </div>
+  );
+
+  const renderFlatSidebar = () => (
+    <div style={styles.sidebarList}>
+      {sorted.map(note => renderNoteRow(note, noteKind(note)))}
+      {draggingKind ? renderSectionEndDrop(draggingKind) : null}
+    </div>
   );
 
   return (
@@ -214,83 +351,15 @@ export default function CaptureNotesPanel({
 
       <div style={styles.split}>
         <aside style={styles.sidebar}>
-          {sorted.length === 0 ? (
-            <div style={styles.sidebarEmpty}>{emptyMessage}</div>
-          ) : (
-            <div style={styles.sidebarList}>
-              {sorted.map(note => {
-                const isSelected = note.id === selectedId;
-                const showDrop = draggingId && dropBeforeId === note.id && draggingId !== note.id;
-                return (
-                  <div key={note.id} style={styles.sidebarRow}>
-                    {showDrop ? <div style={styles.dropIndicator} /> : null}
-                    <button
-                      type="button"
-                      draggable={enableDragReorder}
-                      onClick={() => {
-                        if (dragMovedRef.current) {
-                          dragMovedRef.current = false;
-                          return;
-                        }
-                        setSelectedId(note.id);
-                      }}
-                      onDragStart={e => {
-                        if (!enableDragReorder) return;
-                        dragMovedRef.current = false;
-                        setDraggingId(note.id);
-                        e.dataTransfer.effectAllowed = 'move';
-                        e.dataTransfer.setData('text/plain', note.id);
-                      }}
-                      onDragEnd={() => {
-                        setDraggingId(null);
-                        setDropBeforeId(null);
-                      }}
-                      onDragOver={e => {
-                        if (!enableDragReorder || !draggingId || draggingId === note.id) return;
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'move';
-                        setDropBeforeId(note.id);
-                      }}
-                      onDrop={e => {
-                        if (!enableDragReorder || !draggingId) return;
-                        e.preventDefault();
-                        dragMovedRef.current = true;
-                        finishReorder(draggingId, note.id);
-                      }}
-                      style={{
-                        ...tabItemStyle(note, isSelected, styledTabsByKind),
-                        ...(draggingId === note.id ? styles.sidebarItemDragging : {}),
-                        ...(enableDragReorder ? { cursor: draggingId === note.id ? 'grabbing' : 'grab' } : {}),
-                      }}
-                      title={noteListLabel(note, skipTitleLines)}
-                    >
-                      <span style={styles.tabContent}>
-                        <span style={styles.tabIcon} aria-hidden>
-                          {noteTabIcon(note)}
-                        </span>
-                        <span style={styles.tabLabel}>{noteListLabel(note, skipTitleLines)}</span>
-                      </span>
-                    </button>
-                  </div>
-                );
-              })}
-              {draggingId && dropBeforeId === null ? <div style={styles.dropIndicator} /> : null}
-              <div
-                style={styles.sidebarDropEnd}
-                onDragOver={e => {
-                  if (!enableDragReorder || !draggingId) return;
-                  e.preventDefault();
-                  setDropBeforeId(null);
-                }}
-                onDrop={e => {
-                  if (!enableDragReorder || !draggingId) return;
-                  e.preventDefault();
-                  dragMovedRef.current = true;
-                  finishReorder(draggingId, null);
-                }}
-              />
-            </div>
-          )}
+          {groupedTabsByKind
+            ? renderGroupedSidebar()
+            : sorted.length === 0
+              ? (
+                <div style={styles.sidebarEmpty}>{emptyMessage}</div>
+              )
+              : (
+                renderFlatSidebar()
+              )}
         </aside>
 
         <div style={styles.editorPane}>
@@ -526,7 +595,31 @@ const styles: Record<string, CSSProperties> = {
     padding: 8,
     display: 'flex',
     flexDirection: 'column',
+    gap: 8,
+  },
+  sidebarSection: {
+    display: 'flex',
+    flexDirection: 'column',
     gap: 6,
+  },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    textTransform: 'lowercase',
+    color: '#64748b',
+    padding: '2px 4px 0',
+  },
+  sectionDivider: {
+    height: 1,
+    background: '#e2e8f0',
+    margin: '2px 4px',
+  },
+  sectionEmpty: {
+    fontSize: 11,
+    color: '#94a3b8',
+    padding: '4px 6px 2px',
+    fontStyle: 'italic',
   },
   sidebarRow: {
     display: 'flex',

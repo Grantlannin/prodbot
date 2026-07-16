@@ -191,8 +191,10 @@ export interface CaptureNote {
   createdAt: number;
   updatedAt: number;
   kind?: 'open_loop' | 'decision';
-  /** Manual sidebar order — lower appears higher */
+  /** @deprecated Legacy combined order */
   sortOrder?: number;
+  loopSortOrder?: number;
+  decisionSortOrder?: number;
 }
 
 export interface Thing extends CaptureNote {}
