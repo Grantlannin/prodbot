@@ -37,7 +37,6 @@ export default function DashboardTab({
   const projectsRef = useRef<ProjectsPanelHandle>(null);
   const [selectedProjectProgress, setSelectedProjectProgress] = useState<ProjectProgress | null>(null);
   const [startWorkOpen, setStartWorkOpen] = useState(false);
-  const [setTimerOpen, setSetTimerOpen] = useState(false);
   const [eodSendOpen, setEodSendOpen] = useState(false);
   const nightPrepRef = useRef<HTMLDivElement>(null);
   const { requestEndSession } = useEndSession();
@@ -100,10 +99,6 @@ export default function DashboardTab({
     requestEndSession();
   };
 
-  const handleSetTimer = () => {
-    setSetTimerOpen(true);
-  };
-
   const countdownDisplay = getTimerDisplay({
     status,
     phase,
@@ -149,7 +144,6 @@ export default function DashboardTab({
     <div style={{ background: '#f8fafc', minHeight: '100%', overflowY: 'auto', fontFamily: font, position: 'relative' }}>
       <BeginMyDayButton />
       <StartWorkModal open={startWorkOpen} onClose={() => setStartWorkOpen(false)} />
-      <StartWorkModal open={setTimerOpen} onClose={() => setSetTimerOpen(false)} mode="set-timer" />
       <EodSendModal
         open={eodSendOpen}
         onClose={() => setEodSendOpen(false)}
@@ -163,14 +157,9 @@ export default function DashboardTab({
             <div style={{ color: '#0f172a', fontSize: 36, fontWeight: 700 }}>{formatDuration(todayStats.totalWorkMs)}</div>
             <div style={styles.timerControls}>
               {!hasActiveSession ? (
-                <div style={styles.timerStartRow}>
-                  <button type="button" onClick={handleStartTimer} style={styles.timerStartBtn}>
-                    Start
-                  </button>
-                  <button type="button" onClick={handleSetTimer} style={styles.timerSetBtn}>
-                    Set timer
-                  </button>
-                </div>
+                <button type="button" onClick={handleStartTimer} style={styles.timerStartBtn}>
+                  Start
+                </button>
               ) : (
                 <>
                   {liveCountdown ? (
@@ -408,29 +397,11 @@ const styles: Record<string, CSSProperties> = {
     marginTop: 10,
     width: 196,
   },
-  timerStartRow: {
-    display: 'flex',
-    gap: 5,
-  },
   timerStartBtn: {
-    flex: 1,
+    width: '100%',
     border: 'none',
     borderRadius: 9,
     padding: '7px 10px',
-    fontSize: 11,
-    fontWeight: 600,
-    fontFamily: font,
-    letterSpacing: '-0.01em',
-    background: '#eef2f6',
-    color: '#0f172a',
-    cursor: 'pointer',
-    boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.04)',
-  },
-  timerSetBtn: {
-    flex: 1,
-    border: 'none',
-    borderRadius: 9,
-    padding: '7px 8px',
     fontSize: 11,
     fontWeight: 600,
     fontFamily: font,
