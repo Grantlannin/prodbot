@@ -17,7 +17,6 @@ import DayAtGlancePanel from './DayAtGlancePanel';
 import OpenLoopsPanel from './OpenLoopsPanel';
 import NightPrepPanel from './NightPrepPanel';
 import BeginMyDayButton from './BeginMyDayButton';
-import { DoneTodayBanner } from './DoneTodaySection';
 import EodReportsCalendar from './EodReportsCalendar';
 import EodSendModal from './EodSendModal';
 import StartWorkModal from './StartWorkModal';
@@ -59,7 +58,7 @@ export default function DashboardTab({
     currentSession,
     currentBreak,
   } = useWorkTrackerContext();
-  const { items: doneTodayItems, addItem: addDoneToday, removeItem: removeDoneToday } = useDoneToday();
+  const { items: doneTodayItems, addItem: addDoneToday } = useDoneToday();
   const todayStats = getTodayStats();
   const projectStatsToday = todayStats.projectStats;
 
@@ -261,19 +260,6 @@ export default function DashboardTab({
             ) : (
               <div style={styles.projectEmpty}>No sessions yet today</div>
             )}
-          </div>
-          <div style={styles.divider} />
-          <div style={styles.doneTodayColumn}>
-            <DoneTodayBanner
-              items={doneTodayItems}
-              onRemove={removeDoneToday}
-              onAdd={text =>
-                addDoneToday({
-                  text,
-                  source: 'manual',
-                })
-              }
-            />
           </div>
           <div style={styles.divider} />
           <div style={styles.eodAnchor}>
@@ -636,14 +622,6 @@ const styles: Record<string, CSSProperties> = {
     marginBottom: 6,
   },
   divider: { width: 1, height: 48, background: '#e2e8f0' },
-  doneTodayColumn: {
-    minWidth: 0,
-    flex: '1.2 1 260px',
-    maxWidth: 420,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'stretch',
-  },
   eodAnchor: {
     display: 'flex',
     flexDirection: 'column',
