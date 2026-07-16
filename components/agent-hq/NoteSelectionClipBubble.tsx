@@ -338,7 +338,7 @@ export function useNoteClipBubble({
                 }}
               >
                 <span style={styles.chipIcon} aria-hidden>
-                  ↗
+                  +
                 </span>
               </button>
             ) : (
