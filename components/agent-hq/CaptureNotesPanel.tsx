@@ -4,24 +4,20 @@ import { useState, useEffect, useCallback, useRef, type CSSProperties, type Reac
 import { createPortal } from 'react-dom';
 import type { CaptureNote } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import {
+  DECISION_ICON,
+  OPEN_LOOP_ICON,
+  noteListLabel,
+  noteTabIcon,
+  orderedCaptureNotes,
+  prependCaptureNote,
+  reorderCaptureNotes,
+} from './openLoopsUi';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 function makeId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
-function displayTitle(note: CaptureNote, skipLines: string[]): string {
-  const t = note.title.trim();
-  const raw =
-    t ||
-    (note.body
-      .split(/\r?\n/)
-      .find(l => l.trim() && !skipLines.some(s => l.trim().startsWith(s)))
-      ?.trim() ??
-      'Untitled');
-  const label = raw.length > 36 ? raw.slice(0, 33) + '…' : raw;
-  return note.kind === 'decision' ? `◇ ${label}` : label;
 }
 
 function editorFields(note: CaptureNote, defaultBodyPrompt?: string) {
@@ -39,8 +35,32 @@ function editorFields(note: CaptureNote, defaultBodyPrompt?: string) {
   };
 }
 
+function tabItemStyle(note: CaptureNote, selected: boolean, styledByKind: boolean): CSSProperties {
+  if (!styledByKind) {
+    return {
+      ...styles.sidebarItem,
+      ...(selected ? styles.sidebarItemActive : {}),
+    };
+  }
+
+  if (note.kind === 'decision') {
+    return {
+      ...styles.sidebarItem,
+      ...styles.sidebarItemDecision,
+      ...(selected ? styles.sidebarItemDecisionActive : {}),
+    };
+  }
+
+  return {
+    ...styles.sidebarItem,
+    ...styles.sidebarItemLoop,
+    ...(selected ? styles.sidebarItemLoopActive : {}),
+  };
+}
+
 export interface AddNoteAction {
   label: string;
+  icon?: string;
   bodyTemplate?: string;
   kind?: CaptureNote['kind'];
 }
@@ -49,32 +69,70 @@ export interface CaptureNotesPanelProps {
   storageKey: string;
   bodyTemplate: string;
   addLabel: string;
+  addLabelIcon?: string;
   emptyMessage: string;
   bodyPrompt?: string;
   skipTitleLines?: string[];
   headerExtra?: ReactNode;
   extraAddActions?: AddNoteAction[];
+  styledTabsByKind?: boolean;
+  enableDragReorder?: boolean;
   renderEditorExtra?: (note: CaptureNote) => ReactNode;
+}
+
+function ToolbarIconButton({
+  label,
+  icon,
+  onClick,
+  variant,
+}: {
+  label: string;
+  icon?: string;
+  onClick: () => void;
+  variant: 'primary' | 'secondary';
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={variant === 'primary' ? styles.addBtn : styles.secondaryAddBtn}
+    >
+      <span style={styles.btnContent}>
+        {icon ? (
+          <span style={styles.btnIcon} aria-hidden>
+            {icon}
+          </span>
+        ) : null}
+        <span>{label}</span>
+      </span>
+    </button>
+  );
 }
 
 export default function CaptureNotesPanel({
   storageKey,
   bodyTemplate,
   addLabel,
+  addLabelIcon,
   emptyMessage,
   bodyPrompt,
   skipTitleLines = [],
   headerExtra,
   extraAddActions = [],
+  styledTabsByKind = false,
+  enableDragReorder = false,
   renderEditorExtra,
 }: CaptureNotesPanelProps) {
   const [notes, setNotes] = useLocalStorage<CaptureNote[]>(storageKey, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropBeforeId, setDropBeforeId] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const dragMovedRef = useRef(false);
 
   const selected = notes.find(n => n.id === selectedId) ?? null;
-  const sorted = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
+  const sorted = orderedCaptureNotes(notes);
 
   useEffect(() => {
     if (selectedId && !notes.some(n => n.id === selectedId)) {
@@ -92,7 +150,7 @@ export default function CaptureNotesPanel({
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
-      setNotes(prev => [note, ...prev]);
+      setNotes(prev => prependCaptureNote(prev, note));
       setSelectedId(note.id);
       setTimeout(() => titleRef.current?.focus(), 0);
     },
@@ -118,6 +176,16 @@ export default function CaptureNotesPanel({
     [selectedId, setNotes]
   );
 
+  const finishReorder = useCallback(
+    (fromId: string, beforeId: string | null) => {
+      setNotes(prev => reorderCaptureNotes(prev, fromId, beforeId));
+      setDraggingId(null);
+      setDropBeforeId(null);
+      dragMovedRef.current = false;
+    },
+    [setNotes]
+  );
+
   return (
     <div style={styles.root}>
       <div style={styles.toolbar}>
@@ -127,18 +195,20 @@ export default function CaptureNotesPanel({
         <div style={styles.toolbarActions}>
           {headerExtra}
           {extraAddActions.map(action => (
-            <button
+            <ToolbarIconButton
               key={action.label}
-              type="button"
+              label={action.label}
+              icon={action.icon}
+              variant="secondary"
               onClick={() => addNote(action)}
-              style={styles.secondaryAddBtn}
-            >
-              {action.label}
-            </button>
+            />
           ))}
-          <button type="button" onClick={() => addNote()} style={styles.addBtn}>
-            {addLabel}
-          </button>
+          <ToolbarIconButton
+            label={addLabel}
+            icon={addLabelIcon}
+            variant="primary"
+            onClick={() => addNote()}
+          />
         </div>
       </div>
 
@@ -148,20 +218,77 @@ export default function CaptureNotesPanel({
             <div style={styles.sidebarEmpty}>{emptyMessage}</div>
           ) : (
             <div style={styles.sidebarList}>
-              {sorted.map(note => (
-                <button
-                  key={note.id}
-                  type="button"
-                  onClick={() => setSelectedId(note.id)}
-                  style={{
-                    ...styles.sidebarItem,
-                    ...(note.id === selectedId ? styles.sidebarItemActive : {}),
-                  }}
-                  title={displayTitle(note, skipTitleLines)}
-                >
-                  {displayTitle(note, skipTitleLines)}
-                </button>
-              ))}
+              {sorted.map(note => {
+                const isSelected = note.id === selectedId;
+                const showDrop = draggingId && dropBeforeId === note.id && draggingId !== note.id;
+                return (
+                  <div key={note.id} style={styles.sidebarRow}>
+                    {showDrop ? <div style={styles.dropIndicator} /> : null}
+                    <button
+                      type="button"
+                      draggable={enableDragReorder}
+                      onClick={() => {
+                        if (dragMovedRef.current) {
+                          dragMovedRef.current = false;
+                          return;
+                        }
+                        setSelectedId(note.id);
+                      }}
+                      onDragStart={e => {
+                        if (!enableDragReorder) return;
+                        dragMovedRef.current = false;
+                        setDraggingId(note.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', note.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggingId(null);
+                        setDropBeforeId(null);
+                      }}
+                      onDragOver={e => {
+                        if (!enableDragReorder || !draggingId || draggingId === note.id) return;
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        setDropBeforeId(note.id);
+                      }}
+                      onDrop={e => {
+                        if (!enableDragReorder || !draggingId) return;
+                        e.preventDefault();
+                        dragMovedRef.current = true;
+                        finishReorder(draggingId, note.id);
+                      }}
+                      style={{
+                        ...tabItemStyle(note, isSelected, styledTabsByKind),
+                        ...(draggingId === note.id ? styles.sidebarItemDragging : {}),
+                        ...(enableDragReorder ? { cursor: draggingId === note.id ? 'grabbing' : 'grab' } : {}),
+                      }}
+                      title={noteListLabel(note, skipTitleLines)}
+                    >
+                      <span style={styles.tabContent}>
+                        <span style={styles.tabIcon} aria-hidden>
+                          {noteTabIcon(note)}
+                        </span>
+                        <span style={styles.tabLabel}>{noteListLabel(note, skipTitleLines)}</span>
+                      </span>
+                    </button>
+                  </div>
+                );
+              })}
+              {draggingId && dropBeforeId === null ? <div style={styles.dropIndicator} /> : null}
+              <div
+                style={styles.sidebarDropEnd}
+                onDragOver={e => {
+                  if (!enableDragReorder || !draggingId) return;
+                  e.preventDefault();
+                  setDropBeforeId(null);
+                }}
+                onDrop={e => {
+                  if (!enableDragReorder || !draggingId) return;
+                  e.preventDefault();
+                  dragMovedRef.current = true;
+                  finishReorder(draggingId, null);
+                }}
+              />
             </div>
           )}
         </aside>
@@ -328,6 +455,17 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 8,
     flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+  },
+  btnContent: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+  },
+  btnIcon: {
+    fontSize: 13,
+    lineHeight: 1,
+    flexShrink: 0,
   },
   addBtn: {
     background: '#0f172a',
@@ -360,15 +498,15 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 10,
     overflow: 'hidden',
     background: '#fff',
-    minHeight: 220,
+    minHeight: 260,
   },
   sidebar: {
-    width: 200,
-    minWidth: 200,
-    maxWidth: 200,
+    width: 212,
+    minWidth: 212,
+    maxWidth: 212,
     flexShrink: 0,
     borderRight: '1px solid #e2e8f0',
-    background: '#f8fafc',
+    background: '#f1f5f9',
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
@@ -378,21 +516,38 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     color: '#94a3b8',
     lineHeight: 1.45,
+    minHeight: 52,
   },
   sidebarList: {
     flex: 1,
     overflowY: 'auto',
-    maxHeight: 200,
-    padding: 6,
+    minHeight: 52,
+    maxHeight: 'min(320px, 42vh)',
+    padding: 8,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  sidebarRow: {
     display: 'flex',
     flexDirection: 'column',
     gap: 4,
   },
+  sidebarDropEnd: {
+    minHeight: 10,
+    flexShrink: 0,
+  },
+  dropIndicator: {
+    height: 2,
+    borderRadius: 999,
+    background: '#6366f1',
+    margin: '0 2px',
+  },
   sidebarItem: {
     width: '100%',
     textAlign: 'left',
-    padding: '8px 10px',
-    borderRadius: 6,
+    padding: '9px 10px',
+    borderRadius: 8,
     border: '1px solid transparent',
     background: 'transparent',
     fontSize: 12,
@@ -400,9 +555,30 @@ const styles: Record<string, CSSProperties> = {
     color: '#475569',
     cursor: 'pointer',
     fontFamily: font,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+  },
+  sidebarItemLoop: {
+    background: '#1e293b',
+    color: '#f8fafc',
+    borderColor: '#334155',
+  },
+  sidebarItemLoopActive: {
+    background: '#0f172a',
+    borderColor: '#64748b',
+    boxShadow: '0 0 0 1px rgba(148, 163, 184, 0.35)',
+  },
+  sidebarItemDecision: {
+    background: '#ffffff',
+    color: '#0f172a',
+    borderColor: '#e2e8f0',
+  },
+  sidebarItemDecisionActive: {
+    background: '#f8fafc',
+    borderColor: '#cbd5e1',
+    boxShadow: '0 0 0 1px rgba(15, 23, 42, 0.08)',
+  },
+  sidebarItemDragging: {
+    opacity: 0.55,
+    cursor: 'grabbing',
   },
   sidebarItemActive: {
     background: '#fff',
@@ -410,12 +586,33 @@ const styles: Record<string, CSSProperties> = {
     color: '#0f172a',
     boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
   },
+  tabContent: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 0,
+    width: '100%',
+  },
+  tabIcon: {
+    fontSize: 13,
+    lineHeight: 1,
+    flexShrink: 0,
+    width: 14,
+    textAlign: 'center',
+  },
+  tabLabel: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    flex: 1,
+    minWidth: 0,
+  },
   editorPane: {
     flex: 1,
     minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
-    minHeight: 220,
+    minHeight: 260,
   },
   titleBlock: {
     padding: '4px 14px 0',

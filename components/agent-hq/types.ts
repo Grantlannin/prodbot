@@ -191,6 +191,8 @@ export interface CaptureNote {
   createdAt: number;
   updatedAt: number;
   kind?: 'open_loop' | 'decision';
+  /** Manual sidebar order — lower appears higher */
+  sortOrder?: number;
 }
 
 export interface Thing extends CaptureNote {}

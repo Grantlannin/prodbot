@@ -3,6 +3,7 @@
 import { useState, type CSSProperties } from 'react';
 import CaptureNotesPanel, { QuestionsModal } from './CaptureNotesPanel';
 import OpenLoopCalendarReminder from './OpenLoopCalendarReminder';
+import { DECISION_ICON, OPEN_LOOP_ICON } from './openLoopsUi';
 
 const OPEN_LOOP_BODY_PROMPT = 'What do you need to do / when will you handle this?';
 
@@ -27,16 +28,25 @@ export default function OpenLoopsPanel() {
         bodyTemplate=""
         bodyPrompt={OPEN_LOOP_BODY_PROMPT}
         addLabel="Add open loop"
+        addLabelIcon={OPEN_LOOP_ICON}
         emptyMessage="No open loops yet."
+        styledTabsByKind
+        enableDragReorder
         extraAddActions={[
           {
             label: 'decision i need to make',
             kind: 'decision',
+            icon: DECISION_ICON,
           },
         ]}
         headerExtra={
           <button type="button" onClick={() => setShowQuestions(true)} style={questionsBtnStyle}>
-            Prompt questions
+            <span style={btnContentStyle}>
+              <span aria-hidden style={iconStyle}>
+                ?
+              </span>
+              <span>Prompt questions</span>
+            </span>
           </button>
         }
         renderEditorExtra={note =>
@@ -53,6 +63,18 @@ export default function OpenLoopsPanel() {
     </>
   );
 }
+
+const btnContentStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+};
+
+const iconStyle: CSSProperties = {
+  fontSize: 13,
+  lineHeight: 1,
+  flexShrink: 0,
+};
 
 const questionsBtnStyle: CSSProperties = {
   background: '#fff',
