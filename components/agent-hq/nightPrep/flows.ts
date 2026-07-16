@@ -30,6 +30,7 @@ export const WIND_DOWN_FLOW_COPY = {
   addAnotherTask: 'add task from another project to task list',
   taskListFinished: 'task list finished',
   doneSeeTomorrow: (time: string) => `great. See you tomorrow around ${time}.`,
+  closeChat: 'close chat',
   clearChat: 'clear chat',
   projectNamePlaceholder: 'Project name',
   taskNamePlaceholder: 'New task for this project',

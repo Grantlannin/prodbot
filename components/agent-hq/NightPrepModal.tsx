@@ -711,6 +711,18 @@ export default function NightPrepModal() {
                 </button>
               </div>
             ) : null}
+
+            {phase === 'complete' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button
+                  type="button"
+                  onClick={closeNightPrepChat}
+                  style={{ ...styles.chip, ...styles.chipFinish }}
+                >
+                  {WIND_DOWN_FLOW_COPY.closeChat}
+                </button>
+              </div>
+            ) : null}
           </footer>
         </div>
       </div>
