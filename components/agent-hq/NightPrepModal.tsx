@@ -568,7 +568,7 @@ export default function NightPrepModal() {
                   {WIND_DOWN_FLOW_COPY.inputProject}
                 </button>
                 {hasTomorrowTasks ? (
-                  <button type="button" onClick={finishTaskList} style={styles.chip}>
+                  <button type="button" onClick={finishTaskList} style={{ ...styles.chip, ...styles.chipFinish }}>
                     {WIND_DOWN_FLOW_COPY.taskListFinished}
                   </button>
                 ) : null}
@@ -588,7 +588,7 @@ export default function NightPrepModal() {
                   </button>
                 ))}
                 {hasTomorrowTasks ? (
-                  <button type="button" onClick={finishTaskList} style={styles.chip}>
+                  <button type="button" onClick={finishTaskList} style={{ ...styles.chip, ...styles.chipFinish }}>
                     {WIND_DOWN_FLOW_COPY.taskListFinished}
                   </button>
                 ) : null}
@@ -597,39 +597,53 @@ export default function NightPrepModal() {
 
             {inProjectTaskPick && !typing ? (
               <div style={styles.chipWrap}>
-                {openTasks.map(task => {
-                  const picked = selectedTaskIds.has(task.id);
-                  return (
-                    <button
-                      key={task.id}
-                      type="button"
-                      onClick={() => selectTask(task.text.trim(), task.id)}
-                      style={{
-                        ...styles.chip,
-                        ...(picked ? styles.chipSelected : {}),
-                      }}
-                    >
-                      {picked ? `✓ ${task.text.trim()}` : task.text.trim()}
-                    </button>
-                  );
-                })}
-                <button type="button" onClick={beginAddTask} style={styles.chip}>
-                  {WIND_DOWN_FLOW_COPY.addNewTask}
-                </button>
-                <button type="button" onClick={beginAddAnotherTask} style={styles.chip}>
-                  {WIND_DOWN_FLOW_COPY.addAnotherTask}
-                </button>
-                <button
-                  type="button"
-                  disabled={!hasTomorrowTasks}
-                  onClick={finishTaskList}
-                  style={{
-                    ...styles.chip,
-                    ...(!hasTomorrowTasks ? styles.chipDisabled : {}),
-                  }}
-                >
-                  {WIND_DOWN_FLOW_COPY.taskListFinished}
-                </button>
+                <div style={styles.chipSectionLabel}>tasks in this project</div>
+                {openTasks.length > 0 ? (
+                  <div style={styles.chipTaskGroup}>
+                    {openTasks.map(task => {
+                      const picked = selectedTaskIds.has(task.id);
+                      return (
+                        <button
+                          key={task.id}
+                          type="button"
+                          onClick={() => selectTask(task.text.trim(), task.id)}
+                          style={{
+                            ...styles.chip,
+                            ...(picked ? styles.chipSelected : {}),
+                          }}
+                        >
+                          {picked ? `✓ ${task.text.trim()}` : task.text.trim()}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={styles.chipSectionEmpty}>No open tasks in this project yet.</div>
+                )}
+                <div style={styles.chipActionGroup}>
+                  <button type="button" onClick={beginAddTask} style={{ ...styles.chip, ...styles.chipAddNew }}>
+                    {WIND_DOWN_FLOW_COPY.addNewTask}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={beginAddAnotherTask}
+                    style={{ ...styles.chip, ...styles.chipAddOther }}
+                  >
+                    {WIND_DOWN_FLOW_COPY.addAnotherTask}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!hasTomorrowTasks}
+                    onClick={finishTaskList}
+                    style={{
+                      ...styles.chip,
+                      ...styles.chipFinish,
+                      ...(!hasTomorrowTasks ? styles.chipDisabled : {}),
+                    }}
+                  >
+                    {WIND_DOWN_FLOW_COPY.taskListFinished}
+                  </button>
+                </div>
                 {phase === 'prep_task_name' ? (
                   <div style={styles.compose}>
                     <textarea
@@ -831,6 +845,34 @@ const styles: Record<string, CSSProperties> = {
     gap: 8,
   },
   chipWrap: { display: 'flex', flexDirection: 'column', gap: 6 },
+  chipSectionLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: '0.08em',
+    textTransform: 'lowercase',
+    color: '#64748b',
+    padding: '2px 4px 0',
+  },
+  chipSectionEmpty: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontStyle: 'italic',
+    padding: '2px 4px 4px',
+    lineHeight: 1.4,
+  },
+  chipTaskGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  chipActionGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    marginTop: 4,
+    paddingTop: 8,
+    borderTop: '1px solid #e5e7eb',
+  },
   chip: {
     textAlign: 'center',
     border: '1px solid #007aff',
@@ -848,6 +890,21 @@ const styles: Record<string, CSSProperties> = {
     background: '#e0f2fe',
     borderColor: '#0284c7',
     color: '#0369a1',
+  },
+  chipAddNew: {
+    background: '#fffbeb',
+    borderColor: '#f59e0b',
+    color: '#b45309',
+  },
+  chipAddOther: {
+    background: '#f5f3ff',
+    borderColor: '#8b5cf6',
+    color: '#6d28d9',
+  },
+  chipFinish: {
+    background: '#059669',
+    borderColor: '#059669',
+    color: '#fff',
   },
   chipDisabled: {
     opacity: 0.4,
