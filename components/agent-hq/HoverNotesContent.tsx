@@ -49,6 +49,7 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
     textareaRef,
     noteText: selected?.content ?? '',
     sourceLabel: clipSourceLabel,
+    portalDocument: pipWindow.document,
   });
 
   useEffect(() => {

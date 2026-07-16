@@ -15,6 +15,42 @@ import {
 const font =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+const CHIP_SIZE = 20;
+
+const MIRROR_PROPS = [
+  'direction',
+  'boxSizing',
+  'width',
+  'height',
+  'overflowX',
+  'overflowY',
+  'borderTopWidth',
+  'borderRightWidth',
+  'borderBottomWidth',
+  'borderLeftWidth',
+  'borderStyle',
+  'paddingTop',
+  'paddingRight',
+  'paddingBottom',
+  'paddingLeft',
+  'fontStyle',
+  'fontVariant',
+  'fontWeight',
+  'fontStretch',
+  'fontSize',
+  'fontSizeAdjust',
+  'lineHeight',
+  'fontFamily',
+  'textAlign',
+  'textTransform',
+  'textIndent',
+  'textDecoration',
+  'letterSpacing',
+  'wordSpacing',
+  'tabSize',
+  'whiteSpace',
+] as const;
+
 type SetProjects = (
   value: ProjectBoard[] | ((prev: ProjectBoard[]) => ProjectBoard[])
 ) => void;
@@ -25,6 +61,8 @@ interface UseNoteClipBubbleOptions {
   sourceLabel: string;
   projects?: ProjectBoard[];
   setProjects?: SetProjects;
+  /** PiP / secondary window — portal + coords must use this document */
+  portalDocument?: Document | null;
 }
 
 function projectDisplayName(project: ProjectBoard): string {
@@ -41,17 +79,75 @@ function readSelection(el: HTMLTextAreaElement) {
   return { from, to, picked: el.value.slice(from, to).trim() };
 }
 
-function chipAnchor(el: HTMLTextAreaElement): { left: number; top: number } | null {
-  const { picked } = readSelection(el);
-  if (!picked) return null;
+function getCaretViewportPoint(
+  el: HTMLTextAreaElement,
+  position: number,
+  mountDoc: Document
+): { left: number; top: number; lineHeight: number } {
+  const computed = mountDoc.defaultView?.getComputedStyle(el) ?? getComputedStyle(el);
+  const mirror = mountDoc.createElement('div');
+  const style = mirror.style;
 
-  const rect = el.getBoundingClientRect();
-  const chipSize = 26;
-  const inset = 10;
+  style.position = 'absolute';
+  style.visibility = 'hidden';
+  style.whiteSpace = 'pre-wrap';
+  style.wordWrap = 'break-word';
+  style.overflow = 'hidden';
+
+  for (const prop of MIRROR_PROPS) {
+    style[prop] = computed[prop];
+  }
+
+  style.width = `${el.clientWidth}px`;
+
+  const before = el.value.slice(0, position);
+  mirror.textContent = before;
+
+  const marker = mountDoc.createElement('span');
+  marker.textContent = el.value.slice(position, position + 1) || '.';
+  mirror.appendChild(marker);
+
+  mountDoc.body.appendChild(mirror);
+
+  const textareaRect = el.getBoundingClientRect();
+  const lineHeight = marker.offsetHeight || Number.parseFloat(computed.lineHeight) || 20;
+  const point = {
+    left: textareaRect.left + marker.offsetLeft - el.scrollLeft,
+    top: textareaRect.top + marker.offsetTop - el.scrollTop,
+    lineHeight,
+  };
+
+  mountDoc.body.removeChild(mirror);
+  return point;
+}
+
+function chipAnchor(
+  el: HTMLTextAreaElement,
+  from: number,
+  to: number,
+  mountDoc: Document
+): { left: number; top: number } {
+  const view = mountDoc.defaultView ?? window;
+  const newlineAt = el.value.indexOf('\n', from);
+  const firstLineEnd = newlineAt === -1 || newlineAt >= to ? to : newlineAt;
+
+  const topLeft = getCaretViewportPoint(el, from, mountDoc);
+  const topRight = getCaretViewportPoint(el, firstLineEnd, mountDoc);
+
+  const gap = 4;
+  let left = topRight.left + gap;
+  let top = topLeft.top - CHIP_SIZE - gap;
+
+  const maxLeft = view.innerWidth - CHIP_SIZE - 8;
+  const maxTop = view.innerHeight - CHIP_SIZE - 8;
+
+  if (top < 8) {
+    top = topLeft.top + topLeft.lineHeight + gap;
+  }
 
   return {
-    left: rect.right - chipSize - inset,
-    top: rect.top + inset,
+    left: Math.max(8, Math.min(maxLeft, left)),
+    top: Math.max(8, Math.min(maxTop, top)),
   };
 }
 
@@ -61,16 +157,23 @@ export function useNoteClipBubble({
   sourceLabel,
   projects: projectsProp,
   setProjects: setProjectsProp,
+  portalDocument,
 }: UseNoteClipBubbleOptions) {
   const [storedProjects, setStoredProjects] = useLocalStorage<ProjectBoard[]>(PROJECTS_STORAGE_KEY, []);
   const projects = projectsProp ?? storedProjects;
   const setProjects = setProjectsProp ?? setStoredProjects;
+
+  const mountDoc =
+    portalDocument ?? (typeof document !== 'undefined' ? document : null);
+  const mountWin = mountDoc?.defaultView ?? (typeof window !== 'undefined' ? window : null);
 
   const [anchor, setAnchor] = useState<{ left: number; top: number } | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [projectId, setProjectId] = useState('');
   const [sectionKey, setSectionKey] = useState('project');
   const selectionRef = useRef<{ from: number; to: number } | null>(null);
+  const expandedRef = useRef(false);
+  expandedRef.current = expanded;
 
   const sortedProjects = useMemo(() => [...projects].sort(byUpdatedDesc), [projects]);
   const hasProjects = sortedProjects.length > 0;
@@ -97,29 +200,31 @@ export function useNoteClipBubble({
 
   const updateBubble = useCallback(() => {
     const el = textareaRef.current;
-    if (!el) {
-      clearClipUi();
+    if (!el || !mountDoc) {
+      if (!expandedRef.current) clearClipUi();
       return;
     }
 
     const { from, to, picked } = readSelection(el);
     if (!picked) {
-      clearClipUi();
+      if (!expandedRef.current) clearClipUi();
       return;
     }
 
     selectionRef.current = { from, to };
-    setAnchor(chipAnchor(el));
-  }, [clearClipUi, textareaRef]);
+    setAnchor(chipAnchor(el, from, to, mountDoc));
+  }, [clearClipUi, mountDoc, textareaRef]);
 
   const openExpanded = useCallback(() => {
     const el = textareaRef.current;
-    if (el) {
-      const { from, to, picked } = readSelection(el);
-      if (picked) selectionRef.current = { from, to };
+    const saved = selectionRef.current;
+    if (el && saved) {
+      el.focus();
+      el.setSelectionRange(saved.from, saved.to);
+      if (mountDoc) setAnchor(chipAnchor(el, saved.from, saved.to, mountDoc));
     }
     setExpanded(true);
-  }, [textareaRef]);
+  }, [mountDoc, textareaRef]);
 
   const addSelection = useCallback(() => {
     const el = textareaRef.current;
@@ -150,26 +255,35 @@ export function useNoteClipBubble({
   ]);
 
   useEffect(() => {
-    if (!anchor) return;
-    const onScroll = () => updateBubble();
-    window.addEventListener('scroll', onScroll, true);
-    window.addEventListener('resize', onScroll);
+    if (!anchor || !mountWin) return;
+    const onReposition = () => updateBubble();
+    mountWin.addEventListener('scroll', onReposition, true);
+    mountWin.addEventListener('resize', onReposition);
     return () => {
-      window.removeEventListener('scroll', onScroll, true);
-      window.removeEventListener('resize', onScroll);
+      mountWin.removeEventListener('scroll', onReposition, true);
+      mountWin.removeEventListener('resize', onReposition);
     };
-  }, [anchor, updateBubble]);
+  }, [anchor, mountWin, updateBubble]);
 
   useEffect(() => {
-    if (!expanded) return;
+    if (!expanded || !mountDoc) return;
+
     const onDocDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest('[data-note-clip-ui]')) return;
       setExpanded(false);
     };
-    document.addEventListener('mousedown', onDocDown);
-    return () => document.removeEventListener('mousedown', onDocDown);
-  }, [expanded]);
+
+    // Defer so the same click that opened the panel does not instantly close it.
+    const timer = window.setTimeout(() => {
+      mountDoc.addEventListener('mousedown', onDocDown);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+      mountDoc.removeEventListener('mousedown', onDocDown);
+    };
+  }, [expanded, mountDoc]);
 
   const textareaHandlers = {
     onPointerUp: updateBubble,
@@ -179,19 +293,22 @@ export function useNoteClipBubble({
     onContextMenu: (e: React.MouseEvent<HTMLTextAreaElement>) => {
       const el = textareaRef.current;
       if (!el) return;
-      if (readSelection(el).picked) {
-        e.preventDefault();
-        updateBubble();
-        openExpanded();
-      }
+      const { from, to, picked } = readSelection(el);
+      if (!picked) return;
+      e.preventDefault();
+      selectionRef.current = { from, to };
+      if (mountDoc) setAnchor(chipAnchor(el, from, to, mountDoc));
+      setExpanded(true);
     },
   };
 
-  const panelLeft = anchor ? Math.min(anchor.left, window.innerWidth - 268) : 0;
-  const panelTop = anchor ? anchor.top + 32 : 0;
+  const panelLeft = anchor && mountWin
+    ? Math.min(anchor.left, mountWin.innerWidth - 260)
+    : 0;
+  const panelTop = anchor ? anchor.top + CHIP_SIZE + 6 : 0;
 
   const bubbleNode =
-    anchor && typeof document !== 'undefined'
+    anchor && mountDoc?.body
       ? createPortal(
           <div data-note-clip-ui>
             {!expanded ? (
@@ -199,13 +316,20 @@ export function useNoteClipBubble({
                 type="button"
                 title="Add to project"
                 aria-label="Add selection to project"
+                data-note-clip-ui
                 style={{ ...styles.chip, left: anchor.left, top: anchor.top }}
-                onMouseDown={e => {
+                onPointerDown={e => {
                   e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={e => {
+                  e.stopPropagation();
                   openExpanded();
                 }}
               >
-                +
+                <span style={styles.chipIcon} aria-hidden>
+                  ↗
+                </span>
               </button>
             ) : (
               <div
@@ -266,7 +390,7 @@ export function useNoteClipBubble({
               </div>
             )}
           </div>,
-          document.body
+          mountDoc.body
         )
       : null;
 
@@ -276,15 +400,15 @@ export function useNoteClipBubble({
 const styles: Record<string, CSSProperties> = {
   chip: {
     position: 'fixed',
-    width: 26,
-    height: 26,
+    width: CHIP_SIZE,
+    height: CHIP_SIZE,
     borderRadius: 999,
     border: '1px solid #cbd5e1',
     background: '#0f172a',
     color: '#fff',
-    fontSize: 16,
+    fontSize: 11,
     lineHeight: 1,
-    fontWeight: 500,
+    fontWeight: 600,
     fontFamily: font,
     cursor: 'pointer',
     boxShadow: '0 4px 12px rgba(15,23,42,0.18)',
@@ -293,6 +417,10 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 0,
+  },
+  chipIcon: {
+    display: 'block',
+    transform: 'translateY(-1px)',
   },
   panel: {
     position: 'fixed',
