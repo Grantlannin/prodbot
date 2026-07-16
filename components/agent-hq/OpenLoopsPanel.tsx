@@ -40,14 +40,9 @@ export default function OpenLoopsPanel() {
             icon: DECISION_ICON,
           },
         ]}
-        headerExtra={
-          <button type="button" onClick={() => setShowQuestions(true)} style={questionsBtnStyle}>
-            <span style={btnContentStyle}>
-              <span aria-hidden style={iconStyle}>
-                ?
-              </span>
-              <span>Prompt questions</span>
-            </span>
+        toolbarSubtext={
+          <button type="button" onClick={() => setShowQuestions(true)} style={promptSubtextStyle}>
+            prompt questions to de-load brain-weight
           </button>
         }
         renderEditorExtra={note =>
@@ -65,27 +60,18 @@ export default function OpenLoopsPanel() {
   );
 }
 
-const btnContentStyle: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-};
-
-const iconStyle: CSSProperties = {
-  fontSize: 13,
-  lineHeight: 1,
-  flexShrink: 0,
-};
-
-const questionsBtnStyle: CSSProperties = {
-  background: '#fff',
-  color: '#334155',
-  border: '1px solid #e2e8f0',
-  borderRadius: 8,
-  padding: '7px 12px',
-  fontSize: 12,
-  fontWeight: 600,
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+const promptSubtextStyle: CSSProperties = {
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  margin: 0,
+  font: 'inherit',
+  fontSize: 10,
+  lineHeight: 1.35,
+  color: '#94a3b8',
   cursor: 'pointer',
-  whiteSpace: 'nowrap',
+  textAlign: 'right',
+  textDecoration: 'underline',
+  textDecorationColor: 'rgba(148, 163, 184, 0.45)',
+  textUnderlineOffset: 2,
 };

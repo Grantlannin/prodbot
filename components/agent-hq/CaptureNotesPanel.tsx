@@ -47,18 +47,31 @@ function tabItemStyle(note: CaptureNote, selected: boolean, styledByKind: boolea
     };
   }
 
-  if (note.kind === 'decision') {
-    return {
-      ...styles.sidebarItem,
-      ...styles.sidebarItemDecision,
-      ...(selected ? styles.sidebarItemDecisionActive : {}),
-    };
-  }
-
+  const isDecision = note.kind === 'decision';
   return {
-    ...styles.sidebarItem,
-    ...styles.sidebarItemLoop,
-    ...(selected ? styles.sidebarItemLoopActive : {}),
+    ...styles.sidebarItemAccent,
+    ...(isDecision ? styles.sidebarItemAccentDecision : styles.sidebarItemAccentLoop),
+    ...(selected
+      ? isDecision
+        ? styles.sidebarItemAccentDecisionActive
+        : styles.sidebarItemAccentLoopActive
+      : {}),
+  };
+}
+
+function accentBarStyle(sectionKind: CaptureNoteKind, selected: boolean): CSSProperties {
+  const isDecision = sectionKind === 'decision';
+  return {
+    ...styles.accentBar,
+    width: selected ? 3 : 1,
+    background: isDecision
+      ? selected
+        ? '#8b7ec8'
+        : '#c4b5fd'
+      : selected
+        ? '#64748b'
+        : '#94a3b8',
+    opacity: selected ? 1 : 0.65,
   };
 }
 
@@ -78,6 +91,7 @@ export interface CaptureNotesPanelProps {
   bodyPrompt?: string;
   skipTitleLines?: string[];
   headerExtra?: ReactNode;
+  toolbarSubtext?: ReactNode;
   extraAddActions?: AddNoteAction[];
   styledTabsByKind?: boolean;
   groupedTabsByKind?: boolean;
@@ -123,6 +137,7 @@ export default function CaptureNotesPanel({
   bodyPrompt,
   skipTitleLines = [],
   headerExtra,
+  toolbarSubtext,
   extraAddActions = [],
   styledTabsByKind = false,
   groupedTabsByKind = false,
@@ -253,8 +268,15 @@ export default function CaptureNotesPanel({
           }}
           title={noteListLabel(note, skipTitleLines)}
         >
+          {styledTabsByKind ? <span style={accentBarStyle(sectionKind, isSelected)} aria-hidden /> : null}
           <span style={styles.tabContent}>
-            <span style={styles.tabIcon} aria-hidden>
+            <span
+              style={{
+                ...styles.tabIcon,
+                ...(styledTabsByKind ? styles.tabIconAccent : {}),
+              }}
+              aria-hidden
+            >
               {noteTabIcon(note)}
             </span>
             <span style={styles.tabLabel}>{noteListLabel(note, skipTitleLines)}</span>
@@ -295,7 +317,14 @@ export default function CaptureNotesPanel({
   const renderGroupedSidebar = () => (
     <div style={styles.sidebarList}>
       <div style={styles.sidebarSection}>
-        <div style={styles.sectionLabel}>{OPEN_LOOPS_SECTION_LABEL}</div>
+        <div
+          style={{
+            ...styles.sectionLabel,
+            ...(styledTabsByKind ? styles.sectionLabelAccent : {}),
+          }}
+        >
+          {styledTabsByKind ? OPEN_LOOPS_SECTION_LABEL.toUpperCase() : OPEN_LOOPS_SECTION_LABEL}
+        </div>
         {loopNotes.length === 0 ? (
           <div style={styles.sectionEmpty}>None yet</div>
         ) : (
@@ -305,7 +334,14 @@ export default function CaptureNotesPanel({
       </div>
       <div style={styles.sectionDivider} />
       <div style={styles.sidebarSection}>
-        <div style={styles.sectionLabel}>{DECISIONS_SECTION_LABEL}</div>
+        <div
+          style={{
+            ...styles.sectionLabel,
+            ...(styledTabsByKind ? styles.sectionLabelAccent : {}),
+          }}
+        >
+          {styledTabsByKind ? DECISIONS_SECTION_LABEL.toUpperCase() : DECISIONS_SECTION_LABEL}
+        </div>
         {decisionNotes.length === 0 ? (
           <div style={styles.sectionEmpty}>None yet</div>
         ) : (
@@ -329,23 +365,26 @@ export default function CaptureNotesPanel({
         <span style={styles.count}>
           {notes.length === 0 ? 'None yet' : `${notes.length} saved`}
         </span>
-        <div style={styles.toolbarActions}>
-          {headerExtra}
-          {extraAddActions.map(action => (
+        <div style={styles.toolbarRight}>
+          <div style={styles.toolbarActions}>
+            {headerExtra}
+            {extraAddActions.map(action => (
+              <ToolbarIconButton
+                key={action.label}
+                label={action.label}
+                icon={action.icon}
+                variant="secondary"
+                onClick={() => addNote(action)}
+              />
+            ))}
             <ToolbarIconButton
-              key={action.label}
-              label={action.label}
-              icon={action.icon}
-              variant="secondary"
-              onClick={() => addNote(action)}
+              label={addLabel}
+              icon={addLabelIcon}
+              variant="primary"
+              onClick={() => addNote()}
             />
-          ))}
-          <ToolbarIconButton
-            label={addLabel}
-            icon={addLabelIcon}
-            variant="primary"
-            onClick={() => addNote()}
-          />
+          </div>
+          {toolbarSubtext ? <div style={styles.toolbarSubtext}>{toolbarSubtext}</div> : null}
         </div>
       </div>
 
@@ -526,6 +565,20 @@ const styles: Record<string, CSSProperties> = {
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
   },
+  toolbarRight: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 4,
+    minWidth: 0,
+  },
+  toolbarSubtext: {
+    fontSize: 10,
+    lineHeight: 1.35,
+    color: '#94a3b8',
+    textAlign: 'right',
+    maxWidth: 280,
+  },
   btnContent: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -575,7 +628,7 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: 212,
     flexShrink: 0,
     borderRight: '1px solid #e2e8f0',
-    background: '#f1f5f9',
+    background: '#eceef1',
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
@@ -600,7 +653,7 @@ const styles: Record<string, CSSProperties> = {
   sidebarSection: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 6,
+    gap: 4,
   },
   sectionLabel: {
     fontSize: 10,
@@ -609,6 +662,14 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'lowercase',
     color: '#64748b',
     padding: '2px 4px 0',
+  },
+  sectionLabelAccent: {
+    fontSize: 9,
+    fontWeight: 600,
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase',
+    color: '#6b7280',
+    padding: '4px 6px 2px',
   },
   sectionDivider: {
     height: 1,
@@ -648,6 +709,37 @@ const styles: Record<string, CSSProperties> = {
     color: '#475569',
     cursor: 'pointer',
     fontFamily: font,
+  },
+  sidebarItemAccent: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    textAlign: 'left',
+    padding: '5px 8px 5px 0',
+    borderRadius: 6,
+    border: 'none',
+    background: 'transparent',
+    fontSize: 11,
+    fontWeight: 500,
+    color: '#3d4451',
+    cursor: 'pointer',
+    fontFamily: font,
+    gap: 0,
+  },
+  sidebarItemAccentLoop: {},
+  sidebarItemAccentLoopActive: {
+    background: 'rgba(100, 116, 139, 0.14)',
+  },
+  sidebarItemAccentDecision: {},
+  sidebarItemAccentDecisionActive: {
+    background: 'rgba(139, 126, 200, 0.16)',
+  },
+  accentBar: {
+    alignSelf: 'stretch',
+    borderRadius: 999,
+    flexShrink: 0,
+    marginRight: 8,
+    minHeight: 18,
   },
   sidebarItemLoop: {
     background: '#1e293b',
@@ -692,6 +784,12 @@ const styles: Record<string, CSSProperties> = {
     flexShrink: 0,
     width: 14,
     textAlign: 'center',
+  },
+  tabIconAccent: {
+    fontSize: 11,
+    width: 12,
+    color: '#64748b',
+    opacity: 0.85,
   },
   tabLabel: {
     overflow: 'hidden',
