@@ -111,7 +111,14 @@ interface StuckHelpContextValue {
   setStartingPhase: (phase: StartingFlowPhase) => void;
   setOrganizingPhase: (phase: OrganizingFlowPhase) => void;
   setStructurePhase: (phase: StructureFlowPhase) => void;
-  setStartingFields: (fields: Partial<Pick<StartingFlowState, 'importantTask' | 'prepPlan' | 'chunks'>>) => void;
+  setStartingFields: (
+    fields: Partial<
+      Pick<
+        StartingFlowState,
+        'importantTask' | 'chunks' | 'projectId' | 'projectName' | 'projectMode'
+      >
+    >
+  ) => void;
   setOrganizingFields: (
     fields: Partial<
       Pick<OrganizingFlowState, 'projectId' | 'projectName' | 'projectMode' | 'taskTexts' | 'hardestTask'>
@@ -196,10 +203,12 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     setOrganizingFlow(null);
     setStructureFlow(null);
     setStartingFlow({
-      phase: 'await_task',
+      phase: 'await_task_mode',
       messages: [],
+      projectMode: null,
+      projectId: '',
+      projectName: '',
       importantTask: '',
-      prepPlan: '',
       chunks: '',
     });
   }, []);
@@ -254,7 +263,14 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setStartingFields = useCallback(
-    (fields: Partial<Pick<StartingFlowState, 'importantTask' | 'prepPlan' | 'chunks'>>) => {
+    (
+      fields: Partial<
+        Pick<
+          StartingFlowState,
+          'importantTask' | 'chunks' | 'projectId' | 'projectName' | 'projectMode'
+        >
+      >
+    ) => {
       setStartingFlow(prev => (prev ? { ...prev, ...fields } : prev));
     },
     []
@@ -317,10 +333,12 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     setStartingFlow(prev =>
       prev
         ? {
-            phase: 'await_task',
+            phase: 'await_task_mode',
             messages: [],
+            projectMode: null,
+            projectId: '',
+            projectName: '',
             importantTask: '',
-            prepPlan: '',
             chunks: '',
           }
         : prev

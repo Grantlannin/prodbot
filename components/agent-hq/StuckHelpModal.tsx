@@ -49,8 +49,12 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 
 const BOT_TYPING_MS = 1300;
 
-const STARTING_COMPOSE_PHASES: StartingFlowPhase[] = ['await_task', 'await_prep_plan', 'await_chunks'];
-const STARTING_YES_PHASES: StartingFlowPhase[] = ['await_prep_yes', 'await_chunk_yes'];
+const STARTING_COMPOSE_PHASES: StartingFlowPhase[] = [
+  'await_project_name',
+  'await_task_pick',
+  'await_chunks',
+];
+const STARTING_YES_PHASES: StartingFlowPhase[] = ['await_chunk_yes'];
 
 const ORGANIZING_COMPOSE_PHASES: OrganizingFlowPhase[] = [
   'await_project_name',
@@ -94,9 +98,6 @@ export default function StuckHelpModal() {
     resetStartingChat,
     resetOrganizingChat,
     resetStructureChat,
-    postPrepResume,
-    clearPostPrepResume,
-    beginPrepTimer,
     beginWorkTimer,
   } = useStuckHelp();
   const { status } = useWorkTrackerContext();
@@ -114,7 +115,13 @@ export default function StuckHelpModal() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const draftRef = useRef('');
   const [draft, setDraft] = useState('');
-  const flowFieldsRef = useRef({ importantTask: '', prepPlan: '', chunks: '' });
+  const flowFieldsRef = useRef({
+    projectMode: null as 'choose' | 'input' | null,
+    projectId: '',
+    projectName: '',
+    importantTask: '',
+    chunks: '',
+  });
   const organizingFieldsRef = useRef({
     projectMode: null as 'choose' | 'input' | null,
     projectId: '',
@@ -153,6 +160,30 @@ export default function StuckHelpModal() {
   };
 
   useEffect(() => () => clearTimers(), []);
+
+  useEffect(() => {
+    if (!startingFlow?.projectId) return;
+    const exists = projects.some(project => project.id === startingFlow.projectId);
+    if (exists) return;
+
+    flowFieldsRef.current.projectId = '';
+    flowFieldsRef.current.projectName = '';
+    flowFieldsRef.current.importantTask = '';
+    setStartingFields({
+      projectId: '',
+      projectName: '',
+      importantTask: '',
+    });
+
+    const earlyPhases = new Set<StartingFlowPhase>([
+      'await_task_mode',
+      'await_project_pick',
+      'await_project_name',
+    ]);
+    if (!earlyPhases.has(startingFlow.phase)) {
+      setStartingPhase('await_task_mode');
+    }
+  }, [startingFlow?.phase, startingFlow?.projectId, projects, setStartingFields, setStartingPhase]);
 
   useEffect(() => {
     if (!organizingFlow?.projectId) return;
@@ -358,12 +389,6 @@ export default function StuckHelpModal() {
   };
 
   useEffect(() => {
-    if (!open || !postPrepResume || !startingFlow) return;
-    clearPostPrepResume();
-    sendStartingBotReply(STARTING_FLOW_COPY.qChunks);
-  }, [open, postPrepResume, startingFlow, clearPostPrepResume]);
-
-  useEffect(() => {
     if (!open || !inStarting || !startingPhase || STARTING_YES_PHASES.includes(startingPhase) || typing) return;
     if (!STARTING_COMPOSE_PHASES.includes(startingPhase)) return;
     inputRef.current?.focus();
@@ -385,7 +410,13 @@ export default function StuckHelpModal() {
     clearStartingFlow();
     setDraft('');
     draftRef.current = '';
-    flowFieldsRef.current = { importantTask: '', prepPlan: '', chunks: '' };
+    flowFieldsRef.current = {
+      projectMode: null,
+      projectId: '',
+      projectName: '',
+      importantTask: '',
+      chunks: '',
+    };
     organizingFieldsRef.current = {
       projectMode: null,
       projectId: '',
@@ -398,7 +429,13 @@ export default function StuckHelpModal() {
 
   const pickPath = (id: StuckHelpPath) => {
     if (id === 'starting') {
-      flowFieldsRef.current = { importantTask: '', prepPlan: '', chunks: '' };
+      flowFieldsRef.current = {
+      projectMode: null,
+      projectId: '',
+      projectName: '',
+      importantTask: '',
+      chunks: '',
+    };
       startStartingFlow();
       setDraft('');
       draftRef.current = '';
@@ -425,6 +462,75 @@ export default function StuckHelpModal() {
       draftRef.current = '';
       sendStructureOpeningSequence(STRUCTURE_FLOW_COPY.intro, STRUCTURE_FLOW_COPY.qCommitments);
     }
+  };
+
+  const selectStartingProject = (project: ProjectBoard) => {
+    if (typing) return;
+    const name = project.name.trim() || 'Unnamed project';
+    flowFieldsRef.current.projectMode = 'choose';
+    flowFieldsRef.current.projectId = project.id;
+    flowFieldsRef.current.projectName = name;
+    setStartingFields({
+      projectMode: 'choose',
+      projectId: project.id,
+      projectName: name,
+    });
+    appendStartingMessages({ role: 'user', text: name });
+    requestFocusProject(project.id);
+    setStartingPhase('await_task_pick');
+    setDraft('');
+    draftRef.current = '';
+  };
+
+  const beginStartingChooseProject = () => {
+    if (typing) return;
+    const options = projects.filter(p => p.name.trim());
+    if (options.length === 0) {
+      setChooseProjectError(true);
+      return;
+    }
+    setChooseProjectError(false);
+    flowFieldsRef.current.projectMode = 'choose';
+    setStartingFields({ projectMode: 'choose' });
+    appendStartingMessages({ role: 'user', text: STARTING_FLOW_COPY.chooseProject });
+    setStartingPhase('await_project_pick');
+    setDraft('');
+    draftRef.current = '';
+  };
+
+  const beginStartingCreateProject = () => {
+    if (typing) return;
+    setChooseProjectError(false);
+    flowFieldsRef.current.projectMode = 'input';
+    setStartingFields({ projectMode: 'input' });
+    setStartingPhase('await_project_name');
+    setDraft('');
+    draftRef.current = '';
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const confirmStartingTask = (taskText: string) => {
+    const trimmed = taskText.trim();
+    if (!trimmed || typing) return;
+    flowFieldsRef.current.importantTask = trimmed;
+    setStartingFields({ importantTask: trimmed });
+    appendStartingMessages({ role: 'user', text: trimmed });
+    sendStartingBotReply(STARTING_FLOW_COPY.teeUpPrep);
+    setStartingPhase('await_manual_prep');
+    setDraft('');
+    draftRef.current = '';
+  };
+
+  const selectStartingTask = (taskText: string) => {
+    if (typing) return;
+    confirmStartingTask(taskText);
+  };
+
+  const finishStartingManualPrep = () => {
+    if (typing) return;
+    appendStartingMessages({ role: 'user', text: STARTING_FLOW_COPY.donePrepping });
+    sendStartingBotReply(STARTING_FLOW_COPY.qChunks);
+    setStartingPhase('await_chunks');
   };
 
   const selectOrganizingProject = (project: ProjectBoard) => {
@@ -497,33 +603,41 @@ export default function StuckHelpModal() {
     const text = draft.trim();
     if (!text || typing || !startingPhase) return;
 
+    if (startingPhase === 'await_project_name') {
+      let project!: ProjectBoard;
+      setProjects(prev => {
+        const result = upsertProject(prev, text);
+        project = result.project;
+        return result.projects;
+      });
+      flowFieldsRef.current.projectMode = 'input';
+      flowFieldsRef.current.projectId = project.id;
+      flowFieldsRef.current.projectName = project.name.trim();
+      setStartingFields({
+        projectMode: 'input',
+        projectId: project.id,
+        projectName: project.name.trim(),
+      });
+      appendStartingMessages({ role: 'user', text: project.name.trim() });
+      requestFocusProject(project.id);
+      setStartingPhase('await_task_pick');
+      setDraft('');
+      draftRef.current = '';
+      return;
+    }
+
+    if (startingPhase === 'await_task_pick') {
+      const projectId = startingFlow?.projectId || flowFieldsRef.current.projectId;
+      if (!projectId) return;
+      setProjects(prev => addProjectTask(prev, projectId, text));
+      requestFocusProject(projectId);
+      confirmStartingTask(text);
+      return;
+    }
+
     appendStartingMessages({ role: 'user', text });
     setDraft('');
     draftRef.current = '';
-
-    if (startingPhase === 'await_task') {
-      flowFieldsRef.current.importantTask = text;
-      setStartingFields({ importantTask: text });
-      const courseUrl = STARTING_FLOW_COPY.prepCourseUrl.trim();
-      if (courseUrl) {
-        sendStartingBotReply(STARTING_FLOW_COPY.q2, BOT_TYPING_MS, {
-          label: STARTING_FLOW_COPY.q2CourseLinkLabel,
-          href: courseUrl,
-        });
-      } else {
-        sendStartingBotReply(STARTING_FLOW_COPY.q2 + STARTING_FLOW_COPY.q2CourseLinkLabel);
-      }
-      setStartingPhase('await_prep_plan');
-      return;
-    }
-
-    if (startingPhase === 'await_prep_plan') {
-      flowFieldsRef.current.prepPlan = text;
-      setStartingFields({ prepPlan: text });
-      sendStartingBotReply(STARTING_FLOW_COPY.prepReady);
-      setStartingPhase('await_prep_yes');
-      return;
-    }
 
     if (startingPhase === 'await_chunks') {
       flowFieldsRef.current.chunks = text;
@@ -609,16 +723,6 @@ export default function StuckHelpModal() {
     if (!startingPhase || !startingFlow) return;
     if (busy) return;
 
-    if (startingPhase === 'await_prep_yes') {
-      if (typing) return;
-      const task = (startingFlow.importantTask || flowFieldsRef.current.importantTask).trim();
-      const prep = (startingFlow.prepPlan || flowFieldsRef.current.prepPlan).trim();
-      if (!task || !prep) return;
-      appendStartingMessages({ role: 'user', text: STARTING_FLOW_COPY.yesBegin });
-      beginPrepTimer(task, prep);
-      return;
-    }
-
     if (startingPhase === 'await_chunk_yes') {
       if (typing) return;
       const task = (startingFlow.importantTask || flowFieldsRef.current.importantTask).trim();
@@ -646,7 +750,9 @@ export default function StuckHelpModal() {
 
   const clearChatLabel = inStructure
     ? STRUCTURE_FLOW_COPY.clearChat
-    : ORGANIZING_FLOW_COPY.clearChat;
+    : inStarting
+      ? STARTING_FLOW_COPY.clearChat
+      : ORGANIZING_FLOW_COPY.clearChat;
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -682,7 +788,13 @@ export default function StuckHelpModal() {
     }
 
     if (inStarting) {
-      flowFieldsRef.current = { importantTask: '', prepPlan: '', chunks: '' };
+      flowFieldsRef.current = {
+      projectMode: null,
+      projectId: '',
+      projectName: '',
+      importantTask: '',
+      chunks: '',
+    };
       resetStartingChat();
       sendStartingOpeningSequence(STARTING_FLOW_COPY.intro, STARTING_FLOW_COPY.q1);
     }
@@ -713,6 +825,9 @@ export default function StuckHelpModal() {
   const projectTaskTexts = getOpenProjectTaskTexts(selectedProject);
   const hardestPickOptions = mergeTaskTextOptions(projectTaskTexts, organizingTasks);
   const existingProjectTasks = projectTaskTexts.filter(taskText => !organizingTasks.includes(taskText));
+
+  const selectedStartingProject = projects.find(p => p.id === startingFlow?.projectId);
+  const startingProjectTaskTexts = getOpenProjectTaskTexts(selectedStartingProject);
 
   return createPortal(
     <>
@@ -812,6 +927,58 @@ export default function StuckHelpModal() {
             </div>
 
             <footer style={styles.footer}>
+              {inStarting && startingPhase === 'await_task_mode' && !typing ? (
+                <div style={styles.chipWrap}>
+                  {chooseProjectError ? (
+                    <p style={styles.errorText}>{STARTING_FLOW_COPY.noSavedProjects}</p>
+                  ) : null}
+                  <button type="button" onClick={beginStartingChooseProject} style={styles.chip}>
+                    {STARTING_FLOW_COPY.chooseProject}
+                  </button>
+                  <button type="button" onClick={beginStartingCreateProject} style={styles.chip}>
+                    {STARTING_FLOW_COPY.createProject}
+                  </button>
+                </div>
+              ) : null}
+
+              {inStarting && startingPhase === 'await_project_pick' && !typing && projectOptions.length > 0 ? (
+                <div style={styles.chipWrap}>
+                  {projectOptions.map(project => (
+                    <button
+                      key={project.id}
+                      type="button"
+                      onClick={() => selectStartingProject(project)}
+                      style={styles.chip}
+                    >
+                      {project.name.trim()}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {inStarting && startingPhase === 'await_task_pick' && !typing && startingProjectTaskTexts.length > 0 ? (
+                <div style={styles.chipWrap}>
+                  {startingProjectTaskTexts.map(task => (
+                    <button
+                      key={task}
+                      type="button"
+                      onClick={() => selectStartingTask(task)}
+                      style={styles.chip}
+                    >
+                      {task}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {inStarting && startingPhase === 'await_manual_prep' && !typing ? (
+                <div style={styles.chipWrap}>
+                  <button type="button" onClick={finishStartingManualPrep} style={styles.chip}>
+                    {STARTING_FLOW_COPY.donePrepping}
+                  </button>
+                </div>
+              ) : null}
+
               {inOrganizing && organizingPhase === 'await_project_mode' && !typing ? (
                 <div style={styles.chipWrap}>
                   {chooseProjectError ? (
@@ -1001,11 +1168,15 @@ export default function StuckHelpModal() {
                     onKeyDown={handleKeyDown}
                     rows={1}
                     placeholder={
-                      organizingPhase === 'await_project_name'
-                        ? ORGANIZING_FLOW_COPY.projectNamePlaceholder
-                        : inOrganizing && organizingPhase === 'await_mvp_tasks'
-                          ? ORGANIZING_FLOW_COPY.addTaskPlaceholder
-                          : 'Message'
+                      startingPhase === 'await_project_name'
+                        ? STARTING_FLOW_COPY.projectNamePlaceholder
+                        : startingPhase === 'await_task_pick'
+                          ? STARTING_FLOW_COPY.addTaskPlaceholder
+                          : organizingPhase === 'await_project_name'
+                            ? ORGANIZING_FLOW_COPY.projectNamePlaceholder
+                            : inOrganizing && organizingPhase === 'await_mvp_tasks'
+                              ? ORGANIZING_FLOW_COPY.addTaskPlaceholder
+                              : 'Message'
                     }
                     style={styles.input}
                   />
