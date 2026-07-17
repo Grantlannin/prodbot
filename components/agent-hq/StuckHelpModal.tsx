@@ -563,7 +563,6 @@ export default function StuckHelpModal() {
     setChooseProjectError(false);
     organizingFieldsRef.current.projectMode = 'choose';
     setOrganizingFields({ projectMode: 'choose' });
-    appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.chooseProject });
     setOrganizingPhase('await_project_pick');
     setDraft('');
     draftRef.current = '';
