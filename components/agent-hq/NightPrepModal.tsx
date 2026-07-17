@@ -559,7 +559,7 @@ export default function NightPrepModal() {
             {phase === 'prep_project_mode' && !typing ? (
               <div style={styles.chipWrap}>
                 {chooseProjectError ? (
-                  <p style={styles.errorText}>No saved projects yet — input a project instead.</p>
+                  <p style={styles.errorText}>No saved projects yet — create a project instead.</p>
                 ) : null}
                 <button type="button" onClick={beginChooseProject} style={styles.chip}>
                   {WIND_DOWN_FLOW_COPY.chooseProject}

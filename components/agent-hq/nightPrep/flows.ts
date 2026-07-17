@@ -25,7 +25,7 @@ export const WIND_DOWN_FLOW_COPY = {
   qWhatWorkingOn:
     'Great. Now let\'s figure out what you\'re working on. For the "perfect task list", we can use a 2-question seqeunce. You can first ask yourself "what, if finished tomorrow, would make me feel like it was a productive day?". The 2nd question is "do i have high confidence that i can finish these?". The best task lists make you feel good, and are manageable.',
   chooseProject: 'choose project',
-  inputProject: 'input project',
+  inputProject: 'create project',
   addNewTask: 'add new task into this project',
   addAnotherTask: 'add task from another project to task list',
   taskListFinished: 'task list finished',
