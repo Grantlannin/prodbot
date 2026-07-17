@@ -492,7 +492,6 @@ export default function StuckHelpModal() {
     setChooseProjectError(false);
     flowFieldsRef.current.projectMode = 'choose';
     setStartingFields({ projectMode: 'choose' });
-    appendStartingMessages({ role: 'user', text: STARTING_FLOW_COPY.chooseProject });
     setStartingPhase('await_project_pick');
     setDraft('');
     draftRef.current = '';
