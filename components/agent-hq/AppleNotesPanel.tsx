@@ -82,7 +82,6 @@ export default function AppleNotesPanel() {
   const { textareaHandlers: clipHandlers, bubbleNode: clipBubble } = useNoteClipBubble({
     textareaRef,
     noteText: selected?.content ?? '',
-    clipDateMs: selected?.updatedAt,
     projects,
     setProjects,
   });

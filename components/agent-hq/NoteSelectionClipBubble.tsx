@@ -58,7 +58,6 @@ type SetProjects = (
 interface UseNoteClipBubbleOptions {
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   noteText: string;
-  clipDateMs?: number;
   projects?: ProjectBoard[];
   setProjects?: SetProjects;
   /** PiP / secondary window — portal + coords must use this document */
@@ -154,7 +153,6 @@ function chipAnchor(
 export function useNoteClipBubble({
   textareaRef,
   noteText,
-  clipDateMs,
   projects: projectsProp,
   setProjects: setProjectsProp,
   portalDocument,
@@ -245,7 +243,7 @@ export function useNoteClipBubble({
 
     const entry = formatNoteClipEntry({
       text: picked,
-      dateMs: clipDateMs,
+      dateMs: Date.now(),
       context: addContext ? contextText : undefined,
     });
     setProjects(prev => applyNoteClip(prev, section.target, entry));
@@ -255,7 +253,6 @@ export function useNoteClipBubble({
     activeSectionKey,
     addContext,
     clearClipUi,
-    clipDateMs,
     contextText,
     noteText,
     sectionOptions,

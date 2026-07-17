@@ -38,7 +38,6 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
   const { textareaHandlers: clipHandlers, bubbleNode: clipBubble } = useNoteClipBubble({
     textareaRef,
     noteText: selected?.content ?? '',
-    clipDateMs: selected?.updatedAt,
     portalDocument: pipWindow.document,
   });
 
