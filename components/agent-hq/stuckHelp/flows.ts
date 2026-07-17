@@ -51,7 +51,7 @@ export const STARTING_FLOW_COPY = {
     'Awesome. Now let\'s actually prep it. I call this "teeing up the task", like a tee ball. Open the tabs, log into the accounts, and get everything ready/set up. This will allow you to start with zero friction. Let me know when you\'re prepped.',
   donePrepping: 'done prepping',
   qChunks:
-    'great. at this point the task should be prepped. If not, do that right now. Assuming it is, the majority of your friction is because we think we need to do the whole thing at one point. But let\'s beat that by breaking this task down into a manageable chunk/piece. If you were forced to chunk an important part of this into a winnable task right now, what specifically would you do?',
+    'great. at this point the task should be prepped. If not, do that right now. Assuming it is, the majority of your friction is because we think we need to do the whole thing at one time. But let\'s beat that illusion of friction by breaking this task down into 1 manageable chunk/piece, of which is the most important. If you were forced to chunk the most important part of this into a winnable task right now, what specifically would you do?',
   chunkWorkReady:
     'great. Now let\'s put in a good 5 minutes on it. Completing this piece (and actually moving the ball forward) is tremendously better than nothing, especially since you\'ve already prepped for it. This is the real sh*t that will get you what you want. Everyone else quits right here, and doing this right now, in these moments, is your competitive advantage. Your future self will thank you. Ready to put in a world-class 5 minutes right now?',
   yesBegin: 'YES',
