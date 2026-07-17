@@ -21,6 +21,7 @@ import {
   MORNING_FLOW_USED_KEY,
   type MorningFlowUsedRecord,
 } from './morningFlow/storage';
+import { FOCUS_LOCK_MODE_COPY, FOCUS_LOCK_MODES } from './focusBlocking';
 import {
   getActiveNightPrepPlan,
   NIGHT_PREP_PLAN_KEY,
@@ -317,39 +318,23 @@ export default function MorningFlowModal() {
 
             {phase === 'lock_pick' && !typing ? (
               <div style={styles.chipWrap}>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => pickLock('none', 'No lock')}
-                  style={{
-                    ...styles.chip,
-                    ...(busy ? styles.chipDisabled : {}),
-                  }}
-                >
-                  No lock
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => pickLock('soft', 'Soft lock')}
-                  style={{
-                    ...styles.chip,
-                    ...(busy ? styles.chipDisabled : {}),
-                  }}
-                >
-                  Soft lock
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => pickLock('hard', 'Hard lock')}
-                  style={{
-                    ...styles.chip,
-                    ...(busy ? styles.chipDisabled : {}),
-                  }}
-                >
-                  Hard lock
-                </button>
+                {FOCUS_LOCK_MODES.map(mode => (
+                  <button
+                    key={mode}
+                    type="button"
+                    disabled={busy}
+                    onClick={() =>
+                      pickLock(mode, `${FOCUS_LOCK_MODE_COPY[mode].label} — ${FOCUS_LOCK_MODE_COPY[mode].hint}`)
+                    }
+                    style={{
+                      ...styles.chip,
+                      ...(busy ? styles.chipDisabled : {}),
+                    }}
+                  >
+                    {FOCUS_LOCK_MODE_COPY[mode].label}
+                    <span style={styles.chipMeta}> · {FOCUS_LOCK_MODE_COPY[mode].hint}</span>
+                  </button>
+                ))}
               </div>
             ) : null}
           </footer>

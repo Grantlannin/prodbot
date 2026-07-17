@@ -18,11 +18,6 @@ export const MORNING_FLOW_COPY = {
   chooseTimer: 'please choose your timer length',
   chooseLock: 'Choose lock mode',
   busy: 'You already have a session running. Stop it first to start something new.',
-  lockHints: {
-    none: 'End the session anytime — no cooldown or escape flow.',
-    soft: 'End early after a 2-minute wait and confirmation.',
-    hard: 'No normal early end — hold 10s and type a phrase to escape.',
-  },
 } as const;
 
 export const TIMER_PRESETS = [15, 25, 30, 45, 60, 90] as const;

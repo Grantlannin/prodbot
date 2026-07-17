@@ -7,6 +7,7 @@ import { fireCelebrationConfetti } from './celebrationEffects';
 import { useStuckHelp } from './hooks/StuckHelpProvider';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import { KICKSTART_DURATION_PRESETS, STARTING_FLOW_COPY } from './stuckHelp/flows';
+import { FOCUS_LOCK_MODE_COPY, FOCUS_LOCK_MODES } from './focusBlocking';
 import type { FocusLockMode } from './types';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -140,7 +141,7 @@ export default function StuckHelpOverlays() {
                 <div style={styles.lockSection}>
                   <div style={styles.lockLabel}>Lock mode</div>
                   <div style={styles.lockRow}>
-                    {(['none', 'soft', 'hard'] as FocusLockMode[]).map(mode => (
+                    {FOCUS_LOCK_MODES.map(mode => (
                       <button
                         key={mode}
                         type="button"
@@ -150,7 +151,15 @@ export default function StuckHelpOverlays() {
                           ...(extendLockMode === mode ? styles.lockBtnActive : {}),
                         }}
                       >
-                        {mode === 'none' ? 'No lock' : mode === 'soft' ? 'Soft' : 'Hard'}
+                        <span style={styles.lockBtnLabel}>{FOCUS_LOCK_MODE_COPY[mode].label}</span>
+                        <span
+                          style={{
+                            ...styles.lockBtnHint,
+                            ...(extendLockMode === mode ? styles.lockBtnHintActive : {}),
+                          }}
+                        >
+                          {FOCUS_LOCK_MODE_COPY[mode].hint}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -412,15 +421,32 @@ const styles: Record<string, CSSProperties> = {
   },
   lockBtn: {
     flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 2,
     border: '1px solid #e2e8f0',
     borderRadius: 8,
     padding: '8px 6px',
-    fontSize: 11,
-    fontWeight: 700,
     fontFamily: font,
     background: '#fff',
     color: '#475569',
     cursor: 'pointer',
+  },
+  lockBtnLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    lineHeight: 1.2,
+  },
+  lockBtnHint: {
+    fontSize: 9,
+    fontWeight: 500,
+    color: '#94a3b8',
+    lineHeight: 1.25,
+    textAlign: 'center',
+  },
+  lockBtnHintActive: {
+    color: 'rgba(255, 255, 255, 0.82)',
   },
   lockBtnActive: {
     background: '#0f172a',

@@ -8,6 +8,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import { useHoverTimer } from './hooks/HoverTimerProvider';
 import { listWorkPartGroups, makeProjectTaskId, newProjectTask, sessionLabel, type ListedWorkTask } from './quickstartTask';
+import { FOCUS_LOCK_MODE_COPY, FOCUS_LOCK_MODES } from './focusBlocking';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const PROJECTS_KEY = 'agentHQ_projects';
@@ -349,44 +350,28 @@ export default function StartWorkModal({
             <div style={styles.lockSection}>
               <div style={styles.lockLabel}>Lock mode</div>
               <div style={styles.lockRow}>
-                <button
-                  type="button"
-                  onClick={() => setLockMode('none')}
-                  style={{
-                    ...styles.lockBtn,
-                    ...(lockMode === 'none' ? styles.lockBtnActive : {}),
-                  }}
-                >
-                  No lock
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLockMode('soft')}
-                  style={{
-                    ...styles.lockBtn,
-                    ...(lockMode === 'soft' ? styles.lockBtnActive : {}),
-                  }}
-                >
-                  Soft
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLockMode('hard')}
-                  style={{
-                    ...styles.lockBtn,
-                    ...(lockMode === 'hard' ? styles.lockBtnActive : {}),
-                  }}
-                >
-                  Hard
-                </button>
+                {FOCUS_LOCK_MODES.map(mode => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setLockMode(mode)}
+                    style={{
+                      ...styles.lockBtn,
+                      ...(lockMode === mode ? styles.lockBtnActive : {}),
+                    }}
+                  >
+                    <span style={styles.lockBtnLabel}>{FOCUS_LOCK_MODE_COPY[mode].label}</span>
+                    <span
+                      style={{
+                        ...styles.lockBtnHint,
+                        ...(lockMode === mode ? styles.lockBtnHintActive : {}),
+                      }}
+                    >
+                      {FOCUS_LOCK_MODE_COPY[mode].hint}
+                    </span>
+                  </button>
+                ))}
               </div>
-              <p style={styles.lockHint}>
-                {lockMode === 'none'
-                  ? 'End the session anytime — no cooldown or escape flow.'
-                  : lockMode === 'soft'
-                    ? 'End early after a 2-minute wait and confirmation.'
-                    : 'No normal early end — hold 10s and type a phrase to escape.'}
-              </p>
             </div>
             <div style={styles.actions}>
               <button
@@ -752,26 +737,37 @@ const styles: Record<string, CSSProperties> = {
   },
   lockBtn: {
     flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 2,
     border: '1px solid #e2e8f0',
     borderRadius: 8,
-    padding: '7px 6px',
+    padding: '8px 6px',
     background: '#fff',
     color: '#475569',
-    fontSize: 11,
-    fontWeight: 600,
     fontFamily: font,
     cursor: 'pointer',
+  },
+  lockBtnLabel: {
+    fontSize: 11,
+    fontWeight: 600,
+    lineHeight: 1.2,
+  },
+  lockBtnHint: {
+    fontSize: 9,
+    fontWeight: 500,
+    color: '#94a3b8',
+    lineHeight: 1.25,
+    textAlign: 'center',
+  },
+  lockBtnHintActive: {
+    color: 'rgba(255, 255, 255, 0.82)',
   },
   lockBtnActive: {
     background: '#0f172a',
     color: '#fff',
     borderColor: '#0f172a',
-  },
-  lockHint: {
-    margin: '8px 0 0',
-    fontSize: 11,
-    color: '#94a3b8',
-    lineHeight: 1.4,
   },
   input: {
     width: '100%',

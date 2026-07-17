@@ -3,8 +3,23 @@ import type { FocusLockMode, WorkSession, WorkStatus } from './types';
 export const FOCUS_BLOCKLIST_KEY = 'agentHQ_focusBlocklist';
 
 export const SOFT_LOCK_COOLDOWN_MS = 120_000;
-export const HARD_LOCK_HOLD_MS = 10_000;
-export const HARD_LOCK_ESCAPE_PHRASE = 'i am choosing to end my session early';
+
+export const FOCUS_LOCK_MODE_COPY: Record<FocusLockMode, { label: string; hint: string }> = {
+  none: {
+    label: 'No lock',
+    hint: 'End anytime',
+  },
+  soft: {
+    label: 'Soft',
+    hint: '2-min wait to end early',
+  },
+  hard: {
+    label: 'Hard',
+    hint: 'No early end until timer ends',
+  },
+};
+
+export const FOCUS_LOCK_MODES: FocusLockMode[] = ['none', 'soft', 'hard'];
 
 export const SOCIAL_BUNDLE_SITES = [
   { key: 'twitter', label: 'X / Twitter', domains: ['twitter.com', 'x.com'] },
