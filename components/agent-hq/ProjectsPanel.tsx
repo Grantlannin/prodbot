@@ -406,15 +406,16 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     [projects, updateTask, celebration, onProjectCompleted]
   );
 
-  const insertTaskAfter = useCallback(
-    (projectId: string, afterTaskId: string) => {
-      const task = emptyTask();
+  const splitTaskAfter = useCallback(
+    (projectId: string, afterTaskId: string, beforeText: string, afterText: string) => {
+      const task = { ...emptyTask(), text: afterText };
       setProjects(prev =>
         prev.map(p => {
           if (p.id !== projectId) return p;
           const idx = p.tasks.findIndex(t => t.id === afterTaskId);
           if (idx === -1) return p;
           const tasks = [...p.tasks];
+          tasks[idx] = { ...tasks[idx], text: beforeText };
           tasks.splice(idx + 1, 0, task);
           return { ...p, tasks, updatedAt: Date.now() };
         })
@@ -576,6 +577,38 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
             tasks: p.tasks.map(t => {
               if (t.id !== taskId) return t;
               return { ...t, subTasks: [...(t.subTasks ?? []), sub] };
+            }),
+            updatedAt: Date.now(),
+          };
+        })
+      );
+      setFocusSubTaskKey(subTaskKey(taskId, sub.id));
+    },
+    [setProjects]
+  );
+
+  const splitSubTaskAfter = useCallback(
+    (
+      projectId: string,
+      taskId: string,
+      afterSubTaskId: string,
+      beforeText: string,
+      afterText: string
+    ) => {
+      const sub = { ...emptySubTask(), text: afterText };
+      setProjects(prev =>
+        prev.map(p => {
+          if (p.id !== projectId) return p;
+          return {
+            ...p,
+            tasks: p.tasks.map(t => {
+              if (t.id !== taskId) return t;
+              const subs = [...(t.subTasks ?? [])];
+              const idx = subs.findIndex(s => s.id === afterSubTaskId);
+              if (idx === -1) return t;
+              subs[idx] = { ...subs[idx], text: beforeText };
+              subs.splice(idx + 1, 0, sub);
+              return { ...t, subTasks: subs };
             }),
             updatedAt: Date.now(),
           };
@@ -987,7 +1020,14 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             onKeyDown={e => {
                               if (e.key === 'Enter') {
                                 e.preventDefault();
-                                insertTaskAfter(selected.id, task.id);
+                                const input = e.currentTarget;
+                                const cursor = input.selectionStart ?? input.value.length;
+                                splitTaskAfter(
+                                  selected.id,
+                                  task.id,
+                                  input.value.slice(0, cursor),
+                                  input.value.slice(cursor)
+                                );
                                 return;
                               }
                               if (
@@ -1170,7 +1210,15 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               onKeyDown={e => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault();
-                                  addSubTask(selected.id, task.id);
+                                  const input = e.currentTarget;
+                                  const cursor = input.selectionStart ?? input.value.length;
+                                  splitSubTaskAfter(
+                                    selected.id,
+                                    task.id,
+                                    sub.id,
+                                    input.value.slice(0, cursor),
+                                    input.value.slice(cursor)
+                                  );
                                   return;
                                 }
                                 if (
