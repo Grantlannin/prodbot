@@ -175,7 +175,7 @@ export default function DashboardTab({
             <div style={styles.timerControls}>
               {!hasActiveSession ? (
                 <button type="button" onClick={handleStartTimer} style={styles.timerStartBtn}>
-                  Start
+                  Start working
                 </button>
               ) : (
                 <>
@@ -414,17 +414,17 @@ const styles: Record<string, CSSProperties> = {
   },
   timerStartBtn: {
     width: '100%',
-    border: 'none',
-    borderRadius: 9,
-    padding: '7px 10px',
-    fontSize: 11,
-    fontWeight: 600,
+    border: '1px solid #059669',
+    borderRadius: 10,
+    padding: '9px 12px',
+    fontSize: 12,
+    fontWeight: 700,
     fontFamily: font,
     letterSpacing: '-0.01em',
-    background: '#ecfdf5',
-    color: '#047857',
+    background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)',
+    color: '#fff',
     cursor: 'pointer',
-    boxShadow: 'inset 0 0 0 1px rgba(16, 185, 129, 0.2)',
+    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(16, 185, 129, 0.35)',
   },
   liveCountdown: {
     fontSize: 15,
