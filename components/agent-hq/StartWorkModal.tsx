@@ -12,6 +12,15 @@ import { listWorkPartGroups, makeProjectTaskId, newProjectTask, sessionLabel, ty
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const PROJECTS_KEY = 'agentHQ_projects';
 const DURATION_PRESETS = [15, 25, 30, 45, 60, 90];
+const MAX_CUSTOM_MINUTES = 360;
+
+function parseCustomMinutes(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const parsed = Number.parseInt(trimmed, 10);
+  if (!Number.isFinite(parsed) || parsed < 1 || parsed > MAX_CUSTOM_MINUTES) return null;
+  return parsed;
+}
 
 type Step = 'select-task' | 'new-task' | 'select-project' | 'new-project' | 'select-duration';
 type StartWorkModalMode = 'start' | 'set-timer';
@@ -45,6 +54,7 @@ export default function StartWorkModal({
   const [newProjectName, setNewProjectName] = useState('');
   const [pendingSession, setPendingSession] = useState<PendingSession | null>(null);
   const [durationMinutes, setDurationMinutes] = useState(25);
+  const [customMinutesInput, setCustomMinutesInput] = useState('25');
   const [lockMode, setLockMode] = useState<FocusLockMode>('none');
   const { startSession, status } = useWorkTrackerContext();
   const { requestOpen } = useHoverTimer();
@@ -64,6 +74,7 @@ export default function StartWorkModal({
       setPendingSession(preset);
       setStep('select-duration');
       setDurationMinutes(25);
+      setCustomMinutesInput('25');
       setLockMode('none');
       setExpandedPartKey(null);
       return;
@@ -73,6 +84,7 @@ export default function StartWorkModal({
     setNewProjectName('');
     setPendingSession(null);
     setDurationMinutes(25);
+    setCustomMinutesInput('25');
     setLockMode('none');
     setExpandedPartKey(null);
   }, [open, mode, preset]);
@@ -164,9 +176,11 @@ export default function StartWorkModal({
     queueOrStart(sessionLabel(name, text), { projectId: project.id, taskId: task.id });
   };
 
+  const resolvedCustomMinutes = parseCustomMinutes(customMinutesInput);
+
   const handleStartCountdown = () => {
-    if (!pendingSession || durationMinutes <= 0) return;
-    beginSession(pendingSession.label, pendingSession.taskRef, durationMinutes, lockMode);
+    if (!pendingSession || resolvedCustomMinutes === null) return;
+    beginSession(pendingSession.label, pendingSession.taskRef, resolvedCustomMinutes, lockMode);
   };
 
   const selectTaskTitle = isSetTimer ? 'Set timer — pick a task' : 'What are you working on?';
@@ -283,7 +297,10 @@ export default function StartWorkModal({
                 <button
                   key={min}
                   type="button"
-                  onClick={() => setDurationMinutes(min)}
+                  onClick={() => {
+                    setDurationMinutes(min);
+                    setCustomMinutesInput(String(min));
+                  }}
                   style={{
                     ...styles.presetBtn,
                     ...(durationMinutes === min ? styles.presetBtnActive : {}),
@@ -298,13 +315,37 @@ export default function StartWorkModal({
             </label>
             <input
               id="countdown-minutes"
-              type="number"
-              min={1}
-              max={480}
-              value={durationMinutes}
-              onChange={e => setDurationMinutes(Math.max(1, Number(e.target.value) || 1))}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={customMinutesInput}
+              onChange={e => {
+                const next = e.target.value.replace(/\D/g, '');
+                setCustomMinutesInput(next);
+                const parsed = parseCustomMinutes(next);
+                if (parsed !== null) setDurationMinutes(parsed);
+              }}
+              onFocus={e => e.target.select()}
+              onBlur={() => {
+                if (customMinutesInput.trim() === '') return;
+                const parsed = parseCustomMinutes(customMinutesInput);
+                if (parsed === null) {
+                  const overflow = Number.parseInt(customMinutesInput, 10);
+                  if (Number.isFinite(overflow) && overflow > MAX_CUSTOM_MINUTES) {
+                    setCustomMinutesInput(String(MAX_CUSTOM_MINUTES));
+                    setDurationMinutes(MAX_CUSTOM_MINUTES);
+                  }
+                  return;
+                }
+                setCustomMinutesInput(String(parsed));
+                setDurationMinutes(parsed);
+              }}
               style={styles.input}
+              aria-describedby="countdown-minutes-hint"
             />
+            <p id="countdown-minutes-hint" style={styles.durationHint}>
+              1–{MAX_CUSTOM_MINUTES} minutes
+            </p>
             <div style={styles.lockSection}>
               <div style={styles.lockLabel}>Lock mode</div>
               <div style={styles.lockRow}>
@@ -361,10 +402,10 @@ export default function StartWorkModal({
               <button
                 type="button"
                 onClick={handleStartCountdown}
-                disabled={busy || durationMinutes <= 0}
+                disabled={busy || resolvedCustomMinutes === null}
                 style={{
                   ...styles.primaryBtn,
-                  ...(busy || durationMinutes <= 0 ? styles.primaryBtnDisabled : {}),
+                  ...(busy || resolvedCustomMinutes === null ? styles.primaryBtnDisabled : {}),
                 }}
               >
                 Start session
