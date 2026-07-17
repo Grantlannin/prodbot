@@ -16,7 +16,6 @@ import type { ProjectProgress } from './projectProgress';
 import OpenLoopsPanel from './OpenLoopsPanel';
 import NightPrepPanel from './NightPrepPanel';
 import BeginMyDayButton from './BeginMyDayButton';
-import EodReportsCalendar from './EodReportsCalendar';
 import EodSendModal from './EodSendModal';
 import StartWorkModal, { type StartWorkPreset } from './StartWorkModal';
 import { sessionLabel } from './quickstartTask';
@@ -275,7 +274,6 @@ export default function DashboardTab({
               <button type="button" onClick={() => setEodSendOpen(true)} style={styles.eodSendBtn}>
                 Send EOD
               </button>
-              <EodReportsCalendar />
             </div>
           </div>
         </div>

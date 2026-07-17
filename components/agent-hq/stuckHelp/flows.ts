@@ -106,6 +106,8 @@ export interface StartingFlowState {
   chunks: string;
 }
 
+export const ORGANIZING_MVP_TASK_LIMIT = 2;
+
 export const ORGANIZING_FLOW_COPY = {
   intro:
     "Ok, great. let's tee-up the most important task for you right now & get you organized quickly.",
@@ -114,7 +116,7 @@ export const ORGANIZING_FLOW_COPY = {
     'Great. Now, take a second and think about what can get us to the finish line for this project in 48 hours with the most ghetto MVP (minimum viable product) imaginable. It just needs to WORK, not be pretty. Thinking/overanalyzing gets us nothing, shitty action gets us everything. So if we HAD to get this finished & "up" or "in motion" in 48 hrs (product launched, outreach message sent, funnel finished, thing completed etc), what are the 2 single most important things we\'d work on or do? (Enter them 1 by 1)',
   doneAddingTasks: 'done adding tasks',
   qHardest:
-    "Great. Now - let's choose the hardest part of what we just wrote & and quickly prep it so when we start there's zero friction for us. We're not doing it yet, we're just going to set it up for when we're ready to do it. What is the hardest part? (Also note, one task may be required to be finished first because others are dependent on it. Obviously do that one first.",
+    "Great. Now - let's choose the hardest part (AKA the most important) of what we just wrote & and quickly prep it so when we start there's zero friction for us. We're not doing it yet, we're just going to set it up for when we're ready to do it. What is the hardest part? (Also note, one task may be required to be finished first because others are dependent on it. Obviously do that one first).",
   prepManual:
     "Really? That's easy af. You're way bigger than that little task. Okay - let's go ahead and get everything set up to complete this task. Open required windows, get necessary documents, log into accounts, get yourself in position. Go ahead and do that now, i'll wait for you. Then click \"done prepping\" when you're done prepping it.",
   donePrepping: 'done prepping',

@@ -9,6 +9,7 @@ import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import type { ProjectBoard } from './types';
 import {
   ORGANIZING_FLOW_COPY,
+  ORGANIZING_MVP_TASK_LIMIT,
   STARTING_FLOW_COPY,
   STRUCTURE_FLOW_COPY,
   STUCK_HELP_OPTIONS,
@@ -20,7 +21,6 @@ import {
 import {
   addProjectTask,
   getOpenProjectTaskTexts,
-  mergeTaskTextOptions,
   requestFocusProject,
   upsertProject,
 } from './stuckHelp/projectMutations';
@@ -581,10 +581,23 @@ export default function StuckHelpModal() {
 
   const addOrganizingTaskText = (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    const nextTasks = [...(organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts), trimmed];
+    if (!trimmed) return false;
+    const current = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
+    if (current.length >= ORGANIZING_MVP_TASK_LIMIT) return false;
+    if (current.includes(trimmed)) return false;
+    const nextTasks = [...current, trimmed];
     organizingFieldsRef.current.taskTexts = nextTasks;
     setOrganizingFields({ taskTexts: nextTasks });
+    return true;
+  };
+
+  const advanceFromMvpTasksIfReady = () => {
+    const chatTasks = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
+    if (chatTasks.length < ORGANIZING_MVP_TASK_LIMIT || typing) return;
+    organizingFieldsRef.current.taskTexts = chatTasks;
+    setOrganizingFields({ taskTexts: chatTasks });
+    sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qHardest);
+    setOrganizingPhase('await_hardest_pick');
   };
 
   const selectExistingProjectTask = (taskText: string) => {
@@ -592,9 +605,11 @@ export default function StuckHelpModal() {
     const trimmed = taskText.trim();
     if (!trimmed) return;
     const current = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
+    if (current.length >= ORGANIZING_MVP_TASK_LIMIT) return;
     if (current.includes(trimmed)) return;
     appendOrganizingMessages({ role: 'user', text: trimmed });
-    addOrganizingTaskText(trimmed);
+    if (!addOrganizingTaskText(trimmed)) return;
+    advanceFromMvpTasksIfReady();
   };
 
   const sendStartingDraft = () => {
@@ -678,27 +693,16 @@ export default function StuckHelpModal() {
     if (organizingPhase === 'await_mvp_tasks') {
       const projectId = organizingFlow?.projectId || organizingFieldsRef.current.projectId;
       if (!projectId) return;
+      const current = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
+      if (current.length >= ORGANIZING_MVP_TASK_LIMIT) return;
       appendOrganizingMessages({ role: 'user', text });
       setProjects(prev => addProjectTask(prev, projectId, text));
       requestFocusProject(projectId);
-      addOrganizingTaskText(text);
+      if (!addOrganizingTaskText(text)) return;
       setDraft('');
       draftRef.current = '';
+      advanceFromMvpTasksIfReady();
     }
-  };
-
-  const finishAddingTasks = () => {
-    const chatTasks = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
-    const projectId = organizingFlow?.projectId || organizingFieldsRef.current.projectId;
-    const project = projects.find(p => p.id === projectId);
-    const projectTasks = getOpenProjectTaskTexts(project);
-    const tasks = mergeTaskTextOptions(projectTasks, chatTasks);
-    if (!tasks.length || typing) return;
-    organizingFieldsRef.current.taskTexts = tasks;
-    setOrganizingFields({ taskTexts: tasks });
-    appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.doneAddingTasks });
-    sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qHardest);
-    setOrganizingPhase('await_hardest_pick');
   };
 
   const pickHardestTask = (task: string) => {
@@ -798,13 +802,23 @@ export default function StuckHelpModal() {
     }
   };
 
+  const projectOptions = projects.filter(p => p.name.trim());
+  const organizingTasks = organizingFlow?.taskTexts ?? [];
+  const selectedProject = projects.find(p => p.id === organizingFlow?.projectId);
+  const projectTaskTexts = getOpenProjectTaskTexts(selectedProject);
+  const hardestPickOptions = organizingTasks;
+  const existingProjectTasks = projectTaskTexts.filter(taskText => !organizingTasks.includes(taskText));
+  const mvpTasksRemaining = Math.max(0, ORGANIZING_MVP_TASK_LIMIT - organizingTasks.length);
+
   const showStartingCompose =
     inStarting && startingPhase
       ? STARTING_COMPOSE_PHASES.includes(startingPhase) && !typing
       : false;
   const showOrganizingCompose =
     inOrganizing && organizingPhase
-      ? ORGANIZING_COMPOSE_PHASES.includes(organizingPhase) && !typing
+      ? ORGANIZING_COMPOSE_PHASES.includes(organizingPhase) &&
+        !(organizingPhase === 'await_mvp_tasks' && mvpTasksRemaining === 0) &&
+        !typing
       : false;
   const showStructureCompose =
     inStructure && structurePhase
@@ -816,13 +830,6 @@ export default function StuckHelpModal() {
     inStarting && !inOrganizing && startingPhase
       ? STARTING_YES_PHASES.includes(startingPhase) && !typing
       : false;
-
-  const projectOptions = projects.filter(p => p.name.trim());
-  const organizingTasks = organizingFlow?.taskTexts ?? [];
-  const selectedProject = projects.find(p => p.id === organizingFlow?.projectId);
-  const projectTaskTexts = getOpenProjectTaskTexts(selectedProject);
-  const hardestPickOptions = mergeTaskTextOptions(projectTaskTexts, organizingTasks);
-  const existingProjectTasks = projectTaskTexts.filter(taskText => !organizingTasks.includes(taskText));
 
   const selectedStartingProject = projects.find(p => p.id === startingFlow?.projectId);
   const startingProjectTaskTexts = getOpenProjectTaskTexts(selectedStartingProject);
@@ -1006,7 +1013,7 @@ export default function StuckHelpModal() {
                 </div>
               ) : null}
 
-              {inOrganizing && organizingPhase === 'await_mvp_tasks' && !typing && existingProjectTasks.length > 0 ? (
+              {inOrganizing && organizingPhase === 'await_mvp_tasks' && !typing && mvpTasksRemaining > 0 && existingProjectTasks.length > 0 ? (
                 <div style={styles.chipWrap}>
                   {existingProjectTasks.map(task => (
                     <button
@@ -1021,21 +1028,13 @@ export default function StuckHelpModal() {
                 </div>
               ) : null}
 
-              {inOrganizing && organizingPhase === 'await_hardest_pick' && !typing ? (
+              {inOrganizing && organizingPhase === 'await_hardest_pick' && !typing && hardestPickOptions.length > 0 ? (
                 <div style={styles.chipWrap}>
                   {hardestPickOptions.map(task => (
                     <button key={task} type="button" onClick={() => pickHardestTask(task)} style={styles.chip}>
                       {task}
                     </button>
                   ))}
-                </div>
-              ) : null}
-
-              {inOrganizing && organizingPhase === 'await_mvp_tasks' && !typing && (organizingTasks.length > 0 || projectTaskTexts.length > 0) ? (
-                <div style={styles.chipWrap}>
-                  <button type="button" onClick={finishAddingTasks} style={styles.chip}>
-                    {ORGANIZING_FLOW_COPY.doneAddingTasks}
-                  </button>
                 </div>
               ) : null}
 
