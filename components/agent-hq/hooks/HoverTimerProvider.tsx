@@ -55,10 +55,6 @@ export function HoverTimerProvider({
     else tracker.pauseTimer();
   }, [tracker]);
 
-  const handleReset = useCallback(() => {
-    tracker.resetTimer();
-  }, [tracker]);
-
   const hasActiveTimer = display !== null;
 
   const { videoRef, canvasRef, isOpen, supported, open, close, toggle, pipWindow } =
@@ -126,9 +122,7 @@ export function HoverTimerProvider({
             display={display}
             onAddInfraction={onAddInfraction}
             onTogglePause={handleTogglePause}
-            onReset={handleReset}
             onEndSession={handleEndSession}
-            onSetCountdown={tracker.setCountdownTimer}
             pipWindow={pipWindow}
             timerPaused={tracker.timerPaused}
           />,
