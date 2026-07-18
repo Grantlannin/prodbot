@@ -629,10 +629,10 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 600,
     fontFamily: font,
     letterSpacing: '-0.01em',
-    background: '#ecfdf5',
-    color: '#047857',
+    background: '#1e293b',
+    color: '#f8fafc',
     cursor: 'pointer',
-    boxShadow: 'inset 0 0 0 1px rgba(16, 185, 129, 0.25)',
+    boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.35)',
     whiteSpace: 'nowrap',
   },
   captureSection: {
