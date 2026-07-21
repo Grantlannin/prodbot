@@ -12,8 +12,8 @@ const features = [
 
 export default function LandingPage() {
   const paywall = isBillingEnabled();
-  const ctaHref = paywall ? '/login?mode=signup' : '/app';
-  const ctaLabel = paywall ? `Get started — ${MONTHLY_PRICE_SHORT}` : 'Open app';
+  const ctaHref = paywall ? '/subscribe' : '/app';
+  const ctaLabel = paywall ? `Subscribe — ${MONTHLY_PRICE_SHORT}` : 'Open app';
 
   return (
     <MarketingShell>
@@ -45,7 +45,7 @@ export default function LandingPage() {
             {ctaLabel}
           </Link>
           {paywall ? (
-            <span className="text-sm text-slate-500">Create account, then subscribe</span>
+            <span className="text-sm text-slate-500">Subscribe first, then create your account</span>
           ) : null}
         </div>
 

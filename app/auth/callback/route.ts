@@ -1,5 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { linkStripeCustomerToUser } from '@/lib/billing/link-stripe';
+import { isBillingEnabled } from '@/lib/stripe/config';
 import { getAppOrigin } from '@/lib/app-origin';
 import { getSupabaseConfig } from '@/lib/supabase/config';
 
@@ -39,6 +41,19 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error('[auth/callback]', error.message);
     return NextResponse.redirect(`${appOrigin}/login?error=auth`);
+  }
+
+  if (isBillingEnabled()) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.email) {
+      try {
+        await linkStripeCustomerToUser(user.id, user.email);
+      } catch (linkError) {
+        console.error('[auth/callback] link stripe', linkError);
+      }
+    }
   }
 
   return response;

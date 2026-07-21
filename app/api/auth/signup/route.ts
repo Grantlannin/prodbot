@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { linkStripeCustomerToUser } from '@/lib/billing/link-stripe';
+import { isBillingEnabled } from '@/lib/stripe/config';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 
 function normalizeEmail(email: string): string {
@@ -33,6 +35,13 @@ export async function POST(req: Request) {
     });
 
     if (!error) {
+      if (isBillingEnabled()) {
+        try {
+          await linkStripeCustomerToUser(data.user.id, email);
+        } catch (linkError) {
+          console.error('[auth/signup] link stripe', linkError);
+        }
+      }
       return NextResponse.json({ ok: true, userId: data.user.id });
     }
 
@@ -53,6 +62,14 @@ export async function POST(req: Request) {
 
       if (updateError) {
         return NextResponse.json({ error: updateError.message }, { status: 400 });
+      }
+
+      if (isBillingEnabled()) {
+        try {
+          await linkStripeCustomerToUser(existing.id, email);
+        } catch (linkError) {
+          console.error('[auth/signup] link stripe', linkError);
+        }
       }
 
       return NextResponse.json({ ok: true, userId: existing.id, updated: true });

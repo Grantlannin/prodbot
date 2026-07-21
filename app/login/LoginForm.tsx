@@ -60,7 +60,12 @@ export default function LoginForm() {
     );
   }
 
-  const afterAuth = () => {
+  const afterAuth = async () => {
+    try {
+      await fetch('/api/billing/link', { method: 'POST' });
+    } catch {
+      /* subscription link is best-effort */
+    }
     window.location.href = nextPath.startsWith('/') ? nextPath : '/app';
   };
 

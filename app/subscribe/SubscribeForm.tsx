@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/components/agent-hq/hooks/AuthProvider';
 import { MONTHLY_PRICE_LABEL, MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
 import MarketingShell from '@/components/marketing/MarketingShell';
 
@@ -26,7 +25,6 @@ interface BillingStatus {
 
 export default function SubscribeForm() {
   const searchParams = useSearchParams();
-  const { user, email, loading: authLoading, signOut } = useAuth();
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +36,6 @@ export default function SubscribeForm() {
   }, [canceled]);
 
   useEffect(() => {
-    if (authLoading) return;
     void fetch('/api/billing/status')
       .then(async res => {
         const data = (await res.json()) as BillingStatus & { error?: string };
@@ -48,7 +45,7 @@ export default function SubscribeForm() {
         setStatus(data);
       })
       .catch(() => setError('Could not load billing status.'));
-  }, [authLoading, user]);
+  }, []);
 
   const startCheckout = async () => {
     setBusy(true);
@@ -66,25 +63,9 @@ export default function SubscribeForm() {
     }
   };
 
-  const openPortal = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/stripe/portal', { method: 'POST' });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        throw new Error(data.error ?? 'Could not open billing portal.');
-      }
-      window.location.href = data.url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not open billing portal.');
-      setBusy(false);
-    }
-  };
-
-  if (authLoading || !status) {
+  if (!status) {
     return (
-      <MarketingShell>
+      <MarketingShell showSignIn={false}>
         <div style={styles.wrap}>
           <div style={styles.card}>
             <p style={styles.lead}>Loading…</p>
@@ -107,7 +88,7 @@ export default function SubscribeForm() {
             : 'Billing checks failed after redeploy — open /api/billing/health for details.';
 
     return (
-      <MarketingShell>
+      <MarketingShell showSignIn={false}>
         <div style={styles.wrap}>
           <div style={styles.card}>
             <h1 style={styles.title}>Billing not configured</h1>
@@ -121,11 +102,8 @@ export default function SubscribeForm() {
     );
   }
 
-  const showPortal = status.status === 'past_due' || status.status === 'canceled';
-  const signedIn = !!user;
-
   return (
-    <MarketingShell>
+    <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
           <h1 style={styles.title}>Subscribe to Daywinner</h1>
@@ -134,7 +112,6 @@ export default function SubscribeForm() {
             account and subscription status.
           </p>
 
-          {email ? <p style={styles.account}>Signed in as {email}</p> : null}
           {notice ? <p style={styles.notice}>{notice}</p> : null}
           {error ? <p style={styles.error}>{error}</p> : null}
 
@@ -144,33 +121,11 @@ export default function SubscribeForm() {
             <li>Chrome extension for site blocking</li>
           </ul>
 
-          {signedIn ? (
-            <>
-              <button type="button" onClick={startCheckout} disabled={busy} style={styles.primaryBtn}>
-                {busy ? 'Redirecting to Stripe…' : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
-              </button>
+          <button type="button" onClick={startCheckout} disabled={busy} style={styles.primaryBtn}>
+            {busy ? 'Redirecting to Stripe…' : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
+          </button>
 
-              {showPortal ? (
-                <button type="button" onClick={openPortal} disabled={busy} style={styles.secondaryBtn}>
-                  Manage billing
-                </button>
-              ) : null}
-
-              <button type="button" onClick={() => signOut()} style={styles.linkBtn}>
-                Sign out
-              </button>
-            </>
-          ) : (
-            <>
-              <p style={styles.signInLead}>Create an account or sign in to continue to checkout.</p>
-              <Link href="/login?mode=signup&next=/subscribe" style={styles.primaryLink}>
-                Create account
-              </Link>
-              <Link href="/login?next=/subscribe" style={styles.secondaryLink}>
-                Sign in
-              </Link>
-            </>
-          )}
+          <p style={styles.footerNote}>You&apos;ll create your account after checkout.</p>
 
           <p style={styles.legal}>
             <Link href="/terms" style={styles.legalLink}>
@@ -219,12 +174,6 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.55,
     color: '#64748b',
   },
-  account: {
-    margin: 0,
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#475569',
-  },
   featureList: {
     margin: '4px 0 8px',
     paddingLeft: 18,
@@ -242,28 +191,6 @@ const styles: Record<string, CSSProperties> = {
     background: '#0f172a',
     color: '#fff',
     cursor: 'pointer',
-  },
-  secondaryBtn: {
-    border: '1px solid #e2e8f0',
-    borderRadius: 10,
-    padding: '11px 14px',
-    fontSize: 14,
-    fontWeight: 600,
-    fontFamily: font,
-    background: '#fff',
-    color: '#475569',
-    cursor: 'pointer',
-  },
-  linkBtn: {
-    border: 'none',
-    background: 'transparent',
-    color: '#64748b',
-    fontSize: 13,
-    fontWeight: 600,
-    fontFamily: font,
-    cursor: 'pointer',
-    alignSelf: 'flex-start',
-    padding: 0,
   },
   backLink: {
     marginTop: 8,
@@ -289,6 +216,12 @@ const styles: Record<string, CSSProperties> = {
     color: '#b91c1c',
     fontSize: 13,
   },
+  footerNote: {
+    margin: 0,
+    fontSize: 12,
+    color: '#94a3b8',
+    textAlign: 'center',
+  },
   legal: {
     margin: '8px 0 0',
     fontSize: 12,
@@ -297,37 +230,6 @@ const styles: Record<string, CSSProperties> = {
   legalLink: {
     color: '#64748b',
     fontWeight: 600,
-    textDecoration: 'none',
-  },
-  signInLead: {
-    margin: 0,
-    fontSize: 13,
-    color: '#64748b',
-  },
-  primaryLink: {
-    display: 'block',
-    textAlign: 'center',
-    border: 'none',
-    borderRadius: 10,
-    padding: '13px 14px',
-    fontSize: 15,
-    fontWeight: 700,
-    fontFamily: font,
-    background: '#0f172a',
-    color: '#fff',
-    textDecoration: 'none',
-  },
-  secondaryLink: {
-    display: 'block',
-    textAlign: 'center',
-    border: '1px solid #e2e8f0',
-    borderRadius: 10,
-    padding: '11px 14px',
-    fontSize: 14,
-    fontWeight: 600,
-    fontFamily: font,
-    background: '#fff',
-    color: '#475569',
     textDecoration: 'none',
   },
 };
