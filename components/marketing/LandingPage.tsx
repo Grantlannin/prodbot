@@ -78,6 +78,12 @@ export default function LandingPage() {
         <Link href="/login" className="font-semibold text-slate-600 no-underline hover:text-slate-900">
           Sign in
         </Link>
+        <Link href="/terms" className="font-semibold text-slate-600 no-underline hover:text-slate-900">
+          Terms
+        </Link>
+        <Link href="/privacy" className="font-semibold text-slate-600 no-underline hover:text-slate-900">
+          Privacy
+        </Link>
         <Link
           href="/privacy/focus-extension"
           className="font-semibold text-slate-600 no-underline hover:text-slate-900"

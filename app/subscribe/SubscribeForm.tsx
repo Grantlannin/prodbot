@@ -132,6 +132,16 @@ export default function SubscribeForm() {
           <button type="button" onClick={() => signOut()} style={styles.linkBtn}>
             Sign out
           </button>
+
+          <p style={styles.legal}>
+            <Link href="/terms" style={styles.legalLink}>
+              Terms
+            </Link>
+            {' · '}
+            <Link href="/privacy" style={styles.legalLink}>
+              Privacy
+            </Link>
+          </p>
         </div>
       </div>
     </MarketingShell>
@@ -239,5 +249,15 @@ const styles: Record<string, CSSProperties> = {
     background: '#fef2f2',
     color: '#b91c1c',
     fontSize: 13,
+  },
+  legal: {
+    margin: '8px 0 0',
+    fontSize: 12,
+    color: '#94a3b8',
+  },
+  legalLink: {
+    color: '#64748b',
+    fontWeight: 600,
+    textDecoration: 'none',
   },
 };

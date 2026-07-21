@@ -5,7 +5,7 @@ import { parseBillingRow } from '@/lib/billing/profile';
 import { isBillingEnabled } from '@/lib/stripe/config';
 import { getSupabaseConfig, isAuthRequired } from '@/lib/supabase/config';
 
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/subscribe', '/privacy'];
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/subscribe', '/privacy', '/terms'];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(`${path}/`));

@@ -5,3 +5,5 @@ export function getAppOrigin(fallback = 'http://localhost:3000'): string {
   if (vercel) return `https://${vercel}`;
   return fallback;
 }
+
+export { PRODUCTION_SITE_ORIGIN, PRODUCTION_SITE_HOST } from './site';

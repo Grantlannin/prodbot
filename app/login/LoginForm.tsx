@@ -9,11 +9,15 @@ import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset';
+
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [mode, setMode] = useState<AuthMode>('signin');
+  const [resetReady, setResetReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +35,20 @@ export default function LoginForm() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (searchParams.get('reset') !== '1') return;
+    const supabase = createBrowserSupabaseClient();
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setMode('reset');
+        setResetReady(true);
+      } else {
+        setError('Reset link expired or invalid. Request a new one below.');
+        setMode('forgot');
+      }
+    });
+  }, [searchParams]);
+
   if (!isSupabaseConfigured()) {
     return (
       <MarketingShell showSignIn={false}>
@@ -44,6 +62,11 @@ export default function LoginForm() {
 
   const afterAuth = () => {
     window.location.href = nextPath.startsWith('/') ? nextPath : '/app';
+  };
+
+  const resetRedirectTo = () => {
+    const next = encodeURIComponent('/login?reset=1');
+    return `${window.location.origin}/auth/callback?next=${next}`;
   };
 
   const handleSignIn = async (e: FormEvent) => {
@@ -103,73 +126,206 @@ export default function LoginForm() {
     }
   };
 
+  const handleForgot = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: resetRedirectTo(),
+      });
+      if (resetError) throw resetError;
+      setMessage('Check your email for a password reset link.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send reset email.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleResetPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) throw updateError;
+      afterAuth();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update password.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const title =
+    mode === 'signup'
+      ? 'Create your account'
+      : mode === 'forgot'
+        ? 'Reset password'
+        : mode === 'reset'
+          ? 'Choose a new password'
+          : 'Welcome back';
+
+  const lead =
+    mode === 'signup'
+      ? 'Set up your login, then subscribe to open the app.'
+      : mode === 'forgot'
+        ? 'Enter your email and we will send a reset link.'
+        : mode === 'reset'
+          ? 'Pick a new password for your account.'
+          : 'Sign in to continue to your workspace.';
+
   return (
     <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
-          <h1 style={styles.title}>{mode === 'signup' ? 'Create your account' : 'Welcome back'}</h1>
-          <p style={styles.lead}>
-            {mode === 'signup'
-              ? 'Set up your login, then subscribe to open the app.'
-              : 'Sign in to continue to your workspace.'}
-          </p>
+          <h1 style={styles.title}>{title}</h1>
+          <p style={styles.lead}>{lead}</p>
 
           {initialError ? <p style={styles.error}>{initialError}</p> : null}
           {error ? <p style={styles.error}>{error}</p> : null}
           {message ? <p style={styles.success}>{message}</p> : null}
 
-          <form onSubmit={mode === 'signup' ? handleSignUp : handleSignIn} style={styles.form}>
-            <div style={styles.modeRow}>
-              <button
-                type="button"
-                style={{ ...styles.modeBtn, ...(mode === 'signin' ? styles.modeBtnActive : null) }}
-                onClick={() => setMode('signin')}
-              >
-                Sign in
+          {mode === 'reset' && resetReady ? (
+            <form onSubmit={handleResetPassword} style={styles.form}>
+              <label style={styles.label} htmlFor="password">
+                New password
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                autoComplete="new-password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                style={styles.input}
+              />
+              <label style={styles.label} htmlFor="confirmPassword">
+                Confirm password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                required
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                style={styles.input}
+              />
+              <button type="submit" disabled={busy || !password || !confirmPassword} style={styles.primaryBtn}>
+                {busy ? 'Saving…' : 'Save password'}
+              </button>
+            </form>
+          ) : mode === 'forgot' ? (
+            <form onSubmit={handleForgot} style={styles.form}>
+              <label style={styles.label} htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                style={styles.input}
+              />
+              <button type="submit" disabled={busy || !email.trim()} style={styles.primaryBtn}>
+                {busy ? 'Sending…' : 'Send reset link'}
               </button>
               <button
                 type="button"
-                style={{ ...styles.modeBtn, ...(mode === 'signup' ? styles.modeBtnActive : null) }}
-                onClick={() => setMode('signup')}
+                onClick={() => {
+                  setMode('signin');
+                  setError(null);
+                  setMessage(null);
+                }}
+                style={styles.textBtn}
               >
-                Create account
+                Back to sign in
               </button>
-            </div>
-            <label style={styles.label} htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              style={styles.input}
-            />
-            <label style={styles.label} htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              style={styles.input}
-            />
-            <button type="submit" disabled={busy || !email.trim() || !password} style={styles.primaryBtn}>
-              {busy
-                ? mode === 'signup'
-                  ? 'Creating…'
-                  : 'Signing in…'
-                : mode === 'signup'
-                  ? 'Create account'
-                  : 'Sign in'}
-            </button>
-          </form>
+            </form>
+          ) : (
+            <form onSubmit={mode === 'signup' ? handleSignUp : handleSignIn} style={styles.form}>
+              <div style={styles.modeRow}>
+                <button
+                  type="button"
+                  style={{ ...styles.modeBtn, ...(mode === 'signin' ? styles.modeBtnActive : null) }}
+                  onClick={() => setMode('signin')}
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  style={{ ...styles.modeBtn, ...(mode === 'signup' ? styles.modeBtnActive : null) }}
+                  onClick={() => setMode('signup')}
+                >
+                  Create account
+                </button>
+              </div>
+              <label style={styles.label} htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                style={styles.input}
+              />
+              <label style={styles.label} htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                style={styles.input}
+              />
+              {mode === 'signin' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('forgot');
+                    setError(null);
+                    setMessage(null);
+                  }}
+                  style={styles.textBtn}
+                >
+                  Forgot password?
+                </button>
+              ) : null}
+              <button type="submit" disabled={busy || !email.trim() || !password} style={styles.primaryBtn}>
+                {busy
+                  ? mode === 'signup'
+                    ? 'Creating…'
+                    : 'Signing in…'
+                  : mode === 'signup'
+                    ? 'Create account'
+                    : 'Sign in'}
+              </button>
+            </form>
+          )}
 
           <Link href="/" style={styles.backLink}>
             ← Back
@@ -265,6 +421,18 @@ const styles: Record<string, CSSProperties> = {
     background: '#0f172a',
     color: '#fff',
     cursor: 'pointer',
+  },
+  textBtn: {
+    alignSelf: 'flex-start',
+    border: 'none',
+    background: 'transparent',
+    padding: 0,
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: font,
+    color: '#64748b',
+    cursor: 'pointer',
+    marginBottom: 4,
   },
   error: {
     margin: '0 0 12px',

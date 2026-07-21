@@ -12,7 +12,7 @@ After completing any code changes in this project, deploy automatically without 
 1. Finish the requested implementation or fix.
 2. Run `git status` and `git diff` to verify there are changes to ship.
 3. If there are changes, commit with a concise message focused on why.
-4. Push to `origin main` to trigger the Vercel deploy (`daywinnerbot.com/app`).
+4. Push to `origin main` to trigger the Vercel deploy (`daywinner.bot/app`).
 
 ## Safety
 

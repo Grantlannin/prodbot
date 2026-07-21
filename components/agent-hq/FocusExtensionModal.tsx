@@ -12,6 +12,8 @@ import {
   resolveBlocklist,
   type FocusBlocklistStore,
 } from './focusBlocking';
+import { getAppOrigin } from '@/lib/app-origin';
+import { PRODUCTION_SITE_HOST, PRODUCTION_SITE_ORIGIN } from '@/lib/site';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -26,6 +28,13 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
   const [customError, setCustomError] = useState<string | null>(null);
 
   const activeCount = useMemo(() => resolveBlocklist(store).length, [store]);
+  const siteHost = useMemo(() => {
+    try {
+      return new URL(getAppOrigin(PRODUCTION_SITE_ORIGIN)).hostname;
+    } catch {
+      return PRODUCTION_SITE_HOST;
+    }
+  }, []);
 
   const toggleBundle = () => {
     setStore(prev => ({ ...prev, socialBundleEnabled: !prev.socialBundleEnabled }));
@@ -88,16 +97,16 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
                 <div style={styles.sectionLabel}>Setup</div>
                 <p style={styles.body}>
                   Blocks sites during focus sessions with soft or hard lock (not on breaks or no-lock sessions).
-                  Works on <strong>daywinnerbot.com</strong> — keep this app tab open while you work.
+                  Works on <strong>{siteHost}</strong> — keep this app tab open while you work.
                 </p>
                 <a href="/daywinner.zip" download="daywinner.zip" style={styles.downloadLink}>
-                  Download extension (v1.0.3)
+                  Download extension (v1.0.4)
                 </a>
                 <ol style={styles.steps}>
                   <li>Unzip → chrome://extensions → Developer mode → Load unpacked → select the extension folder.</li>
                   <li>
                     If you already installed an older copy, click <strong>Reload</strong> on the extension card (or
-                    remove and load unpacked again) so daywinnerbot.com is included.
+                    remove and load unpacked again) so {siteHost} is included.
                   </li>
                   <li>Start a countdown session here with soft or hard lock. Blocked sites redirect until the session ends.</li>
                 </ol>

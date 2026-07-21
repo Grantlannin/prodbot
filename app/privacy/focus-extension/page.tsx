@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { PRODUCTION_SITE_HOST, PRODUCTION_SITE_ORIGIN } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Daywinner bot — Privacy Policy',
@@ -44,8 +46,9 @@ export default function FocusExtensionPrivacyPage() {
       <p>The Extension communicates only with:</p>
       <ul>
         <li>
-          The Daywinner web app tab (<a href="https://daywinnerbot.com">daywinnerbot.com</a>), via an in-page
-          message bridge
+          The Daywinner web app tab (
+          <a href={PRODUCTION_SITE_ORIGIN}>{PRODUCTION_SITE_HOST}</a>
+          ), via an in-page message bridge
         </li>
         <li>Chrome APIs required for site blocking</li>
       </ul>
@@ -68,17 +71,17 @@ export default function FocusExtensionPrivacyPage() {
 
       <h2 style={{ fontSize: 18, marginTop: 28 }}>Contact</h2>
       <p>
-        Questions about this policy: contact the Produc team through the email listed on{' '}
-        <a href="https://daywinnerbot.com" style={{ color: '#1d4ed8' }}>
-          daywinnerbot.com
-        </a>
+        Questions about this policy: contact the Daywinner team through the email listed on{' '}
+        <Link href="/" style={{ color: '#1d4ed8' }}>
+          {PRODUCTION_SITE_HOST}
+        </Link>
         .
       </p>
 
       <p style={{ marginTop: 32 }}>
-        <a href="https://daywinnerbot.com" style={{ color: '#1d4ed8' }}>
+        <Link href="/" style={{ color: '#1d4ed8' }}>
           ← Back to Daywinner
-        </a>
+        </Link>
       </p>
     </main>
   );

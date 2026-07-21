@@ -4,6 +4,7 @@ import {
   type NightPrepCalendarTime,
 } from '@/lib/night-prep-calendar';
 import { getAppOrigin } from '@/lib/app-origin';
+import { PRODUCTION_SITE_ORIGIN } from '@/lib/site';
 import { buildGoogleCalendarUrl } from './googleCalendarLink';
 
 export const NIGHT_PREP_TIME_KEY = 'agentHQ_nightPrepReminderTime';
@@ -38,7 +39,7 @@ function nextOccurrence(hour: number, minute: number, now = Date.now()): Date {
 }
 
 function nightPrepSiteUrl(): string {
-  if (typeof window === 'undefined') return `${getAppOrigin('https://daywinnerbot.com')}/?nightprep=1`;
+  if (typeof window === 'undefined') return `${getAppOrigin(PRODUCTION_SITE_ORIGIN)}/?nightprep=1`;
   return `${window.location.origin}/?nightprep=1`;
 }
 

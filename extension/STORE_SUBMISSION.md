@@ -14,7 +14,7 @@ Use this when publishing to the [Chrome Web Store Developer Dashboard](https://c
 
 Site blockers with `*://*/*` are reviewed longer than simple extensions. Plan one round of questions.
 
-**Good news:** Produc’s paywall is **off** today, so reviewers can test at [produc-xi.vercel.app](https://produc-xi.vercel.app) with **no login**. If you re-enable billing later, add test credentials to submission notes.
+**Good news:** If paywall is off, reviewers can test at [daywinner.bot](https://daywinner.bot) with **no login**. If billing is on, add test credentials to submission notes.
 
 ---
 
@@ -23,7 +23,7 @@ Site blockers with `*://*/*` are reviewed longer than simple extensions. Plan on
 - [ ] Pay **$5** one-time [Chrome Web Store developer fee](https://chrome.google.com/webstore/devconsole) (dedicated Google account recommended)
 - [ ] **Icons** in `extension/icons/` (16, 48, 128 PNG) — included in repo
 - [ ] **Store zip:** `node scripts/package-extension-store.mjs` → upload `public/produc-focus-extension-store.zip`
-- [ ] **Privacy policy URL:** https://produc-xi.vercel.app/privacy/focus-extension
+- [ ] **Privacy policy URL:** https://daywinner.bot/privacy/focus-extension
 - [ ] **Screenshots:** 1–5 at 1280×800 or 640×400 (blocked page + Produc “Focus extension” modal + active session)
 - [ ] **Category:** Productivity · **Language:** English
 - [ ] Paste **permission justifications** and **store description** below into the listing form
@@ -39,7 +39,7 @@ block distracting sites during daywinner bot usage
 
 **Description:**
 
-Daywinner bot is the official companion extension for [Daywinner](https://produc-xi.vercel.app).
+Daywinner bot is the official companion extension for [Daywinner](https://daywinner.bot).
 
 While you run a focus session in Produc, the extension blocks sites you choose—social media bundle and custom domains. Blocking turns off during breaks and when your session ends.
 
@@ -87,7 +87,7 @@ Users can add any domain to their blocklist. Rules apply only to domains they en
 TESTING PRODUC FOCUS
 
 1. Install the extension.
-2. Open https://produc-xi.vercel.app (no login required; paywall is disabled).
+2. Open https://daywinner.bot (no login required if paywall is disabled).
 3. Click "Focus extension" (top right, above "What you got done today").
 4. Confirm "Social media pack" is enabled. Optionally add a custom domain.
 5. Click Start → pick a task → set duration (e.g. 25m) → choose lock mode → Start session.
@@ -96,7 +96,7 @@ TESTING PRODUC FOCUS
 7. End session in Produc or wait for countdown; blocking should stop.
 
 Data: All extension data stays in chrome.storage.local. No external servers.
-Content script runs only on produc-xi.vercel.app to sync session/blocklist from the web app.
+Content script runs on daywinner.bot (and legacy domains) to sync session/blocklist from the web app.
 
 If paywall is enabled in a future version, contact [YOUR EMAIL] for test credentials.
 ```

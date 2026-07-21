@@ -10,7 +10,7 @@ import { loadEnvLocal } from './load-env-local.mjs';
 
 loadEnvLocal();
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://daywinnerbot.com').replace(/\/$/, '');
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://daywinner.bot').replace(/\/$/, '');
 const WEBHOOK_URL = `${APP_URL}/api/stripe/webhook`;
 const PRODUCT_NAME = 'Produc';
 const PRICE_USD = 499; // $4.99

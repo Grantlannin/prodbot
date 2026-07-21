@@ -12,7 +12,7 @@ Install from the Chrome Web Store listing (one click). No unpacked load required
 2. Click **Load unpacked**
 3. Select this `extension/` folder
 4. Optional: enable **Allow in incognito**
-5. Open [Daywinner](https://daywinnerbot.com/app) → **Focus extension** → start a session with soft or hard lock
+5. Open [Daywinner](https://daywinner.bot/app) → **Focus extension** → start a session with soft or hard lock
 
 Or download the zip from the app: `/daywinner.zip`
 
@@ -28,11 +28,11 @@ Build the upload zip:
 node scripts/package-extension-store.mjs
 ```
 
-Privacy policy (required): https://daywinnerbot.com/privacy/focus-extension
+Privacy policy (required): https://daywinner.bot/privacy/focus-extension
 
 ## How it works
 
-- Daywinner syncs blocklist + session state to the extension via a content script on daywinnerbot.com (and produc-xi.vercel.app for legacy)
+- Daywinner syncs blocklist + session state to the extension via a content script on **daywinner.bot** (legacy: daywinnerbot.com, produc-xi.vercel.app)
 - While a focus session is active with **soft or hard lock**, matching domains redirect to `blocked.html`
 - Blocking is off during breaks, no-lock sessions, and when no session is active
 - Block hits log infractions in Produc (`Blocked site: …`)
