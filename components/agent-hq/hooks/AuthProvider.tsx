@@ -19,7 +19,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const authEnabled = isSupabaseConfigured();
   const authRequired = isAuthRequired();
-  const [loading, setLoading] = useState(authRequired && authEnabled);
+  const [loading, setLoading] = useState(authEnabled);
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {

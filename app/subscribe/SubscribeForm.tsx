@@ -32,8 +32,13 @@ export default function SubscribeForm() {
   useEffect(() => {
     if (authLoading) return;
     void fetch('/api/billing/status')
-      .then(res => res.json())
-      .then(data => setStatus(data as BillingStatus))
+      .then(async res => {
+        const data = (await res.json()) as BillingStatus & { error?: string };
+        if (!res.ok || typeof data.billingEnabled !== 'boolean') {
+          throw new Error(data.error ?? 'Could not load billing status.');
+        }
+        setStatus(data);
+      })
       .catch(() => setError('Could not load billing status.'));
   }, [authLoading, user]);
 
@@ -71,7 +76,7 @@ export default function SubscribeForm() {
 
   if (authLoading || !status) {
     return (
-      <MarketingShell showSignIn={false}>
+      <MarketingShell>
         <div style={styles.wrap}>
           <div style={styles.card}>
             <p style={styles.lead}>Loading…</p>
@@ -83,7 +88,7 @@ export default function SubscribeForm() {
 
   if (!status.billingEnabled) {
     return (
-      <MarketingShell showSignIn={false}>
+      <MarketingShell>
         <div style={styles.wrap}>
           <div style={styles.card}>
             <h1 style={styles.title}>Billing not configured</h1>
@@ -98,9 +103,10 @@ export default function SubscribeForm() {
   }
 
   const showPortal = status.status === 'past_due' || status.status === 'canceled';
+  const signedIn = !!user;
 
   return (
-    <MarketingShell showSignIn={false}>
+    <MarketingShell>
       <div style={styles.wrap}>
         <div style={styles.card}>
           <h1 style={styles.title}>Subscribe to Daywinner</h1>
@@ -119,19 +125,33 @@ export default function SubscribeForm() {
             <li>Chrome extension for site blocking</li>
           </ul>
 
-          <button type="button" onClick={startCheckout} disabled={busy} style={styles.primaryBtn}>
-            {busy ? 'Redirecting to Stripe…' : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
-          </button>
+          {signedIn ? (
+            <>
+              <button type="button" onClick={startCheckout} disabled={busy} style={styles.primaryBtn}>
+                {busy ? 'Redirecting to Stripe…' : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
+              </button>
 
-          {showPortal ? (
-            <button type="button" onClick={openPortal} disabled={busy} style={styles.secondaryBtn}>
-              Manage billing
-            </button>
-          ) : null}
+              {showPortal ? (
+                <button type="button" onClick={openPortal} disabled={busy} style={styles.secondaryBtn}>
+                  Manage billing
+                </button>
+              ) : null}
 
-          <button type="button" onClick={() => signOut()} style={styles.linkBtn}>
-            Sign out
-          </button>
+              <button type="button" onClick={() => signOut()} style={styles.linkBtn}>
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <p style={styles.signInLead}>Create an account or sign in to continue to checkout.</p>
+              <Link href="/login?mode=signup&next=/subscribe" style={styles.primaryLink}>
+                Create account
+              </Link>
+              <Link href="/login?next=/subscribe" style={styles.secondaryLink}>
+                Sign in
+              </Link>
+            </>
+          )}
 
           <p style={styles.legal}>
             <Link href="/terms" style={styles.legalLink}>
@@ -258,6 +278,37 @@ const styles: Record<string, CSSProperties> = {
   legalLink: {
     color: '#64748b',
     fontWeight: 600,
+    textDecoration: 'none',
+  },
+  signInLead: {
+    margin: 0,
+    fontSize: 13,
+    color: '#64748b',
+  },
+  primaryLink: {
+    display: 'block',
+    textAlign: 'center',
+    border: 'none',
+    borderRadius: 10,
+    padding: '13px 14px',
+    fontSize: 15,
+    fontWeight: 700,
+    fontFamily: font,
+    background: '#0f172a',
+    color: '#fff',
+    textDecoration: 'none',
+  },
+  secondaryLink: {
+    display: 'block',
+    textAlign: 'center',
+    border: '1px solid #e2e8f0',
+    borderRadius: 10,
+    padding: '11px 14px',
+    fontSize: 14,
+    fontWeight: 600,
+    fontFamily: font,
+    background: '#fff',
+    color: '#475569',
     textDecoration: 'none',
   },
 };

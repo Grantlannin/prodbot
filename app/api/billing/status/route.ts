@@ -23,7 +23,12 @@ export async function GET() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+      return NextResponse.json({
+        billingEnabled: true,
+        active: false,
+        status: 'none',
+        endsAt: null,
+      });
     }
 
     const billing = await fetchBillingForUser(supabase, user.id);
