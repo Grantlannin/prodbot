@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isActiveSubscription } from '@/lib/billing/subscription';
 import { fetchBillingForUser } from '@/lib/billing/profile';
-import { isBillingEnabled } from '@/lib/stripe/config';
+import { getBillingConfigChecks, isBillingEnabled } from '@/lib/stripe/config';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -13,6 +13,7 @@ export async function GET() {
       active: true,
       status: 'none',
       endsAt: null,
+      checks: getBillingConfigChecks(),
     });
   }
 

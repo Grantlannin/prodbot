@@ -28,11 +28,13 @@ for (const key of optional) {
   console.log(`${ok ? '✓' : '○'} ${key} (optional)`);
 }
 
+const paywallOff =
+  process.env.DISABLE_PAYWALL === 'true' || process.env.NEXT_PUBLIC_DISABLE_PAYWALL === 'true';
 const billingReady =
   !!process.env.STRIPE_SECRET_KEY &&
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
   !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-  process.env.NEXT_PUBLIC_DISABLE_PAYWALL === 'false';
+  !paywallOff;
 
 console.log('\nPaywall active when deployed:', billingReady ? 'YES' : 'NO');
 if (missing > 0) {

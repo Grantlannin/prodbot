@@ -9,11 +9,19 @@ import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+interface BillingChecks {
+  paywallDisabled: boolean;
+  hasStripeSecret: boolean;
+  supabaseConfigured: boolean;
+  billingEnabled: boolean;
+}
+
 interface BillingStatus {
   billingEnabled: boolean;
   active: boolean;
   status: string;
   endsAt: string | null;
+  checks?: BillingChecks;
 }
 
 export default function SubscribeForm() {
@@ -87,12 +95,23 @@ export default function SubscribeForm() {
   }
 
   if (!status.billingEnabled) {
+    const checks = status.checks;
+    const hint = !checks
+      ? 'Stripe env vars are not set on this deployment yet.'
+      : checks.paywallDisabled
+        ? 'Paywall is disabled (DISABLE_PAYWALL or NEXT_PUBLIC_DISABLE_PAYWALL is true).'
+        : !checks.hasStripeSecret
+          ? 'STRIPE_SECRET_KEY is missing on the prodbot Vercel project — add it under Settings → Environment Variables, then redeploy.'
+          : !checks.supabaseConfigured
+            ? 'Supabase URL or anon key is missing on this deployment.'
+            : 'Billing checks failed after redeploy — open /api/billing/health for details.';
+
     return (
       <MarketingShell>
         <div style={styles.wrap}>
           <div style={styles.card}>
             <h1 style={styles.title}>Billing not configured</h1>
-            <p style={styles.lead}>Stripe env vars are not set on this deployment yet.</p>
+            <p style={styles.lead}>{hint}</p>
             <Link href="/app" style={styles.backLink}>
               Open app anyway →
             </Link>
