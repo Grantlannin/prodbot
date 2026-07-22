@@ -3,11 +3,15 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { isActiveSubscription } from '@/lib/billing/subscription';
 import { parseBillingRow } from '@/lib/billing/profile';
 import { isBillingEnabled } from '@/lib/stripe/config';
-import { INTRO_COMPLETE_COOKIE } from '@/lib/intro';
+import {
+  EXTENSION_INTRO_COMPLETE_COOKIE,
+  INTRO_COMPLETE_COOKIE,
+  INTRO_EXTENSION_PATH,
+  INTRO_VIDEO_PATH,
+} from '@/lib/intro';
 import { getSupabaseConfig, isAuthRequired } from '@/lib/supabase/config';
 
 const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/subscribe', '/privacy', '/terms'];
-const INTRO_PATH = '/intro';
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(`${path}/`));
@@ -17,16 +21,30 @@ function isAppPath(pathname: string): boolean {
   return pathname === '/app' || pathname.startsWith('/app/');
 }
 
+function isIntroVideoPath(pathname: string): boolean {
+  return pathname === INTRO_VIDEO_PATH;
+}
+
+function isIntroExtensionPath(pathname: string): boolean {
+  return pathname === INTRO_EXTENSION_PATH;
+}
+
 function isIntroPath(pathname: string): boolean {
-  return pathname === INTRO_PATH;
+  return isIntroVideoPath(pathname) || isIntroExtensionPath(pathname);
 }
 
 function hasIntroComplete(request: NextRequest): boolean {
   return request.cookies.get(INTRO_COMPLETE_COOKIE)?.value === '1';
 }
 
-function postSubscribeDestination(introComplete: boolean): string {
-  return introComplete ? '/app' : INTRO_PATH;
+function hasExtensionIntroComplete(request: NextRequest): boolean {
+  return request.cookies.get(EXTENSION_INTRO_COMPLETE_COOKIE)?.value === '1';
+}
+
+function postSubscribeDestination(introComplete: boolean, extensionIntroComplete: boolean): string {
+  if (!introComplete) return INTRO_VIDEO_PATH;
+  if (!extensionIntroComplete) return INTRO_EXTENSION_PATH;
+  return '/app';
 }
 
 export async function middleware(request: NextRequest) {
@@ -79,21 +97,25 @@ export async function middleware(request: NextRequest) {
 
       const active = isActiveSubscription(parseBillingRow(profile));
       const introComplete = hasIntroComplete(request);
+      const extensionIntroComplete = hasExtensionIntroComplete(request);
+      const onboarded = introComplete && extensionIntroComplete;
 
       if (active && (pathname === '/login' || pathname === '/subscribe' || pathname === '/')) {
-        return NextResponse.redirect(new URL(postSubscribeDestination(introComplete), request.url));
+        return NextResponse.redirect(
+          new URL(postSubscribeDestination(introComplete, extensionIntroComplete), request.url)
+        );
       }
 
-      if (active && !introComplete && isAppPath(pathname)) {
-        return NextResponse.redirect(new URL(INTRO_PATH, request.url));
+      if (active && !introComplete && (isAppPath(pathname) || isIntroExtensionPath(pathname))) {
+        return NextResponse.redirect(new URL(INTRO_VIDEO_PATH, request.url));
       }
 
-      if (active && introComplete && isIntroPath(pathname)) {
+      if (active && introComplete && !extensionIntroComplete && (isAppPath(pathname) || isIntroVideoPath(pathname))) {
+        return NextResponse.redirect(new URL(INTRO_EXTENSION_PATH, request.url));
+      }
+
+      if (active && onboarded && isIntroPath(pathname)) {
         return NextResponse.redirect(new URL('/app', request.url));
-      }
-
-      if (active && !introComplete && isIntroPath(pathname)) {
-        return supabaseResponse;
       }
 
       if (!active && isIntroPath(pathname)) {

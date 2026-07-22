@@ -48,6 +48,19 @@ async function updateRules(state) {
 }
 
 async function applySync(payload) {
+  if (payload.entitled === false) {
+    payload = {
+      blocking: false,
+      domains: [],
+      sessionEndsAt: null,
+      lockMode: null,
+      sessionId: null,
+      timerPaused: false,
+      remainingMs: null,
+      entitled: false,
+    };
+  }
+
   const state = {
     blocking: !!payload.blocking,
     domains: Array.isArray(payload.domains) ? payload.domains : [],

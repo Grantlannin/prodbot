@@ -52,6 +52,8 @@ export interface FocusSyncPayload {
   sessionId: string | null;
   timerPaused: boolean;
   remainingMs: number | null;
+  /** When false, extension clears all blocking (e.g. subscription canceled). */
+  entitled?: boolean;
 }
 
 export interface FocusInfractionPayload {
@@ -62,6 +64,19 @@ export interface FocusInfractionPayload {
 
 const PRODUC_FOCUS_SYNC = 'PRODUC_FOCUS_SYNC';
 const PRODUC_FOCUS_INFRACTION = 'PRODUC_FOCUS_INFRACTION';
+export const PRODUC_FOCUS_PING = 'PRODUC_FOCUS_PING';
+export const PRODUC_FOCUS_PONG = 'PRODUC_FOCUS_PONG';
+
+export const FOCUS_CLEAR_PAYLOAD: FocusSyncPayload = {
+  blocking: false,
+  domains: [],
+  sessionEndsAt: null,
+  lockMode: null,
+  sessionId: null,
+  timerPaused: false,
+  remainingMs: null,
+  entitled: false,
+};
 
 export function normalizeDomain(input: string): string | null {
   let raw = input.trim().toLowerCase();
@@ -124,7 +139,13 @@ export function buildFocusSyncPayload(input: {
   blocklist: FocusBlocklistStore;
   openCountdownLeft: number | null;
   timerPaused: boolean;
+  entitled?: boolean;
 }): FocusSyncPayload {
+  const entitled = input.entitled !== false;
+  if (!entitled) {
+    return { ...FOCUS_CLEAR_PAYLOAD };
+  }
+
   const lockMode = input.session?.lockMode ?? 'none';
   const blocking =
     input.status === 'working' && (lockMode === 'soft' || lockMode === 'hard');
@@ -147,6 +168,32 @@ export function buildFocusSyncPayload(input: {
     sessionId: input.session?.id ?? null,
     timerPaused,
     remainingMs: timerPaused ? remainingMs : null,
+    entitled: true,
+  };
+}
+
+export function postFocusClearSync(): void {
+  postFocusSync(FOCUS_CLEAR_PAYLOAD);
+}
+
+export function pingFocusExtension(onPong: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+
+  const listener = (event: MessageEvent) => {
+    if (event.source !== window) return;
+    if (event.data?.type !== PRODUC_FOCUS_PONG) return;
+    onPong();
+  };
+
+  window.addEventListener('message', listener);
+  const interval = window.setInterval(() => {
+    window.postMessage({ type: PRODUC_FOCUS_PING }, window.location.origin);
+  }, 1500);
+  window.postMessage({ type: PRODUC_FOCUS_PING }, window.location.origin);
+
+  return () => {
+    window.removeEventListener('message', listener);
+    window.clearInterval(interval);
   };
 }
 

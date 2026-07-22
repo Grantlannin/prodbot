@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import type { CSSProperties } from 'react';
 import MarketingShell from '@/components/marketing/MarketingShell';
-import { getLoomEmbedUrl, markIntroCompleteClient } from '@/lib/intro';
+import { getLoomEmbedUrl, markIntroCompleteClient, INTRO_EXTENSION_PATH } from '@/lib/intro';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -17,7 +17,7 @@ export default function IntroVideo({ loomUrl }: IntroVideoProps) {
 
   const handleContinue = () => {
     markIntroCompleteClient();
-    router.push('/app');
+    router.push(INTRO_EXTENSION_PATH);
     router.refresh();
   };
 

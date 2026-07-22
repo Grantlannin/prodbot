@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import { useStuckHelp } from './hooks/StuckHelpProvider';
@@ -21,6 +21,7 @@ interface FocusExtensionBridgeProps {
 
 export default function FocusExtensionBridge({ onAddInfraction }: FocusExtensionBridgeProps) {
   const [blocklist] = useLocalStorage<FocusBlocklistStore>(FOCUS_BLOCKLIST_KEY, DEFAULT_FOCUS_BLOCKLIST);
+  const [entitled, setEntitled] = useState(true);
   const {
     status,
     currentSession,
@@ -33,15 +34,41 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
   const seenInfractionsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadEntitlement = () => {
+      void fetch('/api/billing/status')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => {
+          if (cancelled || !data) return;
+          if (data.billingEnabled) {
+            setEntitled(!!data.active);
+          } else {
+            setEntitled(true);
+          }
+        })
+        .catch(() => {});
+    };
+
+    loadEntitlement();
+    const interval = window.setInterval(loadEntitlement, 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
     const payload = buildFocusSyncPayload({
       status,
       session: currentSession,
       blocklist,
       openCountdownLeft,
       timerPaused,
+      entitled,
     });
     postFocusSync(payload);
-  }, [status, currentSession, blocklist, openCountdownLeft, timerPaused]);
+  }, [status, currentSession, blocklist, openCountdownLeft, timerPaused, entitled]);
 
   useEffect(() => {
     return onExtensionInfraction(payload => {

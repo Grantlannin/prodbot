@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import { postFocusClearSync } from '@/components/agent-hq/focusBlocking';
 import { isAuthRequired, isSupabaseConfigured } from '@/lib/supabase/config';
 
 interface AuthContextValue {
@@ -52,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     if (!authEnabled) return;
+    postFocusClearSync();
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
     window.location.href = '/';
