@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import type { CSSProperties } from 'react';
 import MarketingShell from '@/components/marketing/MarketingShell';
-import { getLoomEmbedUrl, markIntroCompleteClient } from '@/lib/intro';
+import { getLoomEmbedUrl, markIntroCompleteClient, ONBOARDING_STEP_COUNT } from '@/lib/intro';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -25,7 +25,7 @@ export default function IntroVideo({ loomUrl }: IntroVideoProps) {
     <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
-          <p style={styles.step}>Step 2 of 2</p>
+          <p style={styles.step}>Step 3 of {ONBOARDING_STEP_COUNT}</p>
           <h1 style={styles.title}>Quick intro</h1>
           <p style={styles.lead}>A 2-minute walkthrough of how Daywinner works.</p>
 

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { MONTHLY_PRICE_LABEL, MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
+import { CHROME_DOWNLOAD_URL } from '@/lib/intro';
 import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -121,6 +122,16 @@ export default function SubscribeForm() {
             <li>Chrome extension for site blocking</li>
           </ul>
 
+          <div style={styles.chromeNote}>
+            <p style={styles.chromeNoteTitle}>Requires Google Chrome (desktop)</p>
+            <p style={styles.chromeNoteText}>
+              Daywinner and the focus extension run in Chrome — not Safari or Firefox.{' '}
+              <a href={CHROME_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" style={styles.chromeLink}>
+                Download Chrome
+              </a>
+            </p>
+          </div>
+
           <button type="button" onClick={startCheckout} disabled={busy} style={styles.primaryBtn}>
             {busy ? 'Redirecting to Stripe…' : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
           </button>
@@ -221,6 +232,30 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     color: '#94a3b8',
     textAlign: 'center',
+  },
+  chromeNote: {
+    margin: 0,
+    padding: '12px 14px',
+    borderRadius: 10,
+    background: '#f8fafc',
+    border: '1px solid #e2e8f0',
+  },
+  chromeNoteTitle: {
+    margin: '0 0 4px',
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#334155',
+  },
+  chromeNoteText: {
+    margin: 0,
+    fontSize: 12,
+    lineHeight: 1.5,
+    color: '#64748b',
+  },
+  chromeLink: {
+    color: '#1d4ed8',
+    fontWeight: 600,
+    textDecoration: 'none',
   },
   legal: {
     margin: '8px 0 0',

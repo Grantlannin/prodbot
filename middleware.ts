@@ -4,7 +4,9 @@ import { isActiveSubscription } from '@/lib/billing/subscription';
 import { parseBillingRow } from '@/lib/billing/profile';
 import { isBillingEnabled } from '@/lib/stripe/config';
 import {
+  CHROME_INTRO_COMPLETE_COOKIE,
   EXTENSION_INTRO_COMPLETE_COOKIE,
+  INTRO_CHROME_PATH,
   INTRO_COMPLETE_COOKIE,
   INTRO_EXTENSION_PATH,
   INTRO_VIDEO_PATH,
@@ -21,6 +23,10 @@ function isAppPath(pathname: string): boolean {
   return pathname === '/app' || pathname.startsWith('/app/');
 }
 
+function isIntroChromePath(pathname: string): boolean {
+  return pathname === INTRO_CHROME_PATH;
+}
+
 function isIntroVideoPath(pathname: string): boolean {
   return pathname === INTRO_VIDEO_PATH;
 }
@@ -30,7 +36,7 @@ function isIntroExtensionPath(pathname: string): boolean {
 }
 
 function isIntroPath(pathname: string): boolean {
-  return isIntroVideoPath(pathname) || isIntroExtensionPath(pathname);
+  return isIntroChromePath(pathname) || isIntroVideoPath(pathname) || isIntroExtensionPath(pathname);
 }
 
 function hasIntroComplete(request: NextRequest): boolean {
@@ -41,7 +47,16 @@ function hasExtensionIntroComplete(request: NextRequest): boolean {
   return request.cookies.get(EXTENSION_INTRO_COMPLETE_COOKIE)?.value === '1';
 }
 
-function postSubscribeDestination(introComplete: boolean, extensionIntroComplete: boolean): string {
+function hasChromeIntroComplete(request: NextRequest): boolean {
+  return request.cookies.get(CHROME_INTRO_COMPLETE_COOKIE)?.value === '1';
+}
+
+function postSubscribeDestination(
+  chromeIntroComplete: boolean,
+  extensionIntroComplete: boolean,
+  introComplete: boolean
+): string {
+  if (!chromeIntroComplete) return INTRO_CHROME_PATH;
   if (!extensionIntroComplete) return INTRO_EXTENSION_PATH;
   if (!introComplete) return INTRO_VIDEO_PATH;
   return '/app';
@@ -96,25 +111,43 @@ export async function middleware(request: NextRequest) {
         .maybeSingle();
 
       const active = isActiveSubscription(parseBillingRow(profile));
-      const introComplete = hasIntroComplete(request);
+      const chromeIntroComplete = hasChromeIntroComplete(request);
       const extensionIntroComplete = hasExtensionIntroComplete(request);
-      const onboarded = introComplete && extensionIntroComplete;
+      const introComplete = hasIntroComplete(request);
+      const onboarded = chromeIntroComplete && extensionIntroComplete && introComplete;
 
       if (active && (pathname === '/login' || pathname === '/subscribe' || pathname === '/')) {
         return NextResponse.redirect(
-          new URL(postSubscribeDestination(introComplete, extensionIntroComplete), request.url)
+          new URL(
+            postSubscribeDestination(chromeIntroComplete, extensionIntroComplete, introComplete),
+            request.url
+          )
         );
       }
 
-      if (active && !extensionIntroComplete && (isAppPath(pathname) || isIntroVideoPath(pathname))) {
+      if (
+        active &&
+        !chromeIntroComplete &&
+        (isAppPath(pathname) || isIntroExtensionPath(pathname) || isIntroVideoPath(pathname))
+      ) {
+        return NextResponse.redirect(new URL(INTRO_CHROME_PATH, request.url));
+      }
+
+      if (
+        active &&
+        chromeIntroComplete &&
+        !extensionIntroComplete &&
+        (isAppPath(pathname) || isIntroVideoPath(pathname) || isIntroChromePath(pathname))
+      ) {
         return NextResponse.redirect(new URL(INTRO_EXTENSION_PATH, request.url));
       }
 
       if (
         active &&
+        chromeIntroComplete &&
         extensionIntroComplete &&
         !introComplete &&
-        (isAppPath(pathname) || isIntroExtensionPath(pathname))
+        (isAppPath(pathname) || isIntroExtensionPath(pathname) || isIntroChromePath(pathname))
       ) {
         return NextResponse.redirect(new URL(INTRO_VIDEO_PATH, request.url));
       }

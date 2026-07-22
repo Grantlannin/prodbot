@@ -9,6 +9,7 @@ import {
   getChromeExtensionStoreUrl,
   INTRO_VIDEO_PATH,
   markExtensionIntroCompleteClient,
+  ONBOARDING_STEP_COUNT,
 } from '@/lib/intro';
 import { PRODUCTION_SITE_HOST } from '@/lib/site';
 
@@ -31,7 +32,7 @@ export default function IntroExtension() {
     <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
-          <p style={styles.step}>Step 1 of 2</p>
+          <p style={styles.step}>Step 2 of {ONBOARDING_STEP_COUNT}</p>
           <h1 style={styles.title}>Install the focus extension</h1>
           <p style={styles.lead}>
             Blocks distracting sites during focus sessions. Keep a <strong>{PRODUCTION_SITE_HOST}</strong> tab open
