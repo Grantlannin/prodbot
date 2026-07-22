@@ -4,8 +4,10 @@ export const INTRO_COMPLETE_COOKIE = 'dw_intro_complete';
 export const EXTENSION_INTRO_COMPLETE_KEY = 'agentHQ_extensionIntroComplete';
 export const EXTENSION_INTRO_COMPLETE_COOKIE = 'dw_extension_intro_complete';
 
-export const INTRO_VIDEO_PATH = '/intro';
-export const INTRO_EXTENSION_PATH = '/intro/extension';
+/** Step 1 — install Chrome extension */
+export const INTRO_EXTENSION_PATH = '/intro';
+/** Step 2 — how-to video */
+export const INTRO_VIDEO_PATH = '/intro/video';
 
 /** Convert a Loom share or embed URL to an embed iframe URL. */
 export function getLoomEmbedUrl(url: string | undefined): string | null {

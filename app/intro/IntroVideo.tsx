@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import type { CSSProperties } from 'react';
 import MarketingShell from '@/components/marketing/MarketingShell';
-import { getLoomEmbedUrl, markIntroCompleteClient, INTRO_EXTENSION_PATH } from '@/lib/intro';
+import { getLoomEmbedUrl, markIntroCompleteClient } from '@/lib/intro';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -17,7 +17,7 @@ export default function IntroVideo({ loomUrl }: IntroVideoProps) {
 
   const handleContinue = () => {
     markIntroCompleteClient();
-    router.push(INTRO_EXTENSION_PATH);
+    router.push('/app');
     router.refresh();
   };
 
@@ -25,6 +25,7 @@ export default function IntroVideo({ loomUrl }: IntroVideoProps) {
     <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
+          <p style={styles.step}>Step 2 of 2</p>
           <h1 style={styles.title}>Quick intro</h1>
           <p style={styles.lead}>A 2-minute walkthrough of how Daywinner works.</p>
 
@@ -46,7 +47,7 @@ export default function IntroVideo({ loomUrl }: IntroVideoProps) {
           )}
 
           <button type="button" onClick={handleContinue} style={styles.btn}>
-            Got it
+            Got it — open app
           </button>
         </div>
       </div>
@@ -73,6 +74,14 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: 16,
+  },
+  step: {
+    margin: 0,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    color: '#94a3b8',
   },
   title: {
     margin: 0,

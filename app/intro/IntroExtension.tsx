@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import type { CSSProperties } from 'react';
 import MarketingShell from '@/components/marketing/MarketingShell';
 import { pingFocusExtension } from '@/components/agent-hq/focusBlocking';
-import { getChromeExtensionStoreUrl, markExtensionIntroCompleteClient } from '@/lib/intro';
+import {
+  getChromeExtensionStoreUrl,
+  INTRO_VIDEO_PATH,
+  markExtensionIntroCompleteClient,
+} from '@/lib/intro';
 import { PRODUCTION_SITE_HOST } from '@/lib/site';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -19,7 +23,7 @@ export default function IntroExtension() {
 
   const handleContinue = () => {
     markExtensionIntroCompleteClient();
-    router.push('/app');
+    router.push(INTRO_VIDEO_PATH);
     router.refresh();
   };
 
@@ -27,6 +31,7 @@ export default function IntroExtension() {
     <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
+          <p style={styles.step}>Step 1 of 2</p>
           <h1 style={styles.title}>Install the focus extension</h1>
           <p style={styles.lead}>
             Blocks distracting sites during focus sessions. Keep a <strong>{PRODUCTION_SITE_HOST}</strong> tab open
@@ -68,7 +73,7 @@ export default function IntroExtension() {
           </ol>
 
           <button type="button" onClick={handleContinue} style={styles.btn}>
-            {detected ? 'Continue to app' : 'Skip for now'}
+            {detected ? 'Continue to intro video' : 'Skip for now'}
           </button>
         </div>
       </div>
@@ -95,6 +100,14 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
+  },
+  step: {
+    margin: 0,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    color: '#94a3b8',
   },
   title: {
     margin: 0,

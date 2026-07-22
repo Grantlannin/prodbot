@@ -11,7 +11,7 @@ export default function SubscribeSuccess() {
           <div className="text-center">
             <p className="mb-2 text-lg font-bold text-slate-900">Payment received</p>
             <p className="text-sm leading-relaxed text-slate-600">
-              Create your account with the same email you used at checkout, then watch a short intro.
+              Create your account with the same email you used at checkout, then install the extension.
             </p>
           </div>
           <Link

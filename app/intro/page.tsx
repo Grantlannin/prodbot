@@ -1,6 +1,5 @@
-import IntroVideo from './IntroVideo';
+import IntroExtension from './IntroExtension';
 
 export default function IntroPage() {
-  const loomUrl = process.env.NEXT_PUBLIC_LOOM_INTRO_URL?.trim() || null;
-  return <IntroVideo loomUrl={loomUrl} />;
+  return <IntroExtension />;
 }

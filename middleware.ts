@@ -42,8 +42,8 @@ function hasExtensionIntroComplete(request: NextRequest): boolean {
 }
 
 function postSubscribeDestination(introComplete: boolean, extensionIntroComplete: boolean): string {
-  if (!introComplete) return INTRO_VIDEO_PATH;
   if (!extensionIntroComplete) return INTRO_EXTENSION_PATH;
+  if (!introComplete) return INTRO_VIDEO_PATH;
   return '/app';
 }
 
@@ -106,12 +106,17 @@ export async function middleware(request: NextRequest) {
         );
       }
 
-      if (active && !introComplete && (isAppPath(pathname) || isIntroExtensionPath(pathname))) {
-        return NextResponse.redirect(new URL(INTRO_VIDEO_PATH, request.url));
+      if (active && !extensionIntroComplete && (isAppPath(pathname) || isIntroVideoPath(pathname))) {
+        return NextResponse.redirect(new URL(INTRO_EXTENSION_PATH, request.url));
       }
 
-      if (active && introComplete && !extensionIntroComplete && (isAppPath(pathname) || isIntroVideoPath(pathname))) {
-        return NextResponse.redirect(new URL(INTRO_EXTENSION_PATH, request.url));
+      if (
+        active &&
+        extensionIntroComplete &&
+        !introComplete &&
+        (isAppPath(pathname) || isIntroExtensionPath(pathname))
+      ) {
+        return NextResponse.redirect(new URL(INTRO_VIDEO_PATH, request.url));
       }
 
       if (active && onboarded && isIntroPath(pathname)) {
