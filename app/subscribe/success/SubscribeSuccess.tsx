@@ -11,11 +11,11 @@ export default function SubscribeSuccess() {
           <div className="text-center">
             <p className="mb-2 text-lg font-bold text-slate-900">Payment received</p>
             <p className="text-sm leading-relaxed text-slate-600">
-              Create your account with the same email you used at checkout, then open the app.
+              Create your account with the same email you used at checkout, then watch a short intro.
             </p>
           </div>
           <Link
-            href="/login?mode=signup&next=/app"
+            href="/login?mode=signup&next=/intro"
             className="rounded-xl bg-slate-900 px-4 py-3.5 text-center text-sm font-bold text-white no-underline transition hover:bg-slate-800"
           >
             Create account

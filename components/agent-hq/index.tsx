@@ -112,10 +112,7 @@ function AgentHQInner() {
         <NightPrepModal />
         <MorningFlowModal />
         <StuckHelpOverlays />
-        <OnboardingNameModal
-          open={!profile.onboardingComplete || !profile.displayName.trim()}
-          onSubmit={completeOnboarding}
-        />
+        <OnboardingNameModal open={false} onSubmit={completeOnboarding} />
         <div
           style={{
             display: 'flex',

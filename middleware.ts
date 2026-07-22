@@ -3,9 +3,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { isActiveSubscription } from '@/lib/billing/subscription';
 import { parseBillingRow } from '@/lib/billing/profile';
 import { isBillingEnabled } from '@/lib/stripe/config';
+import { INTRO_COMPLETE_COOKIE } from '@/lib/intro';
 import { getSupabaseConfig, isAuthRequired } from '@/lib/supabase/config';
 
 const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/subscribe', '/privacy', '/terms'];
+const INTRO_PATH = '/intro';
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(`${path}/`));
@@ -13,6 +15,18 @@ function isPublicPath(pathname: string): boolean {
 
 function isAppPath(pathname: string): boolean {
   return pathname === '/app' || pathname.startsWith('/app/');
+}
+
+function isIntroPath(pathname: string): boolean {
+  return pathname === INTRO_PATH;
+}
+
+function hasIntroComplete(request: NextRequest): boolean {
+  return request.cookies.get(INTRO_COMPLETE_COOKIE)?.value === '1';
+}
+
+function postSubscribeDestination(introComplete: boolean): string {
+  return introComplete ? '/app' : INTRO_PATH;
 }
 
 export async function middleware(request: NextRequest) {
@@ -50,7 +64,7 @@ export async function middleware(request: NextRequest) {
     if (requireAuth && !user && !isPublicPath(pathname)) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = '/login';
-      if (isAppPath(pathname)) {
+      if (isAppPath(pathname) || isIntroPath(pathname)) {
         loginUrl.searchParams.set('next', pathname);
       }
       return NextResponse.redirect(loginUrl);
@@ -64,9 +78,29 @@ export async function middleware(request: NextRequest) {
         .maybeSingle();
 
       const active = isActiveSubscription(parseBillingRow(profile));
+      const introComplete = hasIntroComplete(request);
 
       if (active && (pathname === '/login' || pathname === '/subscribe' || pathname === '/')) {
+        return NextResponse.redirect(new URL(postSubscribeDestination(introComplete), request.url));
+      }
+
+      if (active && !introComplete && isAppPath(pathname)) {
+        return NextResponse.redirect(new URL(INTRO_PATH, request.url));
+      }
+
+      if (active && introComplete && isIntroPath(pathname)) {
         return NextResponse.redirect(new URL('/app', request.url));
+      }
+
+      if (active && !introComplete && isIntroPath(pathname)) {
+        return supabaseResponse;
+      }
+
+      if (!active && isIntroPath(pathname)) {
+        const subscribeUrl = request.nextUrl.clone();
+        subscribeUrl.pathname = '/subscribe';
+        subscribeUrl.search = '';
+        return NextResponse.redirect(subscribeUrl);
       }
 
       if (!active && pathname !== '/subscribe' && !pathname.startsWith('/subscribe/')) {
