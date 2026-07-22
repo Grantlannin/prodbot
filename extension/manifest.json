@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Daywinner bot",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "block distracting sites during daywinner bot usage",
   "permissions": ["declarativeNetRequest", "declarativeNetRequestFeedback", "storage", "alarms"],
   "host_permissions": ["*://*/*"],

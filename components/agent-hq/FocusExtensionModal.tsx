@@ -100,7 +100,7 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
                   Works on <strong>{siteHost}</strong> — keep this app tab open while you work.
                 </p>
                 <a href="/daywinner.zip" download="daywinner.zip" style={styles.downloadLink}>
-                  Download extension (v1.0.4)
+                  Download extension (v1.0.5)
                 </a>
                 <ol style={styles.steps}>
                   <li>Unzip → chrome://extensions → Developer mode → Load unpacked → select the extension folder.</li>
