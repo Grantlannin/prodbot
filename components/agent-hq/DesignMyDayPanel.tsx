@@ -91,7 +91,10 @@ const KIND_TAB_LABELS: Record<DayBlockKind, string> = {
   work: 'Work block',
   commitment: 'Commitment',
   open_loop: 'Open loop / decision',
+  custom: 'Empty block',
 };
+
+const UNTITLED_BLOCK_TITLE = 'Untitled';
 
 /** Snaps "now" to the nearest hour, clamped to the Admin calendar window (4am–12am). */
 function defaultWorkStart(): number {
@@ -150,12 +153,23 @@ function makeLoopBlock(note: CaptureNote, startMinutes: number): DayBlock {
   };
 }
 
-type AddTab = 'task' | 'commitment' | 'loop' | 'colors';
+function makeCustomBlock(title: string, startMinutes: number, durationMinutes: number): DayBlock {
+  return {
+    id: makeDayBlockId(),
+    title: title.trim() || UNTITLED_BLOCK_TITLE,
+    startMinutes,
+    durationMinutes,
+    kind: 'custom',
+  };
+}
+
+type AddTab = 'task' | 'commitment' | 'loop' | 'custom' | 'colors';
 
 function tabKind(tab: AddTab): DayBlockKind | null {
   if (tab === 'task') return 'work';
   if (tab === 'commitment') return 'commitment';
   if (tab === 'loop') return 'open_loop';
+  if (tab === 'custom') return 'custom';
   return null;
 }
 
@@ -388,6 +402,83 @@ function CommitmentAddForm({
   );
 }
 
+function EmptyBlockAddForm({
+  onAdd,
+  submitLabel = 'Add empty block',
+}: {
+  onAdd: (title: string, startMinutes: number, durationMinutes: number) => void;
+  submitLabel?: string;
+}) {
+  const [title, setTitle] = useState('');
+  const [startMinutes, setStartMinutes] = useState(() => defaultWorkStart());
+  const [endMinutes, setEndMinutes] = useState(() => defaultWorkStart() + 60);
+  const [error, setError] = useState('');
+
+  const submit = () => {
+    if (endMinutes <= startMinutes) {
+      setError('End time needs to be after start time.');
+      return;
+    }
+    setError('');
+    onAdd(title, startMinutes, endMinutes - startMinutes);
+    setTitle('');
+  };
+
+  return (
+    <div style={styles.form}>
+      <label style={styles.fieldLabel}>Name</label>
+      <input
+        type="text"
+        value={title}
+        onChange={e => {
+          setTitle(e.target.value);
+          setError('');
+        }}
+        placeholder="Optional — rename anytime on the calendar"
+        style={styles.textInput}
+      />
+
+      <div style={styles.fieldRow}>
+        <div style={styles.fieldCol}>
+          <label style={styles.fieldLabel}>Start</label>
+          <select
+            value={startMinutes}
+            onChange={e => setStartMinutes(Number(e.target.value))}
+            style={styles.select}
+          >
+            {START_TIME_OPTIONS.map(mins => (
+              <option key={mins} value={mins}>
+                {formatMinutesLabel(mins)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div style={styles.fieldCol}>
+          <label style={styles.fieldLabel}>End</label>
+          <select
+            value={endMinutes}
+            onChange={e => setEndMinutes(Number(e.target.value))}
+            style={styles.select}
+          >
+            {START_TIME_OPTIONS.map(mins => (
+              <option key={mins} value={mins}>
+                {formatMinutesLabel(mins)}
+              </option>
+            ))}
+            <option value={24 * 60}>{formatMinutesLabel(24 * 60)}</option>
+          </select>
+        </div>
+      </div>
+
+      {error ? <p style={styles.errorText}>{error}</p> : null}
+
+      <button type="button" onClick={submit} style={styles.primaryBtn}>
+        {submitLabel}
+      </button>
+    </div>
+  );
+}
+
 function LoopAddForm({
   notes,
   onAdd,
@@ -525,7 +616,7 @@ function ColorsTab({
   onChangeColor: (kind: DayBlockKind, colorId: string) => void;
 }) {
   const [openKind, setOpenKind] = useState<DayBlockKind | null>(null);
-  const kinds: DayBlockKind[] = ['work', 'commitment', 'open_loop'];
+  const kinds: DayBlockKind[] = ['work', 'commitment', 'open_loop', 'custom'];
 
   return (
     <div style={styles.form}>
@@ -549,6 +640,7 @@ function Legend({ colorMap }: { colorMap: DayBlockColorMap }) {
     { kind: 'work', label: 'Work' },
     { kind: 'commitment', label: 'Commitment' },
     { kind: 'open_loop', label: 'Open loop / decision' },
+    { kind: 'custom', label: 'Empty' },
   ];
   return (
     <div style={styles.legend}>
@@ -808,9 +900,13 @@ function DesignMyDayGuidedModal({
 export default function DesignMyDayPanel() {
   const [store, setStore] = useLocalStorage<DailyStructureStore>(DAILY_STRUCTURE_KEY, {});
   const [openLoops] = useLocalStorage<CaptureNote[]>(OPEN_LOOPS_KEY, []);
-  const [colorMap, setColorMap] = useLocalStorage<DayBlockColorMap>(
+  const [colorMapRaw, setColorMap] = useLocalStorage<DayBlockColorMap>(
     DAY_BLOCK_COLORS_KEY,
     DEFAULT_DAY_BLOCK_COLOR_MAP
+  );
+  const colorMap = useMemo(
+    () => ({ ...DEFAULT_DAY_BLOCK_COLOR_MAP, ...colorMapRaw }),
+    [colorMapRaw]
   );
   const { projects } = useProjects();
 
@@ -855,6 +951,7 @@ export default function DesignMyDayPanel() {
     { id: 'task', label: 'Work block' },
     { id: 'commitment', label: 'Commitment' },
     { id: 'loop', label: 'Open loop' },
+    { id: 'custom', label: 'Empty block' },
     { id: 'colors', label: 'Colors' },
   ];
 
@@ -862,8 +959,8 @@ export default function DesignMyDayPanel() {
     <div style={styles.root}>
       <div style={styles.toolbar}>
         <div style={styles.leadSubtitle}>
-          Add all the other stuff — commitments, open loops, etc. Click a block, then press Delete
-          to remove it.
+          Add all the other stuff — commitments, open loops, empty blocks, etc. Click a name to
+          rename · Delete to remove.
         </div>
         <div style={styles.toolbarActions}>
           <button
@@ -1000,6 +1097,11 @@ export default function DesignMyDayPanel() {
           ) : null}
           {tab === 'loop' ? (
             <LoopAddForm notes={openLoops} onAdd={(note, start) => addBlock(makeLoopBlock(note, start))} />
+          ) : null}
+          {tab === 'custom' ? (
+            <EmptyBlockAddForm
+              onAdd={(title, start, duration) => addBlock(makeCustomBlock(title, start, duration))}
+            />
           ) : null}
           {tab === 'colors' ? (
             <ColorsTab colorMap={colorMap} onChangeColor={changeKindColor} />

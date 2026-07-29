@@ -85,6 +85,9 @@ export default function DailyStructureCalendar({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedIdRef = useRef<string | null>(null);
   selectedIdRef.current = selectedId;
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const rangeStart = timelineStartMinutes;
   const rangeEnd = timelineEndMinutes;
@@ -95,7 +98,16 @@ export default function DailyStructureCalendar({
     if (selectedId && !blocks.some(b => b.id === selectedId)) {
       setSelectedId(null);
     }
-  }, [blocks, selectedId]);
+    if (editingId && !blocks.some(b => b.id === editingId)) {
+      setEditingId(null);
+    }
+  }, [blocks, selectedId, editingId]);
+
+  useEffect(() => {
+    if (!editingId) return;
+    titleInputRef.current?.focus();
+    titleInputRef.current?.select();
+  }, [editingId]);
 
   useEffect(() => {
     if (!interactive || !onRemoveBlock) return;
@@ -103,6 +115,7 @@ export default function DailyStructureCalendar({
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
       if (isEditableTarget(e.target)) return;
+      if (editingId) return;
       const id = selectedIdRef.current;
       if (!id) return;
       e.preventDefault();
@@ -112,7 +125,31 @@ export default function DailyStructureCalendar({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [interactive, onRemoveBlock]);
+  }, [interactive, onRemoveBlock, editingId]);
+
+  const commitRename = useCallback(
+    (blockId: string, nextTitle: string) => {
+      if (!onBlocksChange) return;
+      const trimmed = nextTitle.trim() || 'Untitled';
+      const current = blocksRef.current.find(b => b.id === blockId);
+      if (!current || current.title === trimmed) {
+        setEditingId(null);
+        return;
+      }
+      onBlocksChange(
+        blocksRef.current.map(b => (b.id === blockId ? { ...b, title: trimmed } : b))
+      );
+      setEditingId(null);
+    },
+    [onBlocksChange]
+  );
+
+  const beginRename = (block: DayBlock) => {
+    if (!onBlocksChange) return;
+    setSelectedId(block.id);
+    setEditingId(block.id);
+    setEditTitle(block.title);
+  };
 
   const clampMoveStart = useCallback(
     (minutes: number, duration: number) => {
@@ -127,6 +164,9 @@ export default function DailyStructureCalendar({
     if (!interactive || !onBlocksChange) return;
     e.preventDefault();
     e.stopPropagation();
+    if (editingId) {
+      commitRename(editingId, editTitle);
+    }
     setSelectedId(block.id);
     dragRef.current = {
       id: block.id,
@@ -192,7 +232,12 @@ export default function DailyStructureCalendar({
           ...styles.body,
           ...(noScroll ? styles.bodyNoScroll : { maxHeight: maxBodyHeight }),
         }}
-        onMouseDown={() => setSelectedId(null)}
+        onMouseDown={() => {
+          if (editingId) {
+            commitRename(editingId, editTitle);
+          }
+          setSelectedId(null);
+        }}
       >
         <div style={{ ...styles.labels, minHeight: timelineHeight }}>
           {hourLabels.map(min => (
@@ -228,6 +273,7 @@ export default function DailyStructureCalendar({
             const endMinutes = block.startMinutes + block.durationMinutes;
             const rangeLabel = `${formatMinutesLabel(block.startMinutes)}–${formatMinutesLabel(endMinutes)}`;
             const selected = selectedId === block.id;
+            const renaming = editingId === block.id;
             return (
               <div
                 key={block.id}
@@ -248,7 +294,7 @@ export default function DailyStructureCalendar({
                   e.stopPropagation();
                   setSelectedId(block.id);
                 }}
-                title={`${block.title} · ${rangeLabel}${onRemoveBlock ? ' · Delete to remove' : ''}`}
+                title={`${block.title} · ${rangeLabel}${onRemoveBlock ? ' · Delete to remove' : ''}${canEdit ? ' · Click name to rename' : ''}`}
               >
                 {canEdit ? (
                   <div
@@ -274,9 +320,53 @@ export default function DailyStructureCalendar({
                     />
                   ) : null}
                   <div style={styles.blockTopRow}>
-                    <div style={{ ...styles.blockTitle, ...(dense ? styles.blockTitleDense : {}) }}>
-                      {block.title}
-                    </div>
+                    {renaming ? (
+                      <input
+                        ref={titleInputRef}
+                        type="text"
+                        value={editTitle}
+                        onChange={e => setEditTitle(e.target.value)}
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={e => e.stopPropagation()}
+                        onBlur={() => commitRename(block.id, editTitle)}
+                        onKeyDown={e => {
+                          e.stopPropagation();
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            commitRename(block.id, editTitle);
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            setEditingId(null);
+                          }
+                        }}
+                        style={{
+                          ...styles.titleInput,
+                          ...(dense ? styles.titleInputDense : {}),
+                          color: colors.text,
+                          borderColor: colors.border,
+                        }}
+                        aria-label="Rename block"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        style={{
+                          ...styles.blockTitle,
+                          ...(dense ? styles.blockTitleDense : {}),
+                          ...(canEdit ? styles.blockTitleBtn : {}),
+                        }}
+                        disabled={!canEdit}
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (canEdit) beginRename(block);
+                          else setSelectedId(block.id);
+                        }}
+                        title={canEdit ? 'Click to rename' : undefined}
+                      >
+                        {block.title}
+                      </button>
+                    )}
                     <div style={{ ...styles.blockMetaSide, ...(dense ? styles.blockMetaSideDense : {}) }}>
                       {rangeLabel}
                     </div>
@@ -290,6 +380,7 @@ export default function DailyStructureCalendar({
                           e.stopPropagation();
                           onRemoveBlock(block.id);
                           setSelectedId(null);
+                          setEditingId(null);
                         }}
                       >
                         ×
@@ -457,10 +548,36 @@ const styles: Record<string, CSSProperties> = {
     textOverflow: 'ellipsis',
     minWidth: 0,
     flex: '1 1 auto',
+    textAlign: 'left',
+    background: 'transparent',
+    border: 'none',
+    padding: 0,
+    margin: 0,
+    color: 'inherit',
+    fontFamily: font,
+  },
+  blockTitleBtn: {
+    cursor: 'text',
   },
   blockTitleDense: {
     fontSize: 11,
     lineHeight: 1.15,
+  },
+  titleInput: {
+    flex: '1 1 auto',
+    minWidth: 0,
+    fontSize: 12,
+    fontWeight: 700,
+    lineHeight: 1.2,
+    fontFamily: font,
+    border: '1px solid',
+    borderRadius: 4,
+    padding: '1px 4px',
+    background: 'rgba(255,255,255,0.9)',
+    outline: 'none',
+  },
+  titleInputDense: {
+    fontSize: 11,
   },
   removeBtn: {
     flexShrink: 0,

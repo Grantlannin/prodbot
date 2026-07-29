@@ -10,7 +10,7 @@ import {
 export const DAILY_STRUCTURE_KEY = 'agentHQ_dailyStructure';
 export const RECURRING_COMMITMENTS_KEY = 'agentHQ_recurringCommitments';
 
-export type DayBlockKind = 'commitment' | 'open_loop' | 'work';
+export type DayBlockKind = 'commitment' | 'open_loop' | 'work' | 'custom';
 
 export interface DayBlock {
   id: string;
@@ -309,6 +309,7 @@ export function createOpenLoopNote(
 export function blockKindLabel(kind: DayBlockKind): string {
   if (kind === 'commitment') return 'Commitment';
   if (kind === 'open_loop') return 'Open loop';
+  if (kind === 'custom') return 'Empty block';
   return 'Work';
 }
 
@@ -336,6 +337,7 @@ export const DEFAULT_DAY_BLOCK_COLOR_MAP: DayBlockColorMap = {
   work: 'blue',
   commitment: 'slate',
   open_loop: 'yellow',
+  custom: 'teal',
 };
 
 export function resolveBlockColorToken(colorId: string | undefined): BlockColorToken {
