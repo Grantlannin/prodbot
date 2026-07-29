@@ -21,16 +21,17 @@ interface DailyStructureCalendarProps {
   compact?: boolean;
   title?: string;
   onRemoveBlock?: (blockId: string) => void;
+  /** Inclusive start of visible timeline (minutes from midnight). */
+  timelineStartMinutes?: number;
+  /** Inclusive end of visible timeline (minutes from midnight). */
+  timelineEndMinutes?: number;
+  /** When true, show the full range with no scroll. */
+  noScroll?: boolean;
+  pxPerMin?: number;
 }
 
 function snapMinutes(minutes: number) {
   return Math.round(minutes / SNAP) * SNAP;
-}
-
-function clampMinutes(minutes: number, duration: number) {
-  const min = DAY_TIMELINE_START;
-  const max = DAY_TIMELINE_END - duration;
-  return Math.max(min, Math.min(max, minutes));
 }
 
 export default function DailyStructureCalendar({
@@ -40,21 +41,27 @@ export default function DailyStructureCalendar({
   compact = false,
   title = 'My day at a glance',
   onRemoveBlock,
+  timelineStartMinutes = DAY_TIMELINE_START,
+  timelineEndMinutes = DAY_TIMELINE_END,
+  noScroll = false,
+  pxPerMin = DAY_TIMELINE_PX_PER_MIN,
 }: DailyStructureCalendarProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ id: string; startY: number; originMinutes: number } | null>(null);
 
-  const timelineHeight = (DAY_TIMELINE_END - DAY_TIMELINE_START) * DAY_TIMELINE_PX_PER_MIN;
+  const rangeStart = timelineStartMinutes;
+  const rangeEnd = timelineEndMinutes;
+  const timelineHeight = (rangeEnd - rangeStart) * pxPerMin;
   const sorted = sortBlocks(blocks);
 
-  const yToMinutes = useCallback((clientY: number) => {
-    const track = trackRef.current;
-    if (!track) return DAY_TIMELINE_START;
-    const rect = track.getBoundingClientRect();
-    const y = clientY - rect.top;
-    const raw = DAY_TIMELINE_START + y / DAY_TIMELINE_PX_PER_MIN;
-    return snapMinutes(raw);
-  }, []);
+  const clampToRange = useCallback(
+    (minutes: number, duration: number) => {
+      const min = rangeStart;
+      const max = rangeEnd - duration;
+      return Math.max(min, Math.min(max, minutes));
+    },
+    [rangeStart, rangeEnd]
+  );
 
   const onBlockMouseDown = (e: ReactMouseEvent, block: DayBlock) => {
     if (!interactive || !onBlocksChange) return;
@@ -64,13 +71,14 @@ export default function DailyStructureCalendar({
     const onMove = (ev: MouseEvent) => {
       const drag = dragRef.current;
       if (!drag) return;
-      const deltaMin = ((ev.clientY - drag.startY) / DAY_TIMELINE_PX_PER_MIN);
+      const deltaMin = (ev.clientY - drag.startY) / pxPerMin;
       const blockData = blocks.find(b => b.id === drag.id);
       if (!blockData) return;
-      const nextStart = clampMinutes(snapMinutes(drag.originMinutes + deltaMin), blockData.durationMinutes);
-      onBlocksChange(
-        blocks.map(b => (b.id === drag.id ? { ...b, startMinutes: nextStart } : b))
+      const nextStart = clampToRange(
+        snapMinutes(drag.originMinutes + deltaMin),
+        blockData.durationMinutes
       );
+      onBlocksChange(blocks.map(b => (b.id === drag.id ? { ...b, startMinutes: nextStart } : b)));
     };
 
     const onUp = () => {
@@ -84,19 +92,24 @@ export default function DailyStructureCalendar({
   };
 
   const hourLabels: number[] = [];
-  for (let m = DAY_TIMELINE_START; m <= DAY_TIMELINE_END; m += 60) hourLabels.push(m);
+  for (let m = rangeStart; m <= rangeEnd; m += 60) hourLabels.push(m);
 
   return (
     <div style={{ ...styles.shell, ...(compact ? styles.shellCompact : {}) }}>
       {title ? <div style={styles.header}>{title}</div> : null}
-      <div style={styles.body}>
-        <div style={styles.labels}>
+      <div
+        style={{
+          ...styles.body,
+          ...(noScroll ? styles.bodyNoScroll : {}),
+        }}
+      >
+        <div style={{ ...styles.labels, minHeight: timelineHeight }}>
           {hourLabels.map(min => (
             <div
               key={min}
               style={{
                 ...styles.hourLabel,
-                top: (min - DAY_TIMELINE_START) * DAY_TIMELINE_PX_PER_MIN,
+                top: (min - rangeStart) * pxPerMin,
               }}
             >
               {formatMinutesLabel(min)}
@@ -109,14 +122,17 @@ export default function DailyStructureCalendar({
               key={`line-${min}`}
               style={{
                 ...styles.hourLine,
-                top: (min - DAY_TIMELINE_START) * DAY_TIMELINE_PX_PER_MIN,
+                top: (min - rangeStart) * pxPerMin,
               }}
             />
           ))}
           {sorted.map(block => {
             const colors = blockKindColor(block.kind);
-            const top = (block.startMinutes - DAY_TIMELINE_START) * DAY_TIMELINE_PX_PER_MIN;
-            const height = Math.max(28, block.durationMinutes * DAY_TIMELINE_PX_PER_MIN);
+            const top = (block.startMinutes - rangeStart) * pxPerMin;
+            const height = Math.max(22, block.durationMinutes * pxPerMin);
+            // Skip blocks fully outside the visible window
+            if (block.startMinutes + block.durationMinutes <= rangeStart) return null;
+            if (block.startMinutes >= rangeEnd) return null;
             return (
               <div
                 key={block.id}
@@ -195,11 +211,14 @@ const styles: Record<string, CSSProperties> = {
     overflow: 'auto',
     padding: '8px 10px 12px 4px',
   },
+  bodyNoScroll: {
+    maxHeight: 'none',
+    overflow: 'visible',
+  },
   labels: {
     position: 'relative',
     width: 54,
     flexShrink: 0,
-    minHeight: (DAY_TIMELINE_END - DAY_TIMELINE_START) * DAY_TIMELINE_PX_PER_MIN,
   },
   hourLabel: {
     position: 'absolute',

@@ -48,12 +48,12 @@ function formatDurationLabel(minutes: number): string {
   return `${minutes}m`;
 }
 
-/** Snaps "now" to the nearest 15 minutes, clamped to the start of the day timeline. */
+/** Snaps "now" to the nearest 15 minutes, clamped to the Design my day window (4am–12pm). */
 function defaultWorkStart(): number {
   const now = new Date();
   const minutesNow = now.getHours() * 60 + now.getMinutes();
   const snapped = Math.round(minutesNow / 15) * 15;
-  return Math.max(DAY_TIMELINE_START, snapped);
+  return Math.max(4 * 60, Math.min(11 * 60, snapped));
 }
 
 function taskOptionKey(task: ListedWorkTask): string {
@@ -664,7 +664,11 @@ export default function DesignMyDayPanel() {
           <DailyStructureCalendar
             blocks={blocks}
             interactive
+            compact
             title=""
+            timelineStartMinutes={4 * 60}
+            timelineEndMinutes={12 * 60}
+            noScroll
             onBlocksChange={persistBlocks}
             onRemoveBlock={removeBlock}
           />
