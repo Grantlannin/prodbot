@@ -359,7 +359,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
 
   const deleteProject = useCallback(
     (id: string) => {
-      if (!confirm('Delete this thing?')) return;
+      if (!confirm('Delete this project?')) return;
       setProjects(prev => prev.filter(p => p.id !== id));
       if (selectedId === id) setSelectedId(null);
     },
@@ -1385,7 +1385,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                   </button>
                 </div>
                 <button type="button" onClick={() => deleteProject(selected.id)} style={styles.deleteBtn}>
-                  Delete thing
+                  Delete project
                 </button>
               </div>
             </>
