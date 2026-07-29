@@ -236,54 +236,70 @@ export default function DailyStructureCalendar({
                   background: colors.bg,
                   borderColor: selected ? '#0f172a' : colors.border,
                   color: colors.text,
-                  cursor: canEdit ? 'grab' : 'default',
+                  cursor: 'default',
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: 'stretch',
                 }}
                 onMouseDown={e => {
                   e.stopPropagation();
-                  if (canEdit) beginDrag(e, block, 'move');
-                  else setSelectedId(block.id);
+                  setSelectedId(block.id);
                 }}
                 title={`${block.title} · ${rangeLabel}${onRemoveBlock ? ' · Delete to remove' : ''}`}
               >
                 {canEdit ? (
                   <div
-                    style={{ ...styles.resizeHandle, ...styles.resizeHandleTop }}
-                    onMouseDown={e => beginDrag(e, block, 'resize-start')}
-                    title="Drag to change start"
-                  />
+                    style={{
+                      ...styles.moveHandle,
+                      ...(dense ? styles.moveHandleDense : {}),
+                    }}
+                    onMouseDown={e => beginDrag(e, block, 'move')}
+                    title="Drag to move block"
+                    aria-label={`Move ${block.title}`}
+                  >
+                    <span style={styles.moveHandleGrip} aria-hidden>
+                      ⋮⋮
+                    </span>
+                  </div>
                 ) : null}
-                <div style={styles.blockTopRow}>
-                  <div style={{ ...styles.blockTitle, ...(dense ? styles.blockTitleDense : {}) }}>
-                    {block.title}
+                <div style={styles.blockBody}>
+                  {canEdit ? (
+                    <div
+                      style={{ ...styles.resizeHandle, ...styles.resizeHandleTop }}
+                      onMouseDown={e => beginDrag(e, block, 'resize-start')}
+                      title="Drag to change start"
+                    />
+                  ) : null}
+                  <div style={styles.blockTopRow}>
+                    <div style={{ ...styles.blockTitle, ...(dense ? styles.blockTitleDense : {}) }}>
+                      {block.title}
+                    </div>
+                    <div style={{ ...styles.blockMetaSide, ...(dense ? styles.blockMetaSideDense : {}) }}>
+                      {rangeLabel}
+                    </div>
+                    {onRemoveBlock ? (
+                      <button
+                        type="button"
+                        style={styles.removeBtn}
+                        aria-label={`Remove ${block.title}`}
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={e => {
+                          e.stopPropagation();
+                          onRemoveBlock(block.id);
+                          setSelectedId(null);
+                        }}
+                      >
+                        ×
+                      </button>
+                    ) : null}
                   </div>
-                  <div style={{ ...styles.blockMetaSide, ...(dense ? styles.blockMetaSideDense : {}) }}>
-                    {rangeLabel}
-                  </div>
-                  {onRemoveBlock ? (
-                    <button
-                      type="button"
-                      style={styles.removeBtn}
-                      aria-label={`Remove ${block.title}`}
-                      onMouseDown={e => e.stopPropagation()}
-                      onClick={e => {
-                        e.stopPropagation();
-                        onRemoveBlock(block.id);
-                        setSelectedId(null);
-                      }}
-                    >
-                      ×
-                    </button>
+                  {canEdit ? (
+                    <div
+                      style={{ ...styles.resizeHandle, ...styles.resizeHandleBottom }}
+                      onMouseDown={e => beginDrag(e, block, 'resize-end')}
+                      title="Drag to change end"
+                    />
                   ) : null}
                 </div>
-                {canEdit ? (
-                  <div
-                    style={{ ...styles.resizeHandle, ...styles.resizeHandleBottom }}
-                    onMouseDown={e => beginDrag(e, block, 'resize-end')}
-                    title="Drag to change end"
-                  />
-                ) : null}
               </div>
             );
           })}
@@ -360,14 +376,13 @@ const styles: Record<string, CSSProperties> = {
     right: 4,
     border: '1px solid',
     borderRadius: 10,
-    padding: '6px 8px',
+    padding: 0,
     overflow: 'hidden',
     boxSizing: 'border-box',
     userSelect: 'none',
     boxShadow: 'none',
   },
   blockDense: {
-    padding: '2px 6px',
     borderRadius: 8,
     borderWidth: 1,
   },
@@ -375,11 +390,39 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: '0 0 0 2px rgba(15, 23, 42, 0.35)',
     zIndex: 3,
   },
+  moveHandle: {
+    flex: '0 0 14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'grab',
+    background: 'rgba(15, 23, 42, 0.08)',
+    borderRight: '1px solid rgba(15, 23, 42, 0.08)',
+    zIndex: 2,
+  },
+  moveHandleDense: {
+    flexBasis: 12,
+  },
+  moveHandleGrip: {
+    fontSize: 9,
+    lineHeight: 1,
+    letterSpacing: '-2px',
+    opacity: 0.55,
+    transform: 'scaleY(1.15)',
+  },
+  blockBody: {
+    position: 'relative',
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    padding: '4px 6px 4px 6px',
+  },
   resizeHandle: {
     position: 'absolute',
     left: 0,
     right: 0,
-    height: 10,
+    height: 8,
     zIndex: 2,
     background: 'transparent',
   },
