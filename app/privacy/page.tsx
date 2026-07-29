@@ -34,17 +34,22 @@ export default function PrivacyPage() {
         <li>Your account email and authentication credentials (via Supabase Auth)</li>
         <li>Your subscription status and Stripe customer ID (via Stripe)</li>
         <li>Display name on your profile, if you provide one</li>
+        <li>
+          <strong>Optional cloud backup</strong> (only if you turn it on under Account → Back up to cloud):
+          projects, tasks, notes, and link URLs you attach to tasks. We do not store the content of those
+          websites.
+        </li>
       </ul>
 
-      <h2 style={{ fontSize: 18, marginTop: 28 }}>What stays on your device</h2>
+      <h2 style={{ fontSize: 18, marginTop: 28 }}>What stays on your device by default</h2>
       <p>
-        Your projects, tasks, notes, work sessions, timer history, infractions, and most app settings are saved in your
-        browser&apos;s local storage on the device you use. We do not sync this data to our servers unless a future
-        feature explicitly says otherwise.
+        Unless you enable cloud backup, your projects, tasks, and notes are saved in your browser&apos;s local
+        storage. Timer history, infractions, night prep, focus blocklist, and extension settings are always stored
+        locally.
       </p>
       <p>
-        Clearing browser data or switching devices may remove this information. You are responsible for backing up
-        anything important to you.
+        Clearing browser data or switching devices may remove local information. Cloud backup lets you restore
+        projects and notes after signing in on another computer.
       </p>
 
       <h2 style={{ fontSize: 18, marginTop: 28 }}>Chrome extension</h2>

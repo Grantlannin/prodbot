@@ -50,27 +50,32 @@ export default function IntroExtension() {
               Add to Chrome — Web Store
             </a>
           ) : (
-            <p style={styles.note}>
-              Set <code style={styles.code}>NEXT_PUBLIC_CHROME_EXTENSION_STORE_URL</code> in Vercel to your store listing
-              link.
-            </p>
+            <>
+              <p style={styles.note}>
+                Chrome Web Store link is not configured yet. Ask support or use the developer zip below.
+              </p>
+              <a href="/daywinner.zip" download="daywinner.zip" style={styles.secondaryLink}>
+                Download extension zip (v1.0.6)
+              </a>
+            </>
           )}
-
-          <a href="/daywinner.zip" download="daywinner.zip" style={styles.secondaryLink}>
-            Or download extension zip (v1.0.6)
-          </a>
 
           <ol style={styles.steps}>
             {storeUrl ? (
-              <li>Click <strong>Add to Chrome</strong> above and confirm install.</li>
+              <>
+                <li>Click <strong>Add to Chrome</strong> above and confirm install.</li>
+                <li>Reload the extension if you had an older copy installed.</li>
+                <li>Come back here — we&apos;ll show &quot;Extension connected&quot; when it&apos;s working.</li>
+              </>
             ) : (
-              <li>
-                Unzip the download → <code style={styles.code}>chrome://extensions</code> → Developer mode → Load
-                unpacked.
-              </li>
+              <>
+                <li>
+                  Unzip the download → <code style={styles.code}>chrome://extensions</code> → Developer mode → Load
+                  unpacked.
+                </li>
+                <li>Come back here — we&apos;ll show &quot;Extension connected&quot; when it&apos;s working.</li>
+              </>
             )}
-            <li>Reload the extension if you had an older copy installed.</li>
-            <li>Come back here — we&apos;ll show &quot;Extension connected&quot; when it&apos;s working.</li>
           </ol>
 
           <button type="button" onClick={handleContinue} style={styles.btn}>

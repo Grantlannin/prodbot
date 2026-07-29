@@ -3,17 +3,43 @@
 import { useState, useRef, useEffect, type CSSProperties } from 'react';
 import { useAuth } from './hooks/AuthProvider';
 import { useUserProfile } from './hooks/UserProfileProvider';
+import { useCloudSync } from './hooks/CloudSyncProvider';
 import { welcomeLabel } from './userProfile';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 export default function AccountMenu() {
-  const { user, email, signOut } = useAuth();
+  const { user, email, signOut, authEnabled } = useAuth();
   const { profile, setDisplayName } = useUserProfile();
+  const {
+    cloudEnabled,
+    lastSyncAt,
+    syncing,
+    syncError,
+    enableBackup,
+    pushNow,
+    disableBackup,
+  } = useCloudSync();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(profile.displayName);
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+
+  const lastSavedLabel = (() => {
+    if (!lastSyncAt) return null;
+    const mins = Math.round((Date.now() - lastSyncAt) / 60000);
+    if (mins < 1) return 'Last saved: just now';
+    if (mins === 1) return 'Last saved: 1 min ago';
+    if (mins < 60) return `Last saved: ${mins} min ago`;
+    return `Last saved: ${new Date(lastSyncAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
+  })();
+
+  const handleDisableBackup = () => {
+    setMenuOpen(false);
+    if (!window.confirm('Turn off cloud backup? Your device copy stays; syncing stops.')) return;
+    const deleteCopy = window.confirm('Also delete your cloud copy permanently?');
+    void disableBackup(deleteCopy);
+  };
 
   useEffect(() => {
     if (!editing) setDraft(profile.displayName);
@@ -88,6 +114,48 @@ export default function AccountMenu() {
           {menuOpen ? (
             <div style={styles.menu}>
               {email ? <div style={styles.menuEmail}>{email}</div> : null}
+              {authEnabled ? (
+                <div style={styles.backupSection}>
+                  <div style={styles.backupLabel}>Backup</div>
+                  {cloudEnabled ? (
+                    <>
+                      <div style={styles.backupStatus}>Cloud backup on</div>
+                      {lastSavedLabel ? <div style={styles.backupMeta}>{lastSavedLabel}</div> : null}
+                      {syncError ? <div style={styles.backupError}>{syncError}</div> : null}
+                      <button
+                        type="button"
+                        style={styles.menuItem}
+                        onClick={() => {
+                          setMenuOpen(false);
+                          void pushNow();
+                        }}
+                        disabled={syncing}
+                      >
+                        {syncing ? 'Saving…' : 'Back up now'}
+                      </button>
+                      <button type="button" style={styles.menuItemMuted} onClick={handleDisableBackup}>
+                        Turn off cloud backup…
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div style={styles.backupStatus}>Saved on this device only</div>
+                      {syncError ? <div style={styles.backupError}>{syncError}</div> : null}
+                      <button
+                        type="button"
+                        style={styles.menuItem}
+                        onClick={() => {
+                          setMenuOpen(false);
+                          enableBackup();
+                        }}
+                        disabled={syncing}
+                      >
+                        Back up to cloud
+                      </button>
+                    </>
+                  )}
+                </div>
+              ) : null}
               <button type="button" style={styles.menuItem} onClick={openBillingPortal}>
                 Manage billing
               </button>
@@ -190,5 +258,45 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
     color: '#0f172a',
     cursor: 'pointer',
+  },
+  menuItemMuted: {
+    display: 'block',
+    width: '100%',
+    border: 'none',
+    background: 'transparent',
+    textAlign: 'left',
+    padding: '8px 12px',
+    fontSize: 12,
+    fontFamily: font,
+    color: '#94a3b8',
+    cursor: 'pointer',
+  },
+  backupSection: {
+    padding: '8px 12px 10px',
+    borderBottom: '1px solid #f1f5f9',
+    marginBottom: 4,
+  },
+  backupLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    color: '#94a3b8',
+    marginBottom: 4,
+  },
+  backupStatus: {
+    fontSize: 12,
+    color: '#475569',
+    marginBottom: 4,
+  },
+  backupMeta: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginBottom: 6,
+  },
+  backupError: {
+    fontSize: 11,
+    color: '#b45309',
+    marginBottom: 6,
   },
 };

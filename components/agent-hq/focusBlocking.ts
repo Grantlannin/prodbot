@@ -133,6 +133,29 @@ export function computeSessionEndsAt(
   return session.countdownStartTime + session.countdownTargetMs;
 }
 
+/** Open countdown hit zero — stop blocking even if the app session UI hasn't finished yet. */
+export function isFocusCountdownExpired(input: {
+  status: WorkStatus;
+  session: WorkSession | null;
+  openCountdownLeft: number | null;
+  timerPaused: boolean;
+  sessionEndsAt: number | null;
+}): boolean {
+  const { status, session, openCountdownLeft, timerPaused, sessionEndsAt } = input;
+  if (
+    status !== 'working' ||
+    session?.type !== 'open' ||
+    session.countdownTargetMs == null ||
+    session.countdownStartTime == null
+  ) {
+    return false;
+  }
+  if (timerPaused) return false;
+  if (openCountdownLeft === 0) return true;
+  if (sessionEndsAt != null && sessionEndsAt <= Date.now()) return true;
+  return false;
+}
+
 export function buildFocusSyncPayload(input: {
   status: WorkStatus;
   session: WorkSession | null;
@@ -147,27 +170,42 @@ export function buildFocusSyncPayload(input: {
   }
 
   const lockMode = input.session?.lockMode ?? 'none';
+  const timerPaused = input.status === 'working' && (input.session?.lockMode === 'soft' || input.session?.lockMode === 'hard') && input.timerPaused;
+  const sessionEndsAt = timerPaused
+    ? null
+    : computeSessionEndsAt(
+        input.status,
+        input.session,
+        input.openCountdownLeft,
+        input.timerPaused
+      );
+  const countdownExpired = isFocusCountdownExpired({
+    status: input.status,
+    session: input.session,
+    openCountdownLeft: input.openCountdownLeft,
+    timerPaused: input.timerPaused,
+    sessionEndsAt,
+  });
   const blocking =
-    input.status === 'working' && (lockMode === 'soft' || lockMode === 'hard');
-  const timerPaused = blocking && input.timerPaused;
+    input.status === 'working' &&
+    (lockMode === 'soft' || lockMode === 'hard') &&
+    !countdownExpired;
+  const activeTimerPaused = blocking && input.timerPaused;
   const remainingMs =
     blocking && input.openCountdownLeft != null ? input.openCountdownLeft : null;
 
   return {
     blocking,
     domains: blocking ? resolveBlocklist(input.blocklist) : [],
-    sessionEndsAt: timerPaused
+    sessionEndsAt: activeTimerPaused
       ? null
-      : computeSessionEndsAt(
-          input.status,
-          input.session,
-          input.openCountdownLeft,
-          input.timerPaused
-        ),
+      : blocking
+        ? sessionEndsAt
+        : null,
     lockMode: input.session?.lockMode ?? null,
     sessionId: input.session?.id ?? null,
-    timerPaused,
-    remainingMs: timerPaused ? remainingMs : null,
+    timerPaused: activeTimerPaused,
+    remainingMs: activeTimerPaused ? remainingMs : null,
     entitled: true,
   };
 }

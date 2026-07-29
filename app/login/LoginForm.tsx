@@ -186,7 +186,7 @@ export default function LoginForm() {
 
   const lead =
     mode === 'signup'
-      ? 'Set up your login, then subscribe to open the app.'
+      ? 'Create your account with the same email you used at checkout.'
       : mode === 'forgot'
         ? 'Enter your email and we will send a reset link.'
         : mode === 'reset'

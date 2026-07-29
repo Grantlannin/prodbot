@@ -13,6 +13,7 @@ import {
   type FocusBlocklistStore,
 } from './focusBlocking';
 import { getAppOrigin } from '@/lib/app-origin';
+import { getChromeExtensionStoreUrl } from '@/lib/intro';
 import { PRODUCTION_SITE_HOST, PRODUCTION_SITE_ORIGIN } from '@/lib/site';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -28,6 +29,7 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
   const [customError, setCustomError] = useState<string | null>(null);
 
   const activeCount = useMemo(() => resolveBlocklist(store).length, [store]);
+  const storeUrl = getChromeExtensionStoreUrl();
   const siteHost = useMemo(() => {
     try {
       return new URL(getAppOrigin(PRODUCTION_SITE_ORIGIN)).hostname;
@@ -99,15 +101,33 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
                   Blocks sites during focus sessions with soft or hard lock (not on breaks or no-lock sessions).
                   Works on <strong>{siteHost}</strong> — keep this app tab open while you work.
                 </p>
-                <a href="/daywinner.zip" download="daywinner.zip" style={styles.downloadLink}>
-                  Download extension (v1.0.6)
-                </a>
+                {storeUrl ? (
+                  <a href={storeUrl} target="_blank" rel="noopener noreferrer" style={styles.downloadLink}>
+                    Add to Chrome — Web Store
+                  </a>
+                ) : (
+                  <a href="/daywinner.zip" download="daywinner.zip" style={styles.downloadLink}>
+                    Download extension (v1.0.6)
+                  </a>
+                )}
                 <ol style={styles.steps}>
-                  <li>Unzip → chrome://extensions → Developer mode → Load unpacked → select the extension folder.</li>
-                  <li>
-                    If you already installed an older copy, click <strong>Reload</strong> on the extension card (or
-                    remove and load unpacked again) so {siteHost} is included.
-                  </li>
+                  {storeUrl ? (
+                    <>
+                      <li>Click <strong>Add to Chrome</strong> above and confirm install.</li>
+                      <li>
+                        If you already installed an older copy, open <code>chrome://extensions</code> and click{' '}
+                        <strong>Update</strong> or reinstall from the store so {siteHost} is included.
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Unzip → chrome://extensions → Developer mode → Load unpacked → select the extension folder.</li>
+                      <li>
+                        If you already installed an older copy, click <strong>Reload</strong> on the extension card (or
+                        remove and load unpacked again) so {siteHost} is included.
+                      </li>
+                    </>
+                  )}
                   <li>Start a countdown session here with soft or hard lock. Blocked sites redirect until the session ends.</li>
                 </ol>
               </div>
@@ -175,6 +195,9 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
               </div>
 
               <p style={styles.footer}>{activeCount} site{activeCount === 1 ? '' : 's'} blocked during focus</p>
+              <button type="button" onClick={() => setOpen(false)} style={styles.doneBtn}>
+                Done
+              </button>
             </div>
           </div>,
           document.body
@@ -401,5 +424,19 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 11,
     color: '#94a3b8',
     textAlign: 'center',
+  },
+  doneBtn: {
+    display: 'block',
+    width: '100%',
+    marginTop: 12,
+    border: 'none',
+    borderRadius: 10,
+    padding: '12px 14px',
+    fontSize: 14,
+    fontWeight: 700,
+    fontFamily: font,
+    background: '#0f172a',
+    color: '#fff',
+    cursor: 'pointer',
   },
 };

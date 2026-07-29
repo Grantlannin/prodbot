@@ -93,6 +93,7 @@ function reorderList<T>(list: T[], fromIndex: number, toIndex: number): T[] {
 
 const PART_DRAG_TYPE = 'application/x-daywinner-part-index';
 const SUBTASK_DRAG_TYPE = 'application/x-daywinner-subtask';
+const PROJECT_DRAG_TYPE = 'application/x-daywinner-project-index';
 
 function shouldBlockRowDrag(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -190,6 +191,8 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const [draggingSub, setDraggingSub] = useState<{ taskId: string; subId: string; fromIndex: number } | null>(
     null
   );
+  const [projectDropIndex, setProjectDropIndex] = useState<number | null>(null);
+  const [draggingProjectIndex, setDraggingProjectIndex] = useState<number | null>(null);
   const { celebration, getCelebrationMessage } = useUserProfile();
   const nameRef = useRef<HTMLInputElement>(null);
   const taskInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
@@ -198,7 +201,6 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const linksMigratedRef = useRef(false);
 
   const selected = projects.find(p => p.id === selectedId) ?? null;
-  const sorted = [...projects].sort((a, b) => b.updatedAt - a.updatedAt);
 
   useEffect(() => {
     if (migrated) return;
@@ -249,9 +251,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
 
   useEffect(() => {
     if (selectedId && !projects.some(p => p.id === selectedId)) {
-      setSelectedId(sorted[0]?.id ?? null);
+      setSelectedId(projects[0]?.id ?? null);
     }
-  }, [projects, selectedId, sorted]);
+  }, [projects, selectedId]);
 
   const focusProjectInPanel = useCallback(
     (projectId: string) => {
@@ -719,6 +721,13 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     [setProjects]
   );
 
+  const reorderProjects = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      setProjects(prev => reorderList(prev, fromIndex, toIndex));
+    },
+    [setProjects]
+  );
+
   const clearPartDrag = useCallback(() => {
     setDraggingPartIndex(null);
     setPartDropIndex(null);
@@ -727,6 +736,11 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const clearSubDrag = useCallback(() => {
     setDraggingSub(null);
     setSubDrop(null);
+  }, []);
+
+  const clearProjectDrag = useCallback(() => {
+    setDraggingProjectIndex(null);
+    setProjectDropIndex(null);
   }, []);
 
   const addSubTaskLink = useCallback(
@@ -906,20 +920,53 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       />
       <div style={styles.split}>
         <aside style={styles.sidebar}>
-          {sorted.length === 0 ? (
+          {projects.length === 0 ? (
             <div style={styles.sidebarEmpty}>No things yet.</div>
           ) : (
             <div style={styles.sidebarList}>
-              {sorted.map(project => (
+              {projects.map((project, projectIndex) => (
                 <button
                   key={project.id}
                   type="button"
+                  draggable
+                  data-drag-row=""
+                  data-active-drag={draggingProjectIndex === projectIndex ? 'true' : undefined}
                   onClick={() => setSelectedId(project.id)}
                   style={{
                     ...styles.sidebarItem,
                     ...(project.id === selectedId ? styles.sidebarItemActive : {}),
+                    ...(draggingProjectIndex === projectIndex ? styles.sidebarItemDragging : {}),
+                    ...(projectDropIndex === projectIndex && draggingProjectIndex !== projectIndex
+                      ? styles.sidebarItemDropTarget
+                      : {}),
                   }}
-                  title={displayName(project)}
+                  title={`${displayName(project)} — drag to reorder`}
+                  onDragStart={e => {
+                    e.dataTransfer.setData(PROJECT_DRAG_TYPE, String(projectIndex));
+                    e.dataTransfer.effectAllowed = 'move';
+                    setDraggingProjectIndex(projectIndex);
+                  }}
+                  onDragEnd={clearProjectDrag}
+                  onDragOver={e => {
+                    if (draggingProjectIndex === null) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    setProjectDropIndex(projectIndex);
+                  }}
+                  onDragLeave={e => {
+                    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                    setProjectDropIndex(prev => (prev === projectIndex ? null : prev));
+                  }}
+                  onDrop={e => {
+                    e.preventDefault();
+                    const fromIndex =
+                      draggingProjectIndex ??
+                      Number.parseInt(e.dataTransfer.getData(PROJECT_DRAG_TYPE), 10);
+                    if (fromIndex !== null && !Number.isNaN(fromIndex)) {
+                      reorderProjects(fromIndex, projectIndex);
+                    }
+                    clearProjectDrag();
+                  }}
                 >
                   <span style={styles.sidebarItemName}>{displayName(project)}</span>
                   <span style={styles.sidebarItemMeta}>
@@ -1396,6 +1443,13 @@ const styles: Record<string, CSSProperties> = {
     background: '#fff',
     borderColor: '#e2e8f0',
     boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+  },
+  sidebarItemDragging: {
+    opacity: 0.55,
+    cursor: 'grabbing',
+  },
+  sidebarItemDropTarget: {
+    boxShadow: 'inset 0 -2px 0 rgba(148, 163, 184, 0.55)',
   },
   sidebarItemName: {
     display: 'block',

@@ -9,6 +9,7 @@ import { EndSessionProvider } from './hooks/EndSessionProvider';
 import { HoverTimerProvider } from './hooks/HoverTimerProvider';
 import { HoverNotesProvider } from './hooks/HoverNotesProvider';
 import { ProjectsProvider } from './hooks/ProjectsProvider';
+import { CloudSyncProvider } from './hooks/CloudSyncProvider';
 import { UserProfileProvider, useUserProfile } from './hooks/UserProfileProvider';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import type { Infraction } from './types';
@@ -103,6 +104,7 @@ function AgentHQInner() {
     <HoverTimerProvider onAddInfraction={(k, l) => addInfraction(k, l, 'dashboard')}>
       <HoverNotesProvider>
       <ProjectsProvider>
+      <CloudSyncProvider>
       <NightPrepProvider>
       <MorningFlowProvider>
       <StuckHelpProvider>
@@ -153,6 +155,7 @@ function AgentHQInner() {
       </StuckHelpProvider>
       </MorningFlowProvider>
       </NightPrepProvider>
+      </CloudSyncProvider>
       </ProjectsProvider>
       </HoverNotesProvider>
     </HoverTimerProvider>

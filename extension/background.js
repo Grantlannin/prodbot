@@ -71,6 +71,20 @@ async function applySync(payload) {
     remainingMs: payload.timerPaused ? payload.remainingMs ?? null : null,
   };
 
+  if (
+    state.blocking &&
+    !state.timerPaused &&
+    state.sessionEndsAt &&
+    state.sessionEndsAt <= Date.now()
+  ) {
+    state.blocking = false;
+    state.domains = [];
+    state.sessionEndsAt = null;
+    state.lockMode = null;
+    state.sessionId = null;
+    state.remainingMs = null;
+  }
+
   await chrome.storage.local.set({ focusState: state });
   await updateRules(state);
 
