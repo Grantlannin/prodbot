@@ -445,14 +445,6 @@ function DashCard({
 }
 
 const styles: Record<string, CSSProperties> = {
-  projectsHeaderRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-    minWidth: 0,
-    justifyContent: 'flex-start',
-  },
   workTodayCell: {
     minWidth: 0,
   },
