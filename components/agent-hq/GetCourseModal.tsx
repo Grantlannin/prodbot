@@ -2,9 +2,11 @@
 
 import { useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const COURSE_URL = 'https://simpleproductivitysystem.com/';
+const HIDE_COURSE_BTN_KEY = 'agentHQ_hideGetCourseButton';
 
 interface GetCourseModalProps {
   variant?: 'default' | 'nav';
@@ -12,6 +14,9 @@ interface GetCourseModalProps {
 
 export default function GetCourseModal({ variant = 'default' }: GetCourseModalProps) {
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useLocalStorage(HIDE_COURSE_BTN_KEY, false);
+
+  if (hidden) return null;
 
   const modal =
     open && typeof document !== 'undefined'
@@ -53,19 +58,41 @@ export default function GetCourseModal({ variant = 'default' }: GetCourseModalPr
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        style={variant === 'nav' ? styles.navTriggerBtn : styles.triggerBtn}
-      >
-        get the course
-      </button>
+      <div style={styles.triggerWrap}>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          style={variant === 'nav' ? styles.navTriggerBtn : styles.triggerBtn}
+        >
+          get the course
+        </button>
+        <button type="button" onClick={() => setHidden(true)} style={styles.hideBtn}>
+          hide button
+        </button>
+      </div>
       {modal}
     </>
   );
 }
 
 const styles: Record<string, CSSProperties> = {
+  triggerWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 2,
+  },
+  hideBtn: {
+    border: 'none',
+    background: 'transparent',
+    padding: '2px 4px',
+    fontSize: 10,
+    fontWeight: 500,
+    fontFamily: font,
+    color: '#94a3b8',
+    cursor: 'pointer',
+    lineHeight: 1.2,
+  },
   triggerBtn: {
     border: 'none',
     borderRadius: 8,
