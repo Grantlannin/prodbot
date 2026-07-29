@@ -88,7 +88,7 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
             >
               <div style={styles.panelHeader}>
                 <h3 id="focus-extension-title" style={styles.panelTitle}>
-                  Focus extension
+                  Edit blocked sites
                 </h3>
                 <button type="button" onClick={() => setOpen(false)} style={styles.closeBtn} aria-label="Close">
                   ×
@@ -98,22 +98,25 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
               <div style={styles.section}>
                 <div style={styles.sectionLabel}>Setup</div>
                 <p style={styles.body}>
-                  Blocks sites during focus sessions with soft or hard lock (not on breaks or no-lock sessions).
-                  Works on <strong>{siteHost}</strong> — keep this app tab open while you work.
+                  Blocks sites during focus sessions with soft or hard lock (not on breaks or no-lock sessions). Works on{' '}
+                  <strong>{siteHost}</strong> — keep this app tab open while you work.
                 </p>
+                <div style={styles.sectionLabel}>If you don&apos;t have the extension</div>
                 {storeUrl ? (
                   <a href={storeUrl} target="_blank" rel="noopener noreferrer" style={styles.downloadLink}>
                     Add to Chrome — Web Store
                   </a>
                 ) : (
                   <a href="/daywinner.zip" download="daywinner.zip" style={styles.downloadLink}>
-                    Download extension (v1.0.6)
+                    Download extension
                   </a>
                 )}
                 <ol style={styles.steps}>
                   {storeUrl ? (
                     <>
-                      <li>Click <strong>Add to Chrome</strong> above and confirm install.</li>
+                      <li>
+                        Click <strong>Add to Chrome</strong> above and confirm install.
+                      </li>
                       <li>
                         If you already installed an older copy, open <code>chrome://extensions</code> and click{' '}
                         <strong>Update</strong> or reinstall from the store so {siteHost} is included.
@@ -121,18 +124,20 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
                     </>
                   ) : (
                     <>
-                      <li>Unzip → chrome://extensions → Developer mode → Load unpacked → select the extension folder.</li>
+                      <li>
+                        Unzip → chrome://extensions → Developer mode → Load unpacked → select the extension folder.
+                      </li>
                       <li>
                         If you already installed an older copy, click <strong>Reload</strong> on the extension card (or
                         remove and load unpacked again) so {siteHost} is included.
                       </li>
                     </>
                   )}
-                  <li>Start a countdown session here with soft or hard lock. Blocked sites redirect until the session ends.</li>
                 </ol>
               </div>
 
               <div style={styles.section}>
+                <div style={styles.sectionLabel}>Blocked sites</div>
                 <label style={styles.packRow}>
                   <input type="checkbox" checked={store.socialBundleEnabled} onChange={toggleBundle} />
                   <span style={styles.packTitle}>Social media pack</span>
@@ -211,7 +216,7 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
         onClick={() => setOpen(true)}
         style={variant === 'nav' ? styles.navTriggerBtn : styles.triggerBtn}
       >
-        add focus extension
+        edit blocked sites
       </button>
       {modal}
     </>
@@ -298,9 +303,10 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     color: '#94a3b8',
     marginBottom: 8,
+    marginTop: 4,
   },
   body: {
-    margin: '0 0 10px',
+    margin: '0 0 12px',
     fontSize: 13,
     color: '#64748b',
     lineHeight: 1.45,
@@ -326,6 +332,7 @@ const styles: Record<string, CSSProperties> = {
     gap: 8,
     cursor: 'pointer',
     marginBottom: 8,
+    marginTop: 2,
   },
   packTitle: {
     fontSize: 13,
