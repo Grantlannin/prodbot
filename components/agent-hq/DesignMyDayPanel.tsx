@@ -34,6 +34,8 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 
 const OPEN_LOOPS_KEY = 'agentHQ_openLoops';
 
+const TASK_DURATION_HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] as const;
+
 const BLOCK_COLORS: Record<DayBlock['kind'], { bg: string; border: string; text: string }> = {
   work: { bg: '#dbeafe', border: '#2563eb', text: '#1e3a8a' },
   commitment: { bg: '#f1f5f9', border: '#94a3b8', text: '#334155' },
@@ -192,6 +194,7 @@ function TaskAddForm({
 }) {
   const [taskKey, setTaskKey] = useState('');
   const [time, setTime] = useState(() => formatMinutesLabel(defaultWorkStart()).toLowerCase());
+  const [durationHours, setDurationHours] = useState(1);
   const [error, setError] = useState('');
   const options = useMemo(() => flattenTaskOptions(groups), [groups]);
   const selected = options.find(t => taskOptionKey(t) === taskKey) ?? null;
@@ -204,7 +207,7 @@ function TaskAddForm({
       return;
     }
     setError('');
-    onAdd(selected, startMinutes, 60);
+    onAdd(selected, startMinutes, durationHours * 60);
     setTaskKey('');
   };
 
@@ -231,6 +234,19 @@ function TaskAddForm({
         style={styles.textInput}
       />
       <p style={styles.hint}>(you can adjust the block by dragging it on the calendar)</p>
+
+      <label style={styles.fieldLabel}>Duration</label>
+      <select
+        value={durationHours}
+        onChange={e => setDurationHours(Number(e.target.value))}
+        style={styles.select}
+      >
+        {TASK_DURATION_HOURS.map(hours => (
+          <option key={hours} value={hours}>
+            {hours === 1 ? '1 hour' : `${hours} hours`}
+          </option>
+        ))}
+      </select>
       {error ? <p style={styles.errorText}>{error}</p> : null}
 
       <button
