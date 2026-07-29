@@ -16,8 +16,11 @@ import {
 } from './openLoopsUi';
 import {
   DAILY_STRUCTURE_KEY,
-  DAY_TIMELINE_START,
+  DAY_BLOCK_COLORS_KEY,
+  DAY_BLOCK_COLOR_PALETTE,
+  DEFAULT_DAY_BLOCK_COLOR_MAP,
   OPEN_LOOP_POINT_DURATION_MINUTES,
+  blockKindColor,
   formatMinutesLabel,
   getTodayPlan,
   makeDayBlockId,
@@ -28,6 +31,8 @@ import {
   upsertTodayPlan,
   type DailyStructureStore,
   type DayBlock,
+  type DayBlockColorMap,
+  type DayBlockKind,
 } from './stuckHelp/dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -36,10 +41,10 @@ const OPEN_LOOPS_KEY = 'agentHQ_openLoops';
 
 const TASK_DURATION_HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] as const;
 
-const BLOCK_COLORS: Record<DayBlock['kind'], { bg: string; border: string; text: string }> = {
-  work: { bg: '#dbeafe', border: '#2563eb', text: '#1e3a8a' },
-  commitment: { bg: '#f1f5f9', border: '#94a3b8', text: '#334155' },
-  open_loop: { bg: '#fef9c3', border: '#ca8a04', text: '#713f12' },
+const KIND_TAB_LABELS: Record<DayBlockKind, string> = {
+  work: 'Task',
+  commitment: 'Commitment',
+  open_loop: 'Open loop / decision',
 };
 
 /** Snaps "now" to the nearest 15 minutes, clamped to the Design my day window (4am–12am). */
@@ -99,7 +104,14 @@ function makeLoopBlock(note: CaptureNote, startMinutes: number): DayBlock {
   };
 }
 
-type AddTab = 'task' | 'commitment' | 'loop';
+type AddTab = 'task' | 'commitment' | 'loop' | 'colors';
+
+function tabKind(tab: AddTab): DayBlockKind | null {
+  if (tab === 'task') return 'work';
+  if (tab === 'commitment') return 'commitment';
+  if (tab === 'loop') return 'open_loop';
+  return null;
+}
 
 // ─────────────────────────────────────────────────────────
 // Shared pickers
@@ -374,10 +386,113 @@ function LoopAddForm({
 }
 
 // ─────────────────────────────────────────────────────────
-// Legend + small display bits
+// Legend + color pickers + small display bits
 // ─────────────────────────────────────────────────────────
 
-function Legend() {
+function ColorPaletteMenu({
+  selectedId,
+  onSelect,
+}: {
+  selectedId: string;
+  onSelect: (colorId: string) => void;
+}) {
+  return (
+    <div style={styles.colorMenu} role="menu">
+      {DAY_BLOCK_COLOR_PALETTE.map(token => {
+        const selected = token.id === selectedId;
+        return (
+          <button
+            key={token.id}
+            type="button"
+            role="menuitemradio"
+            aria-checked={selected}
+            title={token.label}
+            onClick={() => onSelect(token.id)}
+            style={{
+              ...styles.colorSwatchBtn,
+              background: token.bg,
+              borderColor: token.border,
+              boxShadow: selected ? `0 0 0 2px ${token.border}` : undefined,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function KindColorRow({
+  kind,
+  colorMap,
+  onChangeColor,
+  menuOpen,
+  onToggleMenu,
+}: {
+  kind: DayBlockKind;
+  colorMap: DayBlockColorMap;
+  onChangeColor: (kind: DayBlockKind, colorId: string) => void;
+  menuOpen: boolean;
+  onToggleMenu: () => void;
+}) {
+  const colors = blockKindColor(kind, colorMap);
+  return (
+    <div style={styles.colorRow}>
+      <span
+        style={{ ...styles.colorRowSwatch, background: colors.bg, borderColor: colors.border }}
+      />
+      <span style={styles.colorRowLabel}>{KIND_TAB_LABELS[kind]}</span>
+      <div style={styles.colorRowMenuWrap}>
+        <button
+          type="button"
+          aria-label={`Change ${KIND_TAB_LABELS[kind]} color`}
+          aria-expanded={menuOpen}
+          onClick={onToggleMenu}
+          style={styles.dotsBtn}
+        >
+          ⋯
+        </button>
+        {menuOpen ? (
+          <ColorPaletteMenu
+            selectedId={colorMap[kind]}
+            onSelect={colorId => {
+              onChangeColor(kind, colorId);
+              onToggleMenu();
+            }}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ColorsTab({
+  colorMap,
+  onChangeColor,
+}: {
+  colorMap: DayBlockColorMap;
+  onChangeColor: (kind: DayBlockKind, colorId: string) => void;
+}) {
+  const [openKind, setOpenKind] = useState<DayBlockKind | null>(null);
+  const kinds: DayBlockKind[] = ['work', 'commitment', 'open_loop'];
+
+  return (
+    <div style={styles.form}>
+      <p style={styles.hint}>Pick a color for each block type. Changes apply to the calendar.</p>
+      {kinds.map(kind => (
+        <KindColorRow
+          key={kind}
+          kind={kind}
+          colorMap={colorMap}
+          onChangeColor={onChangeColor}
+          menuOpen={openKind === kind}
+          onToggleMenu={() => setOpenKind(prev => (prev === kind ? null : kind))}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Legend({ colorMap }: { colorMap: DayBlockColorMap }) {
   const items: { kind: DayBlock['kind']; label: string }[] = [
     { kind: 'work', label: 'Work' },
     { kind: 'commitment', label: 'Commitment' },
@@ -386,7 +501,7 @@ function Legend() {
   return (
     <div style={styles.legend}>
       {items.map(item => {
-        const colors = BLOCK_COLORS[item.kind];
+        const colors = blockKindColor(item.kind, colorMap);
         return (
           <div key={item.kind} style={styles.legendItem}>
             <span
@@ -400,12 +515,20 @@ function Legend() {
   );
 }
 
-function DraftList({ blocks, onRemove }: { blocks: DayBlock[]; onRemove: (id: string) => void }) {
+function DraftList({
+  blocks,
+  onRemove,
+  colorMap,
+}: {
+  blocks: DayBlock[];
+  onRemove: (id: string) => void;
+  colorMap: DayBlockColorMap;
+}) {
   if (blocks.length === 0) return null;
   return (
     <div style={styles.draftList}>
       {blocks.map(block => {
-        const colors = BLOCK_COLORS[block.kind];
+        const colors = blockKindColor(block.kind, colorMap);
         return (
           <div key={block.id} style={styles.draftRow}>
             <span
@@ -445,12 +568,14 @@ function DesignMyDayGuidedModal({
   workGroups,
   openLoops,
   existingBlocks,
+  colorMap,
   onClose,
   onSave,
 }: {
   workGroups: WorkProjectGroup[];
   openLoops: CaptureNote[];
   existingBlocks: DayBlock[];
+  colorMap: DayBlockColorMap;
   onClose: () => void;
   onSave: (draftBlocks: DayBlock[]) => void;
 }) {
@@ -534,7 +659,7 @@ function DesignMyDayGuidedModal({
                 submitLabel="Add commitment"
                 onAdd={(title, start, duration) => addDraft(makeCommitmentBlock(title, start, duration))}
               />
-              <DraftList blocks={commitmentDrafts} onRemove={removeDraft} />
+              <DraftList blocks={commitmentDrafts} onRemove={removeDraft} colorMap={colorMap} />
               <div style={styles.stepActionsRow}>
                 <button type="button" onClick={() => setStep('loops')} style={styles.secondaryBtn}>
                   Skip
@@ -556,7 +681,7 @@ function DesignMyDayGuidedModal({
                 submitLabel="Add to day"
                 onAdd={(note, start) => addDraft(makeLoopBlock(note, start))}
               />
-              <DraftList blocks={loopDrafts} onRemove={removeDraft} />
+              <DraftList blocks={loopDrafts} onRemove={removeDraft} colorMap={colorMap} />
               <div style={styles.stepActionsRow}>
                 <button type="button" onClick={() => setStep('done')} style={styles.secondaryBtn}>
                   Skip
@@ -578,7 +703,7 @@ function DesignMyDayGuidedModal({
               ) : (
                 <div style={styles.previewList}>
                   {previewBlocks.map(block => {
-                    const colors = BLOCK_COLORS[block.kind];
+                    const colors = blockKindColor(block.kind, colorMap);
                     return (
                       <div key={block.id} style={styles.previewRow}>
                         <span
@@ -627,6 +752,10 @@ function DesignMyDayGuidedModal({
 export default function DesignMyDayPanel() {
   const [store, setStore] = useLocalStorage<DailyStructureStore>(DAILY_STRUCTURE_KEY, {});
   const [openLoops] = useLocalStorage<CaptureNote[]>(OPEN_LOOPS_KEY, []);
+  const [colorMap, setColorMap] = useLocalStorage<DayBlockColorMap>(
+    DAY_BLOCK_COLORS_KEY,
+    DEFAULT_DAY_BLOCK_COLOR_MAP
+  );
   const { projects } = useProjects();
 
   const todayKey = localDateKey();
@@ -635,6 +764,7 @@ export default function DesignMyDayPanel() {
   const workGroups = useMemo(() => listWorkProjectGroups(projects), [projects]);
 
   const [tab, setTab] = useState<AddTab>('task');
+  const [colorMenuTab, setColorMenuTab] = useState<AddTab | null>(null);
   const [guidedOpen, setGuidedOpen] = useState(false);
 
   const persistBlocks = (next: DayBlock[]) => {
@@ -649,10 +779,15 @@ export default function DesignMyDayPanel() {
     persistBlocks(blocks.filter(b => b.id !== id));
   };
 
+  const changeKindColor = (kind: DayBlockKind, colorId: string) => {
+    setColorMap(prev => ({ ...prev, [kind]: colorId }));
+  };
+
   const tabs: { id: AddTab; label: string }[] = [
     { id: 'task', label: 'Task' },
     { id: 'commitment', label: 'Commitment' },
-    { id: 'loop', label: 'Open loop / decision' },
+    { id: 'loop', label: 'Open loop' },
+    { id: 'colors', label: 'Colors' },
   ];
 
   return (
@@ -677,24 +812,65 @@ export default function DesignMyDayPanel() {
             timelineEndMinutes={24 * 60}
             noScroll
             pxPerMin={0.4}
+            colorMap={colorMap}
             onBlocksChange={persistBlocks}
             onRemoveBlock={removeBlock}
           />
-          <Legend />
+          <Legend colorMap={colorMap} />
         </div>
 
         <div style={styles.addCell}>
           <div style={styles.tabRow}>
-            {tabs.map(t => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                style={{ ...styles.tabBtn, ...(tab === t.id ? styles.tabBtnActive : {}) }}
-              >
-                {t.label}
-              </button>
-            ))}
+            {tabs.map(t => {
+              const kind = tabKind(t.id);
+              const menuOpen = colorMenuTab === t.id;
+              return (
+                <div key={t.id} style={styles.tabChip}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab(t.id);
+                      setColorMenuTab(null);
+                    }}
+                    style={{
+                      ...styles.tabBtn,
+                      ...(tab === t.id ? styles.tabBtnActive : {}),
+                      ...(kind ? styles.tabBtnWithDots : {}),
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                  {kind ? (
+                    <div style={styles.tabDotsWrap}>
+                      <button
+                        type="button"
+                        aria-label={`Change ${t.label} color`}
+                        aria-expanded={menuOpen}
+                        onClick={e => {
+                          e.stopPropagation();
+                          setColorMenuTab(prev => (prev === t.id ? null : t.id));
+                          setTab(t.id);
+                        }}
+                        style={styles.tabDotsBtn}
+                      >
+                        ⋯
+                      </button>
+                      {menuOpen ? (
+                        <div style={styles.tabColorMenu}>
+                          <ColorPaletteMenu
+                            selectedId={colorMap[kind]}
+                            onSelect={colorId => {
+                              changeKindColor(kind, colorId);
+                              setColorMenuTab(null);
+                            }}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
 
           {tab === 'task' ? (
@@ -711,6 +887,9 @@ export default function DesignMyDayPanel() {
           {tab === 'loop' ? (
             <LoopAddForm notes={openLoops} onAdd={(note, start) => addBlock(makeLoopBlock(note, start))} />
           ) : null}
+          {tab === 'colors' ? (
+            <ColorsTab colorMap={colorMap} onChangeColor={changeKindColor} />
+          ) : null}
         </div>
       </div>
 
@@ -719,6 +898,7 @@ export default function DesignMyDayPanel() {
           workGroups={workGroups}
           openLoops={openLoops}
           existingBlocks={blocks}
+          colorMap={colorMap}
           onClose={() => setGuidedOpen(false)}
           onSave={draftBlocks => {
             persistBlocks(sortBlocks([...blocks, ...draftBlocks]));
@@ -804,6 +984,14 @@ const styles: Record<string, CSSProperties> = {
     background: '#eef2f6',
     borderRadius: 9,
     padding: 3,
+    flexWrap: 'wrap',
+  },
+  tabChip: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'stretch',
+    flex: '1 1 70px',
+    minWidth: 0,
   },
   tabBtn: {
     flex: 1,
@@ -822,10 +1010,95 @@ const styles: Record<string, CSSProperties> = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
+  tabBtnWithDots: {
+    paddingRight: 22,
+  },
   tabBtnActive: {
     background: '#fff',
     color: '#0f172a',
     boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
+  },
+  tabDotsWrap: {
+    position: 'absolute',
+    right: 2,
+    top: 0,
+    bottom: 0,
+    display: 'flex',
+    alignItems: 'center',
+  },
+  tabDotsBtn: {
+    border: 'none',
+    background: 'transparent',
+    color: '#94a3b8',
+    fontSize: 14,
+    lineHeight: 1,
+    padding: '0 4px',
+    cursor: 'pointer',
+    fontFamily: font,
+    borderRadius: 4,
+  },
+  tabColorMenu: {
+    position: 'absolute',
+    top: 'calc(100% + 6px)',
+    right: 0,
+    zIndex: 20,
+  },
+  colorMenu: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(5, 1fr)',
+    gap: 6,
+    padding: 8,
+    background: '#fff',
+    border: '1px solid #e2e8f0',
+    borderRadius: 10,
+    boxShadow: '0 10px 28px rgba(15, 23, 42, 0.14)',
+    minWidth: 148,
+  },
+  colorSwatchBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 999,
+    border: '1.5px solid',
+    cursor: 'pointer',
+    padding: 0,
+  },
+  colorRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '8px 10px',
+    border: '1px solid #e2e8f0',
+    borderRadius: 10,
+    background: '#f8fafc',
+  },
+  colorRowSwatch: {
+    width: 14,
+    height: 14,
+    borderRadius: 4,
+    border: '1.5px solid',
+    flexShrink: 0,
+  },
+  colorRowLabel: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#0f172a',
+  },
+  colorRowMenuWrap: {
+    position: 'relative',
+  },
+  dotsBtn: {
+    border: '1px solid #e2e8f0',
+    background: '#fff',
+    color: '#64748b',
+    fontSize: 16,
+    lineHeight: 1,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontFamily: font,
   },
   form: {
     display: 'flex',

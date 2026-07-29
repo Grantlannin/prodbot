@@ -9,10 +9,12 @@ import {
   formatMinutesLabel,
   sortBlocks,
   type DayBlock,
+  type DayBlockColorMap,
 } from './stuckHelp/dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const SNAP = 15;
+const MIN_DURATION = 15;
 
 interface DailyStructureCalendarProps {
   blocks: DayBlock[];
@@ -28,7 +30,18 @@ interface DailyStructureCalendarProps {
   /** When true, show the full range with no scroll. */
   noScroll?: boolean;
   pxPerMin?: number;
+  colorMap?: DayBlockColorMap | null;
 }
+
+type DragMode = 'move' | 'resize-start' | 'resize-end';
+
+type DragState = {
+  id: string;
+  mode: DragMode;
+  startY: number;
+  originStart: number;
+  originDuration: number;
+};
 
 function snapMinutes(minutes: number) {
   return Math.round(minutes / SNAP) * SNAP;
@@ -45,16 +58,19 @@ export default function DailyStructureCalendar({
   timelineEndMinutes = DAY_TIMELINE_END,
   noScroll = false,
   pxPerMin = DAY_TIMELINE_PX_PER_MIN,
+  colorMap = null,
 }: DailyStructureCalendarProps) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ id: string; startY: number; originMinutes: number } | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const blocksRef = useRef(blocks);
+  blocksRef.current = blocks;
 
   const rangeStart = timelineStartMinutes;
   const rangeEnd = timelineEndMinutes;
   const timelineHeight = (rangeEnd - rangeStart) * pxPerMin;
   const sorted = sortBlocks(blocks);
 
-  const clampToRange = useCallback(
+  const clampMoveStart = useCallback(
     (minutes: number, duration: number) => {
       const min = rangeStart;
       const max = rangeEnd - duration;
@@ -63,22 +79,51 @@ export default function DailyStructureCalendar({
     [rangeStart, rangeEnd]
   );
 
-  const onBlockMouseDown = (e: ReactMouseEvent, block: DayBlock) => {
+  const beginDrag = (e: ReactMouseEvent, block: DayBlock, mode: DragMode) => {
     if (!interactive || !onBlocksChange) return;
     e.preventDefault();
-    dragRef.current = { id: block.id, startY: e.clientY, originMinutes: block.startMinutes };
+    e.stopPropagation();
+    dragRef.current = {
+      id: block.id,
+      mode,
+      startY: e.clientY,
+      originStart: block.startMinutes,
+      originDuration: block.durationMinutes,
+    };
 
     const onMove = (ev: MouseEvent) => {
       const drag = dragRef.current;
       if (!drag) return;
       const deltaMin = (ev.clientY - drag.startY) / pxPerMin;
-      const blockData = blocks.find(b => b.id === drag.id);
-      if (!blockData) return;
-      const nextStart = clampToRange(
-        snapMinutes(drag.originMinutes + deltaMin),
-        blockData.durationMinutes
+      const current = blocksRef.current;
+      const originEnd = drag.originStart + drag.originDuration;
+
+      let nextStart = drag.originStart;
+      let nextDuration = drag.originDuration;
+
+      if (drag.mode === 'move') {
+        nextStart = clampMoveStart(
+          snapMinutes(drag.originStart + deltaMin),
+          drag.originDuration
+        );
+      } else if (drag.mode === 'resize-start') {
+        const rawStart = snapMinutes(drag.originStart + deltaMin);
+        const maxStart = originEnd - MIN_DURATION;
+        nextStart = Math.max(rangeStart, Math.min(maxStart, rawStart));
+        nextDuration = originEnd - nextStart;
+      } else {
+        const rawEnd = snapMinutes(originEnd + deltaMin);
+        const minEnd = drag.originStart + MIN_DURATION;
+        const nextEnd = Math.max(minEnd, Math.min(rangeEnd, rawEnd));
+        nextDuration = nextEnd - drag.originStart;
+        nextStart = drag.originStart;
+      }
+
+      onBlocksChange(
+        current.map(b =>
+          b.id === drag.id ? { ...b, startMinutes: nextStart, durationMinutes: nextDuration } : b
+        )
       );
-      onBlocksChange(blocks.map(b => (b.id === drag.id ? { ...b, startMinutes: nextStart } : b)));
     };
 
     const onUp = () => {
@@ -127,13 +172,14 @@ export default function DailyStructureCalendar({
             />
           ))}
           {sorted.map(block => {
-            const colors = blockKindColor(block.kind);
+            const colors = blockKindColor(block.kind, colorMap);
             const top = (block.startMinutes - rangeStart) * pxPerMin;
             const height = Math.max(pxPerMin >= 0.9 ? 22 : 16, block.durationMinutes * pxPerMin);
             const dense = pxPerMin < 0.85;
             // Skip blocks fully outside the visible window
             if (block.startMinutes + block.durationMinutes <= rangeStart) return null;
             if (block.startMinutes >= rangeEnd) return null;
+            const canEdit = interactive && !!onBlocksChange;
             return (
               <div
                 key={block.id}
@@ -145,11 +191,18 @@ export default function DailyStructureCalendar({
                   background: colors.bg,
                   borderColor: colors.border,
                   color: colors.text,
-                  cursor: interactive && onBlocksChange ? 'grab' : 'default',
+                  cursor: canEdit ? 'grab' : 'default',
                 }}
-                onMouseDown={e => onBlockMouseDown(e, block)}
+                onMouseDown={e => beginDrag(e, block, 'move')}
                 title={`${block.title} (${formatMinutesLabel(block.startMinutes)}) · ${block.durationMinutes}m`}
               >
+                {canEdit ? (
+                  <div
+                    style={{ ...styles.resizeHandle, ...styles.resizeHandleTop }}
+                    onMouseDown={e => beginDrag(e, block, 'resize-start')}
+                    title="Drag to change start"
+                  />
+                ) : null}
                 <div style={styles.blockTopRow}>
                   <div style={{ ...styles.blockTitle, ...(dense ? styles.blockTitleDense : {}) }}>
                     {block.title}
@@ -173,6 +226,13 @@ export default function DailyStructureCalendar({
                   <div style={styles.blockMeta}>
                     {formatMinutesLabel(block.startMinutes)} · {block.durationMinutes}m
                   </div>
+                ) : null}
+                {canEdit ? (
+                  <div
+                    style={{ ...styles.resizeHandle, ...styles.resizeHandleBottom }}
+                    onMouseDown={e => beginDrag(e, block, 'resize-end')}
+                    title="Drag to change end"
+                  />
                 ) : null}
               </div>
             );
@@ -258,6 +318,24 @@ const styles: Record<string, CSSProperties> = {
   blockDense: {
     padding: '3px 6px',
     borderRadius: 6,
+  },
+  resizeHandle: {
+    position: 'absolute',
+    left: 8,
+    right: 8,
+    height: 8,
+    zIndex: 2,
+    borderRadius: 999,
+  },
+  resizeHandleTop: {
+    top: 0,
+    cursor: 'ns-resize',
+    background: 'linear-gradient(to bottom, rgba(15,23,42,0.18), transparent)',
+  },
+  resizeHandleBottom: {
+    bottom: 0,
+    cursor: 'ns-resize',
+    background: 'linear-gradient(to top, rgba(15,23,42,0.18), transparent)',
   },
   blockTopRow: {
     display: 'flex',

@@ -280,10 +280,43 @@ export function blockKindLabel(kind: DayBlockKind): string {
   return 'Work';
 }
 
-export function blockKindColor(kind: DayBlockKind): { bg: string; border: string; text: string } {
-  if (kind === 'commitment') return { bg: '#f1f5f9', border: '#94a3b8', text: '#334155' };
-  if (kind === 'open_loop') return { bg: '#fef9c3', border: '#ca8a04', text: '#713f12' };
-  return { bg: '#dbeafe', border: '#2563eb', text: '#1e3a8a' };
+export type BlockColorToken = { id: string; label: string; bg: string; border: string; text: string };
+
+/** Ten swatches for Design my day block kinds. */
+export const DAY_BLOCK_COLOR_PALETTE: BlockColorToken[] = [
+  { id: 'blue', label: 'Blue', bg: '#dbeafe', border: '#2563eb', text: '#1e3a8a' },
+  { id: 'slate', label: 'Slate', bg: '#f1f5f9', border: '#94a3b8', text: '#334155' },
+  { id: 'yellow', label: 'Yellow', bg: '#fef9c3', border: '#ca8a04', text: '#713f12' },
+  { id: 'green', label: 'Green', bg: '#dcfce7', border: '#16a34a', text: '#14532d' },
+  { id: 'teal', label: 'Teal', bg: '#ccfbf1', border: '#0d9488', text: '#134e4a' },
+  { id: 'purple', label: 'Purple', bg: '#f3e8ff', border: '#9333ea', text: '#581c87' },
+  { id: 'pink', label: 'Pink', bg: '#fce7f3', border: '#db2777', text: '#9d174d' },
+  { id: 'orange', label: 'Orange', bg: '#ffedd5', border: '#ea580c', text: '#9a3412' },
+  { id: 'red', label: 'Red', bg: '#fee2e2', border: '#dc2626', text: '#991b1b' },
+  { id: 'indigo', label: 'Indigo', bg: '#e0e7ff', border: '#4f46e5', text: '#312e81' },
+];
+
+export const DAY_BLOCK_COLORS_KEY = 'agentHQ_dayBlockColors';
+
+export type DayBlockColorMap = Record<DayBlockKind, string>;
+
+export const DEFAULT_DAY_BLOCK_COLOR_MAP: DayBlockColorMap = {
+  work: 'blue',
+  commitment: 'slate',
+  open_loop: 'yellow',
+};
+
+export function resolveBlockColorToken(colorId: string | undefined): BlockColorToken {
+  return DAY_BLOCK_COLOR_PALETTE.find(c => c.id === colorId) ?? DAY_BLOCK_COLOR_PALETTE[0];
+}
+
+export function blockKindColor(
+  kind: DayBlockKind,
+  colorMap?: Partial<DayBlockColorMap> | null
+): { bg: string; border: string; text: string } {
+  const id = colorMap?.[kind] ?? DEFAULT_DAY_BLOCK_COLOR_MAP[kind];
+  const token = resolveBlockColorToken(id);
+  return { bg: token.bg, border: token.border, text: token.text };
 }
 
 export function exportDayToGoogleCalendar(blocks: DayBlock[], dateKey = localDateKey()) {
