@@ -22,7 +22,7 @@ export default function DayAtGlancePanel() {
     <div style={styles.root}>
       {blocks.length === 0 ? (
         <p style={styles.empty}>
-          No blocks planned yet. Use Design my day to build your calendar.
+          No blocks planned yet. Use Admin calendar to build your calendar.
         </p>
       ) : (
         <DailyStructureCalendar blocks={sortBlocks(blocks)} interactive={false} compact />

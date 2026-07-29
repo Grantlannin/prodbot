@@ -336,7 +336,7 @@ export default function DashboardTab({
               <AppleNotesPanel />
             </DashCard>
             <DashCard
-              title="Design my day"
+              title="Admin calendar"
               headerRight={
                 <span style={styles.designDayHint}>Drag · Delete to remove</span>
               }

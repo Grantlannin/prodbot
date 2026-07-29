@@ -54,7 +54,7 @@ const KIND_TAB_LABELS: Record<DayBlockKind, string> = {
   open_loop: 'Open loop / decision',
 };
 
-/** Snaps "now" to the nearest hour, clamped to the Design my day window (4am–12am). */
+/** Snaps "now" to the nearest hour, clamped to the Admin calendar window (4am–12am). */
 function defaultWorkStart(): number {
   const now = new Date();
   const minutesNow = now.getHours() * 60 + now.getMinutes();
@@ -567,7 +567,7 @@ function DraftList({
 }
 
 // ─────────────────────────────────────────────────────────
-// Guided "Design my day" modal
+// Guided Admin calendar modal
 // ─────────────────────────────────────────────────────────
 
 type GuidedStep = 'important' | 'commitments' | 'loops' | 'done';
@@ -620,7 +620,7 @@ function DesignMyDayGuidedModal({
     <div style={styles.backdrop} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={styles.modalShell} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
         <header style={styles.modalHeader}>
-          <span style={styles.modalTitle}>Design my day</span>
+          <span style={styles.modalTitle}>Admin calendar</span>
           <button type="button" onClick={onClose} style={styles.modalCloseBtn} aria-label="Close">
             ×
           </button>
@@ -831,7 +831,7 @@ export default function DesignMyDayPanel() {
             Clear calendar
           </button>
           <button type="button" onClick={() => setGuidedOpen(true)} style={styles.designBtn}>
-            Design my day
+            Admin calendar
           </button>
         </div>
       </div>

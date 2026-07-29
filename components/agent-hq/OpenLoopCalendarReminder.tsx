@@ -130,7 +130,7 @@ export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }
       </div>
 
       <button type="button" onClick={addToDesignMyDay} style={styles.primaryBtn}>
-        {addedFlash ? 'Added to calendar' : 'Add to design your day calendar'}
+        {addedFlash ? 'Added to admin calendar' : 'Add to admin calendar'}
       </button>
 
       <div style={styles.calendarActions}>

@@ -314,7 +314,7 @@ export function blockKindLabel(kind: DayBlockKind): string {
 
 export type BlockColorToken = { id: string; label: string; bg: string; border: string; text: string };
 
-/** Ten swatches for Design my day block kinds. */
+/** Ten swatches for Admin calendar block kinds. */
 export const DAY_BLOCK_COLOR_PALETTE: BlockColorToken[] = [
   { id: 'blue', label: 'Blue', bg: '#dbeafe', border: '#2563eb', text: '#1e3a8a' },
   { id: 'slate', label: 'Slate', bg: '#f1f5f9', border: '#94a3b8', text: '#334155' },
