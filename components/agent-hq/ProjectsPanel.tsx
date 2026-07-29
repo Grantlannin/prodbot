@@ -20,6 +20,14 @@ const TASK_ROW_HEIGHT_PX = 34;
 const TASK_ROW_GAP_PX = 6;
 const TASK_LIST_SCROLL_HEIGHT =
   TASK_LIST_VISIBLE_ROWS * TASK_ROW_HEIGHT_PX + (TASK_LIST_VISIBLE_ROWS - 1) * TASK_ROW_GAP_PX;
+const PROJECT_SIDEBAR_VISIBLE = 5;
+const PROJECT_SIDEBAR_ITEM_HEIGHT_PX = 48;
+const PROJECT_SIDEBAR_GAP_PX = 4;
+const PROJECT_SIDEBAR_LIST_PADDING_PX = 6;
+const PROJECT_SIDEBAR_SCROLL_HEIGHT =
+  PROJECT_SIDEBAR_VISIBLE * PROJECT_SIDEBAR_ITEM_HEIGHT_PX +
+  (PROJECT_SIDEBAR_VISIBLE - 1) * PROJECT_SIDEBAR_GAP_PX +
+  PROJECT_SIDEBAR_LIST_PADDING_PX * 2;
 
 function makeId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -1419,25 +1427,23 @@ const styles: Record<string, CSSProperties> = {
     flexShrink: 0,
     borderRight: '1px solid #e2e8f0',
     background: '#f8fafc',
-    display: 'flex',
-    flexDirection: 'column',
-    // overflow != visible so flex min-size is 0; editor pane defines split height
-    overflow: 'hidden',
-    minHeight: 0,
-    alignSelf: 'stretch',
   },
   sidebarEmpty: { padding: 14, fontSize: 12, color: '#94a3b8' },
   sidebarList: {
-    flex: 1,
-    minHeight: 0,
+    boxSizing: 'border-box',
+    height: PROJECT_SIDEBAR_SCROLL_HEIGHT,
+    maxHeight: PROJECT_SIDEBAR_SCROLL_HEIGHT,
     overflowY: 'auto',
-    padding: 6,
+    padding: PROJECT_SIDEBAR_LIST_PADDING_PX,
     display: 'flex',
     flexDirection: 'column',
-    gap: 4,
+    gap: PROJECT_SIDEBAR_GAP_PX,
   },
   sidebarItem: {
     width: '100%',
+    flexShrink: 0,
+    boxSizing: 'border-box',
+    height: PROJECT_SIDEBAR_ITEM_HEIGHT_PX,
     textAlign: 'left',
     padding: '8px 10px',
     borderRadius: 6,
@@ -1462,6 +1468,7 @@ const styles: Record<string, CSSProperties> = {
     display: 'block',
     fontSize: 12,
     fontWeight: 600,
+    lineHeight: '16px',
     color: '#0f172a',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -1470,6 +1477,7 @@ const styles: Record<string, CSSProperties> = {
   sidebarItemMeta: {
     display: 'block',
     fontSize: 11,
+    lineHeight: '14px',
     color: '#94a3b8',
     marginTop: 2,
   },
