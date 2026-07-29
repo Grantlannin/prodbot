@@ -139,8 +139,8 @@ export function OpenLoopExplainModal({ onClose }: { onClose: () => void }) {
           then have to ask yourself &apos;can i just make an intuitive decision here&apos; or &apos;do i need to think about
           this one&apos;. If answer is you can just make a quick intuitive decision, just go with your intuition &amp;
           don&apos;t worry about it. But if you need to think about it, instead of just letting that decision get lost in
-          your brain &amp; steal your energy (or not making it at all), put that decision down here so you can come back
-          to them when you&apos;re ready.
+          your brain &amp; steal your energy, put that decision down here so you can come back to them when you&apos;re
+          ready.
         </p>
 
         <p style={explainStyles.subheading}>Example:</p>
@@ -150,29 +150,51 @@ export function OpenLoopExplainModal({ onClose }: { onClose: () => void }) {
           website moving forward. When this happens, you have 2 options:
         </p>
         <p style={explainStyles.para}>
-          <strong>Option 1:</strong> Make a quick intuitive decision &amp; keep going on this task. If you have the brain
-          power / think it&apos;s a good usage of brain power (or can just pull from intuition for a quick low-cost
-          decision), you can think through it &amp; decide NOW on what you want to do, then keep moving forward on the
-          same task.
+          <strong>Option 1:</strong>{' '}
+          <strong>Make a quick intuitive decision &amp; keep going on this task.</strong> If you have the brain power /
+          can make a quick decision — you can just decide NOW on what you want to do, and keep moving forward on the same
+          task.
         </p>
         <p style={explainStyles.para}>
           <strong>Option 2:</strong>
         </p>
         <p style={explainStyles.para}>
-          You can decide &quot;this is an important decision but i don&apos;t want to use my brain power on this right now
-          because this thing influences other things, and there are equally important things to be done, so i&apos;ll do
-          the other important things with my brain power and circle back to this decision tonight&quot;. You then store
-          that unmade decision HERE as &apos;decide brand direction&apos;, reminder, and then move on to the other most
-          important task you need your good brain power on for today, get that done, then circle back to this decision
-          tonight (or some other time) &amp; tee this up for tomorrow.
+          You can decide{' '}
+          <strong>
+            &quot;this is an important decision but i don&apos;t want to use my brain power on this right now because i can
+            use this energy for something more urgent&quot;
+          </strong>
+          , store that unmade decision here as &apos;decide brand direction&apos;, then move on to the other most important
+          task you need your good brain power for. You can then circle back to make the decision when you&apos;re ready.
         </p>
         <p style={explainStyles.subheading}>The core idea:</p>
         <p style={explainStyles.para}>
           As you&apos;re working, new decisions / problems will pop up. When these happen, you have to ask yourself
           &apos;is this a good use of my energy right now?&apos;. If answer is YES because it&apos;s the most important
-          thing, just do it. But if the answer is NO because i need to think through this one &amp; there&apos;s other
-          equally important work i can do now — store it, and keep working on what will move the ball forward the most.
-          That&apos;s the game.
+          thing/necessary, just do it. But if the answer is NO because you need to actually think through it &amp;
+          there&apos;s other equally important work that you can do — just store it, and keep working on what will move
+          the ball forward the most. That&apos;s the game.
+        </p>
+
+        <p style={explainStyles.heading}>Unmade decisions stop 99% of people from progress</p>
+        <p style={explainStyles.para}>
+          Most people never get anywhere because they can&apos;t make a decision. Why? Because they&apos;re AFRAID of
+          making the wrong decision. It&apos;s all fear. But it actually makes no sense, because &apos;making the right
+          decision&apos; is actually impossible.
+        </p>
+        <p style={explainStyles.para}>
+          Every decision is a guess. Just say &apos;i think this will be the best for now&apos;, then go with it. That&apos;s
+          it. No big deal. Also realize not making a decision is STILL making a decision, except it&apos;s the only one
+          that guarantees you&apos;ll make zero progress. Even if making the wrong decision WAS real (it&apos;s not),
+          you&apos;d <em>still</em> make progress because you learned what not to do, then could just do the better thing.
+        </p>
+        <p style={explainStyles.para}>So what&apos;s your most advantageous option?</p>
+        <p style={explainStyles.para}>
+          You have to decide to not allow your fear to control you. You have to make decisions WAY faster than you&apos;re
+          currently making them, because the only truly wasted time is time stuck in indecision.
+        </p>
+        <p style={explainStyles.para}>
+          Just choose &amp; go. Take imperfect action &amp; keep making progress. You can fix it as you go.
         </p>
       </div>
     </div>
