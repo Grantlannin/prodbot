@@ -77,23 +77,15 @@ export default function LandingPage() {
   return (
     <MarketingShell>
       <section className="pt-8 sm:pt-14">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">
-          Your work homebase
-        </p>
         <h1 className="mb-5 max-w-xl text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-          Do you. Daywinner bot keeps you aligned.
+          Fighter pilots have their cockpit. You have your daywinner bot.
         </h1>
-        <p className="mb-5 max-w-lg text-lg leading-relaxed text-slate-600">
-          Daywinner bot is a homebase for the work you do that helps you print $$$. It keeps your
-          workflow exactly the same — but helps you stay organized while removing distractions.
-        </p>
-        <p className="mb-5 max-w-lg text-base leading-relaxed text-slate-500">
-          Think of it like someone giving you a nice little organized cubby for your most important work.
-          They then placed you on a cozy little couch while blocking out your most common distractions.
-        </p>
-        <p className="mb-8 max-w-lg text-base leading-relaxed text-slate-500">
-          It doesn&apos;t restrict your work movement like most software — it just gives you structure. You
-          just do you, and daywinner bot will support you.
+        <p className="mb-8 max-w-lg text-lg leading-relaxed text-slate-600">
+          Daywinner bot is your &ldquo;productivity dashboard&rdquo; tool that helps you organize your work,
+          prioritize the 1 most important task for the day &amp; complete it by creating a timed work block
+          &amp; blocking out distracting tabs. You not only now have a &ldquo;homebase&rdquo; for your most
+          important work, but you can track how long you worked on what task, and even keep yourself accountable
+          by sending daily reports to friends or accountability buddies.
         </p>
 
         <div className="mb-10 flex flex-wrap items-center gap-3">
