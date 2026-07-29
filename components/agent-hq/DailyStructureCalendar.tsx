@@ -19,6 +19,8 @@ interface DailyStructureCalendarProps {
   onBlocksChange?: (blocks: DayBlock[]) => void;
   interactive?: boolean;
   compact?: boolean;
+  title?: string;
+  onRemoveBlock?: (blockId: string) => void;
 }
 
 function snapMinutes(minutes: number) {
@@ -36,6 +38,8 @@ export default function DailyStructureCalendar({
   onBlocksChange,
   interactive = true,
   compact = false,
+  title = 'My day at a glance',
+  onRemoveBlock,
 }: DailyStructureCalendarProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ id: string; startY: number; originMinutes: number } | null>(null);
@@ -84,7 +88,7 @@ export default function DailyStructureCalendar({
 
   return (
     <div style={{ ...styles.shell, ...(compact ? styles.shellCompact : {}) }}>
-      <div style={styles.header}>My day at a glance</div>
+      {title ? <div style={styles.header}>{title}</div> : null}
       <div style={styles.body}>
         <div style={styles.labels}>
           {hourLabels.map(min => (
@@ -128,9 +132,26 @@ export default function DailyStructureCalendar({
                 onMouseDown={e => onBlockMouseDown(e, block)}
                 title={`${block.title} (${formatMinutesLabel(block.startMinutes)})`}
               >
-                <div style={styles.blockTitle}>{block.title}</div>
+                <div style={styles.blockTopRow}>
+                  <div style={styles.blockTitle}>{block.title}</div>
+                  {onRemoveBlock ? (
+                    <button
+                      type="button"
+                      style={styles.removeBtn}
+                      aria-label={`Remove ${block.title}`}
+                      onMouseDown={e => e.stopPropagation()}
+                      onClick={e => {
+                        e.stopPropagation();
+                        onRemoveBlock(block.id);
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
                 <div style={styles.blockMeta}>
-                  {formatMinutesLabel(block.startMinutes)} · {block.durationMinutes}m
+                  {formatMinutesLabel(block.startMinutes)} · {block.durationMinutes}m ·{' '}
+                  {block.kind.replace('_', ' ')}
                 </div>
               </div>
             );
@@ -210,6 +231,12 @@ const styles: Record<string, CSSProperties> = {
     boxSizing: 'border-box',
     userSelect: 'none',
   },
+  blockTopRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 4,
+  },
   blockTitle: {
     fontSize: 12,
     fontWeight: 700,
@@ -217,6 +244,20 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    minWidth: 0,
+    flex: 1,
+  },
+  removeBtn: {
+    flexShrink: 0,
+    border: 'none',
+    background: 'transparent',
+    color: 'inherit',
+    opacity: 0.55,
+    fontSize: 14,
+    lineHeight: 1,
+    cursor: 'pointer',
+    padding: 0,
+    fontFamily: font,
   },
   blockMeta: {
     fontSize: 10,

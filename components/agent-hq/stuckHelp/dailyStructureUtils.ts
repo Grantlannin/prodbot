@@ -19,6 +19,9 @@ export interface DayBlock {
   durationMinutes: number;
   kind: DayBlockKind;
   openLoopId?: string;
+  projectId?: string;
+  taskId?: string;
+  subTaskId?: string;
 }
 
 export interface DailyStructurePlan {
