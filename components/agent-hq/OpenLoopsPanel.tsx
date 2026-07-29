@@ -135,9 +135,12 @@ export function OpenLoopExplainModal({ onClose }: { onClose: () => void }) {
         <p style={explainStyles.heading}>UNMADE DECISIONS</p>
         <p style={explainStyles.para}>
           You will also notice there is an &apos;unmade decision&apos; section. Why is that added? Because you will notice
-          that when you procrastinate, it is often because there are decisions you need to make that you aren&apos;t
-          making. So instead of just letting those get lost in your brain &amp; steal your energy (or not making them),
-          put that decision down here so you can come back to them when you&apos;re ready.
+          that as you work, you will come face-to-face with decisions that you&apos;ll need to make to move forward. You
+          then have to ask yourself &apos;can i just make an intuitive decision here&apos; or &apos;do i need to think about
+          this one&apos;. If answer is you can just make a quick intuitive decision, just retardmaxx forward &amp;
+          don&apos;t worry about it. But if you need to think about it, instead of just letting that decision get lost in
+          your brain &amp; steal your energy (or not making it at all), put that decision down here so you can come back
+          to them when you&apos;re ready.
         </p>
 
         <p style={explainStyles.subheading}>Example:</p>
