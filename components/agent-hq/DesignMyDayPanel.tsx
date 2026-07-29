@@ -651,11 +651,8 @@ export default function DesignMyDayPanel() {
   return (
     <div style={styles.root}>
       <div style={styles.toolbar}>
-        <div style={styles.toolbarLead}>
-          <div style={styles.leadTitle}>Design my day</div>
-          <div style={styles.leadSubtitle}>
-            Block time for your most important work, commitments, and open loops.
-          </div>
+        <div style={styles.leadSubtitle}>
+          Block time for work, commitments, and open loops.
         </div>
         <button type="button" onClick={() => setGuidedOpen(true)} style={styles.designBtn}>
           Design my day
@@ -768,22 +765,26 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
   },
   grid: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(280px, 340px) minmax(240px, 1fr)',
-    gap: 16,
-    alignItems: 'start',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+    alignItems: 'stretch',
   },
   calendarCell: {
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
     minWidth: 0,
+    maxWidth: 360,
+    width: '100%',
   },
   addCell: {
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
     minWidth: 0,
+    maxWidth: 360,
+    width: '100%',
     background: '#fff',
     border: '1px solid #e2e8f0',
     borderRadius: 12,

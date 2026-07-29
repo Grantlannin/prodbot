@@ -333,6 +333,14 @@ export default function DashboardTab({
             <DashCard title="Notes" noPad>
               <AppleNotesPanel />
             </DashCard>
+            <DashCard
+              title="Design my day"
+              headerRight={
+                <span style={styles.designDayHint}>Drag · resets tomorrow</span>
+              }
+            >
+              <DesignMyDayPanel />
+            </DashCard>
           </div>
           <DashCard
             title="open loops / unmade decisions"
@@ -349,15 +357,6 @@ export default function DashboardTab({
             <OpenLoopsPanel />
           </DashCard>
         </div>
-
-        <DashCard
-          title="Design my day"
-          headerRight={
-            <span style={styles.designDayHint}>Drag blocks to move · resets tomorrow</span>
-          }
-        >
-          <DesignMyDayPanel />
-        </DashCard>
       </div>
       {showOpenLoopExplain ? (
         <OpenLoopExplainModal onClose={() => setShowOpenLoopExplain(false)} />
