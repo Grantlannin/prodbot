@@ -129,7 +129,8 @@ export default function DailyStructureCalendar({
           {sorted.map(block => {
             const colors = blockKindColor(block.kind);
             const top = (block.startMinutes - rangeStart) * pxPerMin;
-            const height = Math.max(22, block.durationMinutes * pxPerMin);
+            const height = Math.max(pxPerMin >= 0.9 ? 22 : 16, block.durationMinutes * pxPerMin);
+            const dense = pxPerMin < 0.85;
             // Skip blocks fully outside the visible window
             if (block.startMinutes + block.durationMinutes <= rangeStart) return null;
             if (block.startMinutes >= rangeEnd) return null;
@@ -138,6 +139,7 @@ export default function DailyStructureCalendar({
                 key={block.id}
                 style={{
                   ...styles.block,
+                  ...(dense ? styles.blockDense : {}),
                   top,
                   height,
                   background: colors.bg,
@@ -146,10 +148,12 @@ export default function DailyStructureCalendar({
                   cursor: interactive && onBlocksChange ? 'grab' : 'default',
                 }}
                 onMouseDown={e => onBlockMouseDown(e, block)}
-                title={`${block.title} (${formatMinutesLabel(block.startMinutes)})`}
+                title={`${block.title} (${formatMinutesLabel(block.startMinutes)}) · ${block.durationMinutes}m`}
               >
                 <div style={styles.blockTopRow}>
-                  <div style={styles.blockTitle}>{block.title}</div>
+                  <div style={{ ...styles.blockTitle, ...(dense ? styles.blockTitleDense : {}) }}>
+                    {block.title}
+                  </div>
                   {onRemoveBlock ? (
                     <button
                       type="button"
@@ -165,10 +169,11 @@ export default function DailyStructureCalendar({
                     </button>
                   ) : null}
                 </div>
-                <div style={styles.blockMeta}>
-                  {formatMinutesLabel(block.startMinutes)} · {block.durationMinutes}m ·{' '}
-                  {block.kind.replace('_', ' ')}
-                </div>
+                {!dense || height >= 28 ? (
+                  <div style={styles.blockMeta}>
+                    {formatMinutesLabel(block.startMinutes)} · {block.durationMinutes}m
+                  </div>
+                ) : null}
               </div>
             );
           })}
@@ -250,6 +255,10 @@ const styles: Record<string, CSSProperties> = {
     boxSizing: 'border-box',
     userSelect: 'none',
   },
+  blockDense: {
+    padding: '3px 6px',
+    borderRadius: 6,
+  },
   blockTopRow: {
     display: 'flex',
     alignItems: 'flex-start',
@@ -265,6 +274,10 @@ const styles: Record<string, CSSProperties> = {
     textOverflow: 'ellipsis',
     minWidth: 0,
     flex: 1,
+  },
+  blockTitleDense: {
+    fontSize: 11,
+    lineHeight: 1.2,
   },
   removeBtn: {
     flexShrink: 0,
