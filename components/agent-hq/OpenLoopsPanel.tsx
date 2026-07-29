@@ -177,25 +177,6 @@ export function OpenLoopExplainModal({ onClose }: { onClose: () => void }) {
         </p>
 
         <p style={explainStyles.heading}>Unmade decisions stop 99% of people from progress</p>
-        <p style={explainStyles.para}>
-          Most people never get anywhere because they can&apos;t make a decision. Why? Because they&apos;re AFRAID of
-          making the wrong decision. It&apos;s all fear. But it actually makes no sense, because &apos;making the right
-          decision&apos; is actually impossible.
-        </p>
-        <p style={explainStyles.para}>
-          Every decision is a guess. Just say &apos;i think this will be the best for now&apos;, then go with it. That&apos;s
-          it. No big deal. Also realize not making a decision is STILL making a decision, except it&apos;s the only one
-          that guarantees you&apos;ll make zero progress. Even if making the wrong decision WAS real (it&apos;s not),
-          you&apos;d <em>still</em> make progress because you learned what not to do, then could just do the better thing.
-        </p>
-        <p style={explainStyles.para}>So what&apos;s your most advantageous option?</p>
-        <p style={explainStyles.para}>
-          You have to decide to not allow your fear to control you. You have to make decisions WAY faster than you&apos;re
-          currently making them, because the only truly wasted time is time stuck in indecision.
-        </p>
-        <p style={explainStyles.para}>
-          Just choose &amp; go. Take imperfect action &amp; keep making progress. You can fix it as you go.
-        </p>
       </div>
     </div>
   );
