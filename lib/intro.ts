@@ -79,3 +79,23 @@ export function isChromeIntroCompleteClient(): boolean {
   if (localStorage.getItem(CHROME_INTRO_COMPLETE_KEY) === '1') return true;
   return document.cookie.split(';').some(part => part.trim() === `${CHROME_INTRO_COMPLETE_COOKIE}=1`);
 }
+
+/** First-visit “how to start” video on the dashboard (separate from /intro onboarding). */
+export const HOW_TO_START_DISMISSED_KEY = 'agentHQ_howToStartDismissed';
+
+export function isHowToStartDismissedClient(): boolean {
+  if (typeof window === 'undefined') return true;
+  return localStorage.getItem(HOW_TO_START_DISMISSED_KEY) === '1';
+}
+
+export function markHowToStartDismissedClient(): void {
+  localStorage.setItem(HOW_TO_START_DISMISSED_KEY, '1');
+}
+
+export function getHowToStartLoomUrl(): string | null {
+  return (
+    process.env.NEXT_PUBLIC_LOOM_HOW_TO_START_URL?.trim() ||
+    process.env.NEXT_PUBLIC_LOOM_INTRO_URL?.trim() ||
+    null
+  );
+}

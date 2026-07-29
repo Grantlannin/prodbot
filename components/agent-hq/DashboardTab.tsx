@@ -18,6 +18,7 @@ import NightPrepPanel from './NightPrepPanel';
 import BeginMyDayButton from './BeginMyDayButton';
 import EodSendModal from './EodSendModal';
 import StartWorkModal, { type StartWorkPreset } from './StartWorkModal';
+import HowToStartBanner from './HowToStartBanner';
 import { sessionLabel } from './quickstartTask';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
 
@@ -153,6 +154,7 @@ export default function DashboardTab({
   return (
     <div style={{ background: '#f8fafc', minHeight: '100%', overflowY: 'auto', fontFamily: font, position: 'relative' }}>
       <BeginMyDayButton />
+      <HowToStartBanner />
       <StartWorkModal
         open={startWorkOpen}
         onClose={() => {
