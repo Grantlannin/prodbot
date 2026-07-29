@@ -40,6 +40,8 @@ interface DailyStructureCalendarProps {
   timelineEndMinutes?: number;
   /** When true, show the full range with no scroll. */
   noScroll?: boolean;
+  /** Max height of the scrollable timeline body (ignored when noScroll). */
+  maxBodyHeight?: number;
   pxPerMin?: number;
   colorMap?: DayBlockColorMap | null;
 }
@@ -75,6 +77,7 @@ export default function DailyStructureCalendar({
   timelineStartMinutes = DAY_TIMELINE_START,
   timelineEndMinutes = DAY_TIMELINE_END,
   noScroll = false,
+  maxBodyHeight = 520,
   pxPerMin = DAY_TIMELINE_PX_PER_MIN,
   colorMap = null,
 }: DailyStructureCalendarProps) {
@@ -206,7 +209,7 @@ export default function DailyStructureCalendar({
       <div
         style={{
           ...styles.body,
-          ...(noScroll ? styles.bodyNoScroll : {}),
+          ...(noScroll ? styles.bodyNoScroll : { maxHeight: maxBodyHeight }),
         }}
         onMouseDown={() => setSelectedId(null)}
       >

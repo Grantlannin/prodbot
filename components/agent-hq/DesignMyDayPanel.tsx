@@ -39,46 +39,22 @@ const TASK_DURATION_HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 
 
 const FULL_DAY_START = 4 * 60;
 const FULL_DAY_END = 24 * 60;
-const FULL_DAY_PX_PER_MIN = 0.4;
-const FULL_DAY_HEIGHT = (FULL_DAY_END - FULL_DAY_START) * FULL_DAY_PX_PER_MIN;
+const CALENDAR_ZOOM_KEY = 'agentHQ_adminCalendarZoom';
+/** Pixels per minute — default ~60px/hour so hour blocks stay readable. */
+const CALENDAR_ZOOM_STEPS = [0.5, 0.65, 0.8, 1, 1.25, 1.5, 1.85, 2.25];
+const DEFAULT_CALENDAR_ZOOM = 1;
 
-/** Zoom the timeline around existing blocks while keeping the same overall calendar height. */
-function computeFitToBlocksWindow(blocks: DayBlock[]): {
-  startMinutes: number;
-  endMinutes: number;
-  pxPerMin: number;
-} | null {
-  if (blocks.length === 0) return null;
-
-  let minStart = Infinity;
-  let maxEnd = -Infinity;
-  for (const block of blocks) {
-    minStart = Math.min(minStart, block.startMinutes);
-    maxEnd = Math.max(maxEnd, block.startMinutes + block.durationMinutes);
-  }
-
-  const pad = 30;
-  let startMinutes = Math.floor((minStart - pad) / 60) * 60;
-  let endMinutes = Math.ceil((maxEnd + pad) / 60) * 60;
-  startMinutes = Math.max(FULL_DAY_START, startMinutes);
-  endMinutes = Math.min(FULL_DAY_END, endMinutes);
-
-  const minSpan = 3 * 60;
-  if (endMinutes - startMinutes < minSpan) {
-    const mid = (startMinutes + endMinutes) / 2;
-    startMinutes = Math.max(FULL_DAY_START, Math.floor((mid - minSpan / 2) / 60) * 60);
-    endMinutes = Math.min(FULL_DAY_END, startMinutes + minSpan);
-    if (endMinutes - startMinutes < minSpan) {
-      startMinutes = Math.max(FULL_DAY_START, endMinutes - minSpan);
+function nearestZoomIndex(pxPerMin: number): number {
+  let best = 0;
+  let bestDiff = Infinity;
+  CALENDAR_ZOOM_STEPS.forEach((step, index) => {
+    const diff = Math.abs(step - pxPerMin);
+    if (diff < bestDiff) {
+      best = index;
+      bestDiff = diff;
     }
-  }
-
-  const span = Math.max(60, endMinutes - startMinutes);
-  return {
-    startMinutes,
-    endMinutes,
-    pxPerMin: FULL_DAY_HEIGHT / span,
-  };
+  });
+  return best;
 }
 
 /** 4am–11pm in 1-hour steps (fine-tune to 15m by dragging on the calendar). */
@@ -826,27 +802,12 @@ export default function DesignMyDayPanel() {
   const [tab, setTab] = useState<AddTab>('task');
   const [colorMenuTab, setColorMenuTab] = useState<AddTab | null>(null);
   const [guidedOpen, setGuidedOpen] = useState(false);
-  const [fitToBlocks, setFitToBlocks] = useState(true);
+  const [pxPerMin, setPxPerMin] = useLocalStorage<number>(CALENDAR_ZOOM_KEY, DEFAULT_CALENDAR_ZOOM);
 
-  const calendarView = useMemo(() => {
-    if (fitToBlocks) {
-      const fit = computeFitToBlocksWindow(blocks);
-      if (fit) {
-        return {
-          timelineStartMinutes: fit.startMinutes,
-          timelineEndMinutes: fit.endMinutes,
-          pxPerMin: fit.pxPerMin,
-          fitting: true as const,
-        };
-      }
-    }
-    return {
-      timelineStartMinutes: FULL_DAY_START,
-      timelineEndMinutes: FULL_DAY_END,
-      pxPerMin: FULL_DAY_PX_PER_MIN,
-      fitting: false as const,
-    };
-  }, [blocks, fitToBlocks]);
+  const zoomIndex = nearestZoomIndex(pxPerMin);
+  const zoomPercent = Math.round((CALENDAR_ZOOM_STEPS[zoomIndex] / DEFAULT_CALENDAR_ZOOM) * 100);
+  const canZoomOut = zoomIndex > 0;
+  const canZoomIn = zoomIndex < CALENDAR_ZOOM_STEPS.length - 1;
 
   const persistBlocks = (next: DayBlock[]) => {
     setStore(prev => upsertActiveDayPlan(prev, next));
@@ -905,35 +866,45 @@ export default function DesignMyDayPanel() {
       <div style={styles.grid}>
         <div style={styles.calendarCell}>
           <div style={styles.calendarToolbar}>
-            <button
-              type="button"
-              onClick={() => setFitToBlocks(v => !v)}
-              disabled={blocks.length === 0}
-              style={{
-                ...styles.fitToggleBtn,
-                ...(calendarView.fitting ? styles.fitToggleBtnActive : {}),
-                ...(blocks.length === 0 ? styles.btnDisabled : {}),
-              }}
-              title={
-                blocks.length === 0
-                  ? 'Add blocks to zoom into used hours'
-                  : calendarView.fitting
-                    ? 'Showing used hours — click for full day'
-                    : 'Zoom into hours that have blocks'
-              }
-            >
-              {calendarView.fitting ? 'Show full day' : 'Fit to blocks'}
-            </button>
+            <div style={styles.zoomControls}>
+              <button
+                type="button"
+                onClick={() => canZoomOut && setPxPerMin(CALENDAR_ZOOM_STEPS[zoomIndex - 1])}
+                disabled={!canZoomOut}
+                style={{
+                  ...styles.zoomBtn,
+                  ...(!canZoomOut ? styles.btnDisabled : {}),
+                }}
+                aria-label="Zoom out"
+                title="Zoom out"
+              >
+                −
+              </button>
+              <span style={styles.zoomLabel}>{zoomPercent}%</span>
+              <button
+                type="button"
+                onClick={() => canZoomIn && setPxPerMin(CALENDAR_ZOOM_STEPS[zoomIndex + 1])}
+                disabled={!canZoomIn}
+                style={{
+                  ...styles.zoomBtn,
+                  ...(!canZoomIn ? styles.btnDisabled : {}),
+                }}
+                aria-label="Zoom in"
+                title="Zoom in"
+              >
+                +
+              </button>
+            </div>
           </div>
           <DailyStructureCalendar
             blocks={blocks}
             interactive
             compact
             title=""
-            timelineStartMinutes={calendarView.timelineStartMinutes}
-            timelineEndMinutes={calendarView.timelineEndMinutes}
-            noScroll
-            pxPerMin={calendarView.pxPerMin}
+            timelineStartMinutes={FULL_DAY_START}
+            timelineEndMinutes={FULL_DAY_END}
+            maxBodyHeight={460}
+            pxPerMin={CALENDAR_ZOOM_STEPS[zoomIndex]}
             colorMap={colorMap}
             onBlocksChange={persistBlocks}
             onRemoveBlock={removeBlock}
@@ -1114,23 +1085,35 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
-  fitToggleBtn: {
-    border: '1px solid #e2e8f0',
-    borderRadius: 8,
-    padding: '6px 10px',
-    fontSize: 11,
-    fontWeight: 600,
-    fontFamily: font,
-    letterSpacing: '-0.01em',
-    background: '#fff',
-    color: '#64748b',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
+  zoomControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    background: '#eef2f6',
+    borderRadius: 9,
+    padding: 3,
   },
-  fitToggleBtnActive: {
-    background: '#0f172a',
-    borderColor: '#0f172a',
-    color: '#f8fafc',
+  zoomBtn: {
+    width: 28,
+    height: 26,
+    border: 'none',
+    borderRadius: 7,
+    background: '#fff',
+    color: '#0f172a',
+    fontSize: 16,
+    fontWeight: 700,
+    lineHeight: 1,
+    cursor: 'pointer',
+    fontFamily: font,
+    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
+  },
+  zoomLabel: {
+    minWidth: 42,
+    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#334155',
+    fontVariantNumeric: 'tabular-nums',
   },
   addCell: {
     display: 'flex',
