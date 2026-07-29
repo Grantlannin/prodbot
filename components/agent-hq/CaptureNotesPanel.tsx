@@ -157,7 +157,7 @@ export default function CaptureNotesPanel({
   const selected = notes.find(n => n.id === selectedId) ?? null;
   const loopNotes = orderedNotesInSection(notes, 'open_loop');
   const decisionNotes = orderedNotesInSection(notes, 'decision');
-  const sorted = [...loopNotes, ...decisionNotes];
+  const sorted = [...decisionNotes, ...loopNotes];
 
   useEffect(() => {
     if (selectedId && !notes.some(n => n.id === selectedId)) {
@@ -323,14 +323,14 @@ export default function CaptureNotesPanel({
             ...(styledTabsByKind ? styles.sectionLabelAccent : {}),
           }}
         >
-          {styledTabsByKind ? OPEN_LOOPS_SECTION_LABEL.toUpperCase() : OPEN_LOOPS_SECTION_LABEL}
+          {styledTabsByKind ? DECISIONS_SECTION_LABEL.toUpperCase() : DECISIONS_SECTION_LABEL}
         </div>
-        {loopNotes.length === 0 ? (
+        {decisionNotes.length === 0 ? (
           <div style={styles.sectionEmpty}>None yet</div>
         ) : (
-          loopNotes.map(note => renderNoteRow(note, 'open_loop'))
+          decisionNotes.map(note => renderNoteRow(note, 'decision'))
         )}
-        {renderSectionEndDrop('open_loop')}
+        {renderSectionEndDrop('decision')}
       </div>
       <div style={styles.sectionDivider} />
       <div style={styles.sidebarSection}>
@@ -340,14 +340,14 @@ export default function CaptureNotesPanel({
             ...(styledTabsByKind ? styles.sectionLabelAccent : {}),
           }}
         >
-          {styledTabsByKind ? DECISIONS_SECTION_LABEL.toUpperCase() : DECISIONS_SECTION_LABEL}
+          {styledTabsByKind ? OPEN_LOOPS_SECTION_LABEL.toUpperCase() : OPEN_LOOPS_SECTION_LABEL}
         </div>
-        {decisionNotes.length === 0 ? (
+        {loopNotes.length === 0 ? (
           <div style={styles.sectionEmpty}>None yet</div>
         ) : (
-          decisionNotes.map(note => renderNoteRow(note, 'decision'))
+          loopNotes.map(note => renderNoteRow(note, 'open_loop'))
         )}
-        {renderSectionEndDrop('decision')}
+        {renderSectionEndDrop('open_loop')}
       </div>
     </div>
   );

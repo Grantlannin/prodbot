@@ -128,7 +128,7 @@ export function prependNoteInSection(notes: CaptureNote[], note: CaptureNote): C
 
 /** @deprecated Use orderedNotesInSection */
 export function orderedCaptureNotes(notes: CaptureNote[]): CaptureNote[] {
-  return [...orderedNotesInSection(notes, 'open_loop'), ...orderedNotesInSection(notes, 'decision')];
+  return [...orderedNotesInSection(notes, 'decision'), ...orderedNotesInSection(notes, 'open_loop')];
 }
 
 /** @deprecated Use reorderNotesInSection */
