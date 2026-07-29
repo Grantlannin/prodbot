@@ -29,12 +29,13 @@ export default function IntroChrome() {
       <div style={styles.wrap}>
         <div style={styles.card}>
           <p style={styles.step}>Step 1 of {ONBOARDING_STEP_COUNT}</p>
-          <h1 style={styles.title}>Full usage requires Google Chrome</h1>
+          <h1 style={styles.title}>Hook up Google Chrome</h1>
           <p style={styles.lead}>
-            Let&apos;s download it quickly here if you&apos;re not already using it. If you are, continue to set up the
-            extension. Note: if you&apos;re using a different browser, adding a new browser is a fantastic way to
-            refresh everything for maximum productivity. (Also there is no affiliation with Chrome — it is just what we
-            personally use &amp; designed the bot around.)
+            Chrome is the browser we&apos;ve designed the bot around. So if you don&apos;t currently have it, let&apos;s
+            download it quickly here if you&apos;re not already using it. If you do already use Chrome, just continue to
+            set up the extension below. Note: if you&apos;re using a different browser, adding a new browser is a
+            fantastic way to refresh everything for maximum productivity. (Also, there is no affiliation with Chrome —
+            it is just what we personally use &amp; designed the bot around.)
           </p>
           <p style={styles.supportNote}>
             Daywinner and the focus extension run in Google Chrome on desktop. Safari, Firefox, and mobile browsers are
