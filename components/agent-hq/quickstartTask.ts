@@ -18,6 +18,12 @@ export interface WorkPartGroup {
   subTasks: ListedWorkTask[];
 }
 
+export interface WorkProjectGroup {
+  projectId: string;
+  projectName: string;
+  parts: WorkPartGroup[];
+}
+
 function projectDisplayName(project: ProjectBoard): string {
   return project.name.trim() || 'Untitled project';
 }
@@ -72,6 +78,28 @@ export function listWorkPartGroups(projects: ProjectBoard[]): WorkPartGroup[] {
         .filter((entry): entry is ListedWorkTask => entry !== null);
       out.push({ projectId: project.id, projectName, part, subTasks });
     }
+  }
+
+  return out;
+}
+
+/** Projects with their work-ready tasks, in the same order as listWorkPartGroups. */
+export function listWorkProjectGroups(projects: ProjectBoard[]): WorkProjectGroup[] {
+  const out: WorkProjectGroup[] = [];
+  const byId = new Map<string, WorkProjectGroup>();
+
+  for (const group of listWorkPartGroups(projects)) {
+    let entry = byId.get(group.projectId);
+    if (!entry) {
+      entry = {
+        projectId: group.projectId,
+        projectName: group.projectName,
+        parts: [],
+      };
+      byId.set(group.projectId, entry);
+      out.push(entry);
+    }
+    entry.parts.push(group);
   }
 
   return out;

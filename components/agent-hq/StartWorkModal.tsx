@@ -7,7 +7,7 @@ import type { ProjectBoard, FocusLockMode } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import { useHoverTimer } from './hooks/HoverTimerProvider';
-import { listWorkPartGroups, makeProjectTaskId, newProjectTask, sessionLabel, type ListedWorkTask } from './quickstartTask';
+import { listWorkProjectGroups, makeProjectTaskId, newProjectTask, sessionLabel, type ListedWorkTask } from './quickstartTask';
 import { FOCUS_LOCK_MODE_COPY, FOCUS_LOCK_MODES } from './focusBlocking';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -48,6 +48,7 @@ export default function StartWorkModal({
   preset = null,
   onSessionStarted,
 }: StartWorkModalProps) {
+  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
   const [expandedPartKey, setExpandedPartKey] = useState<string | null>(null);
   const [projects, setProjects] = useLocalStorage<ProjectBoard[]>(PROJECTS_KEY, []);
   const [step, setStep] = useState<Step>('select-task');
@@ -60,7 +61,7 @@ export default function StartWorkModal({
   const { startSession, status } = useWorkTrackerContext();
   const { requestOpen } = useHoverTimer();
 
-  const partGroups = useMemo(() => listWorkPartGroups(projects), [projects]);
+  const projectGroups = useMemo(() => listWorkProjectGroups(projects), [projects]);
   const sortedProjects = useMemo(
     () => [...projects].sort((a, b) => b.updatedAt - a.updatedAt),
     [projects]
@@ -77,6 +78,7 @@ export default function StartWorkModal({
       setDurationMinutes(25);
       setCustomMinutesInput('25');
       setLockMode('none');
+      setExpandedProjectId(null);
       setExpandedPartKey(null);
       return;
     }
@@ -87,6 +89,7 @@ export default function StartWorkModal({
     setDurationMinutes(25);
     setCustomMinutesInput('25');
     setLockMode('none');
+    setExpandedProjectId(null);
     setExpandedPartKey(null);
   }, [open, mode, preset]);
 
@@ -206,70 +209,112 @@ export default function StartWorkModal({
               <p style={styles.busy}>You already have a session running. Stop it first to start something new.</p>
             ) : null}
             <div style={styles.taskList}>
-              {partGroups.length === 0 ? (
+              {projectGroups.length === 0 ? (
                 <p style={styles.empty}>No tasks in your projects yet.</p>
               ) : (
-                partGroups.map(group => {
-                  const key = partGroupKey(group.projectId, group.part.taskId);
-                  const hasSubs = group.subTasks.length > 0;
-                  const expanded = expandedPartKey === key;
+                projectGroups.map(projectGroup => {
+                  const projectExpanded = expandedProjectId === projectGroup.projectId;
+                  const taskCount = projectGroup.parts.length;
                   return (
-                    <div key={key} style={styles.partGroup}>
+                    <div key={projectGroup.projectId} style={styles.projectGroup}>
                       <button
                         type="button"
                         disabled={busy}
                         onClick={() => {
-                          if (hasSubs) {
-                            setExpandedPartKey(expanded ? null : key);
+                          if (projectExpanded) {
+                            setExpandedProjectId(null);
+                            setExpandedPartKey(null);
                             return;
                           }
-                          handlePickTask(group.part);
+                          setExpandedProjectId(projectGroup.projectId);
+                          setExpandedPartKey(null);
                         }}
                         style={{
-                          ...styles.taskBtn,
+                          ...styles.projectBtn,
                           ...(busy ? styles.taskBtnDisabled : {}),
-                          ...(hasSubs && expanded ? styles.taskBtnExpanded : {}),
+                          ...(projectExpanded ? styles.projectBtnExpanded : {}),
                         }}
                       >
                         <span style={styles.taskBtnRow}>
                           <span style={styles.taskBtnMain}>
-                            <span style={styles.partBtnText}>{group.part.taskText}</span>
-                            <span style={styles.taskBtnMeta}>{group.projectName}</span>
-                          </span>
-                          {hasSubs ? (
-                            <span style={styles.expandHint} aria-hidden>
-                              {expanded ? '▾' : '▸'}
+                            <span style={styles.projectLabel}>Project</span>
+                            <span style={styles.projectBtnText}>{projectGroup.projectName}</span>
+                            <span style={styles.projectBtnMeta}>
+                              {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
                             </span>
-                          ) : null}
+                          </span>
+                          <span style={styles.expandHint} aria-hidden>
+                            {projectExpanded ? '▾' : '▸'}
+                          </span>
                         </span>
                       </button>
-                      {hasSubs && expanded ? (
-                        <div style={styles.subTaskList}>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => handlePickTask(group.part)}
-                            style={{
-                              ...styles.subTaskBtn,
-                              ...(busy ? styles.taskBtnDisabled : {}),
-                            }}
-                          >
-                            <span style={styles.subTaskBtnText}>Whole part</span>
-                          </button>
-                          {group.subTasks.map(sub => (
-                            <button
-                              key={sub.subTaskId}
-                              type="button"
-                              disabled={busy}
-                              onClick={() => handlePickTask(sub)}
-                              style={{
-                                ...styles.subTaskBtn,
-                                ...(busy ? styles.taskBtnDisabled : {}),
-                              }}
-                            >
-                              <span style={styles.subTaskBtnText}>{sub.taskText}</span>
-                            </button>
-                          ))}
+                      {projectExpanded ? (
+                        <div style={styles.projectTaskList}>
+                          {projectGroup.parts.map(group => {
+                            const key = partGroupKey(group.projectId, group.part.taskId);
+                            const hasSubs = group.subTasks.length > 0;
+                            const expanded = expandedPartKey === key;
+                            return (
+                              <div key={key} style={styles.partGroup}>
+                                <button
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() => {
+                                    if (hasSubs) {
+                                      setExpandedPartKey(expanded ? null : key);
+                                      return;
+                                    }
+                                    handlePickTask(group.part);
+                                  }}
+                                  style={{
+                                    ...styles.taskBtn,
+                                    ...(busy ? styles.taskBtnDisabled : {}),
+                                    ...(hasSubs && expanded ? styles.taskBtnExpanded : {}),
+                                  }}
+                                >
+                                  <span style={styles.taskBtnRow}>
+                                    <span style={styles.taskBtnMain}>
+                                      <span style={styles.partBtnText}>{group.part.taskText}</span>
+                                    </span>
+                                    {hasSubs ? (
+                                      <span style={styles.expandHint} aria-hidden>
+                                        {expanded ? '▾' : '▸'}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                </button>
+                                {hasSubs && expanded ? (
+                                  <div style={styles.subTaskList}>
+                                    <button
+                                      type="button"
+                                      disabled={busy}
+                                      onClick={() => handlePickTask(group.part)}
+                                      style={{
+                                        ...styles.subTaskBtn,
+                                        ...(busy ? styles.taskBtnDisabled : {}),
+                                      }}
+                                    >
+                                      <span style={styles.subTaskBtnText}>Whole part</span>
+                                    </button>
+                                    {group.subTasks.map(sub => (
+                                      <button
+                                        key={sub.subTaskId}
+                                        type="button"
+                                        disabled={busy}
+                                        onClick={() => handlePickTask(sub)}
+                                        style={{
+                                          ...styles.subTaskBtn,
+                                          ...(busy ? styles.taskBtnDisabled : {}),
+                                        }}
+                                      >
+                                        <span style={styles.subTaskBtnText}>{sub.taskText}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : null}
                     </div>
@@ -579,15 +624,66 @@ const styles: Record<string, CSSProperties> = {
     marginTop: 14,
     display: 'flex',
     flexDirection: 'column',
-    gap: 6,
+    gap: 8,
     overflowY: 'auto',
-    maxHeight: 280,
+    maxHeight: 320,
   },
   empty: {
     margin: 0,
     fontSize: 13,
     color: '#94a3b8',
     lineHeight: 1.45,
+  },
+  projectGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+  },
+  projectBtn: {
+    width: '100%',
+    textAlign: 'left',
+    border: '1px solid #cbd5e1',
+    borderRadius: 8,
+    padding: '10px 12px',
+    background: '#f1f5f9',
+    cursor: 'pointer',
+    fontFamily: font,
+  },
+  projectBtnExpanded: {
+    borderColor: '#94a3b8',
+    background: '#e2e8f0',
+  },
+  projectLabel: {
+    display: 'block',
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase' as const,
+    color: '#64748b',
+    lineHeight: 1.2,
+  },
+  projectBtnText: {
+    display: 'block',
+    marginTop: 2,
+    fontSize: 15,
+    fontWeight: 700,
+    color: '#0f172a',
+    lineHeight: 1.3,
+  },
+  projectBtnMeta: {
+    display: 'block',
+    marginTop: 2,
+    fontSize: 11,
+    color: '#64748b',
+  },
+  projectTaskList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+    paddingLeft: 10,
+    borderLeft: '2px solid #cbd5e1',
+    marginLeft: 8,
+    marginTop: 2,
   },
   taskBtn: {
     width: '100%',
@@ -664,7 +760,7 @@ const styles: Record<string, CSSProperties> = {
   partBtnText: {
     display: 'block',
     fontSize: 14,
-    fontWeight: 700,
+    fontWeight: 600,
     color: '#0f172a',
     lineHeight: 1.3,
   },
