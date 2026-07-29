@@ -137,7 +137,7 @@ export function OpenLoopExplainModal({ onClose }: { onClose: () => void }) {
           You will also notice there is an &apos;unmade decision&apos; section. Why is that added? Because you will notice
           that as you work, you will come face-to-face with decisions that you&apos;ll need to make to move forward. You
           then have to ask yourself &apos;can i just make an intuitive decision here&apos; or &apos;do i need to think about
-          this one&apos;. If answer is you can just make a quick intuitive decision, just retardmaxx forward &amp;
+          this one&apos;. If answer is you can just make a quick intuitive decision, just go with your intuition &amp;
           don&apos;t worry about it. But if you need to think about it, instead of just letting that decision get lost in
           your brain &amp; steal your energy (or not making it at all), put that decision down here so you can come back
           to them when you&apos;re ready.
