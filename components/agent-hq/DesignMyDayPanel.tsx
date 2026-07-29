@@ -39,10 +39,23 @@ const TASK_DURATION_HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 
 
 const FULL_DAY_START = 4 * 60;
 const FULL_DAY_END = 24 * 60;
+const FULL_DAY_SPAN = FULL_DAY_END - FULL_DAY_START;
+const CALENDAR_VIEWPORT_HEIGHT = 460;
 const CALENDAR_ZOOM_KEY = 'agentHQ_adminCalendarZoom';
-/** Pixels per minute — default ~60px/hour so hour blocks stay readable. */
-const CALENDAR_ZOOM_STEPS = [0.5, 0.65, 0.8, 1, 1.25, 1.5, 1.85, 2.25];
+/** 0% = whole day fits in the viewport; 100% = default readable size. */
+const MIN_CALENDAR_ZOOM = CALENDAR_VIEWPORT_HEIGHT / FULL_DAY_SPAN;
 const DEFAULT_CALENDAR_ZOOM = 1;
+const CALENDAR_ZOOM_STEPS = [
+  MIN_CALENDAR_ZOOM,
+  0.5,
+  0.65,
+  0.8,
+  DEFAULT_CALENDAR_ZOOM,
+  1.25,
+  1.5,
+  1.85,
+  2.25,
+];
 
 function nearestZoomIndex(pxPerMin: number): number {
   let best = 0;
@@ -55,6 +68,12 @@ function nearestZoomIndex(pxPerMin: number): number {
     }
   });
   return best;
+}
+
+function zoomPercentLabel(pxPerMin: number): number {
+  const pct =
+    ((pxPerMin - MIN_CALENDAR_ZOOM) / (DEFAULT_CALENDAR_ZOOM - MIN_CALENDAR_ZOOM)) * 100;
+  return Math.max(0, Math.round(pct));
 }
 
 /** 4am–11pm in 1-hour steps (fine-tune to 15m by dragging on the calendar). */
@@ -805,9 +824,10 @@ export default function DesignMyDayPanel() {
   const [pxPerMin, setPxPerMin] = useLocalStorage<number>(CALENDAR_ZOOM_KEY, DEFAULT_CALENDAR_ZOOM);
 
   const zoomIndex = nearestZoomIndex(pxPerMin);
-  const zoomPercent = Math.round((CALENDAR_ZOOM_STEPS[zoomIndex] / DEFAULT_CALENDAR_ZOOM) * 100);
+  const zoomPercent = zoomPercentLabel(CALENDAR_ZOOM_STEPS[zoomIndex]);
   const canZoomOut = zoomIndex > 0;
   const canZoomIn = zoomIndex < CALENDAR_ZOOM_STEPS.length - 1;
+  const atFullDayZoom = zoomIndex === 0;
 
   const persistBlocks = (next: DayBlock[]) => {
     setStore(prev => upsertActiveDayPlan(prev, next));
@@ -903,7 +923,8 @@ export default function DesignMyDayPanel() {
             title=""
             timelineStartMinutes={FULL_DAY_START}
             timelineEndMinutes={FULL_DAY_END}
-            maxBodyHeight={460}
+            maxBodyHeight={CALENDAR_VIEWPORT_HEIGHT}
+            noScroll={atFullDayZoom}
             pxPerMin={CALENDAR_ZOOM_STEPS[zoomIndex]}
             colorMap={colorMap}
             onBlocksChange={persistBlocks}
