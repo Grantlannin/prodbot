@@ -34,19 +34,11 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 
 const OPEN_LOOPS_KEY = 'agentHQ_openLoops';
 
-const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
-
 const BLOCK_COLORS: Record<DayBlock['kind'], { bg: string; border: string; text: string }> = {
   work: { bg: '#dbeafe', border: '#2563eb', text: '#1e3a8a' },
   commitment: { bg: '#f1f5f9', border: '#94a3b8', text: '#334155' },
   open_loop: { bg: '#fef9c3', border: '#ca8a04', text: '#713f12' },
 };
-
-function formatDurationLabel(minutes: number): string {
-  if (minutes % 60 === 0) return `${minutes / 60}h`;
-  if (minutes > 60) return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-  return `${minutes}m`;
-}
 
 /** Snaps "now" to the nearest 15 minutes, clamped to the Design my day window (4am–12am). */
 function defaultWorkStart(): number {
@@ -199,48 +191,47 @@ function TaskAddForm({
   submitLabel?: string;
 }) {
   const [taskKey, setTaskKey] = useState('');
-  const [time, setTime] = useState(() => minutesToTimeInput(defaultWorkStart()));
-  const [duration, setDuration] = useState(30);
+  const [time, setTime] = useState(() => formatMinutesLabel(defaultWorkStart()).toLowerCase());
+  const [error, setError] = useState('');
   const options = useMemo(() => flattenTaskOptions(groups), [groups]);
   const selected = options.find(t => taskOptionKey(t) === taskKey) ?? null;
 
   const submit = () => {
     if (!selected) return;
-    const startMinutes = parseTimeInput(time) ?? defaultWorkStart();
-    onAdd(selected, startMinutes, duration);
+    const startMinutes = parseTimeInput(time);
+    if (startMinutes == null) {
+      setError('Try a time like 9am or 2:30pm.');
+      return;
+    }
+    setError('');
+    onAdd(selected, startMinutes, 60);
     setTaskKey('');
   };
 
   return (
     <div style={styles.form}>
-      <label style={styles.fieldLabel}>Task</label>
+      <label style={styles.fieldLabel}>Choose a task</label>
       <TaskPicker groups={groups} value={taskKey} onChange={setTaskKey} />
 
-      <div style={styles.fieldRow}>
-        <div style={styles.fieldCol}>
-          <label style={styles.fieldLabel}>Start time</label>
-          <input
-            type="time"
-            value={time}
-            onChange={e => setTime(e.target.value)}
-            style={styles.timeInput}
-          />
-        </div>
-        <div style={styles.fieldCol}>
-          <label style={styles.fieldLabel}>Duration</label>
-          <select
-            value={duration}
-            onChange={e => setDuration(Number(e.target.value))}
-            style={styles.select}
-          >
-            {DURATION_OPTIONS.map(d => (
-              <option key={d} value={d}>
-                {formatDurationLabel(d)}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <label style={styles.fieldLabel}>Start time</label>
+      <input
+        type="text"
+        value={time}
+        onChange={e => {
+          setTime(e.target.value);
+          if (error) setError('');
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            submit();
+          }
+        }}
+        placeholder="e.g. 9am"
+        style={styles.textInput}
+      />
+      <p style={styles.hint}>(you can adjust the block by dragging it on the calendar)</p>
+      {error ? <p style={styles.errorText}>{error}</p> : null}
 
       <button
         type="button"
@@ -888,6 +879,12 @@ const styles: Record<string, CSSProperties> = {
     color: '#94a3b8',
     lineHeight: 1.45,
     fontStyle: 'italic',
+  },
+  hint: {
+    margin: '-2px 0 0',
+    fontSize: 11,
+    color: '#94a3b8',
+    lineHeight: 1.4,
   },
   primaryBtn: {
     border: 'none',
