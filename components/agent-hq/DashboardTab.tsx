@@ -338,7 +338,7 @@ export default function DashboardTab({
             <DashCard
               title="Admin calendar"
               headerRight={
-                <span style={styles.designDayHint}>Drag · Delete to remove</span>
+                <span style={styles.designDayHint}>Click · Delete to remove</span>
               }
             >
               <DesignMyDayPanel />

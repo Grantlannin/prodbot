@@ -862,8 +862,8 @@ export default function DesignMyDayPanel() {
     <div style={styles.root}>
       <div style={styles.toolbar}>
         <div style={styles.leadSubtitle}>
-          Add all the stuff that isn&apos;t your most important tasks for the day — work blocks,
-          commitments, and open loops. Click a block, then press Delete to remove it.
+          Add all the other stuff — commitments, open loops, etc. Click a block, then press Delete
+          to remove it.
         </div>
         <div style={styles.toolbarActions}>
           <button

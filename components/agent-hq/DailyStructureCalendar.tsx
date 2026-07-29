@@ -21,11 +21,8 @@ import {
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const SNAP = 15;
-/** Dragging edges cannot shrink below 1 hour. */
-const MIN_DRAG_DURATION = 60;
-/** +/- buttons adjust in 15-minute steps when under 1 hour. */
-const DURATION_STEP = 15;
-const MIN_STEP_DURATION = 15;
+/** Edge-drag cannot shrink a block below 15 minutes. */
+const MIN_DRAG_DURATION = 15;
 
 interface DailyStructureCalendarProps {
   blocks: DayBlock[];
@@ -184,22 +181,6 @@ export default function DailyStructureCalendar({
     window.addEventListener('mouseup', onUp);
   };
 
-  const nudgeDuration = (block: DayBlock, delta: number) => {
-    if (!onBlocksChange) return;
-    const maxByRange = Math.max(MIN_STEP_DURATION, rangeEnd - block.startMinutes);
-    let nextDuration = block.durationMinutes + delta;
-    if (delta < 0) {
-      nextDuration = Math.max(MIN_STEP_DURATION, nextDuration);
-    } else {
-      // Step controls only fine-tune under an hour; edge-drag handles longer.
-      nextDuration = Math.min(MIN_DRAG_DURATION, maxByRange, nextDuration);
-    }
-    if (nextDuration === block.durationMinutes) return;
-    onBlocksChange(
-      blocksRef.current.map(b => (b.id === block.id ? { ...b, durationMinutes: nextDuration } : b))
-    );
-  };
-
   const hourLabels: number[] = [];
   for (let m = rangeStart; m <= rangeEnd; m += 60) hourLabels.push(m);
 
@@ -238,12 +219,8 @@ export default function DailyStructureCalendar({
           ))}
           {sorted.map(block => {
             const colors = blockKindColor(block.kind, colorMap);
-            const underHour = block.durationMinutes < MIN_DRAG_DURATION;
             const canEdit = interactive && !!onBlocksChange;
-            /** At 1h, keep edge drag and allow − to step under an hour. */
-            const showStepControls = canEdit && block.durationMinutes <= MIN_DRAG_DURATION;
             const top = (block.startMinutes - rangeStart) * pxPerMin;
-            // Height always tracks duration so −/+ visibly shrink/grow the block.
             const height = Math.max(8, block.durationMinutes * pxPerMin);
             const dense = pxPerMin < 0.85;
             if (block.startMinutes + block.durationMinutes <= rangeStart) return null;
@@ -251,9 +228,6 @@ export default function DailyStructureCalendar({
             const endMinutes = block.startMinutes + block.durationMinutes;
             const rangeLabel = `${formatMinutesLabel(block.startMinutes)}–${formatMinutesLabel(endMinutes)}`;
             const selected = selectedId === block.id;
-            const canShrink = block.durationMinutes > MIN_STEP_DURATION;
-            const canGrow = block.durationMinutes < MIN_DRAG_DURATION &&
-              block.startMinutes + block.durationMinutes < rangeEnd;
             return (
               <div
                 key={block.id}
@@ -292,11 +266,11 @@ export default function DailyStructureCalendar({
                   </div>
                 ) : null}
                 <div style={styles.blockBody}>
-                  {canEdit && !underHour ? (
+                  {canEdit ? (
                     <div
                       style={{ ...styles.resizeHandle, ...styles.resizeHandleTop }}
                       onMouseDown={e => beginDrag(e, block, 'resize-start')}
-                      title="Drag to change start (1h minimum)"
+                      title="Drag to change start"
                     />
                   ) : null}
                   <div style={styles.blockTopRow}>
@@ -322,53 +296,12 @@ export default function DailyStructureCalendar({
                       </button>
                     ) : null}
                   </div>
-                  {canEdit && !underHour ? (
+                  {canEdit ? (
                     <div
                       style={{ ...styles.resizeHandle, ...styles.resizeHandleBottom }}
                       onMouseDown={e => beginDrag(e, block, 'resize-end')}
-                      title="Drag to change end (1h minimum)"
+                      title="Drag to change end"
                     />
-                  ) : null}
-                  {showStepControls ? (
-                    <div
-                      style={styles.stepControlsFloat}
-                      onMouseDown={e => e.stopPropagation()}
-                    >
-                      <button
-                        type="button"
-                        style={{
-                          ...styles.stepBtn,
-                          ...(!canShrink ? styles.stepBtnDisabled : {}),
-                        }}
-                        disabled={!canShrink}
-                        aria-label="Shrink by 15 minutes"
-                        title="−15 min"
-                        onClick={e => {
-                          e.stopPropagation();
-                          setSelectedId(block.id);
-                          nudgeDuration(block, -DURATION_STEP);
-                        }}
-                      >
-                        −
-                      </button>
-                      <button
-                        type="button"
-                        style={{
-                          ...styles.stepBtn,
-                          ...(!canGrow ? styles.stepBtnDisabled : {}),
-                        }}
-                        disabled={!canGrow}
-                        aria-label="Expand by 15 minutes"
-                        title="+15 min"
-                        onClick={e => {
-                          e.stopPropagation();
-                          setSelectedId(block.id);
-                          nudgeDuration(block, DURATION_STEP);
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
                   ) : null}
                 </div>
               </div>
@@ -552,41 +485,5 @@ const styles: Record<string, CSSProperties> = {
   },
   blockMetaSideDense: {
     fontSize: 9,
-  },
-  stepControlsFloat: {
-    position: 'absolute',
-    left: '50%',
-    bottom: -11,
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 3,
-    zIndex: 6,
-    padding: '2px 4px',
-    borderRadius: 999,
-    background: 'rgba(255,255,255,0.95)',
-    border: '1px solid rgba(15, 23, 42, 0.12)',
-    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)',
-  },
-  stepBtn: {
-    width: 20,
-    height: 18,
-    border: 'none',
-    borderRadius: 999,
-    padding: 0,
-    background: 'transparent',
-    color: '#0f172a',
-    fontSize: 13,
-    fontWeight: 700,
-    lineHeight: 1,
-    cursor: 'pointer',
-    fontFamily: font,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepBtnDisabled: {
-    opacity: 0.3,
-    cursor: 'not-allowed',
   },
 };
