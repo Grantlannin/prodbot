@@ -115,14 +115,15 @@ export function OpenLoopExplainModal({ onClose }: { onClose: () => void }) {
         </p>
         <ul style={explainStyles.list}>
           <li>
-            something you need to do but haven&apos;t (text person response, return amazon item, etc)
+            something you need to do but haven&apos;t (text person back, return amazon item today, etc)
           </li>
           <li>
-            a commitment you made that you need to remember (help a friend, doctor&apos;s appointment)
+            a commitment you made that you need to remember (help a friend with move, doctor&apos;s appointment, lunch
+            with stacy)
           </li>
           <li>
-            a decision you have to make that you haven&apos;t or are avoiding (figure out brand direction, decide on
-            posting schedule, decide who my ideal client is, etc)
+            a decision you have to make that you haven&apos;t yet or are avoiding (figure out brand direction, decide on
+            posting schedule, decide who my ideal client is for my service, etc)
           </li>
         </ul>
         <p style={explainStyles.para}>
