@@ -28,6 +28,7 @@ import GetCourseModal from './GetCourseModal';
 import EndSessionWorkCompleteDismiss from './EndSessionWorkCompleteDismiss';
 import { clearNightPrepDeepLinkParam, readNightPrepDeepLink } from './nightPrepReminder';
 import { fetchProfileDisplayName } from '@/lib/supabase/profile';
+import { isPlaceholderDisplayName } from './userProfile';
 import OnboardingNameModal from './OnboardingNameModal';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -77,7 +78,7 @@ function AgentHQInner() {
   }, [openNightPrep]);
 
   useEffect(() => {
-    if (!authEnabled || !user || profile.displayName.trim()) return;
+    if (!authEnabled || !user || !isPlaceholderDisplayName(profile.displayName)) return;
     void fetchProfileDisplayName().then(name => {
       if (name) completeOnboarding(name);
     });

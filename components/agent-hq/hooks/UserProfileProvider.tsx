@@ -7,8 +7,10 @@ import {
   CELEBRATION_SETTINGS_STORAGE_KEY,
   DEFAULT_CELEBRATION_SETTINGS,
   DEFAULT_USER_PROFILE,
+  DISPLAY_NAME_PLACEHOLDER,
   USER_PROFILE_STORAGE_KEY,
   formatCelebrationMessage,
+  isPlaceholderDisplayName,
   type CelebrationSettings,
   type UserProfile,
 } from '../userProfile';
@@ -32,15 +34,26 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     DEFAULT_CELEBRATION_SETTINGS
   );
 
+  const resolvedProfile = useMemo<UserProfile>(
+    () => ({
+      ...profile,
+      displayName: profile.displayName.trim() || DISPLAY_NAME_PLACEHOLDER,
+      onboardingComplete: true,
+    }),
+    [profile]
+  );
+
   const setDisplayName = useCallback(
     (name: string) => {
-      const trimmed = name.trim();
+      const trimmed = name.trim() || DISPLAY_NAME_PLACEHOLDER;
       setProfile(prev => ({
         ...prev,
         displayName: trimmed,
         onboardingComplete: true,
       }));
-      void saveProfileDisplayName(trimmed);
+      if (!isPlaceholderDisplayName(trimmed)) {
+        void saveProfileDisplayName(trimmed);
+      }
     },
     [setProfile]
   );
@@ -48,6 +61,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
   const completeOnboarding = useCallback(
     (name: string) => {
       const trimmed = name.trim();
+      if (!trimmed || isPlaceholderDisplayName(trimmed)) return;
       setProfile({
         displayName: trimmed,
         onboardingComplete: true,
@@ -72,12 +86,12 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
   }, [setCelebrationState]);
 
   const getCelebrationMessage = useCallback(() => {
-    return formatCelebrationMessage(celebration.messageTemplate, profile.displayName);
-  }, [celebration.messageTemplate, profile.displayName]);
+    return formatCelebrationMessage(celebration.messageTemplate, resolvedProfile.displayName);
+  }, [celebration.messageTemplate, resolvedProfile.displayName]);
 
   const value = useMemo(
     () => ({
-      profile,
+      profile: resolvedProfile,
       setDisplayName,
       completeOnboarding,
       celebration,
@@ -85,7 +99,15 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
       resetCelebrationTemplate,
       getCelebrationMessage,
     }),
-    [profile, setDisplayName, completeOnboarding, celebration, setCelebration, resetCelebrationTemplate, getCelebrationMessage]
+    [
+      resolvedProfile,
+      setDisplayName,
+      completeOnboarding,
+      celebration,
+      setCelebration,
+      resetCelebrationTemplate,
+      getCelebrationMessage,
+    ]
   );
 
   return <UserProfileContext.Provider value={value}>{children}</UserProfileContext.Provider>;

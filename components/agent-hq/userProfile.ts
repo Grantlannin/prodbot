@@ -1,6 +1,8 @@
 export const USER_PROFILE_STORAGE_KEY = 'agentHQ_userProfile';
 export const CELEBRATION_SETTINGS_STORAGE_KEY = 'agentHQ_celebrationSettings';
 
+export const DISPLAY_NAME_PLACEHOLDER = 'what should I call you?';
+
 export interface UserProfile {
   displayName: string;
   onboardingComplete: boolean;
@@ -19,8 +21,8 @@ export const DEFAULT_CELEBRATION_TEMPLATE =
   'YOUR A FUCKING BEAST. YOURE A FUCKING ANIMAL. NOBODY CAN TAME YOU. THE WORLD IS YOURS, {name}!';
 
 export const DEFAULT_USER_PROFILE: UserProfile = {
-  displayName: '',
-  onboardingComplete: false,
+  displayName: DISPLAY_NAME_PLACEHOLDER,
+  onboardingComplete: true,
 };
 
 export const DEFAULT_CELEBRATION_SETTINGS: CelebrationSettings = {
@@ -32,12 +34,18 @@ export const DEFAULT_CELEBRATION_SETTINGS: CelebrationSettings = {
 export const ONBOARDING_NAME_PROMPT =
   'Initialized. To tailor this system to you, we need to build your profile. What name should we call you?';
 
+export function isPlaceholderDisplayName(name: string): boolean {
+  const trimmed = name.trim();
+  if (!trimmed) return true;
+  return trimmed.toLowerCase() === DISPLAY_NAME_PLACEHOLDER.toLowerCase();
+}
+
 export function formatCelebrationMessage(template: string, displayName: string): string {
-  const name = displayName.trim() || 'CHAMP';
+  const name = isPlaceholderDisplayName(displayName) ? 'CHAMP' : displayName.trim();
   return template.replace(/\{name\}/gi, name.toUpperCase());
 }
 
 export function welcomeLabel(displayName: string): string {
-  const name = displayName.trim();
-  return name ? `Welcome back, ${name}` : 'Welcome back';
+  const name = displayName.trim() || DISPLAY_NAME_PLACEHOLDER;
+  return `Welcome back, ${name}`;
 }
