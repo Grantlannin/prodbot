@@ -78,7 +78,7 @@ export default function LandingPage() {
     <MarketingShell>
       <section className="pt-8 sm:pt-14">
         <h1 className="mb-5 max-w-xl text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-          Fighter pilots have their cockpit. You have your daywinner bot.
+          The world&apos;s most elite fighter pilots have their cockpit. You have your daywinner bot.
         </h1>
         <p className="mb-8 max-w-lg text-lg leading-relaxed text-slate-600">
           Daywinner bot is your &ldquo;productivity dashboard&rdquo; tool that helps you organize your work,
