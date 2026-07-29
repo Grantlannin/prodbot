@@ -22,6 +22,7 @@ import BeginMyDayButton from './BeginMyDayButton';
 import EodSendModal from './EodSendModal';
 import StartWorkModal, { type StartWorkPreset } from './StartWorkModal';
 import HowToStartBanner from './HowToStartBanner';
+import DesignMyDayPanel from './DesignMyDayPanel';
 import { sessionLabel } from './quickstartTask';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
 
@@ -349,6 +350,14 @@ export default function DashboardTab({
           </DashCard>
         </div>
 
+        <DashCard
+          title="Design my day"
+          headerRight={
+            <span style={styles.designDayHint}>Drag blocks to move · resets tomorrow</span>
+          }
+        >
+          <DesignMyDayPanel />
+        </DashCard>
       </div>
       {showOpenLoopExplain ? (
         <OpenLoopExplainModal onClose={() => setShowOpenLoopExplain(false)} />
@@ -695,5 +704,11 @@ const styles: Record<string, CSSProperties> = {
   nightPrepCell: {
     scrollMarginTop: 24,
     minWidth: 0,
+  },
+  designDayHint: {
+    fontSize: 11,
+    fontWeight: 500,
+    color: '#94a3b8',
+    whiteSpace: 'nowrap',
   },
 };
