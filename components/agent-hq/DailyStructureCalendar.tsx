@@ -179,6 +179,8 @@ export default function DailyStructureCalendar({
             // Skip blocks fully outside the visible window
             if (block.startMinutes + block.durationMinutes <= rangeStart) return null;
             if (block.startMinutes >= rangeEnd) return null;
+            const endMinutes = block.startMinutes + block.durationMinutes;
+            const rangeLabel = `${formatMinutesLabel(block.startMinutes)}–${formatMinutesLabel(endMinutes)}`;
             const canEdit = interactive && !!onBlocksChange;
             return (
               <div
@@ -194,7 +196,7 @@ export default function DailyStructureCalendar({
                   cursor: canEdit ? 'grab' : 'default',
                 }}
                 onMouseDown={e => beginDrag(e, block, 'move')}
-                title={`${block.title} (${formatMinutesLabel(block.startMinutes)}) · ${block.durationMinutes}m`}
+                title={`${block.title} · ${rangeLabel}`}
               >
                 {canEdit ? (
                   <div
@@ -223,9 +225,7 @@ export default function DailyStructureCalendar({
                   ) : null}
                 </div>
                 {!dense || height >= 28 ? (
-                  <div style={styles.blockMeta}>
-                    {formatMinutesLabel(block.startMinutes)} · {block.durationMinutes}m
-                  </div>
+                  <div style={styles.blockMeta}>{rangeLabel}</div>
                 ) : null}
                 {canEdit ? (
                   <div
@@ -308,34 +308,34 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 4,
     right: 4,
-    border: '1px solid',
-    borderRadius: 8,
+    border: '3px solid',
+    borderRadius: 12,
     padding: '6px 8px',
     overflow: 'hidden',
     boxSizing: 'border-box',
     userSelect: 'none',
+    boxShadow: 'none',
   },
   blockDense: {
     padding: '3px 6px',
-    borderRadius: 6,
+    borderRadius: 10,
+    borderWidth: 3,
   },
   resizeHandle: {
     position: 'absolute',
-    left: 8,
-    right: 8,
-    height: 8,
+    left: 0,
+    right: 0,
+    height: 10,
     zIndex: 2,
-    borderRadius: 999,
+    background: 'transparent',
   },
   resizeHandleTop: {
     top: 0,
     cursor: 'ns-resize',
-    background: 'linear-gradient(to bottom, rgba(15,23,42,0.18), transparent)',
   },
   resizeHandleBottom: {
     bottom: 0,
     cursor: 'ns-resize',
-    background: 'linear-gradient(to top, rgba(15,23,42,0.18), transparent)',
   },
   blockTopRow: {
     display: 'flex',

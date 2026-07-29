@@ -24,9 +24,6 @@ import {
   formatMinutesLabel,
   getTodayPlan,
   makeDayBlockId,
-  minutesToTimeInput,
-  parseTimeInput,
-  parseTimeRangeInput,
   sortBlocks,
   upsertTodayPlan,
   type DailyStructureStore,
@@ -40,6 +37,17 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 const OPEN_LOOPS_KEY = 'agentHQ_openLoops';
 
 const TASK_DURATION_HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] as const;
+
+/** 4am–11:45pm in 15-minute steps (matches the calendar window). */
+const START_TIME_OPTIONS: number[] = (() => {
+  const out: number[] = [];
+  for (let m = 4 * 60; m < 24 * 60; m += 15) out.push(m);
+  return out;
+})();
+
+function formatBlockRange(startMinutes: number, durationMinutes: number): string {
+  return `${formatMinutesLabel(startMinutes)}–${formatMinutesLabel(startMinutes + durationMinutes)}`;
+}
 
 const KIND_TAB_LABELS: Record<DayBlockKind, string> = {
   work: 'Task',
@@ -205,20 +213,13 @@ function TaskAddForm({
   submitLabel?: string;
 }) {
   const [taskKey, setTaskKey] = useState('');
-  const [time, setTime] = useState(() => formatMinutesLabel(defaultWorkStart()).toLowerCase());
+  const [startMinutes, setStartMinutes] = useState(() => defaultWorkStart());
   const [durationHours, setDurationHours] = useState(1);
-  const [error, setError] = useState('');
   const options = useMemo(() => flattenTaskOptions(groups), [groups]);
   const selected = options.find(t => taskOptionKey(t) === taskKey) ?? null;
 
   const submit = () => {
     if (!selected) return;
-    const startMinutes = parseTimeInput(time);
-    if (startMinutes == null) {
-      setError('Try a time like 9am or 2:30pm.');
-      return;
-    }
-    setError('');
     onAdd(selected, startMinutes, durationHours * 60);
     setTaskKey('');
   };
@@ -229,22 +230,17 @@ function TaskAddForm({
       <TaskPicker groups={groups} value={taskKey} onChange={setTaskKey} />
 
       <label style={styles.fieldLabel}>Start time</label>
-      <input
-        type="text"
-        value={time}
-        onChange={e => {
-          setTime(e.target.value);
-          if (error) setError('');
-        }}
-        onKeyDown={e => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            submit();
-          }
-        }}
-        placeholder="e.g. 9am"
-        style={styles.textInput}
-      />
+      <select
+        value={startMinutes}
+        onChange={e => setStartMinutes(Number(e.target.value))}
+        style={styles.select}
+      >
+        {START_TIME_OPTIONS.map(mins => (
+          <option key={mins} value={mins}>
+            {formatMinutesLabel(mins)}
+          </option>
+        ))}
+      </select>
       <p style={styles.hint}>(you can adjust the block by dragging it on the calendar)</p>
 
       <label style={styles.fieldLabel}>Duration</label>
@@ -259,7 +255,6 @@ function TaskAddForm({
           </option>
         ))}
       </select>
-      {error ? <p style={styles.errorText}>{error}</p> : null}
 
       <button
         type="button"
@@ -281,8 +276,8 @@ function CommitmentAddForm({
   submitLabel?: string;
 }) {
   const [title, setTitle] = useState('');
-  const [start, setStart] = useState(() => minutesToTimeInput(defaultWorkStart()));
-  const [end, setEnd] = useState(() => minutesToTimeInput(defaultWorkStart() + 60));
+  const [startMinutes, setStartMinutes] = useState(() => defaultWorkStart());
+  const [endMinutes, setEndMinutes] = useState(() => defaultWorkStart() + 60);
   const [error, setError] = useState('');
 
   const submit = () => {
@@ -291,13 +286,12 @@ function CommitmentAddForm({
       setError('Give this commitment a name.');
       return;
     }
-    const range = parseTimeRangeInput(`${start}-${end}`);
-    if (!range) {
-      setError('Check the start and end time.');
+    if (endMinutes <= startMinutes) {
+      setError('End time needs to be after start time.');
       return;
     }
     setError('');
-    onAdd(trimmed, range.startMinutes, range.durationMinutes);
+    onAdd(trimmed, startMinutes, endMinutes - startMinutes);
     setTitle('');
   };
 
@@ -318,21 +312,32 @@ function CommitmentAddForm({
       <div style={styles.fieldRow}>
         <div style={styles.fieldCol}>
           <label style={styles.fieldLabel}>Start</label>
-          <input
-            type="time"
-            value={start}
-            onChange={e => setStart(e.target.value)}
-            style={styles.timeInput}
-          />
+          <select
+            value={startMinutes}
+            onChange={e => setStartMinutes(Number(e.target.value))}
+            style={styles.select}
+          >
+            {START_TIME_OPTIONS.map(mins => (
+              <option key={mins} value={mins}>
+                {formatMinutesLabel(mins)}
+              </option>
+            ))}
+          </select>
         </div>
         <div style={styles.fieldCol}>
           <label style={styles.fieldLabel}>End</label>
-          <input
-            type="time"
-            value={end}
-            onChange={e => setEnd(e.target.value)}
-            style={styles.timeInput}
-          />
+          <select
+            value={endMinutes}
+            onChange={e => setEndMinutes(Number(e.target.value))}
+            style={styles.select}
+          >
+            {START_TIME_OPTIONS.map(mins => (
+              <option key={mins} value={mins}>
+                {formatMinutesLabel(mins)}
+              </option>
+            ))}
+            <option value={24 * 60}>{formatMinutesLabel(24 * 60)}</option>
+          </select>
         </div>
       </div>
 
@@ -355,12 +360,11 @@ function LoopAddForm({
   submitLabel?: string;
 }) {
   const [noteId, setNoteId] = useState('');
-  const [time, setTime] = useState(() => minutesToTimeInput(defaultWorkStart()));
+  const [startMinutes, setStartMinutes] = useState(() => defaultWorkStart());
   const selected = notes.find(n => n.id === noteId) ?? null;
 
   const submit = () => {
     if (!selected) return;
-    const startMinutes = parseTimeInput(time) ?? defaultWorkStart();
     onAdd(selected, startMinutes);
     setNoteId('');
   };
@@ -371,7 +375,17 @@ function LoopAddForm({
       <LoopPicker notes={notes} value={noteId} onChange={setNoteId} />
 
       <label style={styles.fieldLabel}>Time</label>
-      <input type="time" value={time} onChange={e => setTime(e.target.value)} style={styles.timeInput} />
+      <select
+        value={startMinutes}
+        onChange={e => setStartMinutes(Number(e.target.value))}
+        style={styles.select}
+      >
+        {START_TIME_OPTIONS.map(mins => (
+          <option key={mins} value={mins}>
+            {formatMinutesLabel(mins)}
+          </option>
+        ))}
+      </select>
 
       <button
         type="button"
@@ -534,7 +548,9 @@ function DraftList({
             <span
               style={{ ...styles.draftSwatch, background: colors.bg, borderColor: colors.border }}
             />
-            <span style={styles.draftTime}>{formatMinutesLabel(block.startMinutes)}</span>
+            <span style={styles.draftTime}>
+              {formatBlockRange(block.startMinutes, block.durationMinutes)}
+            </span>
             <span style={styles.draftTitle}>{block.title}</span>
             <button
               type="button"
@@ -713,7 +729,9 @@ function DesignMyDayGuidedModal({
                             borderColor: colors.border,
                           }}
                         />
-                        <span style={styles.previewTime}>{formatMinutesLabel(block.startMinutes)}</span>
+                        <span style={styles.previewTime}>
+                          {formatBlockRange(block.startMinutes, block.durationMinutes)}
+                        </span>
                         <span style={styles.previewTitle}>{block.title}</span>
                       </div>
                     );
