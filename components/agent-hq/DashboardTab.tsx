@@ -289,9 +289,9 @@ export default function DashboardTab({
       <div style={styles.captureSection}>
         <div style={styles.upperHalf}>
           <DashCard
-            title="Projects"
-            headerRight={
-              <div style={styles.projectsHeaderRight}>
+            title={
+              <>
+                Projects
                 <button
                   type="button"
                   onClick={() => projectsRef.current?.addProject()}
@@ -299,10 +299,12 @@ export default function DashboardTab({
                 >
                   Add project
                 </button>
-                {selectedProjectProgress && selectedProjectProgress.total > 0 ? (
-                  <ProjectProgressBar progress={selectedProjectProgress} compact />
-                ) : null}
-              </div>
+              </>
+            }
+            headerRight={
+              selectedProjectProgress && selectedProjectProgress.total > 0 ? (
+                <ProjectProgressBar progress={selectedProjectProgress} compact />
+              ) : null
             }
           >
             <ProjectsPanel
@@ -371,7 +373,7 @@ function DashCard({
   noPad,
   headerRight,
 }: {
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
   noPad?: boolean;
   headerRight?: ReactNode;
@@ -416,7 +418,16 @@ function DashCard({
             gap: 10,
           }}
         >
-          <span style={{ minWidth: 0 }}>{title}</span>
+          <span
+            style={{
+              minWidth: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
+            {title}
+          </span>
           {headerRight ? <span style={{ flexShrink: 0 }}>{headerRight}</span> : null}
         </span>
       </div>
