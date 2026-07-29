@@ -182,20 +182,20 @@ export default function DailyStructureCalendar({
             const endMinutes = block.startMinutes + block.durationMinutes;
             const rangeLabel = `${formatMinutesLabel(block.startMinutes)}–${formatMinutesLabel(endMinutes)}`;
             const canEdit = interactive && !!onBlocksChange;
-            const isShort = block.durationMinutes < 60;
             return (
               <div
                 key={block.id}
                 style={{
                   ...styles.block,
                   ...(dense ? styles.blockDense : {}),
-                  ...(isShort ? styles.blockShort : {}),
                   top,
                   height,
                   background: colors.bg,
                   borderColor: colors.border,
                   color: colors.text,
                   cursor: canEdit ? 'grab' : 'default',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
                 onMouseDown={e => beginDrag(e, block, 'move')}
                 title={`${block.title} · ${rangeLabel}`}
@@ -207,15 +207,13 @@ export default function DailyStructureCalendar({
                     title="Drag to change start"
                   />
                 ) : null}
-                <div style={{ ...styles.blockTopRow, ...(isShort ? styles.blockTopRowShort : {}) }}>
+                <div style={styles.blockTopRow}>
                   <div style={{ ...styles.blockTitle, ...(dense ? styles.blockTitleDense : {}) }}>
                     {block.title}
                   </div>
-                  {isShort ? (
-                    <div style={{ ...styles.blockMetaSide, ...(dense ? styles.blockMetaSideDense : {}) }}>
-                      {rangeLabel}
-                    </div>
-                  ) : null}
+                  <div style={{ ...styles.blockMetaSide, ...(dense ? styles.blockMetaSideDense : {}) }}>
+                    {rangeLabel}
+                  </div>
                   {onRemoveBlock ? (
                     <button
                       type="button"
@@ -231,9 +229,6 @@ export default function DailyStructureCalendar({
                     </button>
                   ) : null}
                 </div>
-                {!isShort && (!dense || height >= 28) ? (
-                  <div style={styles.blockMeta}>{rangeLabel}</div>
-                ) : null}
                 {canEdit ? (
                   <div
                     style={{ ...styles.resizeHandle, ...styles.resizeHandleBottom }}
@@ -324,15 +319,9 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: 'none',
   },
   blockDense: {
-    padding: '3px 6px',
+    padding: '2px 6px',
     borderRadius: 10,
     borderWidth: 3,
-  },
-  blockShort: {
-    display: 'flex',
-    alignItems: 'center',
-    paddingTop: 2,
-    paddingBottom: 2,
   },
   resizeHandle: {
     position: 'absolute',
@@ -352,28 +341,25 @@ const styles: Record<string, CSSProperties> = {
   },
   blockTopRow: {
     display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 4,
-  },
-  blockTopRowShort: {
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
     width: '100%',
     minWidth: 0,
   },
   blockTitle: {
     fontSize: 12,
     fontWeight: 700,
-    lineHeight: 1.25,
+    lineHeight: 1.2,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     minWidth: 0,
-    flex: 1,
+    flex: '1 1 auto',
   },
   blockTitleDense: {
     fontSize: 11,
-    lineHeight: 1.2,
+    lineHeight: 1.15,
   },
   removeBtn: {
     flexShrink: 0,
@@ -387,18 +373,14 @@ const styles: Record<string, CSSProperties> = {
     padding: 0,
     fontFamily: font,
   },
-  blockMeta: {
-    fontSize: 10,
-    opacity: 0.85,
-    marginTop: 2,
-  },
   blockMetaSide: {
-    flexShrink: 0,
+    flex: '0 0 auto',
+    marginLeft: 'auto',
     fontSize: 10,
     fontWeight: 600,
-    opacity: 0.9,
+    opacity: 0.92,
     whiteSpace: 'nowrap',
-    letterSpacing: '-0.01em',
+    letterSpacing: '-0.02em',
   },
   blockMetaSideDense: {
     fontSize: 9,
