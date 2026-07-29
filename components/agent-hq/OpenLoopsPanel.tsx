@@ -212,9 +212,7 @@ export default function OpenLoopsPanel() {
             prompt questions to de-load brain-weight
           </button>
         }
-        renderEditorExtra={note =>
-          note.kind === 'decision' ? null : <OpenLoopCalendarReminder key={note.id} note={note} />
-        }
+        renderEditorExtra={note => <OpenLoopCalendarReminder key={note.id} note={note} />}
       />
       {showQuestions && (
         <QuestionsModal

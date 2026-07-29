@@ -2,22 +2,53 @@
 
 import { useMemo, useState, type CSSProperties } from 'react';
 import type { CaptureNote } from './types';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import { noteKind, noteListLabel } from './openLoopsUi';
 import {
   buildGoogleCalendarUrl,
   buildOutlookCalendarEventUrl,
   buildSingleEventIcs,
-  defaultReminderDate,
   downloadIcsFile,
-  parseDatetimeLocalValue,
-  toDatetimeLocalValue,
 } from './googleCalendarLink';
+import {
+  DAILY_STRUCTURE_KEY,
+  OPEN_LOOP_POINT_DURATION_MINUTES,
+  formatMinutesLabel,
+  getActiveDayPlan,
+  makeDayBlockId,
+  sortBlocks,
+  upsertActiveDayPlan,
+  type DailyStructureStore,
+} from './stuckHelp/dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+const START_TIME_OPTIONS: number[] = (() => {
+  const out: number[] = [];
+  for (let m = 4 * 60; m < 24 * 60; m += 60) out.push(m);
+  return out;
+})();
+
+function defaultStartMinutes(): number {
+  const now = new Date();
+  const minutesNow = now.getHours() * 60 + now.getMinutes();
+  const snapped = Math.round(minutesNow / 60) * 60;
+  return Math.max(4 * 60, Math.min(22 * 60, snapped));
+}
+
+function startDateFromMinutes(startMinutes: number): Date {
+  const d = new Date();
+  d.setSeconds(0, 0);
+  d.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
+  return d;
+}
+
 function eventTitle(note: CaptureNote): string {
-  const t = note.title.trim();
-  if (t) return `Open loop: ${t}`;
-  return 'Open loop reminder';
+  const label = noteListLabel(note, []);
+  if (noteKind(note) === 'decision') {
+    return label ? `Decision: ${label}` : 'Unmade decision';
+  }
+  return label ? `Open loop: ${label}` : 'Open loop reminder';
 }
 
 /** Short description for calendar links — avoids huge URLs from full note body. */
@@ -28,87 +59,88 @@ function calendarDetails(note: CaptureNote): string {
     .map(l => l.trim())
     .filter(l => l && !skipPrefixes.some(prefix => l.startsWith(prefix)));
 
-  const text = lines.join('\n').trim() || note.title.trim() || 'Open loop reminder';
+  const text = lines.join('\n').trim() || note.title.trim() || eventTitle(note);
   return text.length > 480 ? `${text.slice(0, 477)}…` : text;
 }
 
 export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }) {
-  const [when, setWhen] = useState(() => toDatetimeLocalValue(defaultReminderDate()));
+  const [startMinutes, setStartMinutes] = useState(defaultStartMinutes);
+  const [addedFlash, setAddedFlash] = useState(false);
+  const [, setDayStore] = useLocalStorage<DailyStructureStore>(DAILY_STRUCTURE_KEY, {});
 
-  const start = useMemo(() => parseDatetimeLocalValue(when), [when]);
-  const valid = start !== null && start.getTime() > Date.now() - 60_000;
+  const start = useMemo(() => startDateFromMinutes(startMinutes), [startMinutes]);
 
   const eventOpts = useMemo(
-    () =>
-      start
-        ? {
-            title: eventTitle(note),
-            details: calendarDetails(note),
-            start,
-            durationMinutes: 30,
-          }
-        : null,
+    () => ({
+      title: eventTitle(note),
+      details: calendarDetails(note),
+      start,
+      durationMinutes: 30,
+    }),
     [note, start]
   );
 
   const openGoogle = () => {
-    if (!eventOpts) return;
     const url = buildGoogleCalendarUrl({ ...eventOpts, maxDetailsLength: 480 });
     window.open(url, '_blank');
   };
 
   const openApple = () => {
-    if (!eventOpts) return;
     downloadIcsFile(buildSingleEventIcs(eventOpts), 'open-loop.ics');
   };
 
   const openOutlook = () => {
-    if (!eventOpts) return;
     const url = buildOutlookCalendarEventUrl(eventOpts);
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const btnStyle = (disabled: boolean): CSSProperties => ({
-    ...styles.calendarBtn,
-    ...(disabled ? styles.btnDisabled : {}),
-  });
+  const addToDesignMyDay = () => {
+    setDayStore(prev => {
+      const existing = getActiveDayPlan(prev)?.blocks ?? [];
+      const block = {
+        id: makeDayBlockId(),
+        title: noteListLabel(note, []),
+        startMinutes,
+        durationMinutes: OPEN_LOOP_POINT_DURATION_MINUTES,
+        kind: 'open_loop' as const,
+        openLoopId: note.id,
+      };
+      return upsertActiveDayPlan(prev, sortBlocks([...existing, block]));
+    });
+    setAddedFlash(true);
+    window.setTimeout(() => setAddedFlash(false), 1600);
+  };
 
   return (
     <div style={styles.wrap}>
       <div style={styles.timeRow}>
-        <span style={styles.label}>Remind me</span>
-        <input
-          type="datetime-local"
-          value={when}
-          onChange={e => setWhen(e.target.value)}
-          style={styles.input}
-          aria-label="Open loop reminder time"
-        />
+        <span style={styles.label}>Time</span>
+        <select
+          value={startMinutes}
+          onChange={e => setStartMinutes(Number(e.target.value))}
+          style={styles.select}
+          aria-label="Time"
+        >
+          {START_TIME_OPTIONS.map(mins => (
+            <option key={mins} value={mins}>
+              {formatMinutesLabel(mins)}
+            </option>
+          ))}
+        </select>
       </div>
 
+      <button type="button" onClick={addToDesignMyDay} style={styles.primaryBtn}>
+        {addedFlash ? 'Added to calendar' : 'Add to design your day calendar'}
+      </button>
+
       <div style={styles.calendarActions}>
-        <button
-          type="button"
-          onClick={openGoogle}
-          disabled={!valid}
-          style={btnStyle(!valid)}
-        >
+        <button type="button" onClick={openGoogle} style={styles.calendarBtn}>
           Google Calendar
         </button>
-        <button
-          type="button"
-          onClick={openApple}
-          disabled={!valid}
-          style={btnStyle(!valid)}
-        >
+        <button type="button" onClick={openApple} style={styles.calendarBtn}>
           Apple Calendar
         </button>
-        <button
-          type="button"
-          onClick={openOutlook}
-          disabled={!valid}
-          style={btnStyle(!valid)}
-        >
+        <button type="button" onClick={openOutlook} style={styles.calendarBtn}>
           Outlook
         </button>
       </div>
@@ -135,7 +167,7 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 500,
     color: '#64748b',
   },
-  input: {
+  select: {
     width: '100%',
     border: '1px solid #e2e8f0',
     borderRadius: 6,
@@ -145,6 +177,20 @@ const styles: Record<string, CSSProperties> = {
     color: '#0f172a',
     background: '#fff',
     boxSizing: 'border-box',
+  },
+  primaryBtn: {
+    width: '100%',
+    border: 'none',
+    borderRadius: 8,
+    padding: '9px 12px',
+    fontSize: 12,
+    fontWeight: 600,
+    fontFamily: font,
+    letterSpacing: '-0.01em',
+    background: '#0f172a',
+    color: '#f8fafc',
+    cursor: 'pointer',
+    boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.35)',
   },
   calendarActions: {
     display: 'flex',
@@ -163,9 +209,5 @@ const styles: Record<string, CSSProperties> = {
     color: '#0f172a',
     cursor: 'pointer',
     textAlign: 'left',
-  },
-  btnDisabled: {
-    opacity: 0.45,
-    cursor: 'not-allowed',
   },
 };
