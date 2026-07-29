@@ -49,7 +49,7 @@ function formatBlockRange(startMinutes: number, durationMinutes: number): string
 }
 
 const KIND_TAB_LABELS: Record<DayBlockKind, string> = {
-  work: 'Task',
+  work: 'Work block',
   commitment: 'Commitment',
   open_loop: 'Open loop / decision',
 };
@@ -806,7 +806,7 @@ export default function DesignMyDayPanel() {
   };
 
   const tabs: { id: AddTab; label: string }[] = [
-    { id: 'task', label: 'Task' },
+    { id: 'task', label: 'Work block' },
     { id: 'commitment', label: 'Commitment' },
     { id: 'loop', label: 'Open loop' },
     { id: 'colors', label: 'Colors' },
