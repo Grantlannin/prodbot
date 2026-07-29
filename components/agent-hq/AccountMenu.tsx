@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useRef, useEffect, type CSSProperties } from 'react';
 import { useAuth } from './hooks/AuthProvider';
 import { useUserProfile } from './hooks/UserProfileProvider';
@@ -177,6 +178,10 @@ export default function AccountMenu() {
             </div>
           ) : null}
         </div>
+      ) : authEnabled ? (
+        <Link href="/login?next=/app" style={styles.signInLink}>
+          Sign in
+        </Link>
       ) : null}
     </div>
   );
@@ -239,6 +244,18 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
     padding: '6px 10px',
     cursor: 'pointer',
+  },
+  signInLink: {
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    background: '#f8fafc',
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: 600,
+    fontFamily: font,
+    padding: '6px 10px',
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
   },
   menu: {
     position: 'absolute',
