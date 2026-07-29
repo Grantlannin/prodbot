@@ -310,8 +310,8 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 4,
     right: 4,
-    border: '3px solid',
-    borderRadius: 12,
+    border: '1px solid',
+    borderRadius: 10,
     padding: '6px 8px',
     overflow: 'hidden',
     boxSizing: 'border-box',
@@ -320,8 +320,8 @@ const styles: Record<string, CSSProperties> = {
   },
   blockDense: {
     padding: '2px 6px',
-    borderRadius: 10,
-    borderWidth: 3,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   resizeHandle: {
     position: 'absolute',
