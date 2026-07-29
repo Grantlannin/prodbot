@@ -183,11 +183,14 @@ export default function DailyStructureCalendar({
 
   const nudgeDuration = (block: DayBlock, delta: number) => {
     if (!onBlocksChange) return;
-    const maxDuration = Math.max(MIN_STEP_DURATION, rangeEnd - block.startMinutes);
-    const nextDuration = Math.max(
-      MIN_STEP_DURATION,
-      Math.min(maxDuration, block.durationMinutes + delta)
-    );
+    const maxByRange = Math.max(MIN_STEP_DURATION, rangeEnd - block.startMinutes);
+    let nextDuration = block.durationMinutes + delta;
+    if (delta < 0) {
+      nextDuration = Math.max(MIN_STEP_DURATION, nextDuration);
+    } else {
+      // Step controls only fine-tune under an hour; edge-drag handles longer.
+      nextDuration = Math.min(MIN_DRAG_DURATION, maxByRange, nextDuration);
+    }
     if (nextDuration === block.durationMinutes) return;
     onBlocksChange(
       blocksRef.current.map(b => (b.id === block.id ? { ...b, durationMinutes: nextDuration } : b))
@@ -237,10 +240,8 @@ export default function DailyStructureCalendar({
             /** At 1h, keep edge drag and allow − to step under an hour. */
             const showStepControls = canEdit && block.durationMinutes <= MIN_DRAG_DURATION;
             const top = (block.startMinutes - rangeStart) * pxPerMin;
-            const height = Math.max(
-              showStepControls ? 28 : pxPerMin >= 0.9 ? 22 : 16,
-              block.durationMinutes * pxPerMin
-            );
+            // Height always tracks duration so −/+ visibly shrink/grow the block.
+            const height = Math.max(8, block.durationMinutes * pxPerMin);
             const dense = pxPerMin < 0.85;
             if (block.startMinutes + block.durationMinutes <= rangeStart) return null;
             if (block.startMinutes >= rangeEnd) return null;
@@ -248,7 +249,8 @@ export default function DailyStructureCalendar({
             const rangeLabel = `${formatMinutesLabel(block.startMinutes)}–${formatMinutesLabel(endMinutes)}`;
             const selected = selectedId === block.id;
             const canShrink = block.durationMinutes > MIN_STEP_DURATION;
-            const canGrow = block.startMinutes + block.durationMinutes < rangeEnd;
+            const canGrow = block.durationMinutes < MIN_DRAG_DURATION &&
+              block.startMinutes + block.durationMinutes < rangeEnd;
             return (
               <div
                 key={block.id}
@@ -301,46 +303,6 @@ export default function DailyStructureCalendar({
                     <div style={{ ...styles.blockMetaSide, ...(dense ? styles.blockMetaSideDense : {}) }}>
                       {rangeLabel}
                     </div>
-                    {showStepControls ? (
-                      <div style={styles.stepControls}>
-                        <button
-                          type="button"
-                          style={{
-                            ...styles.stepBtn,
-                            ...(!canShrink ? styles.stepBtnDisabled : {}),
-                          }}
-                          disabled={!canShrink}
-                          aria-label="Shrink by 15 minutes"
-                          title="−15 min"
-                          onMouseDown={e => e.stopPropagation()}
-                          onClick={e => {
-                            e.stopPropagation();
-                            setSelectedId(block.id);
-                            nudgeDuration(block, -DURATION_STEP);
-                          }}
-                        >
-                          −
-                        </button>
-                        <button
-                          type="button"
-                          style={{
-                            ...styles.stepBtn,
-                            ...(!canGrow ? styles.stepBtnDisabled : {}),
-                          }}
-                          disabled={!canGrow}
-                          aria-label="Expand by 15 minutes"
-                          title="+15 min"
-                          onMouseDown={e => e.stopPropagation()}
-                          onClick={e => {
-                            e.stopPropagation();
-                            setSelectedId(block.id);
-                            nudgeDuration(block, DURATION_STEP);
-                          }}
-                        >
-                          +
-                        </button>
-                      </div>
-                    ) : null}
                     {onRemoveBlock ? (
                       <button
                         type="button"
@@ -363,6 +325,47 @@ export default function DailyStructureCalendar({
                       onMouseDown={e => beginDrag(e, block, 'resize-end')}
                       title="Drag to change end (1h minimum)"
                     />
+                  ) : null}
+                  {showStepControls ? (
+                    <div
+                      style={styles.stepControlsFloat}
+                      onMouseDown={e => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        style={{
+                          ...styles.stepBtn,
+                          ...(!canShrink ? styles.stepBtnDisabled : {}),
+                        }}
+                        disabled={!canShrink}
+                        aria-label="Shrink by 15 minutes"
+                        title="−15 min"
+                        onClick={e => {
+                          e.stopPropagation();
+                          setSelectedId(block.id);
+                          nudgeDuration(block, -DURATION_STEP);
+                        }}
+                      >
+                        −
+                      </button>
+                      <button
+                        type="button"
+                        style={{
+                          ...styles.stepBtn,
+                          ...(!canGrow ? styles.stepBtnDisabled : {}),
+                        }}
+                        disabled={!canGrow}
+                        aria-label="Expand by 15 minutes"
+                        title="+15 min"
+                        onClick={e => {
+                          e.stopPropagation();
+                          setSelectedId(block.id);
+                          nudgeDuration(block, DURATION_STEP);
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
                   ) : null}
                 </div>
               </div>
@@ -442,7 +445,7 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid',
     borderRadius: 10,
     padding: 0,
-    overflow: 'hidden',
+    overflow: 'visible',
     boxSizing: 'border-box',
     userSelect: 'none',
     boxShadow: 'none',
@@ -453,7 +456,7 @@ const styles: Record<string, CSSProperties> = {
   },
   blockSelected: {
     boxShadow: '0 0 0 2px rgba(15, 23, 42, 0.35)',
-    zIndex: 3,
+    zIndex: 4,
   },
   moveHandle: {
     flex: '0 0 14px',
@@ -464,6 +467,7 @@ const styles: Record<string, CSSProperties> = {
     background: 'rgba(15, 23, 42, 0.08)',
     borderRight: '1px solid rgba(15, 23, 42, 0.08)',
     zIndex: 2,
+    borderRadius: '10px 0 0 10px',
   },
   moveHandleDense: {
     flexBasis: 12,
@@ -481,7 +485,8 @@ const styles: Record<string, CSSProperties> = {
     minWidth: 0,
     display: 'flex',
     alignItems: 'center',
-    padding: '4px 6px 4px 6px',
+    padding: '2px 6px',
+    overflow: 'visible',
   },
   resizeHandle: {
     position: 'absolute',
@@ -545,21 +550,30 @@ const styles: Record<string, CSSProperties> = {
   blockMetaSideDense: {
     fontSize: 9,
   },
-  stepControls: {
+  stepControlsFloat: {
+    position: 'absolute',
+    left: '50%',
+    bottom: -11,
+    transform: 'translateX(-50%)',
     display: 'flex',
     alignItems: 'center',
-    gap: 2,
-    flexShrink: 0,
+    gap: 3,
+    zIndex: 6,
+    padding: '2px 4px',
+    borderRadius: 999,
+    background: 'rgba(255,255,255,0.95)',
+    border: '1px solid rgba(15, 23, 42, 0.12)',
+    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)',
   },
   stepBtn: {
-    width: 18,
+    width: 20,
     height: 18,
-    border: '1px solid rgba(15, 23, 42, 0.18)',
-    borderRadius: 4,
+    border: 'none',
+    borderRadius: 999,
     padding: 0,
-    background: 'rgba(255,255,255,0.7)',
-    color: 'inherit',
-    fontSize: 12,
+    background: 'transparent',
+    color: '#0f172a',
+    fontSize: 13,
     fontWeight: 700,
     lineHeight: 1,
     cursor: 'pointer',
@@ -569,7 +583,7 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: 'center',
   },
   stepBtnDisabled: {
-    opacity: 0.35,
+    opacity: 0.3,
     cursor: 'not-allowed',
   },
 };
