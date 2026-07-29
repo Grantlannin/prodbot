@@ -21,7 +21,11 @@ import {
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const SNAP = 15;
-const MIN_DURATION = 15;
+/** Dragging edges cannot shrink below 1 hour. */
+const MIN_DRAG_DURATION = 60;
+/** +/- buttons adjust in 15-minute steps when under 1 hour. */
+const DURATION_STEP = 15;
+const MIN_STEP_DURATION = 15;
 
 interface DailyStructureCalendarProps {
   blocks: DayBlock[];
@@ -149,12 +153,12 @@ export default function DailyStructureCalendar({
         );
       } else if (drag.mode === 'resize-start') {
         const rawStart = snapMinutes(drag.originStart + deltaMin);
-        const maxStart = originEnd - MIN_DURATION;
+        const maxStart = originEnd - MIN_DRAG_DURATION;
         nextStart = Math.max(rangeStart, Math.min(maxStart, rawStart));
         nextDuration = originEnd - nextStart;
       } else {
         const rawEnd = snapMinutes(originEnd + deltaMin);
-        const minEnd = drag.originStart + MIN_DURATION;
+        const minEnd = drag.originStart + MIN_DRAG_DURATION;
         const nextEnd = Math.max(minEnd, Math.min(rangeEnd, rawEnd));
         nextDuration = nextEnd - drag.originStart;
         nextStart = drag.originStart;
@@ -175,6 +179,19 @@ export default function DailyStructureCalendar({
 
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
+  };
+
+  const nudgeDuration = (block: DayBlock, delta: number) => {
+    if (!onBlocksChange) return;
+    const maxDuration = Math.max(MIN_STEP_DURATION, rangeEnd - block.startMinutes);
+    const nextDuration = Math.max(
+      MIN_STEP_DURATION,
+      Math.min(maxDuration, block.durationMinutes + delta)
+    );
+    if (nextDuration === block.durationMinutes) return;
+    onBlocksChange(
+      blocksRef.current.map(b => (b.id === block.id ? { ...b, durationMinutes: nextDuration } : b))
+    );
   };
 
   const hourLabels: number[] = [];
@@ -215,15 +232,23 @@ export default function DailyStructureCalendar({
           ))}
           {sorted.map(block => {
             const colors = blockKindColor(block.kind, colorMap);
+            const underHour = block.durationMinutes < MIN_DRAG_DURATION;
+            const canEdit = interactive && !!onBlocksChange;
+            /** At 1h, keep edge drag and allow − to step under an hour. */
+            const showStepControls = canEdit && block.durationMinutes <= MIN_DRAG_DURATION;
             const top = (block.startMinutes - rangeStart) * pxPerMin;
-            const height = Math.max(pxPerMin >= 0.9 ? 22 : 16, block.durationMinutes * pxPerMin);
+            const height = Math.max(
+              showStepControls ? 28 : pxPerMin >= 0.9 ? 22 : 16,
+              block.durationMinutes * pxPerMin
+            );
             const dense = pxPerMin < 0.85;
             if (block.startMinutes + block.durationMinutes <= rangeStart) return null;
             if (block.startMinutes >= rangeEnd) return null;
             const endMinutes = block.startMinutes + block.durationMinutes;
             const rangeLabel = `${formatMinutesLabel(block.startMinutes)}–${formatMinutesLabel(endMinutes)}`;
-            const canEdit = interactive && !!onBlocksChange;
             const selected = selectedId === block.id;
+            const canShrink = block.durationMinutes > MIN_STEP_DURATION;
+            const canGrow = block.startMinutes + block.durationMinutes < rangeEnd;
             return (
               <div
                 key={block.id}
@@ -262,11 +287,11 @@ export default function DailyStructureCalendar({
                   </div>
                 ) : null}
                 <div style={styles.blockBody}>
-                  {canEdit ? (
+                  {canEdit && !underHour ? (
                     <div
                       style={{ ...styles.resizeHandle, ...styles.resizeHandleTop }}
                       onMouseDown={e => beginDrag(e, block, 'resize-start')}
-                      title="Drag to change start"
+                      title="Drag to change start (1h minimum)"
                     />
                   ) : null}
                   <div style={styles.blockTopRow}>
@@ -276,6 +301,46 @@ export default function DailyStructureCalendar({
                     <div style={{ ...styles.blockMetaSide, ...(dense ? styles.blockMetaSideDense : {}) }}>
                       {rangeLabel}
                     </div>
+                    {showStepControls ? (
+                      <div style={styles.stepControls}>
+                        <button
+                          type="button"
+                          style={{
+                            ...styles.stepBtn,
+                            ...(!canShrink ? styles.stepBtnDisabled : {}),
+                          }}
+                          disabled={!canShrink}
+                          aria-label="Shrink by 15 minutes"
+                          title="−15 min"
+                          onMouseDown={e => e.stopPropagation()}
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedId(block.id);
+                            nudgeDuration(block, -DURATION_STEP);
+                          }}
+                        >
+                          −
+                        </button>
+                        <button
+                          type="button"
+                          style={{
+                            ...styles.stepBtn,
+                            ...(!canGrow ? styles.stepBtnDisabled : {}),
+                          }}
+                          disabled={!canGrow}
+                          aria-label="Expand by 15 minutes"
+                          title="+15 min"
+                          onMouseDown={e => e.stopPropagation()}
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedId(block.id);
+                            nudgeDuration(block, DURATION_STEP);
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : null}
                     {onRemoveBlock ? (
                       <button
                         type="button"
@@ -292,11 +357,11 @@ export default function DailyStructureCalendar({
                       </button>
                     ) : null}
                   </div>
-                  {canEdit ? (
+                  {canEdit && !underHour ? (
                     <div
                       style={{ ...styles.resizeHandle, ...styles.resizeHandleBottom }}
                       onMouseDown={e => beginDrag(e, block, 'resize-end')}
-                      title="Drag to change end"
+                      title="Drag to change end (1h minimum)"
                     />
                   ) : null}
                 </div>
@@ -479,5 +544,32 @@ const styles: Record<string, CSSProperties> = {
   },
   blockMetaSideDense: {
     fontSize: 9,
+  },
+  stepControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 2,
+    flexShrink: 0,
+  },
+  stepBtn: {
+    width: 18,
+    height: 18,
+    border: '1px solid rgba(15, 23, 42, 0.18)',
+    borderRadius: 4,
+    padding: 0,
+    background: 'rgba(255,255,255,0.7)',
+    color: 'inherit',
+    fontSize: 12,
+    fontWeight: 700,
+    lineHeight: 1,
+    cursor: 'pointer',
+    fontFamily: font,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepBtnDisabled: {
+    opacity: 0.35,
+    cursor: 'not-allowed',
   },
 };
