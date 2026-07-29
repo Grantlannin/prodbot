@@ -667,9 +667,9 @@ export default function DesignMyDayPanel() {
             compact
             title=""
             timelineStartMinutes={4 * 60}
-            timelineEndMinutes={12 * 60}
+            timelineEndMinutes={24 * 60}
             noScroll
-            pxPerMin={0.55}
+            pxPerMin={0.4}
             onBlocksChange={persistBlocks}
             onRemoveBlock={removeBlock}
           />
