@@ -37,6 +37,50 @@ const OPEN_LOOPS_KEY = 'agentHQ_openLoops';
 
 const TASK_DURATION_HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] as const;
 
+const FULL_DAY_START = 4 * 60;
+const FULL_DAY_END = 24 * 60;
+const FULL_DAY_PX_PER_MIN = 0.4;
+const FULL_DAY_HEIGHT = (FULL_DAY_END - FULL_DAY_START) * FULL_DAY_PX_PER_MIN;
+
+/** Zoom the timeline around existing blocks while keeping the same overall calendar height. */
+function computeFitToBlocksWindow(blocks: DayBlock[]): {
+  startMinutes: number;
+  endMinutes: number;
+  pxPerMin: number;
+} | null {
+  if (blocks.length === 0) return null;
+
+  let minStart = Infinity;
+  let maxEnd = -Infinity;
+  for (const block of blocks) {
+    minStart = Math.min(minStart, block.startMinutes);
+    maxEnd = Math.max(maxEnd, block.startMinutes + block.durationMinutes);
+  }
+
+  const pad = 30;
+  let startMinutes = Math.floor((minStart - pad) / 60) * 60;
+  let endMinutes = Math.ceil((maxEnd + pad) / 60) * 60;
+  startMinutes = Math.max(FULL_DAY_START, startMinutes);
+  endMinutes = Math.min(FULL_DAY_END, endMinutes);
+
+  const minSpan = 3 * 60;
+  if (endMinutes - startMinutes < minSpan) {
+    const mid = (startMinutes + endMinutes) / 2;
+    startMinutes = Math.max(FULL_DAY_START, Math.floor((mid - minSpan / 2) / 60) * 60);
+    endMinutes = Math.min(FULL_DAY_END, startMinutes + minSpan);
+    if (endMinutes - startMinutes < minSpan) {
+      startMinutes = Math.max(FULL_DAY_START, endMinutes - minSpan);
+    }
+  }
+
+  const span = Math.max(60, endMinutes - startMinutes);
+  return {
+    startMinutes,
+    endMinutes,
+    pxPerMin: FULL_DAY_HEIGHT / span,
+  };
+}
+
 /** 4am–11pm in 1-hour steps (fine-tune to 15m by dragging on the calendar). */
 const START_TIME_OPTIONS: number[] = (() => {
   const out: number[] = [];
@@ -782,6 +826,27 @@ export default function DesignMyDayPanel() {
   const [tab, setTab] = useState<AddTab>('task');
   const [colorMenuTab, setColorMenuTab] = useState<AddTab | null>(null);
   const [guidedOpen, setGuidedOpen] = useState(false);
+  const [fitToBlocks, setFitToBlocks] = useState(true);
+
+  const calendarView = useMemo(() => {
+    if (fitToBlocks) {
+      const fit = computeFitToBlocksWindow(blocks);
+      if (fit) {
+        return {
+          timelineStartMinutes: fit.startMinutes,
+          timelineEndMinutes: fit.endMinutes,
+          pxPerMin: fit.pxPerMin,
+          fitting: true as const,
+        };
+      }
+    }
+    return {
+      timelineStartMinutes: FULL_DAY_START,
+      timelineEndMinutes: FULL_DAY_END,
+      pxPerMin: FULL_DAY_PX_PER_MIN,
+      fitting: false as const,
+    };
+  }, [blocks, fitToBlocks]);
 
   const persistBlocks = (next: DayBlock[]) => {
     setStore(prev => upsertActiveDayPlan(prev, next));
@@ -839,15 +904,36 @@ export default function DesignMyDayPanel() {
 
       <div style={styles.grid}>
         <div style={styles.calendarCell}>
+          <div style={styles.calendarToolbar}>
+            <button
+              type="button"
+              onClick={() => setFitToBlocks(v => !v)}
+              disabled={blocks.length === 0}
+              style={{
+                ...styles.fitToggleBtn,
+                ...(calendarView.fitting ? styles.fitToggleBtnActive : {}),
+                ...(blocks.length === 0 ? styles.btnDisabled : {}),
+              }}
+              title={
+                blocks.length === 0
+                  ? 'Add blocks to zoom into used hours'
+                  : calendarView.fitting
+                    ? 'Showing used hours — click for full day'
+                    : 'Zoom into hours that have blocks'
+              }
+            >
+              {calendarView.fitting ? 'Show full day' : 'Fit to blocks'}
+            </button>
+          </div>
           <DailyStructureCalendar
             blocks={blocks}
             interactive
             compact
             title=""
-            timelineStartMinutes={4 * 60}
-            timelineEndMinutes={24 * 60}
+            timelineStartMinutes={calendarView.timelineStartMinutes}
+            timelineEndMinutes={calendarView.timelineEndMinutes}
             noScroll
-            pxPerMin={0.4}
+            pxPerMin={calendarView.pxPerMin}
             colorMap={colorMap}
             onBlocksChange={persistBlocks}
             onRemoveBlock={removeBlock}
@@ -1022,6 +1108,29 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: 'column',
     gap: 10,
     minWidth: 0,
+  },
+  calendarToolbar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  fitToggleBtn: {
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    padding: '6px 10px',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    letterSpacing: '-0.01em',
+    background: '#fff',
+    color: '#64748b',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  fitToggleBtnActive: {
+    background: '#0f172a',
+    borderColor: '#0f172a',
+    color: '#f8fafc',
   },
   addCell: {
     display: 'flex',
