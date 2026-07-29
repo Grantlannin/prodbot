@@ -80,12 +80,19 @@ export default function LandingPage() {
         <h1 className="mb-5 max-w-xl text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
           The world&apos;s most elite fighter pilots have their cockpit. You have your daywinner bot.
         </h1>
-        <p className="mb-8 max-w-lg text-lg leading-relaxed text-slate-600">
-          Daywinner bot is your &ldquo;productivity dashboard&rdquo; tool that helps you organize your work,
-          prioritize the 1 most important task for the day &amp; complete it by creating a timed work block
-          &amp; blocking out distracting tabs. You not only now have a &ldquo;homebase&rdquo; for your most
-          important work, but you can track how long you worked on what task, and even keep yourself accountable
-          by sending daily reports to friends or accountability buddies.
+        <p className="mb-5 max-w-2xl text-lg leading-relaxed text-slate-600">
+          Daywinner bot is your &ldquo;productivity dashboard&rdquo; tool that helps you WIN THE DAY by helping
+          you organize your work &amp; block distractions like 7/8 figure entrepreneurs so you can hit your first
+          6 figures, finish/launch that project, overdeliver for your clients, get that remote job, or study
+          efficiently — and make more progress in 30 days than you have in the past 5 years.
+        </p>
+        <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600">
+          Built around the exact workflow of people making multiple hundreds of thousands of dollars per month,
+          daywinner bot helps you prioritize the 1 most important task (or tasks) for the day &amp; work until
+          completed by creating timed work blocks &amp; force-blocking out your most distracting tabs/websites. You
+          now not only have a &ldquo;homebase&rdquo; for your most important work, but you can also track how long
+          you worked on what task each day, and even keep yourself accountable by sending daily reports to friends
+          or accountability buddies (or yourself).
         </p>
 
         <div className="mb-10 flex flex-wrap items-center gap-3">
