@@ -85,12 +85,12 @@ export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }
   return (
     <div style={styles.wrap}>
       <div style={styles.timeRow}>
-        <span style={styles.label}>Time</span>
+        <span style={styles.label}>set a time (optional)</span>
         <select
           value={startMinutes}
           onChange={e => setStartMinutes(Number(e.target.value))}
           style={styles.select}
-          aria-label="Time"
+          aria-label="set a time (optional)"
         >
           {START_TIME_OPTIONS.map(mins => (
             <option key={mins} value={mins}>
