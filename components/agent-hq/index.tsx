@@ -140,8 +140,8 @@ function AgentHQInner() {
           >
             <AccountMenu />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FocusExtensionModal variant="nav" />
               <GetCourseModal variant="nav" />
+              <FocusExtensionModal variant="nav" />
               <StuckHelpNavButton />
             </div>
           </nav>
