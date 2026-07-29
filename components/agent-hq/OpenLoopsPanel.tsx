@@ -111,45 +111,64 @@ export function OpenLoopExplainModal({ onClose }: { onClose: () => void }) {
         <p style={explainStyles.para}>
           An open loop is anything that isn&apos;t &quot;completed&quot; or &quot;finished&quot; in your mind (it&apos;s just a
           loop that&apos;s open in your mind) that is tugging at your attention / energy that needs to be put into words
-          &amp; stored somewhere (here) so you can get it out of your head. This can be something you need to do but
-          haven&apos;t, a commitment you made that you need to remember, a decision you have to make that you haven&apos;t
-          or are avoiding, etc. Your brain wasn&apos;t meant to store 500 things inside of it. Storing them in your head
-          costs energy. So we need to get that energy back and &quot;able for you to use it for yourself&quot; by storing
-          all open loops HERE, so you can use that new energy/bandwidth on your most important task(s) so you can
-          live/follow your dreams.
+          &amp; stored somewhere (here) so you can get it out of your head. This can be:
+        </p>
+        <ul style={explainStyles.list}>
+          <li>
+            something you need to do but haven&apos;t (text person response, return amazon item, etc)
+          </li>
+          <li>
+            a commitment you made that you need to remember (help a friend, doctor&apos;s appointment)
+          </li>
+          <li>
+            a decision you have to make that you haven&apos;t or are avoiding (figure out brand direction, decide on
+            posting schedule, decide who my ideal client is, etc)
+          </li>
+        </ul>
+        <p style={explainStyles.para}>
+          Your brain wasn&apos;t meant to store 500 things inside of it. Storing them in your head costs energy. So we
+          need to get that energy back and &quot;able for you to use it for yourself&quot; by storing all open loops HERE,
+          so you can use that new energy/bandwidth on your most important task(s) so you can live/follow your dreams.
         </p>
 
         <p style={explainStyles.heading}>UNMADE DECISIONS</p>
         <p style={explainStyles.para}>
           You will also notice there is an &apos;unmade decision&apos; section. Why is that added? Because you will notice
           that when you procrastinate, it is often because there are decisions you need to make that you aren&apos;t
-          making. So instead of just letting those get lost in your brain storage to use your energy, just put them down
-          here so you can come back to them when you&apos;re ready.
+          making. So instead of just letting those get lost in your brain &amp; steal your energy (or not making them),
+          put that decision down here so you can come back to them when you&apos;re ready.
         </p>
 
         <p style={explainStyles.subheading}>Example:</p>
         <p style={explainStyles.para}>
-          You are working on your website and you aren&apos;t sure which way to take your brand colors/design. But you&apos;re
-          now working on your website now, and everything else is dependent on it. When this happens, you have 2 options:
+          You are working on your website and you aren&apos;t sure which way to take your brand colors/design. You&apos;re
+          working on your website now, and this decision needs to be made because it influences how you work on the
+          website moving forward. When this happens, you have 2 options:
         </p>
         <p style={explainStyles.para}>
-          <strong>Option 1:</strong> If you have the brain power / think it&apos;s a good usage of brain power, you can
-          think through it &amp; decide NOW on what you want to do, then move forward
+          <strong>Option 1:</strong> Make a quick intuitive decision &amp; keep going on this task. If you have the brain
+          power / think it&apos;s a good usage of brain power (or can just pull from intuition for a quick low-cost
+          decision), you can think through it &amp; decide NOW on what you want to do, then keep moving forward on the
+          same task.
         </p>
         <p style={explainStyles.para}>
           <strong>Option 2:</strong>
         </p>
         <p style={explainStyles.para}>
           You can decide &quot;this is an important decision but i don&apos;t want to use my brain power on this right now
-          when i can use it for something more important right now, so i&apos;ll do the important thing and make this
-          decision tonight&quot;, store that unmade decision HERE as &apos;decide brand direction&apos;, and then move on to
-          the most important task you need your good brain power for today, circling back to this decision tonight (or
-          some other time).
+          because this thing influences other things, and there are equally important things to be done, so i&apos;ll do
+          the other important things with my brain power and circle back to this decision tonight&quot;. You then store
+          that unmade decision HERE as &apos;decide brand direction&apos;, reminder, and then move on to the other most
+          important task you need your good brain power on for today, get that done, then circle back to this decision
+          tonight (or some other time) &amp; tee this up for tomorrow.
         </p>
+        <p style={explainStyles.subheading}>The core idea:</p>
         <p style={explainStyles.para}>
-          You have to ask yourself &apos;is this a good use of my energy right now?&apos;. If answer is YES because it&apos;s
-          the most important thing, do it. But if the answer is NO, store it, and keep working on what will move the ball
-          forward the most. That&apos;s the game.
+          As you&apos;re working, new decisions / problems will pop up. When these happen, you have to ask yourself
+          &apos;is this a good use of my energy right now?&apos;. If answer is YES because it&apos;s the most important
+          thing, just do it. But if the answer is NO because i need to think through this one &amp; there&apos;s other
+          equally important work i can do now — store it, and keep working on what will move the ball forward the most.
+          That&apos;s the game.
         </p>
       </div>
     </div>
@@ -294,6 +313,16 @@ const explainStyles: Record<string, CSSProperties> = {
   },
   para: {
     margin: 0,
+    fontSize: 13,
+    lineHeight: 1.55,
+    color: '#334155',
+  },
+  list: {
+    margin: 0,
+    paddingLeft: 20,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
     fontSize: 13,
     lineHeight: 1.55,
     color: '#334155',
