@@ -62,10 +62,6 @@ export default function StartWorkModal({
   const { requestOpen } = useHoverTimer();
 
   const projectGroups = useMemo(() => listWorkProjectGroups(projects), [projects]);
-  const sortedProjects = useMemo(
-    () => [...projects].sort((a, b) => b.updatedAt - a.updatedAt),
-    [projects]
-  );
 
   const busy = status === 'working' || status === 'on_break';
   const isSetTimer = mode === 'set-timer';
@@ -142,7 +138,7 @@ export default function StartWorkModal({
   const handleNewTaskContinue = () => {
     const text = newTaskText.trim();
     if (!text) return;
-    setStep(sortedProjects.length > 0 ? 'select-project' : 'new-project');
+    setStep(projects.length > 0 ? 'select-project' : 'new-project');
   };
 
   const handlePickProject = (project: ProjectBoard) => {
@@ -486,7 +482,7 @@ export default function StartWorkModal({
             <h3 style={styles.title}>What project is this for?</h3>
             <p style={styles.subtitle}>{newTaskText.trim()}</p>
             <div style={styles.taskList}>
-              {sortedProjects.map(project => (
+              {projects.map(project => (
                 <button
                   key={project.id}
                   type="button"
@@ -538,7 +534,7 @@ export default function StartWorkModal({
             <div style={styles.actions}>
               <button
                 type="button"
-                onClick={() => setStep(sortedProjects.length > 0 ? 'select-project' : 'new-task')}
+                onClick={() => setStep(projects.length > 0 ? 'select-project' : 'new-task')}
                 style={styles.secondaryBtn}
               >
                 Back

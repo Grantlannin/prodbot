@@ -66,9 +66,9 @@ function subTaskListedTask(
 
 export function listWorkPartGroups(projects: ProjectBoard[]): WorkPartGroup[] {
   const out: WorkPartGroup[] = [];
-  const sorted = [...projects].sort((a, b) => b.updatedAt - a.updatedAt);
 
-  for (const project of sorted) {
+  // Preserve projects / tasks array order (matches drag-reorder in ProjectsPanel).
+  for (const project of projects) {
     const projectName = projectDisplayName(project);
     for (const task of project.tasks) {
       const part = partListedTask(project, task);
