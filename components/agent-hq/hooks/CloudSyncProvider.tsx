@@ -40,6 +40,7 @@ interface CloudSyncContextValue {
   disableBackup: (deleteCloudCopy: boolean) => Promise<void>;
   pushNow: () => Promise<void>;
   restoreFromCloud: () => Promise<void>;
+  offerRestore: () => void;
   dismissRestoreOffer: () => void;
   restoreOfferOpen: boolean;
   enableConfirmOpen: boolean;
@@ -68,18 +69,37 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const [hydratedFromServer, setHydratedFromServer] = useState(false);
 
   const skipPushRef = useRef(false);
+  const declinedRestoreRef = useRef(false);
+  const restoreOfferOpenRef = useRef(false);
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const projectsRef = useRef(projects);
   const notesRef = useRef(notes);
 
   projectsRef.current = projects;
   notesRef.current = notes;
+  restoreOfferOpenRef.current = restoreOfferOpen;
+
+  const offerRestoreIfNeeded = useCallback(
+    async (supabase: ReturnType<typeof createBrowserSupabaseClient>, userId: string): Promise<boolean> => {
+      if (!isLocalDataEmpty(projectsRef.current, notesRef.current)) return false;
+      if (declinedRestoreRef.current) return false;
+
+      const snapshot = await fetchCloudSnapshot(supabase, userId);
+      if (snapshot.projects.length > 0 || snapshot.notes.length > 0) {
+        setRestoreOfferOpen(true);
+        return true;
+      }
+      return false;
+    },
+    []
+  );
 
   useEffect(() => {
     if (!authEnabled || !user) {
       setCloudEnabled(false);
       setHydratedFromServer(false);
       setRestoreOfferOpen(false);
+      declinedRestoreRef.current = false;
       return;
     }
 
@@ -97,12 +117,8 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         setLastSyncAt(settings?.last_sync_at ? new Date(settings.last_sync_at).getTime() : null);
         setHydratedFromServer(true);
 
-        if (enabled && isLocalDataEmpty(projectsRef.current, notesRef.current)) {
-          const snapshot = await fetchCloudSnapshot(supabase, user.id);
-          if (cancelled) return;
-          if (snapshot.projects.length > 0 || snapshot.notes.length > 0) {
-            setRestoreOfferOpen(true);
-          }
+        if (enabled) {
+          await offerRestoreIfNeeded(supabase, user.id);
         }
       } catch {
         if (!cancelled) setSyncError('Could not load backup settings.');
@@ -112,15 +128,21 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [authEnabled, user, setCloudEnabledLocal]);
+  }, [authEnabled, user, setCloudEnabledLocal, offerRestoreIfNeeded]);
 
   const runPush = useCallback(async () => {
-    if (!authEnabled || !user || !cloudEnabled || skipPushRef.current) return;
+    if (!authEnabled || !user || !cloudEnabled || skipPushRef.current || restoreOfferOpenRef.current) return;
 
     setSyncing(true);
     setSyncError(null);
     try {
       const supabase = createBrowserSupabaseClient();
+
+      if (isLocalDataEmpty(projectsRef.current, notesRef.current)) {
+        const hasCloudBackup = await offerRestoreIfNeeded(supabase, user.id);
+        if (hasCloudBackup) return;
+      }
+
       const { lastSyncAt: iso } = await pushCloudSnapshot(
         supabase,
         user.id,
@@ -133,10 +155,10 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     } finally {
       setSyncing(false);
     }
-  }, [authEnabled, user, cloudEnabled]);
+  }, [authEnabled, user, cloudEnabled, offerRestoreIfNeeded]);
 
   useEffect(() => {
-    if (!cloudEnabled || !user || !hydratedFromServer) return;
+    if (!cloudEnabled || !user || !hydratedFromServer || restoreOfferOpen) return;
 
     if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
     pushTimerRef.current = setTimeout(() => {
@@ -146,7 +168,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     return () => {
       if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
     };
-  }, [projects, notes, cloudEnabled, user, hydratedFromServer, runPush]);
+  }, [projects, notes, cloudEnabled, user, hydratedFromServer, restoreOfferOpen, runPush]);
 
   const enableBackup = useCallback(() => {
     if (!authEnabled) return;
@@ -236,7 +258,30 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
 
   const dismissRestoreOffer = useCallback(() => {
     setRestoreOfferOpen(false);
+    declinedRestoreRef.current = true;
   }, []);
+
+  const offerRestore = useCallback(() => {
+    if (!user) return;
+    declinedRestoreRef.current = false;
+    setSyncError(null);
+    void (async () => {
+      setSyncing(true);
+      try {
+        const supabase = createBrowserSupabaseClient();
+        const snapshot = await fetchCloudSnapshot(supabase, user.id);
+        if (snapshot.projects.length > 0 || snapshot.notes.length > 0) {
+          setRestoreOfferOpen(true);
+        } else {
+          setSyncError('No cloud backup found for this account.');
+        }
+      } catch (err) {
+        setSyncError(err instanceof Error ? err.message : 'Could not check cloud backup.');
+      } finally {
+        setSyncing(false);
+      }
+    })();
+  }, [user]);
 
   const value = useMemo(
     (): CloudSyncContextValue => ({
@@ -251,6 +296,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       disableBackup,
       pushNow,
       restoreFromCloud,
+      offerRestore,
       dismissRestoreOffer,
       restoreOfferOpen,
       enableConfirmOpen,
@@ -268,6 +314,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       disableBackup,
       pushNow,
       restoreFromCloud,
+      offerRestore,
       dismissRestoreOffer,
       restoreOfferOpen,
       enableConfirmOpen,

@@ -19,6 +19,7 @@ export default function AccountMenu() {
     enableBackup,
     pushNow,
     disableBackup,
+    offerRestore,
   } = useCloudSync();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(profile.displayName);
@@ -122,6 +123,17 @@ export default function AccountMenu() {
                       <div style={styles.backupStatus}>Cloud backup on</div>
                       {lastSavedLabel ? <div style={styles.backupMeta}>{lastSavedLabel}</div> : null}
                       {syncError ? <div style={styles.backupError}>{syncError}</div> : null}
+                      <button
+                        type="button"
+                        style={styles.menuItem}
+                        onClick={() => {
+                          setMenuOpen(false);
+                          offerRestore();
+                        }}
+                        disabled={syncing}
+                      >
+                        Restore from cloud
+                      </button>
                       <button
                         type="button"
                         style={styles.menuItem}
