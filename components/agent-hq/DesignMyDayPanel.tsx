@@ -38,10 +38,10 @@ const OPEN_LOOPS_KEY = 'agentHQ_openLoops';
 
 const TASK_DURATION_HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] as const;
 
-/** 4am–11:45pm in 15-minute steps (matches the calendar window). */
+/** 4am–11pm in 1-hour steps (fine-tune to 15m by dragging on the calendar). */
 const START_TIME_OPTIONS: number[] = (() => {
   const out: number[] = [];
-  for (let m = 4 * 60; m < 24 * 60; m += 15) out.push(m);
+  for (let m = 4 * 60; m < 24 * 60; m += 60) out.push(m);
   return out;
 })();
 
@@ -55,11 +55,11 @@ const KIND_TAB_LABELS: Record<DayBlockKind, string> = {
   open_loop: 'Open loop / decision',
 };
 
-/** Snaps "now" to the nearest 15 minutes, clamped to the Design my day window (4am–12am). */
+/** Snaps "now" to the nearest hour, clamped to the Design my day window (4am–12am). */
 function defaultWorkStart(): number {
   const now = new Date();
   const minutesNow = now.getHours() * 60 + now.getMinutes();
-  const snapped = Math.round(minutesNow / 15) * 15;
+  const snapped = Math.round(minutesNow / 60) * 60;
   return Math.max(4 * 60, Math.min(22 * 60, snapped));
 }
 

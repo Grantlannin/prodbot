@@ -182,12 +182,14 @@ export default function DailyStructureCalendar({
             const endMinutes = block.startMinutes + block.durationMinutes;
             const rangeLabel = `${formatMinutesLabel(block.startMinutes)}–${formatMinutesLabel(endMinutes)}`;
             const canEdit = interactive && !!onBlocksChange;
+            const isShort = block.durationMinutes < 60;
             return (
               <div
                 key={block.id}
                 style={{
                   ...styles.block,
                   ...(dense ? styles.blockDense : {}),
+                  ...(isShort ? styles.blockShort : {}),
                   top,
                   height,
                   background: colors.bg,
@@ -205,10 +207,15 @@ export default function DailyStructureCalendar({
                     title="Drag to change start"
                   />
                 ) : null}
-                <div style={styles.blockTopRow}>
+                <div style={{ ...styles.blockTopRow, ...(isShort ? styles.blockTopRowShort : {}) }}>
                   <div style={{ ...styles.blockTitle, ...(dense ? styles.blockTitleDense : {}) }}>
                     {block.title}
                   </div>
+                  {isShort ? (
+                    <div style={{ ...styles.blockMetaSide, ...(dense ? styles.blockMetaSideDense : {}) }}>
+                      {rangeLabel}
+                    </div>
+                  ) : null}
                   {onRemoveBlock ? (
                     <button
                       type="button"
@@ -224,7 +231,7 @@ export default function DailyStructureCalendar({
                     </button>
                   ) : null}
                 </div>
-                {!dense || height >= 28 ? (
+                {!isShort && (!dense || height >= 28) ? (
                   <div style={styles.blockMeta}>{rangeLabel}</div>
                 ) : null}
                 {canEdit ? (
@@ -321,6 +328,12 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 10,
     borderWidth: 3,
   },
+  blockShort: {
+    display: 'flex',
+    alignItems: 'center',
+    paddingTop: 2,
+    paddingBottom: 2,
+  },
   resizeHandle: {
     position: 'absolute',
     left: 0,
@@ -342,6 +355,11 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 4,
+  },
+  blockTopRowShort: {
+    alignItems: 'center',
+    width: '100%',
+    minWidth: 0,
   },
   blockTitle: {
     fontSize: 12,
@@ -373,5 +391,16 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 10,
     opacity: 0.85,
     marginTop: 2,
+  },
+  blockMetaSide: {
+    flexShrink: 0,
+    fontSize: 10,
+    fontWeight: 600,
+    opacity: 0.9,
+    whiteSpace: 'nowrap',
+    letterSpacing: '-0.01em',
+  },
+  blockMetaSideDense: {
+    fontSize: 9,
   },
 };
