@@ -109,9 +109,9 @@ export function OpenLoopExplainModal({ onClose }: { onClose: () => void }) {
       <div style={explainStyles.body}>
         <p style={explainStyles.heading}>what is an open loop?</p>
         <p style={explainStyles.para}>
-          An open loop is anything that isn&apos;t &quot;completed&quot; or &quot;finished&quot; in your mind (it&apos;s just a
-          loop that&apos;s open in your mind) that is tugging at your attention / energy that needs to be put into words
-          &amp; stored somewhere (here) so you can get it out of your head. This can be:
+          An open loop is anything that isn&apos;t &quot;completed&quot; or &quot;finished&quot; in your mind that is tugging
+          at your attention / energy that needs to be put into words &amp; stored somewhere (here) so you can get it out
+          of your head. This can be:
         </p>
         <ul style={explainStyles.list}>
           <li>
