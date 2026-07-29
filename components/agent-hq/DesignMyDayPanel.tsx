@@ -48,12 +48,12 @@ function formatDurationLabel(minutes: number): string {
   return `${minutes}m`;
 }
 
-/** Snaps "now" to the nearest 15 minutes, clamped to the Design my day window (4am–12pm). */
+/** Snaps "now" to the nearest 15 minutes, clamped to the Design my day window (4am–12am). */
 function defaultWorkStart(): number {
   const now = new Date();
   const minutesNow = now.getHours() * 60 + now.getMinutes();
   const snapped = Math.round(minutesNow / 15) * 15;
-  return Math.max(4 * 60, Math.min(11 * 60, snapped));
+  return Math.max(4 * 60, Math.min(22 * 60, snapped));
 }
 
 function taskOptionKey(task: ListedWorkTask): string {
