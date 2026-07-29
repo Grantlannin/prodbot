@@ -13,7 +13,10 @@ import AppleNotesPanel from './AppleNotesPanel';
 import ProjectsPanel, { addProjectBtnStyle, type ProjectsPanelHandle } from './ProjectsPanel';
 import ProjectProgressBar from './ProjectProgressBar';
 import type { ProjectProgress } from './projectProgress';
-import OpenLoopsPanel from './OpenLoopsPanel';
+import OpenLoopsPanel, {
+  OpenLoopExplainModal,
+  openLoopExplainLinkStyle,
+} from './OpenLoopsPanel';
 import NightPrepPanel from './NightPrepPanel';
 import BeginMyDayButton from './BeginMyDayButton';
 import EodSendModal from './EodSendModal';
@@ -40,6 +43,7 @@ export default function DashboardTab({
   const [startWorkOpen, setStartWorkOpen] = useState(false);
   const [startWorkPreset, setStartWorkPreset] = useState<StartWorkPreset | null>(null);
   const [eodSendOpen, setEodSendOpen] = useState(false);
+  const [showOpenLoopExplain, setShowOpenLoopExplain] = useState(false);
   const nightPrepRef = useRef<HTMLDivElement>(null);
   const { requestEndSession } = useEndSession();
   const { isOpen: hoverTimerOpen, supported: hoverTimerSupported, toggle: toggleHoverTimer } = useHoverTimer();
@@ -329,12 +333,26 @@ export default function DashboardTab({
               <AppleNotesPanel />
             </DashCard>
           </div>
-          <DashCard title="open loops / unmade decisions">
+          <DashCard
+            title="open loops / unmade decisions"
+            headerRight={
+              <button
+                type="button"
+                onClick={() => setShowOpenLoopExplain(true)}
+                style={openLoopExplainLinkStyle}
+              >
+                what&apos;s an open loop?
+              </button>
+            }
+          >
             <OpenLoopsPanel />
           </DashCard>
         </div>
 
       </div>
+      {showOpenLoopExplain ? (
+        <OpenLoopExplainModal onClose={() => setShowOpenLoopExplain(false)} />
+      ) : null}
     </div>
   );
 }
@@ -376,9 +394,22 @@ function DashCard({
           flexShrink: 0,
         }}
       >
-        <span style={{ flex: 1, minWidth: 0, color: '#0f172a', fontFamily: font, fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
-          {title}
-          {headerRight}
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            color: '#0f172a',
+            fontFamily: font,
+            fontSize: 14,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+          }}
+        >
+          <span style={{ minWidth: 0 }}>{title}</span>
+          {headerRight ? <span style={{ flexShrink: 0 }}>{headerRight}</span> : null}
         </span>
       </div>
       <div
