@@ -2,14 +2,14 @@
 
 import { useMemo } from 'react';
 import type { CSSProperties } from 'react';
-import DailyStructureCalendar from './DailyStructureCalendar';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import DailyStructureCalendar from '../../DailyStructureCalendar';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 import {
   DAILY_STRUCTURE_KEY,
   getActiveDayPlan,
   sortBlocks,
   type DailyStructureStore,
-} from './stuckHelp/dailyStructureUtils';
+} from '../../stuckHelp/dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 

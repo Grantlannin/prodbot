@@ -2,17 +2,17 @@
 
 import { useMemo, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import DailyStructureCalendar from './DailyStructureCalendar';
-import { useLocalStorage } from './hooks/useLocalStorage';
-import { useProjects } from './hooks/ProjectsProvider';
-import { listWorkProjectGroups, type ListedWorkTask, type WorkProjectGroup } from './quickstartTask';
-import type { CaptureNote } from './types';
+import DailyStructureCalendar from '../../DailyStructureCalendar';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useProjects } from '../../hooks/ProjectsProvider';
+import { listWorkProjectGroups, type ListedWorkTask, type WorkProjectGroup } from '../../quickstartTask';
+import type { CaptureNote } from '../../types';
 import {
   noteKind,
   noteListLabel,
   OPEN_LOOPS_SECTION_LABEL,
   DECISIONS_SECTION_LABEL,
-} from './openLoopsUi';
+} from '../../openLoopsUi';
 import {
   DAILY_STRUCTURE_KEY,
   DAY_BLOCK_COLORS_KEY,
@@ -29,7 +29,7 @@ import {
   type DayBlock,
   type DayBlockColorMap,
   type DayBlockKind,
-} from './stuckHelp/dailyStructureUtils';
+} from '../../stuckHelp/dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 

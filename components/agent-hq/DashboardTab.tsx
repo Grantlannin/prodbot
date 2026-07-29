@@ -22,7 +22,6 @@ import BeginMyDayButton from './BeginMyDayButton';
 import EodSendModal from './EodSendModal';
 import StartWorkModal, { type StartWorkPreset } from './StartWorkModal';
 import HowToStartBanner from './HowToStartBanner';
-import DesignMyDayPanel from './DesignMyDayPanel';
 import { sessionLabel } from './quickstartTask';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
 
@@ -334,14 +333,6 @@ export default function DashboardTab({
           <div style={styles.lowerLeft}>
             <DashCard title="Notes" noPad>
               <AppleNotesPanel />
-            </DashCard>
-            <DashCard
-              title="Admin calendar"
-              headerRight={
-                <span style={styles.designDayHint}>Click · Delete to remove</span>
-              }
-            >
-              <DesignMyDayPanel />
             </DashCard>
           </div>
           <DashCard
@@ -706,11 +697,5 @@ const styles: Record<string, CSSProperties> = {
   nightPrepCell: {
     scrollMarginTop: 24,
     minWidth: 0,
-  },
-  designDayHint: {
-    fontSize: 11,
-    fontWeight: 500,
-    color: '#94a3b8',
-    whiteSpace: 'nowrap',
   },
 };

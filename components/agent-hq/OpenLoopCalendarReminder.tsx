@@ -2,7 +2,6 @@
 
 import { useMemo, useState, type CSSProperties } from 'react';
 import type { CaptureNote } from './types';
-import { useLocalStorage } from './hooks/useLocalStorage';
 import { noteKind, noteListLabel } from './openLoopsUi';
 import {
   buildGoogleCalendarUrl,
@@ -10,16 +9,7 @@ import {
   buildSingleEventIcs,
   downloadIcsFile,
 } from './googleCalendarLink';
-import {
-  DAILY_STRUCTURE_KEY,
-  OPEN_LOOP_POINT_DURATION_MINUTES,
-  formatMinutesLabel,
-  getActiveDayPlan,
-  makeDayBlockId,
-  sortBlocks,
-  upsertActiveDayPlan,
-  type DailyStructureStore,
-} from './stuckHelp/dailyStructureUtils';
+import { formatMinutesLabel } from './stuckHelp/dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -65,8 +55,6 @@ function calendarDetails(note: CaptureNote): string {
 
 export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }) {
   const [startMinutes, setStartMinutes] = useState(defaultStartMinutes);
-  const [addedFlash, setAddedFlash] = useState(false);
-  const [, setDayStore] = useLocalStorage<DailyStructureStore>(DAILY_STRUCTURE_KEY, {});
 
   const start = useMemo(() => startDateFromMinutes(startMinutes), [startMinutes]);
 
@@ -94,23 +82,6 @@ export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const addToDesignMyDay = () => {
-    setDayStore(prev => {
-      const existing = getActiveDayPlan(prev)?.blocks ?? [];
-      const block = {
-        id: makeDayBlockId(),
-        title: noteListLabel(note, []),
-        startMinutes,
-        durationMinutes: OPEN_LOOP_POINT_DURATION_MINUTES,
-        kind: 'open_loop' as const,
-        openLoopId: note.id,
-      };
-      return upsertActiveDayPlan(prev, sortBlocks([...existing, block]));
-    });
-    setAddedFlash(true);
-    window.setTimeout(() => setAddedFlash(false), 1600);
-  };
-
   return (
     <div style={styles.wrap}>
       <div style={styles.timeRow}>
@@ -128,10 +99,6 @@ export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }
           ))}
         </select>
       </div>
-
-      <button type="button" onClick={addToDesignMyDay} style={styles.primaryBtn}>
-        {addedFlash ? 'Added to admin calendar' : 'Add to admin calendar'}
-      </button>
 
       <div style={styles.calendarActions}>
         <button type="button" onClick={openGoogle} style={styles.calendarBtn}>
@@ -178,36 +145,20 @@ const styles: Record<string, CSSProperties> = {
     background: '#fff',
     boxSizing: 'border-box',
   },
-  primaryBtn: {
-    width: '100%',
-    border: 'none',
-    borderRadius: 8,
-    padding: '9px 12px',
-    fontSize: 12,
-    fontWeight: 600,
-    fontFamily: font,
-    letterSpacing: '-0.01em',
-    background: '#0f172a',
-    color: '#f8fafc',
-    cursor: 'pointer',
-    boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.35)',
-  },
   calendarActions: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: 6,
   },
   calendarBtn: {
-    width: '100%',
     border: '1px solid #e2e8f0',
-    borderRadius: 6,
-    padding: '8px 12px',
-    fontSize: 12,
-    fontWeight: 600,
-    fontFamily: font,
     background: '#fff',
-    color: '#0f172a',
+    color: '#334155',
+    borderRadius: 6,
+    padding: '6px 10px',
+    fontSize: 11,
+    fontWeight: 600,
     cursor: 'pointer',
-    textAlign: 'left',
+    fontFamily: font,
   },
 };
