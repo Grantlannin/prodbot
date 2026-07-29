@@ -78,15 +78,43 @@ export default function SubscribeForm() {
 
   if (!status.billingEnabled) {
     const checks = status.checks;
+    const paywallOff = checks?.paywallDisabled === true;
+
+    if (paywallOff) {
+      return (
+        <MarketingShell showSignIn={false}>
+          <div style={styles.wrap}>
+            <div style={styles.card}>
+              <h1 style={styles.title}>Paywall off (testing)</h1>
+              <p style={styles.lead}>
+                Subscription is temporarily disabled so you can run the full signup → onboard → app flow without
+                paying.
+              </p>
+              <Link
+                href="/login?mode=signup"
+                style={{ ...styles.primaryBtn, display: 'block', textAlign: 'center', textDecoration: 'none' }}
+              >
+                Create account →
+              </Link>
+              <p style={styles.footerNote}>
+                Already have an account?{' '}
+                <Link href="/login" style={styles.legalLink}>
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </div>
+        </MarketingShell>
+      );
+    }
+
     const hint = !checks
       ? 'Stripe env vars are not set on this deployment yet.'
-      : checks.paywallDisabled
-        ? 'Paywall is disabled (DISABLE_PAYWALL or NEXT_PUBLIC_DISABLE_PAYWALL is true).'
-        : !checks.hasStripeSecret
-          ? 'STRIPE_SECRET_KEY is missing on the prodbot Vercel project — add it under Settings → Environment Variables, then redeploy.'
-          : !checks.supabaseConfigured
-            ? 'Supabase URL or anon key is missing on this deployment.'
-            : 'Billing checks failed after redeploy — open /api/billing/health for details.';
+      : !checks.hasStripeSecret
+        ? 'STRIPE_SECRET_KEY is missing on the prodbot Vercel project — add it under Settings → Environment Variables, then redeploy.'
+        : !checks.supabaseConfigured
+          ? 'Supabase URL or anon key is missing on this deployment.'
+          : 'Billing checks failed after redeploy — open /api/billing/health for details.';
 
     return (
       <MarketingShell showSignIn={false}>

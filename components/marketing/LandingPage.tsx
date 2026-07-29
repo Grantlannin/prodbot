@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { isBillingEnabled } from '@/lib/stripe/config';
+import { isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { MONTHLY_PRICE_LABEL, MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
 import MarketingShell from './MarketingShell';
 
@@ -71,8 +71,9 @@ const whoItsFor = [
 
 export default function LandingPage() {
   const paywall = isBillingEnabled();
-  const ctaHref = paywall ? '/subscribe' : '/app';
-  const ctaLabel = paywall ? `Subscribe — ${MONTHLY_PRICE_SHORT}` : 'Open app';
+  const paywallOff = isPaywallDisabled();
+  const ctaHref = paywall ? '/subscribe' : paywallOff ? '/login?mode=signup' : '/app';
+  const ctaLabel = paywall ? `Subscribe — ${MONTHLY_PRICE_SHORT}` : paywallOff ? 'Get started' : 'Open app';
 
   return (
     <MarketingShell>
@@ -104,6 +105,8 @@ export default function LandingPage() {
           </Link>
           {paywall ? (
             <span className="text-sm text-slate-500">Subscribe first, then create your account</span>
+          ) : paywallOff ? (
+            <span className="text-sm text-slate-500">Paywall off for testing — create an account to try the full flow</span>
           ) : null}
         </div>
 

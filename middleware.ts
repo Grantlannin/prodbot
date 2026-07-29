@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isActiveSubscription } from '@/lib/billing/subscription';
 import { parseBillingRow } from '@/lib/billing/profile';
-import { isBillingEnabled } from '@/lib/stripe/config';
+import { isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import {
   CHROME_INTRO_COMPLETE_COOKIE,
   EXTENSION_INTRO_COMPLETE_COOKIE,
@@ -72,7 +72,9 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const billingEnabled = isBillingEnabled();
-  const requireAuth = isAuthRequired() || billingEnabled;
+  const paywallOff = isPaywallDisabled();
+  // Paywall-off test mode still requires login so onboarding can run.
+  const requireAuth = isAuthRequired() || billingEnabled || paywallOff;
 
   try {
     const supabase = createServerClient(url, anonKey, {
@@ -103,14 +105,17 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    if (billingEnabled && user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('stripe_customer_id, subscription_status, subscription_ends_at')
-        .eq('id', user.id)
-        .maybeSingle();
+    if (user && (billingEnabled || paywallOff)) {
+      let active = true;
+      if (billingEnabled) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('stripe_customer_id, subscription_status, subscription_ends_at')
+          .eq('id', user.id)
+          .maybeSingle();
+        active = isActiveSubscription(parseBillingRow(profile));
+      }
 
-      const active = isActiveSubscription(parseBillingRow(profile));
       const chromeIntroComplete = hasChromeIntroComplete(request);
       const extensionIntroComplete = hasExtensionIntroComplete(request);
       const introComplete = hasIntroComplete(request);

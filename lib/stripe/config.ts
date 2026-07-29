@@ -23,6 +23,11 @@ function isPaywallExplicitlyDisabled(): boolean {
   );
 }
 
+/** True when paywall is temporarily off for end-to-end testing. */
+export function isPaywallDisabled(): boolean {
+  return isPaywallExplicitlyDisabled();
+}
+
 /** Paywall is on when Stripe + Supabase are configured and not explicitly disabled. */
 export function isBillingEnabled(): boolean {
   if (isPaywallExplicitlyDisabled()) return false;
