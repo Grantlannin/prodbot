@@ -11,7 +11,6 @@ import {
   markExtensionIntroCompleteClient,
   ONBOARDING_STEP_COUNT,
 } from '@/lib/intro';
-import { PRODUCTION_SITE_HOST } from '@/lib/site';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -35,14 +34,16 @@ export default function IntroExtension() {
           <p style={styles.step}>Step 2 of {ONBOARDING_STEP_COUNT}</p>
           <h1 style={styles.title}>Install the focus extension</h1>
           <p style={styles.lead}>
-            Blocks distracting sites during focus sessions. Keep a <strong>{PRODUCTION_SITE_HOST}</strong> tab open
-            while you work so blocking stays in sync.
+            The focus extension blocks distracting sites during your work sessions &amp; communicates vital information
+            with your dashboard.
           </p>
 
           {detected ? (
             <p style={styles.detected}>Extension connected — you&apos;re good to go.</p>
           ) : (
-            <p style={styles.pending}>Install the extension on this browser, then we&apos;ll detect it automatically.</p>
+            <p style={styles.pending}>
+              Come back here after installing — we&apos;ll show &quot;Extension connected&quot; when it&apos;s working.
+            </p>
           )}
 
           {storeUrl ? (
@@ -55,7 +56,7 @@ export default function IntroExtension() {
                 Chrome Web Store link is not configured yet. Ask support or use the developer zip below.
               </p>
               <a href="/daywinner.zip" download="daywinner.zip" style={styles.secondaryLink}>
-                Download extension zip (v1.0.6)
+                Download extension zip
               </a>
             </>
           )}
@@ -63,7 +64,9 @@ export default function IntroExtension() {
           <ol style={styles.steps}>
             {storeUrl ? (
               <>
-                <li>Click <strong>Add to Chrome</strong> above and confirm install.</li>
+                <li>
+                  Click <strong>Add to Chrome</strong> above and confirm install.
+                </li>
                 <li>Reload the extension if you had an older copy installed.</li>
                 <li>Come back here — we&apos;ll show &quot;Extension connected&quot; when it&apos;s working.</li>
               </>
@@ -78,9 +81,15 @@ export default function IntroExtension() {
             )}
           </ol>
 
-          <button type="button" onClick={handleContinue} style={styles.btn}>
-            {detected ? 'Continue to intro video' : 'Skip for now'}
-          </button>
+          {detected ? (
+            <button type="button" onClick={handleContinue} style={styles.btn}>
+              Continue
+            </button>
+          ) : (
+            <button type="button" onClick={handleContinue} style={styles.skipBtn}>
+              Skip
+            </button>
+          )}
         </div>
       </div>
     </MarketingShell>
@@ -197,5 +206,17 @@ const styles: Record<string, CSSProperties> = {
     background: '#0f172a',
     color: '#fff',
     cursor: 'pointer',
+  },
+  skipBtn: {
+    alignSelf: 'center',
+    marginTop: 8,
+    border: 'none',
+    background: 'transparent',
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    cursor: 'pointer',
+    padding: '4px 8px',
   },
 };

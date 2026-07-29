@@ -29,23 +29,25 @@ export default function IntroChrome() {
       <div style={styles.wrap}>
         <div style={styles.card}>
           <p style={styles.step}>Step 1 of {ONBOARDING_STEP_COUNT}</p>
-          <h1 style={styles.title}>Use Google Chrome</h1>
+          <h1 style={styles.title}>Full usage requires Google Chrome</h1>
           <p style={styles.lead}>
-            Daywinner and the focus extension run in <strong>Google Chrome</strong> on desktop. Safari, Firefox, and
-            mobile browsers are not supported yet.
+            Let&apos;s download it quickly here if you&apos;re not already using it. If you are, continue to set up the
+            extension. Note: if you&apos;re using a different browser, adding a new browser is a fantastic way to
+            refresh everything for maximum productivity. (Also there is no affiliation with Chrome — it is just what we
+            personally use &amp; designed the bot around.)
+          </p>
+          <p style={styles.supportNote}>
+            Daywinner and the focus extension run in Google Chrome on desktop. Safari, Firefox, and mobile browsers are
+            not supported.
           </p>
 
           {onChrome ? (
             <p style={styles.detected}>You&apos;re on Chrome — you&apos;re ready for the next step.</p>
           ) : (
-            <p style={styles.pending}>
-              If you&apos;re on another browser, download Chrome first. Take your time — we&apos;ll wait here.
-            </p>
+            <a href={CHROME_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" style={styles.primaryLink}>
+              Download Google Chrome
+            </a>
           )}
-
-          <a href={CHROME_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" style={styles.primaryLink}>
-            Download Google Chrome
-          </a>
 
           <ul style={styles.list}>
             <li>Install Chrome, then open this site again in Chrome.</li>
@@ -72,7 +74,7 @@ const styles: Record<string, CSSProperties> = {
   },
   card: {
     width: '100%',
-    maxWidth: 520,
+    maxWidth: 560,
     background: '#fff',
     borderRadius: 14,
     border: '1px solid #e2e8f0',
@@ -95,12 +97,19 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 24,
     fontWeight: 700,
     color: '#0f172a',
+    lineHeight: 1.3,
   },
   lead: {
     margin: 0,
     fontSize: 14,
     lineHeight: 1.55,
     color: '#64748b',
+  },
+  supportNote: {
+    margin: 0,
+    fontSize: 13,
+    lineHeight: 1.5,
+    color: '#475569',
   },
   detected: {
     margin: 0,
@@ -110,14 +119,6 @@ const styles: Record<string, CSSProperties> = {
     color: '#047857',
     fontSize: 13,
     fontWeight: 600,
-  },
-  pending: {
-    margin: 0,
-    padding: '10px 12px',
-    borderRadius: 8,
-    background: '#f8fafc',
-    color: '#64748b',
-    fontSize: 13,
   },
   primaryLink: {
     display: 'block',

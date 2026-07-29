@@ -26,14 +26,13 @@ export default function IntroVideo({ loomUrl }: IntroVideoProps) {
       <div style={styles.wrap}>
         <div style={styles.card}>
           <p style={styles.step}>Step 3 of {ONBOARDING_STEP_COUNT}</p>
-          <h1 style={styles.title}>Quick intro</h1>
-          <p style={styles.lead}>A 2-minute walkthrough of how Daywinner works.</p>
+          <h1 style={styles.title}>Let me quickly show you how your dashboard works</h1>
 
           {embedUrl ? (
             <div style={styles.videoFrame}>
               <iframe
                 src={embedUrl}
-                title="Daywinner intro"
+                title="How your Daywinner dashboard works"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 style={styles.iframe}
@@ -88,12 +87,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 24,
     fontWeight: 700,
     color: '#0f172a',
-  },
-  lead: {
-    margin: 0,
-    fontSize: 14,
-    lineHeight: 1.55,
-    color: '#64748b',
   },
   videoFrame: {
     position: 'relative',
