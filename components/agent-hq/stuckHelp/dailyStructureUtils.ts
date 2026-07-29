@@ -222,6 +222,38 @@ export function getTodayPlan(store: DailyStructureStore, dateKey = localDateKey(
   return store[dateKey] ?? null;
 }
 
+/** Stable key so the plan survives overnight (designed the night before for the next day). */
+export const DAY_PLAN_ACTIVE_KEY = 'active';
+
+export function getActiveDayPlan(store: DailyStructureStore): DailyStructurePlan | null {
+  const active = store[DAY_PLAN_ACTIVE_KEY];
+  if (active) return active;
+
+  // Migrate older date-keyed plans so nothing disappears overnight.
+  const today = store[localDateKey()];
+  if (today) return today;
+
+  let latest: DailyStructurePlan | null = null;
+  for (const plan of Object.values(store)) {
+    if (!latest || plan.updatedAt > latest.updatedAt) latest = plan;
+  }
+  return latest;
+}
+
+export function upsertActiveDayPlan(
+  store: DailyStructureStore,
+  blocks: DayBlock[]
+): DailyStructureStore {
+  return {
+    ...store,
+    [DAY_PLAN_ACTIVE_KEY]: {
+      dateKey: DAY_PLAN_ACTIVE_KEY,
+      blocks: sortBlocks(blocks),
+      updatedAt: Date.now(),
+    },
+  };
+}
+
 export function upsertRecurringCommitment(
   items: RecurringCommitment[],
   block: Pick<DayBlock, 'title' | 'startMinutes' | 'durationMinutes'>

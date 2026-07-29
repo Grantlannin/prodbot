@@ -336,7 +336,7 @@ export default function DashboardTab({
             <DashCard
               title="Design my day"
               headerRight={
-                <span style={styles.designDayHint}>Drag · resets tomorrow</span>
+                <span style={styles.designDayHint}>Drag · Delete to remove</span>
               }
             >
               <DesignMyDayPanel />

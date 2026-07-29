@@ -4,10 +4,9 @@ import { useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import DailyStructureCalendar from './DailyStructureCalendar';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { localDateKey } from './eodReports';
 import {
   DAILY_STRUCTURE_KEY,
-  getTodayPlan,
+  getActiveDayPlan,
   sortBlocks,
   type DailyStructureStore,
 } from './stuckHelp/dailyStructureUtils';
@@ -16,15 +15,14 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 
 export default function DayAtGlancePanel() {
   const [store] = useLocalStorage<DailyStructureStore>(DAILY_STRUCTURE_KEY, {});
-  const todayKey = localDateKey();
-  const plan = useMemo(() => getTodayPlan(store, todayKey), [store, todayKey]);
+  const plan = useMemo(() => getActiveDayPlan(store), [store]);
   const blocks = plan?.blocks ?? [];
 
   return (
     <div style={styles.root}>
       {blocks.length === 0 ? (
         <p style={styles.empty}>
-          No blocks planned for today yet. Use &quot;lets quickly build my day&quot; to build your day.
+          No blocks planned yet. Use Design my day to build your calendar.
         </p>
       ) : (
         <DailyStructureCalendar blocks={sortBlocks(blocks)} interactive={false} compact />

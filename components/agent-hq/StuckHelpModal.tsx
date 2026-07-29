@@ -38,7 +38,7 @@ import {
   RECURRING_COMMITMENTS_KEY,
   sortBlocks,
   upsertRecurringCommitment,
-  upsertTodayPlan,
+  upsertActiveDayPlan,
   type DailyStructureStore,
   type DayBlock,
   type DayBlockKind,
@@ -293,7 +293,7 @@ export default function StuckHelpModal() {
   const persistStructureBlocks = (blocks: DayBlock[]) => {
     const sorted = sortBlocks(blocks);
     setStructureBlocks(sorted);
-    setDailyStore(prev => upsertTodayPlan(prev, sorted, localDateKey()));
+    setDailyStore(prev => upsertActiveDayPlan(prev, sorted));
   };
 
   const addStructureBlock = (

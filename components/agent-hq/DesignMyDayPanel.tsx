@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import DailyStructureCalendar from './DailyStructureCalendar';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useProjects } from './hooks/ProjectsProvider';
-import { localDateKey } from './eodReports';
 import { listWorkProjectGroups, type ListedWorkTask, type WorkProjectGroup } from './quickstartTask';
 import type { CaptureNote } from './types';
 import {
@@ -22,10 +21,10 @@ import {
   OPEN_LOOP_POINT_DURATION_MINUTES,
   blockKindColor,
   formatMinutesLabel,
-  getTodayPlan,
+  getActiveDayPlan,
   makeDayBlockId,
   sortBlocks,
-  upsertTodayPlan,
+  upsertActiveDayPlan,
   type DailyStructureStore,
   type DayBlock,
   type DayBlockColorMap,
@@ -776,8 +775,7 @@ export default function DesignMyDayPanel() {
   );
   const { projects } = useProjects();
 
-  const todayKey = localDateKey();
-  const plan = useMemo(() => getTodayPlan(store, todayKey), [store, todayKey]);
+  const plan = useMemo(() => getActiveDayPlan(store), [store]);
   const blocks = useMemo(() => plan?.blocks ?? [], [plan]);
   const workGroups = useMemo(() => listWorkProjectGroups(projects), [projects]);
 
@@ -786,7 +784,7 @@ export default function DesignMyDayPanel() {
   const [guidedOpen, setGuidedOpen] = useState(false);
 
   const persistBlocks = (next: DayBlock[]) => {
-    setStore(prev => upsertTodayPlan(prev, next, todayKey));
+    setStore(prev => upsertActiveDayPlan(prev, next));
   };
 
   const addBlock = (block: DayBlock) => {
@@ -795,6 +793,12 @@ export default function DesignMyDayPanel() {
 
   const removeBlock = (id: string) => {
     persistBlocks(blocks.filter(b => b.id !== id));
+  };
+
+  const clearCalendar = () => {
+    if (blocks.length === 0) return;
+    if (!window.confirm('Clear all blocks from the calendar?')) return;
+    persistBlocks([]);
   };
 
   const changeKindColor = (kind: DayBlockKind, colorId: string) => {
@@ -812,11 +816,24 @@ export default function DesignMyDayPanel() {
     <div style={styles.root}>
       <div style={styles.toolbar}>
         <div style={styles.leadSubtitle}>
-          Block time for work, commitments, and open loops.
+          Block time for work, commitments, and open loops. Click a block, then press Delete to remove it.
         </div>
-        <button type="button" onClick={() => setGuidedOpen(true)} style={styles.designBtn}>
-          Design my day
-        </button>
+        <div style={styles.toolbarActions}>
+          <button
+            type="button"
+            onClick={clearCalendar}
+            disabled={blocks.length === 0}
+            style={{
+              ...styles.clearBtn,
+              ...(blocks.length === 0 ? styles.btnDisabled : {}),
+            }}
+          >
+            Clear calendar
+          </button>
+          <button type="button" onClick={() => setGuidedOpen(true)} style={styles.designBtn}>
+            Design my day
+          </button>
+        </div>
       </div>
 
       <div style={styles.grid}>
@@ -944,6 +961,25 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+  },
+  toolbarActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
+  clearBtn: {
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    padding: '8px 12px',
+    fontSize: 12,
+    fontWeight: 600,
+    fontFamily: font,
+    letterSpacing: '-0.01em',
+    background: '#fff',
+    color: '#64748b',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
   },
   toolbarLead: {
     minWidth: 0,

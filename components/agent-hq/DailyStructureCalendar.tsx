@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useRef, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import {
   DAY_TIMELINE_END,
   DAY_TIMELINE_PX_PER_MIN,
@@ -47,6 +54,13 @@ function snapMinutes(minutes: number) {
   return Math.round(minutes / SNAP) * SNAP;
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  return target.isContentEditable;
+}
+
 export default function DailyStructureCalendar({
   blocks,
   onBlocksChange,
@@ -64,11 +78,37 @@ export default function DailyStructureCalendar({
   const dragRef = useRef<DragState | null>(null);
   const blocksRef = useRef(blocks);
   blocksRef.current = blocks;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedIdRef = useRef<string | null>(null);
+  selectedIdRef.current = selectedId;
 
   const rangeStart = timelineStartMinutes;
   const rangeEnd = timelineEndMinutes;
   const timelineHeight = (rangeEnd - rangeStart) * pxPerMin;
   const sorted = sortBlocks(blocks);
+
+  useEffect(() => {
+    if (selectedId && !blocks.some(b => b.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [blocks, selectedId]);
+
+  useEffect(() => {
+    if (!interactive || !onRemoveBlock) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      if (isEditableTarget(e.target)) return;
+      const id = selectedIdRef.current;
+      if (!id) return;
+      e.preventDefault();
+      onRemoveBlock(id);
+      setSelectedId(null);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [interactive, onRemoveBlock]);
 
   const clampMoveStart = useCallback(
     (minutes: number, duration: number) => {
@@ -83,6 +123,7 @@ export default function DailyStructureCalendar({
     if (!interactive || !onBlocksChange) return;
     e.preventDefault();
     e.stopPropagation();
+    setSelectedId(block.id);
     dragRef.current = {
       id: block.id,
       mode,
@@ -147,6 +188,7 @@ export default function DailyStructureCalendar({
           ...styles.body,
           ...(noScroll ? styles.bodyNoScroll : {}),
         }}
+        onMouseDown={() => setSelectedId(null)}
       >
         <div style={{ ...styles.labels, minHeight: timelineHeight }}>
           {hourLabels.map(min => (
@@ -176,29 +218,34 @@ export default function DailyStructureCalendar({
             const top = (block.startMinutes - rangeStart) * pxPerMin;
             const height = Math.max(pxPerMin >= 0.9 ? 22 : 16, block.durationMinutes * pxPerMin);
             const dense = pxPerMin < 0.85;
-            // Skip blocks fully outside the visible window
             if (block.startMinutes + block.durationMinutes <= rangeStart) return null;
             if (block.startMinutes >= rangeEnd) return null;
             const endMinutes = block.startMinutes + block.durationMinutes;
             const rangeLabel = `${formatMinutesLabel(block.startMinutes)}–${formatMinutesLabel(endMinutes)}`;
             const canEdit = interactive && !!onBlocksChange;
+            const selected = selectedId === block.id;
             return (
               <div
                 key={block.id}
                 style={{
                   ...styles.block,
                   ...(dense ? styles.blockDense : {}),
+                  ...(selected ? styles.blockSelected : {}),
                   top,
                   height,
                   background: colors.bg,
-                  borderColor: colors.border,
+                  borderColor: selected ? '#0f172a' : colors.border,
                   color: colors.text,
                   cursor: canEdit ? 'grab' : 'default',
                   display: 'flex',
                   alignItems: 'center',
                 }}
-                onMouseDown={e => beginDrag(e, block, 'move')}
-                title={`${block.title} · ${rangeLabel}`}
+                onMouseDown={e => {
+                  e.stopPropagation();
+                  if (canEdit) beginDrag(e, block, 'move');
+                  else setSelectedId(block.id);
+                }}
+                title={`${block.title} · ${rangeLabel}${onRemoveBlock ? ' · Delete to remove' : ''}`}
               >
                 {canEdit ? (
                   <div
@@ -223,6 +270,7 @@ export default function DailyStructureCalendar({
                       onClick={e => {
                         e.stopPropagation();
                         onRemoveBlock(block.id);
+                        setSelectedId(null);
                       }}
                     >
                       ×
@@ -322,6 +370,10 @@ const styles: Record<string, CSSProperties> = {
     padding: '2px 6px',
     borderRadius: 8,
     borderWidth: 1,
+  },
+  blockSelected: {
+    boxShadow: '0 0 0 2px rgba(15, 23, 42, 0.35)',
+    zIndex: 3,
   },
   resizeHandle: {
     position: 'absolute',
