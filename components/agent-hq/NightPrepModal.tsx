@@ -30,12 +30,17 @@ import {
   type NightPrepTomorrowPlan,
   type NightPrepTomorrowTask,
 } from './nightPrep/storage';
+import { saveWindDownBetterUse } from './nightPrep/windDownEodNotes';
 import { parseFlexibleTime } from './stuckHelp/dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const BOT_TYPING_MS = 1300;
 
 const COMPOSE_PHASES: NightPrepFlowPhase[] = [
+  'wind_down_reflect',
+  'wind_down_missed_why',
+  'wind_down_missed_prep',
+  'wind_down_better_use',
   'wind_down_item',
   'prep_time',
   'prep_location',
@@ -64,7 +69,7 @@ export default function NightPrepModal() {
     setNightPrepFields,
     appendNightPrepMessages,
   } = useNightPrep();
-  const { items: doneTodayItems } = useDoneToday();
+  const { items: doneTodayItems, addItem: addDoneToday } = useDoneToday();
   const { getTodayStats } = useWorkTrackerContext();
   const { projects, setProjects } = useProjects();
   const [, setNightPrepPlan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
@@ -127,22 +132,11 @@ export default function NightPrepModal() {
     clearTimers();
     setTyping(true);
     schedule(() => {
-      appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.intro });
-      schedule(() => {
-        if (windDownItems.length === 0) {
-          appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.emptyLogged });
-          setNightPrepPhase('empty_logged_prompt');
-        } else {
-          appendNightPrepMessages({
-            role: 'bot',
-            text: WIND_DOWN_FLOW_COPY.taskPrompt(windDownItemLabel(windDownItems[0])),
-          });
-          setNightPrepPhase('wind_down_item');
-        }
-        setTyping(false);
-      }, BOT_TYPING_MS);
+      appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.reflectIntro });
+      setNightPrepPhase('wind_down_reflect');
+      setTyping(false);
     }, BOT_TYPING_MS);
-  }, [open, flow, windDownItems, appendNightPrepMessages, setNightPrepPhase]);
+  }, [open, flow, appendNightPrepMessages, setNightPrepPhase]);
 
   useEffect(() => {
     if (!open || !phase || typing) return;
@@ -169,14 +163,38 @@ export default function NightPrepModal() {
     }, typingMs);
   };
 
-  const beginNightPrep = () => {
+  const beginNightPrep = (intro: string = WIND_DOWN_FLOW_COPY.prepIntro) => {
     clearTimers();
     setTyping(true);
     schedule(() => {
-      appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.prepIntro });
+      appendNightPrepMessages({ role: 'bot', text: intro });
       schedule(() => {
         appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.qFirstBlockTime });
         setNightPrepPhase('prep_time');
+        setTyping(false);
+      }, BOT_TYPING_MS);
+    }, BOT_TYPING_MS);
+  };
+
+  const startContextPhase = (intro: string) => {
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text: intro });
+      schedule(() => {
+        const items = buildCurrentWindDownItems();
+        fieldsRef.current.windDownIndex = 0;
+        setNightPrepFields({ windDownIndex: 0, windDownItems: items });
+        if (items.length === 0) {
+          appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.emptyLogged });
+          setNightPrepPhase('empty_logged_prompt');
+        } else {
+          appendNightPrepMessages({
+            role: 'bot',
+            text: WIND_DOWN_FLOW_COPY.taskPrompt(windDownItemLabel(items[0])),
+          });
+          setNightPrepPhase('wind_down_item');
+        }
         setTyping(false);
       }, BOT_TYPING_MS);
     }, BOT_TYPING_MS);
@@ -220,9 +238,87 @@ export default function NightPrepModal() {
     advanceWindDown(true);
   };
 
+  const handleDidntGetDone = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.didntGetDone });
+    sendBotReply(WIND_DOWN_FLOW_COPY.missedWhy);
+    setNightPrepPhase('wind_down_missed_why');
+  };
+
+  const handleBestUseYes = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.yes });
+    startContextPhase(WIND_DOWN_FLOW_COPY.contextIntro);
+  };
+
+  const handleBestUseNo = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.no });
+    sendBotReply(WIND_DOWN_FLOW_COPY.betterUse);
+    setNightPrepPhase('wind_down_better_use');
+  };
+
+  const finishMissedPath = (why: string, prep: string) => {
+    addDoneToday({
+      text: "Didn't get done what I wanted to",
+      detail: `What happened: ${why}\n\nTomorrow prep/system: ${prep}`,
+      source: 'manual',
+    });
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.missedClose });
+      setTyping(false);
+      schedule(() => {
+        beginNightPrep(WIND_DOWN_FLOW_COPY.prepIntroAfterMissed);
+      }, BOT_TYPING_MS + 400);
+    }, BOT_TYPING_MS);
+  };
+
   const sendDraft = () => {
     const text = draft.trim();
     if (!text || typing || !phase) return;
+
+    if (phase === 'wind_down_reflect') {
+      appendNightPrepMessages({ role: 'user', text });
+      setNightPrepFields({ doneReflection: text });
+      addDoneToday({ text, source: 'manual' });
+      setDraft('');
+      draftRef.current = '';
+      sendBotReply(WIND_DOWN_FLOW_COPY.confirmBestUse);
+      setNightPrepPhase('wind_down_best_use_confirm');
+      return;
+    }
+
+    if (phase === 'wind_down_missed_why') {
+      appendNightPrepMessages({ role: 'user', text });
+      setNightPrepFields({ missedWhy: text });
+      setDraft('');
+      draftRef.current = '';
+      sendBotReply(WIND_DOWN_FLOW_COPY.missedPrep);
+      setNightPrepPhase('wind_down_missed_prep');
+      return;
+    }
+
+    if (phase === 'wind_down_missed_prep') {
+      const why = (flow.missedWhy || '').trim();
+      appendNightPrepMessages({ role: 'user', text });
+      setNightPrepFields({ missedPrep: text });
+      setDraft('');
+      draftRef.current = '';
+      finishMissedPath(why, text);
+      return;
+    }
+
+    if (phase === 'wind_down_better_use') {
+      appendNightPrepMessages({ role: 'user', text });
+      setNightPrepFields({ betterUseOfTime: text });
+      saveWindDownBetterUse(text);
+      setDraft('');
+      draftRef.current = '';
+      startContextPhase(WIND_DOWN_FLOW_COPY.betterUseNoted);
+      return;
+    }
 
     if (phase === 'wind_down_item') {
       appendNightPrepMessages({ role: 'user', text });
@@ -537,6 +633,25 @@ export default function NightPrepModal() {
           </div>
 
           <footer style={styles.footer}>
+            {phase === 'wind_down_reflect' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={handleDidntGetDone} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.didntGetDone}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'wind_down_best_use_confirm' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={handleBestUseYes} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.yes}
+                </button>
+                <button type="button" onClick={handleBestUseNo} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.no}
+                </button>
+              </div>
+            ) : null}
+
             {phase === 'wind_down_item' && !typing ? (
               <div style={styles.chipWrap}>
                 <button type="button" onClick={skipWindDownContext} style={styles.chip}>

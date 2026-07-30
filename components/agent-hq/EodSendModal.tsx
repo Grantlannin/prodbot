@@ -28,6 +28,7 @@ import { useAuth } from './hooks/AuthProvider';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import type { DoneTodayItem, Infraction } from './types';
+import { windDownBetterUsePrefill } from './nightPrep/windDownEodNotes';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -90,7 +91,7 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
 
     const existing = getReport(todayKey);
     setCompleted(existing ? reportCompleted(existing) : prefillCompletedFromDoneToday(doneTodayItems));
-    setLearnings(existing ? reportLearnings(existing) : '');
+    setLearnings(existing ? reportLearnings(existing) : windDownBetterUsePrefill());
     setBodyTouched(false);
     setEmailError(null);
     setSent(false);

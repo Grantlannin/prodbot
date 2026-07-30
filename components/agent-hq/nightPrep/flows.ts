@@ -10,8 +10,22 @@ export interface NightPrepChatMessage {
 
 export const WIND_DOWN_FLOW_COPY = {
   windDownButton: 'wind down',
-  intro:
-    'Let\'s begin your wind down. The first thing we want to do is add specific context to everything you did today. If you don\'t want to add context, just click "no context. Next". Make sure your notes are specific enough to understand tomorrow, or you will pay the \'clarity tax\'. Staying organized will keep you a beast. Let\'s begin.',
+  reflectIntro:
+    "Let's begin your wind down. What did you objectively get done today?\n& was that the best use of your time? Reflect below.",
+  didntGetDone: "i didn't get done what I wanted to",
+  missedWhy:
+    "Happens, let's figure out why & build a system around it. What happened? analyze as best as you can.",
+  missedPrep:
+    'Got it. What will you need to make sure you do tomorrow from a prep, management, or system perspective to not allow it to happen again tomorrow?',
+  missedClose: "Great. Tomorrow is a new day. let it go & dominate tomorrow. I'll be ready.",
+  confirmBestUse: 'to confirm, was this the best use of your time?',
+  yes: 'yes',
+  no: 'no',
+  betterUse: 'what would have been a more effective usage of time? analyze here.',
+  betterUseNoted:
+    'Noted. you can send that to yourself via email in the EOD if you want so you have it. Now before we organize for tomorrow, first thing we want to do is add specific context to everything you did today. If you don\'t want to add context, just click "no context. Next". Make sure your notes are specific enough to understand tomorrow, or you will pay the \'clarity tax\'. Staying organized will keep you a beast. Let\'s begin.',
+  contextIntro:
+    'great. Now before we organize for tomorrow, first thing we want to do is add specific context to everything you did today. If you don\'t want to add context, just click "no context. Next". Make sure your notes are specific enough to understand tomorrow, or you will pay the \'clarity tax\'. Staying organized will keep you a beast. Let\'s begin.',
   noContextNext: 'no context. Next',
   taskPrompt: (label: string) => `What context do you want to leave for "${label}"?`,
   emptyLogged:
@@ -20,6 +34,8 @@ export const WIND_DOWN_FLOW_COPY = {
   emptyNo: 'no',
   prepIntro:
     'great. Context added. Now let\'s prep your tasks/work for tomorrow, so you can begin quickly & clearly',
+  prepIntroAfterMissed:
+    "Now let's prep your tasks/work for tomorrow, so you can begin quickly & clearly",
   qFirstBlockTime: 'roughly what time are you putting in your 1st work block tomorrow?',
   qWorkLocation: 'where are you going to be doing this work?',
   qWhatWorkingOn:
@@ -37,7 +53,11 @@ export const WIND_DOWN_FLOW_COPY = {
 } as const;
 
 export type NightPrepFlowPhase =
-  | 'wind_down_intro'
+  | 'wind_down_reflect'
+  | 'wind_down_missed_why'
+  | 'wind_down_missed_prep'
+  | 'wind_down_best_use_confirm'
+  | 'wind_down_better_use'
   | 'wind_down_item'
   | 'empty_logged_prompt'
   | 'prep_time'
@@ -65,6 +85,14 @@ export interface NightPrepFlowState {
   taskId: string;
   taskText: string;
   tomorrowTasks: NightPrepTomorrowTask[];
+  /** Objective done-today reflection before best-use confirm */
+  doneReflection: string;
+  /** Missed-path: what happened */
+  missedWhy: string;
+  /** Missed-path: prep/system for tomorrow */
+  missedPrep: string;
+  /** What would have been a better use of time */
+  betterUseOfTime: string;
 }
 
 export { windDownItemLabel };

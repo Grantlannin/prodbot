@@ -21,7 +21,7 @@ function makeId() {
 
 function initialFlowState(items: WindDownItem[]): NightPrepFlowState {
   return {
-    phase: 'wind_down_intro',
+    phase: 'wind_down_reflect',
     messages: [],
     windDownItems: items,
     windDownIndex: 0,
@@ -33,6 +33,10 @@ function initialFlowState(items: WindDownItem[]): NightPrepFlowState {
     taskId: '',
     taskText: '',
     tomorrowTasks: [],
+    doneReflection: '',
+    missedWhy: '',
+    missedPrep: '',
+    betterUseOfTime: '',
   };
 }
 
@@ -56,6 +60,11 @@ interface NightPrepContextValue {
         | 'taskId'
         | 'taskText'
         | 'tomorrowTasks'
+        | 'windDownItems'
+        | 'doneReflection'
+        | 'missedWhy'
+        | 'missedPrep'
+        | 'betterUseOfTime'
       >
     >
   ) => void;
@@ -99,6 +108,11 @@ export function NightPrepProvider({ children }: { children: ReactNode }) {
           | 'taskId'
           | 'taskText'
           | 'tomorrowTasks'
+          | 'windDownItems'
+          | 'doneReflection'
+          | 'missedWhy'
+          | 'missedPrep'
+          | 'betterUseOfTime'
         >
       >
     ) => {
