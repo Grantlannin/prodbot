@@ -110,6 +110,7 @@ export default function StuckHelpModal() {
   const [openLoops, setOpenLoops] = useLocalStorage<CaptureNote[]>('agentHQ_openLoops', []);
   const [typing, setTyping] = useState(false);
   const [chooseProjectError, setChooseProjectError] = useState(false);
+  const [kickstartError, setKickstartError] = useState<string | null>(null);
 
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -220,6 +221,7 @@ export default function StuckHelpModal() {
       setDraft('');
       draftRef.current = '';
       setChooseProjectError(false);
+      setKickstartError(null);
     }
   }, [open]);
 
@@ -747,10 +749,20 @@ export default function StuckHelpModal() {
 
   const sendOrganizingKickstart = () => {
     if (!organizingPhase || !organizingFlow || organizingPhase !== 'await_kickstart_yes') return;
-    if (typing || busy) return;
-    const projectName = (organizingFlow.projectName || organizingFieldsRef.current.projectName).trim();
-    const hardest = (organizingFlow.hardestTask || organizingFieldsRef.current.hardestTask).trim();
-    if (!projectName || !hardest) return;
+    if (busy) {
+      setKickstartError(STARTING_FLOW_COPY.busySession);
+      return;
+    }
+    const projectName =
+      (organizingFlow.projectName || organizingFieldsRef.current.projectName).trim() || 'Work';
+    const hardest =
+      (organizingFlow.hardestTask || organizingFieldsRef.current.hardestTask).trim() ||
+      (organizingFieldsRef.current.taskTexts[0] || organizingFlow.taskTexts[0] || '').trim();
+    if (!hardest) {
+      setKickstartError('Pick the hardest task again, then tap done prepping.');
+      return;
+    }
+    setKickstartError(null);
     appendOrganizingMessages({ role: 'user', text: ORGANIZING_FLOW_COPY.kickstartYes });
     beginWorkTimer(hardest, projectName);
   };
@@ -788,6 +800,7 @@ export default function StuckHelpModal() {
         hardestTask: '',
       };
       setChooseProjectError(false);
+      setKickstartError(null);
       resetOrganizingChat();
       sendOrganizingOpeningSequence(ORGANIZING_FLOW_COPY.intro, ORGANIZING_FLOW_COPY.qProject);
       return;
@@ -1060,7 +1073,14 @@ export default function StuckHelpModal() {
 
               {inOrganizing && organizingPhase === 'await_kickstart_yes' && !typing ? (
                 <div style={styles.chipWrap}>
-                  <button type="button" disabled={busy} onClick={sendOrganizingKickstart} style={styles.chip}>
+                  {busy || kickstartError ? (
+                    <p style={styles.errorText}>{kickstartError || STARTING_FLOW_COPY.busySession}</p>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={sendOrganizingKickstart}
+                    style={{ ...styles.chip, ...(busy ? styles.chipDisabled : {}) }}
+                  >
                     {ORGANIZING_FLOW_COPY.kickstartYes}
                   </button>
                 </div>
@@ -1469,6 +1489,10 @@ const styles: Record<string, CSSProperties> = {
     color: '#007aff',
     cursor: 'pointer',
     lineHeight: 1.4,
+  },
+  chipDisabled: {
+    opacity: 0.45,
+    cursor: 'not-allowed',
   },
   errorText: {
     margin: 0,
