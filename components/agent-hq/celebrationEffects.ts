@@ -5,7 +5,6 @@ export function stopCelebrationConfetti() {
 }
 
 export function fireCelebrationConfetti() {
-  stopCelebrationConfetti();
   const duration = 4000;
   const end = Date.now() + duration;
   const colors = ['#3b82f6', '#60a5fa', '#2563eb', '#93c5fd', '#22c55e', '#fbbf24', '#f472b6'];
@@ -41,9 +40,10 @@ export function fireCelebrationConfetti() {
 }
 
 export function triggerCelebration(
-  settings: { enabled: boolean },
+  settings: { enabled?: boolean },
   showOverlay: () => void
 ) {
-  if (!settings.enabled) return;
+  if (settings.enabled === false) return;
+  fireCelebrationConfetti();
   showOverlay();
 }

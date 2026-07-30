@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useCallback, useState, type CSSProperties } from 'react';
+import { useEffect, useCallback, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import CelebrationSettingsEditor from './CelebrationSettingsEditor';
-import { fireCelebrationConfetti, stopCelebrationConfetti } from './celebrationEffects';
+import { stopCelebrationConfetti } from './celebrationEffects';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -19,18 +19,18 @@ export default function ProjectCompletionOverlay({
   message,
 }: ProjectCompletionOverlayProps) {
   const [editOpen, setEditOpen] = useState(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) {
       setEditOpen(false);
-      stopCelebrationConfetti();
       return;
     }
-    // Only when the overlay opens — not when edit settings change (that was looping confetti).
-    fireCelebrationConfetti();
-    const t = setTimeout(onClose, 8000);
+    // Auto-dismiss only — confetti is fired once by triggerCelebration.
+    const t = setTimeout(() => onCloseRef.current(), 8000);
     return () => clearTimeout(t);
-  }, [open, onClose]);
+  }, [open]);
 
   const handleClose = useCallback(() => {
     stopCelebrationConfetti();
