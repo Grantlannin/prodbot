@@ -130,10 +130,11 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'lowercase',
   },
   editPopover: {
-    position: 'absolute',
-    right: 12,
-    bottom: 36,
-    zIndex: 2,
+    position: 'fixed',
+    top: '50%',
+    right: 24,
+    transform: 'translateY(-50%)',
+    zIndex: 100000,
     textAlign: 'left',
   },
 };

@@ -24,7 +24,7 @@ export const CELEBRATION_MESSAGE_OPTIONS = [
   DEFAULT_CELEBRATION_TEMPLATE,
   "YOU'RE UNSTOPPABLE. KEEP GOING",
   'BOOM. ONTO THE NEXT',
-  'We did it. Next.',
+  'you did it. Next.',
   "LET'S GOOO!!",
 ] as const;
 
