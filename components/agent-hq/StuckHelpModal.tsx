@@ -582,7 +582,8 @@ export default function StuckHelpModal() {
   const addOrganizingTaskText = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return false;
-    const current = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
+    // Ref is source of truth — state can still be [] and would wipe prior tasks via ??.
+    const current = organizingFieldsRef.current.taskTexts;
     if (current.length >= ORGANIZING_MVP_TASK_LIMIT) return false;
     if (current.includes(trimmed)) return false;
     const nextTasks = [...current, trimmed];
@@ -592,24 +593,30 @@ export default function StuckHelpModal() {
   };
 
   const advanceFromMvpTasksIfReady = () => {
-    const chatTasks = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
-    if (chatTasks.length < ORGANIZING_MVP_TASK_LIMIT || typing) return;
-    organizingFieldsRef.current.taskTexts = chatTasks;
+    const chatTasks = organizingFieldsRef.current.taskTexts;
+    if (chatTasks.length < ORGANIZING_MVP_TASK_LIMIT) return false;
+    clearTimers();
     setOrganizingFields({ taskTexts: chatTasks });
     sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qHardest);
     setOrganizingPhase('await_hardest_pick');
+    return true;
+  };
+
+  const afterMvpTaskAdded = () => {
+    if (advanceFromMvpTasksIfReady()) return;
+    const count = organizingFieldsRef.current.taskTexts.length;
+    if (count > 0 && count < ORGANIZING_MVP_TASK_LIMIT) {
+      sendOrganizingBotReply(ORGANIZING_FLOW_COPY.qMvpSecond);
+    }
   };
 
   const selectExistingProjectTask = (taskText: string) => {
     if (typing) return;
     const trimmed = taskText.trim();
     if (!trimmed) return;
-    const current = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
-    if (current.length >= ORGANIZING_MVP_TASK_LIMIT) return;
-    if (current.includes(trimmed)) return;
-    appendOrganizingMessages({ role: 'user', text: trimmed });
     if (!addOrganizingTaskText(trimmed)) return;
-    advanceFromMvpTasksIfReady();
+    appendOrganizingMessages({ role: 'user', text: trimmed });
+    afterMvpTaskAdded();
   };
 
   const sendStartingDraft = () => {
@@ -693,15 +700,24 @@ export default function StuckHelpModal() {
     if (organizingPhase === 'await_mvp_tasks') {
       const projectId = organizingFlow?.projectId || organizingFieldsRef.current.projectId;
       if (!projectId) return;
-      const current = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
-      if (current.length >= ORGANIZING_MVP_TASK_LIMIT) return;
+      if (organizingFieldsRef.current.taskTexts.length >= ORGANIZING_MVP_TASK_LIMIT) return;
+      if (/^(yes|no|y|n|ok|okay|done)$/i.test(text.trim())) {
+        setDraft('');
+        draftRef.current = '';
+        sendOrganizingBotReply(
+          organizingFieldsRef.current.taskTexts.length === 0
+            ? ORGANIZING_FLOW_COPY.qMvp
+            : ORGANIZING_FLOW_COPY.qMvpSecond
+        );
+        return;
+      }
+      if (!addOrganizingTaskText(text)) return;
       appendOrganizingMessages({ role: 'user', text });
       setProjects(prev => addProjectTask(prev, projectId, text));
       requestFocusProject(projectId);
-      if (!addOrganizingTaskText(text)) return;
       setDraft('');
       draftRef.current = '';
-      advanceFromMvpTasksIfReady();
+      afterMvpTaskAdded();
     }
   };
 
@@ -803,11 +819,15 @@ export default function StuckHelpModal() {
   };
 
   const projectOptions = projects.filter(p => p.name.trim());
-  const organizingTasks = organizingFlow?.taskTexts ?? [];
+  const organizingTasks = organizingFlow?.taskTexts ?? organizingFieldsRef.current.taskTexts;
   const selectedProject = projects.find(p => p.id === organizingFlow?.projectId);
   const projectTaskTexts = getOpenProjectTaskTexts(selectedProject);
   const hardestPickOptions = organizingTasks;
-  const existingProjectTasks = projectTaskTexts.filter(taskText => !organizingTasks.includes(taskText));
+  /** Skip leftover confirm junk (e.g. "yes") so it isn't mistaken for an MVP task chip. */
+  const existingProjectTasks = projectTaskTexts.filter(
+    taskText =>
+      !organizingTasks.includes(taskText) && !/^(yes|no|y|n|ok|okay|done)$/i.test(taskText)
+  );
   const mvpTasksRemaining = Math.max(0, ORGANIZING_MVP_TASK_LIMIT - organizingTasks.length);
 
   const showStartingCompose =
