@@ -1,6 +1,11 @@
 import confetti from 'canvas-confetti';
 
+export function stopCelebrationConfetti() {
+  confetti.reset();
+}
+
 export function fireCelebrationConfetti() {
+  stopCelebrationConfetti();
   const duration = 4000;
   const end = Date.now() + duration;
   const colors = ['#3b82f6', '#60a5fa', '#2563eb', '#93c5fd', '#22c55e', '#fbbf24', '#f472b6'];
@@ -10,6 +15,7 @@ export function fireCelebrationConfetti() {
   confetti({ particleCount: 80, spread: 120, origin: { x: 0.8, y: 0.4 }, colors });
 
   const frame = () => {
+    if (Date.now() >= end) return;
     confetti({
       particleCount: 3,
       angle: 60,
@@ -29,18 +35,15 @@ export function fireCelebrationConfetti() {
   frame();
 
   setTimeout(() => {
+    if (Date.now() > end + 500) return;
     confetti({ particleCount: 200, spread: 160, origin: { y: 0.35 }, colors });
   }, 400);
 }
 
 export function triggerCelebration(
-  settings: { enabled: boolean; showMessage: boolean },
+  settings: { enabled: boolean },
   showOverlay: () => void
 ) {
   if (!settings.enabled) return;
-  if (settings.showMessage) {
-    showOverlay();
-    return;
-  }
-  fireCelebrationConfetti();
+  showOverlay();
 }

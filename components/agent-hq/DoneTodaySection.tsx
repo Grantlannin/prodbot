@@ -123,7 +123,6 @@ export function DoneTodayBanner({ items, onRemove, onAdd }: DoneTodayBannerProps
         open={showCelebration}
         onClose={() => setShowCelebration(false)}
         message={getCelebrationMessage()}
-        showMessage={celebration.showMessage}
       />
     </>
   );

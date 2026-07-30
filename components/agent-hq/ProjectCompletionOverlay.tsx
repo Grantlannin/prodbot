@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import CelebrationSettingsEditor from './CelebrationSettingsEditor';
-import { fireCelebrationConfetti } from './celebrationEffects';
+import { fireCelebrationConfetti, stopCelebrationConfetti } from './celebrationEffects';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -11,47 +11,46 @@ interface ProjectCompletionOverlayProps {
   open: boolean;
   onClose: () => void;
   message: string;
-  showMessage: boolean;
 }
 
 export default function ProjectCompletionOverlay({
   open,
   onClose,
   message,
-  showMessage,
 }: ProjectCompletionOverlayProps) {
   const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setEditOpen(false);
+      stopCelebrationConfetti();
       return;
     }
+    // Only when the overlay opens — not when edit settings change (that was looping confetti).
     fireCelebrationConfetti();
-    if (!showMessage) {
-      const t = setTimeout(onClose, 1200);
-      return () => clearTimeout(t);
-    }
     const t = setTimeout(onClose, 8000);
     return () => clearTimeout(t);
-  }, [open, onClose, showMessage]);
+  }, [open, onClose]);
+
+  const handleClose = useCallback(() => {
+    stopCelebrationConfetti();
+    onClose();
+  }, [onClose]);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
-      if (e.target === e.currentTarget) onClose();
+      if (e.target === e.currentTarget) handleClose();
     },
-    [onClose]
+    [handleClose]
   );
 
   if (!open || typeof document === 'undefined') return null;
-
-  if (!showMessage) return null;
 
   return createPortal(
     <div style={styles.backdrop} onClick={handleBackdropClick} role="dialog" aria-modal="true">
       <div style={styles.card}>
         <p style={styles.message}>{message}</p>
-        <button type="button" onClick={onClose} style={styles.dismissBtn}>
+        <button type="button" onClick={handleClose} style={styles.dismissBtn}>
           LET&apos;S GO
         </button>
         <button

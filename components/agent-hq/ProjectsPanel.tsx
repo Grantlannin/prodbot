@@ -912,7 +912,6 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
         open={showCelebration}
         onClose={() => setShowCelebration(false)}
         message={getCelebrationMessage()}
-        showMessage={celebration.showMessage}
       />
       <AppleNotesEditorModal
         open={notesEditor !== null}

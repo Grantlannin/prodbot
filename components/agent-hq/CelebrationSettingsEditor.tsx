@@ -25,17 +25,7 @@ export default function CelebrationSettingsEditor({ onClose, compact }: Celebrat
           checked={celebration.enabled}
           onChange={e => setCelebration({ enabled: e.target.checked })}
         />
-        <span>Celebration on (confetti)</span>
-      </label>
-
-      <label style={{ ...styles.checkRow, opacity: celebration.enabled ? 1 : 0.45 }}>
-        <input
-          type="checkbox"
-          checked={celebration.showMessage}
-          disabled={!celebration.enabled}
-          onChange={e => setCelebration({ showMessage: e.target.checked })}
-        />
-        <span>Show message overlay</span>
+        <span>Celebration on (confetti + message)</span>
       </label>
 
       <label style={styles.fieldLabel}>

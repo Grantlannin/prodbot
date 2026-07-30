@@ -9,10 +9,10 @@ export interface UserProfile {
 }
 
 export interface CelebrationSettings {
-  /** Show confetti + overlay on project completion */
+  /** Show confetti + message overlay on project completion */
   enabled: boolean;
-  /** Show bold text overlay (if enabled, confetti still runs when enabled) */
-  showMessage: boolean;
+  /** @deprecated Always shows message when enabled; kept for stored settings compat */
+  showMessage?: boolean;
   /** Use {name} for the user's display name */
   messageTemplate: string;
 }
