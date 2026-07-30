@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { useDoneToday } from './hooks/useDoneToday';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import { useNightPrep } from './hooks/NightPrepProvider';
 import { WIND_DOWN_FLOW_COPY } from './nightPrep/flows';
@@ -45,16 +44,15 @@ export default function NightPrepPanel({
   onStartTask,
   sessionBusy = false,
 }: NightPrepPanelProps) {
-  const { items: doneTodayItems } = useDoneToday();
   const { getTodayStats } = useWorkTrackerContext();
   const { openNightPrepChat } = useNightPrep();
   const [plan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
   const [windDownHovered, setWindDownHovered] = useState(false);
 
   const startWindDown = useCallback(() => {
-    const items = buildWindDownItems(getTodayStats().projectStats, doneTodayItems);
+    const items = buildWindDownItems(getTodayStats().projectStats);
     openNightPrepChat(items);
-  }, [getTodayStats, doneTodayItems, openNightPrepChat]);
+  }, [getTodayStats, openNightPrepChat]);
 
   useEffect(() => {
     if (!autoStartWindDown) return;

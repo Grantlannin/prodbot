@@ -69,7 +69,7 @@ export default function NightPrepModal() {
     setNightPrepFields,
     appendNightPrepMessages,
   } = useNightPrep();
-  const { items: doneTodayItems, addItem: addDoneToday } = useDoneToday();
+  const { addItem: addDoneToday } = useDoneToday();
   const { getTodayStats } = useWorkTrackerContext();
   const { projects, setProjects } = useProjects();
   const [, setNightPrepPlan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
@@ -100,8 +100,7 @@ export default function NightPrepModal() {
   const windDownIndex = flow?.windDownIndex ?? 0;
   const currentWindDownItem = windDownItems[windDownIndex];
 
-  const buildCurrentWindDownItems = () =>
-    buildWindDownItems(getTodayStats().projectStats, doneTodayItems);
+  const buildCurrentWindDownItems = () => buildWindDownItems(getTodayStats().projectStats);
 
   const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);

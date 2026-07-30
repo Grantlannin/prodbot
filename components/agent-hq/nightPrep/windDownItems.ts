@@ -1,13 +1,11 @@
-import type { DoneTodayItem } from '../types';
 import { formatDuration } from '../chatLogic';
 
 export interface WindDownItem {
   id: string;
   label: string;
-  source: 'tracker' | 'done_today';
+  source: 'tracker';
   trackerMs?: number;
   trackerSessions?: number;
-  doneTodayItem?: DoneTodayItem;
 }
 
 export interface ProjectWorkStat {
@@ -16,10 +14,8 @@ export interface ProjectWorkStat {
   count: number;
 }
 
-export function buildWindDownItems(
-  projectStats: ProjectWorkStat[],
-  doneTodayItems: DoneTodayItem[]
-): WindDownItem[] {
+/** Wind-down context prompts only for timer-tracked work — not typed Done Today entries. */
+export function buildWindDownItems(projectStats: ProjectWorkStat[]): WindDownItem[] {
   const items: WindDownItem[] = [];
   const seen = new Set<string>();
 
@@ -38,26 +34,11 @@ export function buildWindDownItems(
     });
   }
 
-  for (const done of doneTodayItems) {
-    if (done.source === 'project') continue;
-    const text = done.text.trim();
-    if (!text) continue;
-    const key = text.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    items.push({
-      id: done.id,
-      label: text,
-      source: 'done_today',
-      doneTodayItem: done,
-    });
-  }
-
   return items;
 }
 
 export function windDownItemLabel(item: WindDownItem): string {
-  if (item.source === 'tracker' && item.trackerMs) {
+  if (item.trackerMs) {
     return `${item.label} (${formatDuration(item.trackerMs)} tracked)`;
   }
   return item.label;

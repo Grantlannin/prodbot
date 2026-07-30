@@ -1,4 +1,4 @@
-import type { DoneTodayItem, ProjectBoard } from '../types';
+import type { ProjectBoard } from '../types';
 import { formatReportDateLabel, localDateKey } from '../eodReports';
 import { parseFlexibleTime } from '../stuckHelp/dailyStructureUtils';
 import type { WindDownItem } from './windDownItems';
@@ -38,40 +38,6 @@ function applyNoteToTaskTargets(
       }),
     };
   });
-}
-
-export function resolveDoneItemTaskTargets(
-  projects: ProjectBoard[],
-  item: DoneTodayItem
-): { projectId: string; taskId: string }[] {
-  if (item.projectId) {
-    const project = projects.find(p => p.id === item.projectId);
-    if (!project) return [];
-
-    const trimmed = item.text.trim();
-    if (trimmed) {
-      const task = project.tasks.find(t => t.text.trim().toLowerCase() === trimmed.toLowerCase());
-      if (task) return [{ projectId: item.projectId, taskId: task.id }];
-    }
-
-    const detail = item.detail?.trim();
-    if (detail && !detail.includes('·')) {
-      const task = project.tasks.find(t => t.text.trim().toLowerCase() === detail.toLowerCase());
-      if (task) return [{ projectId: item.projectId, taskId: task.id }];
-    }
-
-    return [];
-  }
-
-  const trimmed = item.text.trim().toLowerCase();
-  if (!trimmed) return [];
-
-  const targets: { projectId: string; taskId: string }[] = [];
-  for (const project of projects) {
-    const task = project.tasks.find(t => t.text.trim().toLowerCase() === trimmed);
-    if (task) targets.push({ projectId: project.id, taskId: task.id });
-  }
-  return targets;
 }
 
 function resolveTrackerTaskTargets(
@@ -114,11 +80,6 @@ export function appendWindDownContextToProjects(
   dateKey = localDateKey()
 ): ProjectBoard[] {
   const entry = formatWindDownNoteEntry(dateKey, context);
-
-  if (item.source === 'done_today' && item.doneTodayItem) {
-    const targets = resolveDoneItemTaskTargets(projects, item.doneTodayItem);
-    return applyNoteToTaskTargets(projects, targets, entry);
-  }
 
   const taskTargets = resolveTrackerTaskTargets(projects, item.label.trim());
   if (taskTargets.length) {
