@@ -99,8 +99,19 @@ export default function NightPrepModal() {
   const windDownItems = flow?.windDownItems ?? [];
   const windDownIndex = flow?.windDownIndex ?? 0;
   const currentWindDownItem = windDownItems[windDownIndex];
+  const windDownItemsRef = useRef(windDownItems);
+  windDownItemsRef.current = windDownItems;
 
   const buildCurrentWindDownItems = () => buildWindDownItems(getTodayStats().projectStats);
+
+  /** Lock context prompts to live timer stats only (never typed Done Today / reflections). */
+  const lockTrackedContextItems = () => {
+    const items = buildCurrentWindDownItems().filter(item => (item.trackerMs ?? 0) > 0);
+    fieldsRef.current.windDownIndex = 0;
+    windDownItemsRef.current = items;
+    setNightPrepFields({ windDownIndex: 0, windDownItems: items });
+    return items;
+  };
 
   const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
@@ -196,11 +207,7 @@ export default function NightPrepModal() {
     schedule(() => {
       appendNightPrepMessages({ role: 'bot', text: intro });
       schedule(() => {
-        // Only ask context for items tracked when wind down opened — not the
-        // reflection text just logged into Done Today.
-        const items = flow.windDownItems;
-        fieldsRef.current.windDownIndex = 0;
-        setNightPrepFields({ windDownIndex: 0 });
+        const items = lockTrackedContextItems();
         if (items.length === 0) {
           appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.emptyLogged });
           setNightPrepPhase('empty_logged_prompt');
@@ -217,16 +224,17 @@ export default function NightPrepModal() {
   };
 
   const advanceWindDown = (skipContext = false) => {
-    const nextIndex = windDownIndex + 1;
+    const items = windDownItemsRef.current;
+    const nextIndex = (fieldsRef.current.windDownIndex ?? windDownIndex) + 1;
     fieldsRef.current.windDownIndex = nextIndex;
     setNightPrepFields({ windDownIndex: nextIndex });
 
-    if (nextIndex >= windDownItems.length) {
+    if (nextIndex >= items.length) {
       beginNightPrep();
       return;
     }
 
-    const nextItem = windDownItems[nextIndex];
+    const nextItem = items[nextIndex];
     if (!skipContext) {
       sendBotReply(WIND_DOWN_FLOW_COPY.taskPrompt(windDownItemLabel(nextItem)));
     } else {
