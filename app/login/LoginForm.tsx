@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { clearIntroProgressClient, INTRO_CHROME_PATH } from '@/lib/intro';
 import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -60,11 +61,16 @@ export default function LoginForm() {
     );
   }
 
-  const afterAuth = async () => {
+  const afterAuth = async (opts?: { isNewAccount?: boolean }) => {
     try {
       await fetch('/api/billing/link', { method: 'POST' });
     } catch {
       /* subscription link is best-effort */
+    }
+    if (opts?.isNewAccount) {
+      clearIntroProgressClient();
+      window.location.href = INTRO_CHROME_PATH;
+      return;
     }
     window.location.href = nextPath.startsWith('/') ? nextPath : '/app';
   };
@@ -112,7 +118,7 @@ export default function LoginForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password }),
       });
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as { error?: string; updated?: boolean };
       if (!res.ok) {
         throw new Error(data.error ?? 'Could not create account.');
       }
@@ -123,7 +129,8 @@ export default function LoginForm() {
         password,
       });
       if (signInError) throw signInError;
-      afterAuth();
+      // Existing email via "create account" only updates password — don't reset intro.
+      afterAuth({ isNewAccount: !data.updated });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create account.');
     } finally {

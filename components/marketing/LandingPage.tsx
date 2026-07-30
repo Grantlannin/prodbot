@@ -72,7 +72,7 @@ const whoItsFor = [
 export default function LandingPage() {
   const paywall = isBillingEnabled();
   const paywallOff = isPaywallDisabled();
-  const ctaHref = paywall ? '/subscribe' : paywallOff ? '/login?mode=signup' : '/app';
+  const ctaHref = paywall ? '/subscribe' : paywallOff ? '/login?mode=signup&next=/intro/chrome' : '/app';
   const ctaLabel = paywall ? `Subscribe — ${MONTHLY_PRICE_SHORT}` : paywallOff ? 'Get started' : 'Open app';
 
   return (

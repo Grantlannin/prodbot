@@ -91,7 +91,7 @@ export default function SubscribeForm() {
                 paying.
               </p>
               <Link
-                href="/login?mode=signup"
+                href="/login?mode=signup&next=/intro/chrome"
                 style={{ ...styles.primaryBtn, display: 'block', textAlign: 'center', textDecoration: 'none' }}
               >
                 Create account →

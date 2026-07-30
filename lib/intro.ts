@@ -42,6 +42,10 @@ function setClientCookie(name: string): void {
   document.cookie = `${name}=1; path=/; max-age=${maxAge}; SameSite=Lax`;
 }
 
+function clearClientCookie(name: string): void {
+  document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
+}
+
 export function markChromeIntroCompleteClient(): void {
   localStorage.setItem(CHROME_INTRO_COMPLETE_KEY, '1');
   setClientCookie(CHROME_INTRO_COMPLETE_COOKIE);
@@ -55,6 +59,17 @@ export function markIntroCompleteClient(): void {
 export function markExtensionIntroCompleteClient(): void {
   localStorage.setItem(EXTENSION_INTRO_COMPLETE_KEY, '1');
   setClientCookie(EXTENSION_INTRO_COMPLETE_COOKIE);
+}
+
+/** Wipe browser intro flags so a new account always starts onboarding. */
+export function clearIntroProgressClient(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(CHROME_INTRO_COMPLETE_KEY);
+  localStorage.removeItem(EXTENSION_INTRO_COMPLETE_KEY);
+  localStorage.removeItem(INTRO_COMPLETE_KEY);
+  clearClientCookie(CHROME_INTRO_COMPLETE_COOKIE);
+  clearClientCookie(EXTENSION_INTRO_COMPLETE_COOKIE);
+  clearClientCookie(INTRO_COMPLETE_COOKIE);
 }
 
 export function isChromeBrowserClient(): boolean {
