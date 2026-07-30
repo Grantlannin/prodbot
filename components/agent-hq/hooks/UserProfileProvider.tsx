@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { saveProfileDisplayName } from '@/lib/supabase/profile';
 import { useLocalStorage } from './useLocalStorage';
 import {
@@ -32,6 +32,30 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
   const [celebration, setCelebrationState] = useLocalStorage<CelebrationSettings>(
     CELEBRATION_SETTINGS_STORAGE_KEY,
     DEFAULT_CELEBRATION_SETTINGS
+  );
+
+  // One-time: confetti-loop fix left some users with celebration disabled.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const key = 'agentHQ_celebrationReenable_v1';
+    if (window.localStorage.getItem(key) === '1') return;
+    window.localStorage.setItem(key, '1');
+    setCelebrationState(prev => ({
+      ...DEFAULT_CELEBRATION_SETTINGS,
+      ...prev,
+      enabled: true,
+      showMessage: true,
+    }));
+  }, [setCelebrationState]);
+
+  const resolvedCelebration = useMemo<CelebrationSettings>(
+    () => ({
+      ...DEFAULT_CELEBRATION_SETTINGS,
+      ...celebration,
+      // Message overlay toggle was removed; always show message when celebrating.
+      showMessage: true,
+    }),
+    [celebration]
   );
 
   const resolvedProfile = useMemo<UserProfile>(
@@ -86,15 +110,15 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
   }, [setCelebrationState]);
 
   const getCelebrationMessage = useCallback(() => {
-    return formatCelebrationMessage(celebration.messageTemplate, resolvedProfile.displayName);
-  }, [celebration.messageTemplate, resolvedProfile.displayName]);
+    return formatCelebrationMessage(resolvedCelebration.messageTemplate, resolvedProfile.displayName);
+  }, [resolvedCelebration.messageTemplate, resolvedProfile.displayName]);
 
   const value = useMemo(
     () => ({
       profile: resolvedProfile,
       setDisplayName,
       completeOnboarding,
-      celebration,
+      celebration: resolvedCelebration,
       setCelebration,
       resetCelebrationTemplate,
       getCelebrationMessage,
@@ -103,7 +127,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
       resolvedProfile,
       setDisplayName,
       completeOnboarding,
-      celebration,
+      resolvedCelebration,
       setCelebration,
       resetCelebrationTemplate,
       getCelebrationMessage,

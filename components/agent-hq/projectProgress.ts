@@ -7,11 +7,27 @@ export interface ProjectProgress {
   total: number;
 }
 
-/** Progress from tasks with non-empty text only */
+/**
+ * Progress from real work items only:
+ * - parts with sub-tasks → each non-empty sub-task counts
+ * - parts without sub-tasks → the part itself counts
+ */
 export function getProjectProgress(tasks: ProjectTask[]): ProjectProgress {
-  const countable = tasks.filter(t => t.text.trim().length > 0);
-  const total = countable.length;
+  let done = 0;
+  let total = 0;
+
+  for (const task of tasks) {
+    if (!task.text.trim()) continue;
+    const subs = (task.subTasks ?? []).filter(st => st.text.trim().length > 0);
+    if (subs.length > 0) {
+      total += subs.length;
+      done += subs.filter(st => st.done).length;
+    } else {
+      total += 1;
+      if (task.done) done += 1;
+    }
+  }
+
   if (total === 0) return { percent: 0, done: 0, total: 0 };
-  const done = countable.filter(t => t.done).length;
   return { percent: Math.round((done / total) * 100), done, total };
 }

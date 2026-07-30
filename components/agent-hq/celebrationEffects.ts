@@ -40,10 +40,10 @@ export function fireCelebrationConfetti() {
 }
 
 export function triggerCelebration(
-  settings: { enabled?: boolean },
+  _settings: { enabled?: boolean },
   showOverlay: () => void
 ) {
-  if (settings.enabled === false) return;
+  // Always celebrate on project complete — settings toggle only edits the message.
   fireCelebrationConfetti();
   showOverlay();
 }

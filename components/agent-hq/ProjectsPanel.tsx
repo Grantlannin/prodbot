@@ -390,6 +390,20 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     [setProjects]
   );
 
+  const celebrateIfNewlyComplete = useCallback(
+    (before: ReturnType<typeof getProjectProgress>, after: ReturnType<typeof getProjectProgress>, project: ProjectBoard) => {
+      if (!(after.percent === 100 && before.percent < 100 && after.total > 0)) return;
+      const completedTasks = project.tasks.filter(t => t.text.trim());
+      onProjectCompleted?.({
+        text: displayName(project),
+        detail: completedTasks.map(t => t.text.trim()).join(' · '),
+        projectId: project.id,
+      });
+      triggerCelebration(celebration, () => setShowCelebration(true));
+    },
+    [celebration, onProjectCompleted]
+  );
+
   const toggleTaskDone = useCallback(
     (projectId: string, taskId: string, done: boolean) => {
       const project = projects.find(p => p.id === projectId);
@@ -400,20 +414,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       const after = getProjectProgress(nextTasks);
 
       updateTask(projectId, taskId, { done });
-
-      if (after.percent === 100 && before.percent < 100 && after.total > 0) {
-        const completedTasks = nextTasks.filter(t => t.done && t.text.trim());
-        onProjectCompleted?.({
-          text: displayName(project),
-          detail: completedTasks.map(t => t.text.trim()).join(' · '),
-          projectId: project.id,
-        });
-        queueMicrotask(() => {
-          triggerCelebration(celebration, () => setShowCelebration(true));
-        });
-      }
+      celebrateIfNewlyComplete(before, after, { ...project, tasks: nextTasks });
     },
-    [projects, updateTask, celebration, onProjectCompleted]
+    [projects, updateTask, celebrateIfNewlyComplete]
   );
 
   const splitTaskAfter = useCallback(
@@ -636,6 +639,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       subTaskId: string,
       patch: Partial<Pick<ProjectSubTask, 'text' | 'done' | 'notes' | 'contextLinks'>>
     ) => {
+      const project = projects.find(p => p.id === projectId);
+      const before = project ? getProjectProgress(project.tasks) : null;
+
       setProjects(prev =>
         prev.map(p => {
           if (p.id !== projectId) return p;
@@ -654,8 +660,22 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
           };
         })
       );
+
+      if (project && before && patch.done !== undefined) {
+        const nextTasks = project.tasks.map(t => {
+          if (t.id !== taskId) return t;
+          return {
+            ...t,
+            subTasks: (t.subTasks ?? []).map(st =>
+              st.id === subTaskId ? { ...st, ...patch } : st
+            ),
+          };
+        });
+        const after = getProjectProgress(nextTasks);
+        celebrateIfNewlyComplete(before, after, { ...project, tasks: nextTasks });
+      }
     },
-    [setProjects]
+    [projects, setProjects, celebrateIfNewlyComplete]
   );
 
   const removeSubTask = useCallback(
