@@ -113,6 +113,13 @@ export default function NightPrepModal() {
     timersRef.current.push(id);
   };
 
+  const syncComposeHeight = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  };
+
   useEffect(() => () => clearTimers(), []);
 
   useEffect(() => {
@@ -160,13 +167,6 @@ export default function NightPrepModal() {
     if (!open) return;
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, phase, open, typing, draft]);
-
-  const syncComposeHeight = () => {
-    const el = inputRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
-  };
 
   if (!open || !flow || typeof document === 'undefined') return null;
 
