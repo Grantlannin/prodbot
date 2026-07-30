@@ -127,6 +127,14 @@ export default function NightPrepModal() {
   }, [open]);
 
   useEffect(() => {
+    if (!open || !draft) {
+      if (inputRef.current) inputRef.current.style.height = '';
+      return;
+    }
+    syncComposeHeight();
+  }, [open, draft, phase]);
+
+  useEffect(() => {
     if (!open || !flow || openedRef.current) return;
     openedRef.current = true;
     clearTimers();
@@ -151,7 +159,14 @@ export default function NightPrepModal() {
   useEffect(() => {
     if (!open) return;
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, phase, open, typing]);
+  }, [messages, phase, open, typing, draft]);
+
+  const syncComposeHeight = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  };
 
   if (!open || !flow || typeof document === 'undefined') return null;
 
@@ -767,6 +782,7 @@ export default function NightPrepModal() {
                       onChange={e => {
                         setDraft(e.target.value);
                         draftRef.current = e.target.value;
+                        requestAnimationFrame(syncComposeHeight);
                       }}
                       onKeyDown={handleKeyDown}
                       rows={1}
@@ -798,6 +814,7 @@ export default function NightPrepModal() {
                   onChange={e => {
                     setDraft(e.target.value);
                     draftRef.current = e.target.value;
+                    requestAnimationFrame(syncComposeHeight);
                   }}
                   onKeyDown={handleKeyDown}
                   rows={1}
@@ -965,13 +982,13 @@ const styles: Record<string, CSSProperties> = {
   footer: {
     background: '#fff',
     borderTop: '1px solid #e5e7eb',
-    padding: '10px 12px 12px',
+    padding: '14px 12px 28px',
     flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: 8,
+    gap: 12,
   },
-  chipWrap: { display: 'flex', flexDirection: 'column', gap: 6 },
+  chipWrap: { display: 'flex', flexDirection: 'column', gap: 8 },
   chipSectionLabel: {
     fontSize: 10,
     fontWeight: 700,
@@ -1050,7 +1067,7 @@ const styles: Record<string, CSSProperties> = {
     gap: 8,
     background: '#f2f2f7',
     borderRadius: 22,
-    padding: '6px 6px 6px 14px',
+    padding: '10px 8px 10px 14px',
     border: '1px solid #e5e7eb',
   },
   input: {
@@ -1062,7 +1079,8 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.4,
     resize: 'none',
     outline: 'none',
-    maxHeight: 100,
+    maxHeight: 140,
+    minHeight: 28,
     padding: '6px 0',
     color: '#0f172a',
   },
