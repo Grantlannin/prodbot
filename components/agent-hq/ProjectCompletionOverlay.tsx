@@ -40,26 +40,25 @@ export default function ProjectCompletionOverlay({
 
   return createPortal(
     <div style={styles.backdrop} onClick={handleBackdropClick} role="dialog" aria-modal="true">
-      <div style={styles.card}>
-        <p style={styles.message}>{message}</p>
-        <button type="button" onClick={handleClose} style={styles.dismissBtn}>
-          LET&apos;S GO
-        </button>
-        <button
-          type="button"
-          onClick={e => {
-            e.stopPropagation();
-            setEditOpen(v => !v);
-          }}
-          style={styles.editMessageLink}
-        >
-          choose message
-        </button>
-        {editOpen && (
-          <div style={styles.editPopover} onClick={e => e.stopPropagation()}>
+      <div style={styles.stack} onClick={e => e.stopPropagation()}>
+        <div style={styles.card}>
+          <p style={styles.message}>{message}</p>
+          <button type="button" onClick={handleClose} style={styles.dismissBtn}>
+            LET&apos;S GO
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditOpen(v => !v)}
+            style={styles.editMessageLink}
+          >
+            choose message
+          </button>
+        </div>
+        {editOpen ? (
+          <div style={styles.editPopover}>
             <CelebrationSettingsEditor compact onClose={() => setEditOpen(false)} />
           </div>
-        )}
+        ) : null}
       </div>
     </div>,
     document.body
@@ -77,10 +76,19 @@ const styles: Record<string, CSSProperties> = {
     padding: 24,
     background: 'rgba(15, 23, 42, 0.72)',
     backdropFilter: 'blur(6px)',
+    overflowY: 'auto',
+  },
+  stack: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 12,
+    width: '100%',
+    maxWidth: 720,
+    margin: 'auto',
   },
   card: {
     position: 'relative',
-    maxWidth: 720,
     width: '100%',
     textAlign: 'center',
     padding: '40px 32px 36px',
@@ -130,11 +138,7 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'lowercase',
   },
   editPopover: {
-    position: 'fixed',
-    top: '50%',
-    right: 24,
-    transform: 'translateY(-50%)',
-    zIndex: 100000,
-    textAlign: 'left',
+    width: '100%',
+    maxWidth: 300,
   },
 };
