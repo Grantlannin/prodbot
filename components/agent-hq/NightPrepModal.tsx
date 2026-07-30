@@ -197,9 +197,11 @@ export default function NightPrepModal() {
     schedule(() => {
       appendNightPrepMessages({ role: 'bot', text: intro });
       schedule(() => {
-        const items = buildCurrentWindDownItems();
+        // Only ask context for items tracked when wind down opened — not the
+        // reflection text just logged into Done Today.
+        const items = flow.windDownItems;
         fieldsRef.current.windDownIndex = 0;
-        setNightPrepFields({ windDownIndex: 0, windDownItems: items });
+        setNightPrepFields({ windDownIndex: 0 });
         if (items.length === 0) {
           appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.emptyLogged });
           setNightPrepPhase('empty_logged_prompt');
