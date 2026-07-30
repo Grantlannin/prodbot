@@ -2,7 +2,11 @@
 
 import type { CSSProperties } from 'react';
 import { useUserProfile } from './hooks/UserProfileProvider';
-import { formatCelebrationMessage } from './userProfile';
+import {
+  CELEBRATION_MESSAGE_OPTIONS,
+  formatCelebrationMessage,
+  resolveCelebrationTemplate,
+} from './userProfile';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -12,8 +16,8 @@ interface CelebrationSettingsEditorProps {
 }
 
 export default function CelebrationSettingsEditor({ onClose, compact }: CelebrationSettingsEditorProps) {
-  const { profile, celebration, setCelebration, resetCelebrationTemplate } = useUserProfile();
-  const preview = formatCelebrationMessage(celebration.messageTemplate, profile.displayName);
+  const { profile, celebration, setCelebration } = useUserProfile();
+  const selected = resolveCelebrationTemplate(celebration.messageTemplate);
 
   return (
     <div style={compact ? styles.compactRoot : styles.root}>
@@ -28,31 +32,43 @@ export default function CelebrationSettingsEditor({ onClose, compact }: Celebrat
         <span>Celebration on (confetti + message)</span>
       </label>
 
-      <label style={styles.fieldLabel}>
-        Celebration text
-        <span style={styles.hint}> Use {'{name}'} for your name</span>
-      </label>
-      <textarea
-        value={celebration.messageTemplate}
-        disabled={!celebration.enabled}
-        onChange={e => setCelebration({ messageTemplate: e.target.value })}
-        rows={compact ? 3 : 4}
-        style={styles.textarea}
-      />
+      <div style={styles.fieldLabel}>Choose a message</div>
+      <div style={styles.optionList} role="radiogroup" aria-label="Celebration message">
+        {CELEBRATION_MESSAGE_OPTIONS.map((option, index) => {
+          const checked = selected === option;
+          const preview = formatCelebrationMessage(option, profile.displayName);
+          return (
+            <label
+              key={option}
+              style={{
+                ...styles.optionRow,
+                ...(checked ? styles.optionRowSelected : {}),
+                ...(!celebration.enabled ? styles.optionRowDisabled : {}),
+              }}
+            >
+              <input
+                type="radio"
+                name="celebration-message"
+                checked={checked}
+                disabled={!celebration.enabled}
+                onChange={() => setCelebration({ messageTemplate: option })}
+                style={styles.radio}
+              />
+              <span style={styles.optionText}>
+                <span style={styles.optionIndex}>{index + 1}.</span> {preview}
+              </span>
+            </label>
+          );
+        })}
+      </div>
 
-      <div style={styles.previewLabel}>Preview</div>
-      <div style={styles.preview}>{preview}</div>
-
-      <div style={styles.actions}>
-        <button type="button" onClick={() => resetCelebrationTemplate()} style={styles.secondaryBtn}>
-          Reset default
-        </button>
-        {onClose && (
+      {onClose ? (
+        <div style={styles.actions}>
           <button type="button" onClick={onClose} style={styles.primaryBtn}>
             Done
           </button>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -68,7 +84,7 @@ const styles: Record<string, CSSProperties> = {
     background: '#fff',
     border: '1px solid rgba(255,255,255,0.12)',
     boxShadow: '0 16px 40px rgba(0,0,0,0.35)',
-    maxWidth: 320,
+    maxWidth: 340,
   },
   panelTitle: {
     fontSize: 13,
@@ -82,7 +98,7 @@ const styles: Record<string, CSSProperties> = {
     gap: 8,
     fontSize: 12,
     color: '#334155',
-    marginBottom: 8,
+    marginBottom: 10,
     cursor: 'pointer',
   },
   fieldLabel: {
@@ -90,59 +106,52 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 11,
     fontWeight: 600,
     color: '#64748b',
-    marginTop: 6,
-    marginBottom: 6,
+    marginBottom: 8,
   },
-  hint: {
-    fontWeight: 400,
-    color: '#94a3b8',
+  optionList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    maxHeight: 260,
+    overflowY: 'auto',
   },
-  textarea: {
-    width: '100%',
-    boxSizing: 'border-box',
-    padding: 8,
-    fontSize: 12,
-    fontFamily: font,
-    border: '1px solid #e2e8f0',
+  optionRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 8,
+    padding: '8px 9px',
     borderRadius: 8,
-    resize: 'vertical',
-    lineHeight: 1.4,
+    border: '1px solid #e2e8f0',
+    background: '#fff',
+    cursor: 'pointer',
   },
-  previewLabel: {
-    fontSize: 10,
-    fontWeight: 600,
-    color: '#94a3b8',
-    marginTop: 8,
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: '0.04em',
+  optionRowSelected: {
+    borderColor: '#2563eb',
+    background: '#eff6ff',
   },
-  preview: {
+  optionRowDisabled: {
+    opacity: 0.45,
+    cursor: 'default',
+  },
+  radio: {
+    marginTop: 2,
+    flexShrink: 0,
+  },
+  optionText: {
     fontSize: 11,
-    lineHeight: 1.35,
-    color: '#475569',
-    background: '#f8fafc',
-    padding: 8,
-    borderRadius: 6,
-    maxHeight: 64,
-    overflow: 'auto',
+    lineHeight: 1.4,
+    color: '#0f172a',
+    fontWeight: 600,
+  },
+  optionIndex: {
+    color: '#64748b',
+    fontWeight: 700,
   },
   actions: {
     display: 'flex',
     gap: 8,
     marginTop: 12,
     justifyContent: 'flex-end',
-  },
-  secondaryBtn: {
-    padding: '7px 10px',
-    border: '1px solid #e2e8f0',
-    borderRadius: 8,
-    background: '#f8fafc',
-    fontSize: 11,
-    fontWeight: 600,
-    fontFamily: font,
-    cursor: 'pointer',
-    color: '#475569',
   },
   primaryBtn: {
     padding: '7px 12px',

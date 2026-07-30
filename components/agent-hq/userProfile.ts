@@ -20,6 +20,21 @@ export interface CelebrationSettings {
 export const DEFAULT_CELEBRATION_TEMPLATE =
   'YOUR A FUCKING BEAST. YOURE A FUCKING ANIMAL. NOBODY CAN TAME YOU. THE WORLD IS YOURS, {name}!';
 
+export const CELEBRATION_MESSAGE_OPTIONS = [
+  DEFAULT_CELEBRATION_TEMPLATE,
+  "YOU'RE UNSTOPPABLE. KEEP GOING",
+  'BOOM. ONTO THE NEXT',
+  'We did it. Next.',
+  "LET'S GOOO!!",
+] as const;
+
+export type CelebrationMessageOption = (typeof CELEBRATION_MESSAGE_OPTIONS)[number];
+
+export function resolveCelebrationTemplate(template: string): CelebrationMessageOption {
+  const match = CELEBRATION_MESSAGE_OPTIONS.find(option => option === template);
+  return match ?? CELEBRATION_MESSAGE_OPTIONS[0];
+}
+
 export const DEFAULT_USER_PROFILE: UserProfile = {
   displayName: DISPLAY_NAME_PLACEHOLDER,
   onboardingComplete: true,

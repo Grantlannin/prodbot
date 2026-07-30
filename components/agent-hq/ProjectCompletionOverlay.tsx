@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useCallback, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import CelebrationSettingsEditor from './CelebrationSettingsEditor';
 import { stopCelebrationConfetti } from './celebrationEffects';
@@ -19,17 +19,9 @@ export default function ProjectCompletionOverlay({
   message,
 }: ProjectCompletionOverlayProps) {
   const [editOpen, setEditOpen] = useState(false);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
 
   useEffect(() => {
-    if (!open) {
-      setEditOpen(false);
-      return;
-    }
-    // Auto-dismiss only — confetti is fired once by triggerCelebration.
-    const t = setTimeout(() => onCloseRef.current(), 8000);
-    return () => clearTimeout(t);
+    if (!open) setEditOpen(false);
   }, [open]);
 
   const handleClose = useCallback(() => {
@@ -61,7 +53,7 @@ export default function ProjectCompletionOverlay({
           }}
           style={styles.editMessageLink}
         >
-          edit message
+          choose message
         </button>
         {editOpen && (
           <div style={styles.editPopover} onClick={e => e.stopPropagation()}>

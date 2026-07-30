@@ -11,6 +11,7 @@ import {
   USER_PROFILE_STORAGE_KEY,
   formatCelebrationMessage,
   isPlaceholderDisplayName,
+  resolveCelebrationTemplate,
   type CelebrationSettings,
   type UserProfile,
 } from '../userProfile';
@@ -52,8 +53,10 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     () => ({
       ...DEFAULT_CELEBRATION_SETTINGS,
       ...celebration,
-      // Message overlay toggle was removed; always show message when celebrating.
       showMessage: true,
+      messageTemplate: resolveCelebrationTemplate(
+        celebration.messageTemplate || DEFAULT_CELEBRATION_SETTINGS.messageTemplate
+      ),
     }),
     [celebration]
   );
