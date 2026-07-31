@@ -34,6 +34,7 @@ function initialFlowState(items: WindDownItem[]): NightPrepFlowState {
     taskId: '',
     taskText: '',
     tomorrowTasks: [],
+    unsureMvpTasks: [],
     doneReflection: '',
     missedWhy: '',
     missedPrep: '',
@@ -62,6 +63,7 @@ interface NightPrepContextValue {
         | 'taskId'
         | 'taskText'
         | 'tomorrowTasks'
+        | 'unsureMvpTasks'
         | 'windDownItems'
         | 'doneReflection'
         | 'missedWhy'
@@ -111,6 +113,7 @@ export function NightPrepProvider({ children }: { children: ReactNode }) {
           | 'taskId'
           | 'taskText'
           | 'tomorrowTasks'
+          | 'unsureMvpTasks'
           | 'windDownItems'
           | 'doneReflection'
           | 'missedWhy'

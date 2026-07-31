@@ -45,10 +45,23 @@ export const WIND_DOWN_FLOW_COPY = {
     'great. Take a second and think about what task(s) are most important to get done tomorrow, choose them, and i will add them to your task list',
   needToAddIt: 'I need to add it',
   notSureYet: "I'm not sure what yet",
+  unsureIntro: "Ok, great. let's figure it out.",
+  unsureQProject: 'What project/goal are you working on?',
+  unsureMvp:
+    'Great. Now, take a second and think about what can get us to the finish line for this project in 48 hours with the most ghetto MVP (minimum viable product) imaginable. It just needs to WORK, not be pretty. Thinking/overanalyzing gets us nothing, shitty action gets us everything. So if we HAD to get this finished & "up" or "in motion" in 48 hrs (product launched, outreach message sent, funnel finished, thing completed etc), what are the 2 single most important things we\'d work on or do? (Enter them 1 by 1)',
+  unsureMvpSecond: "Got it. What's the second most important thing?",
+  unsurePlaceOrBreak:
+    'great. Now are these tasks you want to throw on your task list for tomorrow? Or do we need to break these down farther?',
+  placeOnTaskList: 'place on task list',
+  breakDownFarther: 'Break down farther',
+  unsureBreakDown:
+    'ok, great. If you had to pick the most important part of this for tomorrow, what would it be?',
+  unsureTomorrowList: (task: string) =>
+    `Awesome. So your task list for tomorrow will be ${task}. Would you like to add anything else to it?`,
+  unsureAddMoreYes: 'yes',
+  unsureAddMoreNo: 'no',
   projectCreatedAddTask:
     'project created. Now add the most important task that you need to get done tomorrow, and I will place it on your task list',
-  notSurePlaceholder:
-    "Placeholder — this will open the organizing help flow next. We'll wire that up in a sec.",
   chooseProject: 'choose project',
   inputProject: 'create project',
   addNewTask: 'add new task into this project',
@@ -57,12 +70,15 @@ export const WIND_DOWN_FLOW_COPY = {
   taskListLabel: 'task list',
   chooseTaskLabel: 'choose a task',
   taskListEmpty: 'No tasks on your list yet.',
+  addTaskPlaceholder: 'Add a task',
   doneSeeTomorrow: (time: string) => `great. See you tomorrow around ${time}.`,
   closeChat: 'close chat',
   clearChat: 'clear chat',
   projectNamePlaceholder: 'Project name',
   taskNamePlaceholder: 'New task for this project',
 } as const;
+
+export const UNSURE_MVP_TASK_LIMIT = 2;
 
 export type NightPrepFlowPhase =
   | 'wind_down_reflect'
@@ -82,7 +98,10 @@ export type NightPrepFlowPhase =
   | 'prep_task_name'
   | 'prep_task_list'
   | 'prep_after_task'
-  | 'prep_not_sure_placeholder'
+  | 'prep_unsure_mvp'
+  | 'prep_unsure_place_or_break'
+  | 'prep_unsure_break_down'
+  | 'prep_unsure_add_more'
   | 'complete';
 
 export type NightPrepProjectMode = 'choose' | 'input' | null;
@@ -103,6 +122,8 @@ export interface NightPrepFlowState {
   taskId: string;
   taskText: string;
   tomorrowTasks: NightPrepTomorrowTask[];
+  /** MVP tasks captured on the "I'm not sure" path */
+  unsureMvpTasks: string[];
   /** Objective done-today reflection before best-use confirm */
   doneReflection: string;
   /** Missed-path: what happened */

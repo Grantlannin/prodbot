@@ -11,6 +11,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import type { ProjectBoard } from './types';
 import {
   WIND_DOWN_FLOW_COPY,
+  UNSURE_MVP_TASK_LIMIT,
   windDownItemLabel,
   type NightPrepFlowPhase,
 } from './nightPrep/flows';
@@ -45,6 +46,8 @@ const COMPOSE_PHASES: NightPrepFlowPhase[] = [
   'prep_time',
   'prep_location',
   'prep_project_name',
+  'prep_unsure_mvp',
+  'prep_unsure_break_down',
 ];
 
 function TypingBubble() {
@@ -93,6 +96,7 @@ export default function NightPrepModal() {
     taskText: '',
     windDownIndex: 0,
     tomorrowTasks: [] as NightPrepTomorrowTask[],
+    unsureMvpTasks: [] as string[],
   });
 
   const phase = flow?.phase;
@@ -187,6 +191,52 @@ export default function NightPrepModal() {
       appendNightPrepMessages({ role: 'bot', text });
       setTyping(false);
     }, typingMs);
+  };
+
+  const beginUnsureMvp = () => {
+    fieldsRef.current.unsureMvpTasks = [];
+    setNightPrepFields({ unsureMvpTasks: [] });
+    sendBotReply(WIND_DOWN_FLOW_COPY.unsureMvp);
+    setNightPrepPhase('prep_unsure_mvp');
+  };
+
+  const placeTasksOnTomorrowList = (texts: string[]): NightPrepTomorrowTask[] => {
+    const projectId = flow.projectId || fieldsRef.current.projectId;
+    const projectName = (flow.projectName || fieldsRef.current.projectName).trim();
+    if (!projectId || texts.length === 0) return flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+
+    const created: NightPrepTomorrowTask[] = [];
+    setProjects(prev => {
+      let next = prev;
+      for (const text of texts) {
+        const trimmed = text.trim();
+        if (!trimmed) continue;
+        next = addProjectTask(next, projectId, trimmed);
+        const project = next.find(p => p.id === projectId);
+        const task = project?.tasks[project.tasks.length - 1];
+        if (task) {
+          created.push({
+            projectId,
+            projectName,
+            taskId: task.id,
+            taskText: trimmed,
+          });
+        }
+      }
+      return next;
+    });
+    requestFocusProject(projectId);
+
+    const current = flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+    const merged = [...current];
+    for (const task of created) {
+      if (!merged.some(t => t.projectId === task.projectId && t.taskId === task.taskId)) {
+        merged.push(task);
+      }
+    }
+    fieldsRef.current.tomorrowTasks = merged;
+    setNightPrepFields({ tomorrowTasks: merged });
+    return merged;
   };
 
   const beginNightPrep = (intro: string = WIND_DOWN_FLOW_COPY.prepIntro) => {
@@ -397,14 +447,48 @@ export default function NightPrepModal() {
       });
       appendNightPrepMessages({ role: 'user', text: project.name.trim() });
       requestFocusProject(project.id);
-      const fromNeedAdd = (flow.leveragePath || fieldsRef.current.leveragePath) === 'need_add';
-      if (fromNeedAdd) {
+      const leverage = flow.leveragePath || fieldsRef.current.leveragePath;
+      if (leverage === 'unsure') {
+        beginUnsureMvp();
+        setDraft('');
+        draftRef.current = '';
+        return;
+      }
+      if (leverage === 'need_add') {
         sendBotReply(WIND_DOWN_FLOW_COPY.projectCreatedAddTask);
       }
       setNightPrepPhase('prep_task_name');
       setDraft('');
       draftRef.current = '';
       requestAnimationFrame(() => inputRef.current?.focus());
+      return;
+    }
+
+    if (phase === 'prep_unsure_mvp') {
+      const current = [...(flow.unsureMvpTasks ?? fieldsRef.current.unsureMvpTasks)];
+      if (current.length >= UNSURE_MVP_TASK_LIMIT) return;
+      current.push(text);
+      fieldsRef.current.unsureMvpTasks = current;
+      setNightPrepFields({ unsureMvpTasks: current });
+      appendNightPrepMessages({ role: 'user', text });
+      setDraft('');
+      draftRef.current = '';
+      if (current.length < UNSURE_MVP_TASK_LIMIT) {
+        sendBotReply(WIND_DOWN_FLOW_COPY.unsureMvpSecond);
+        return;
+      }
+      sendBotReply(WIND_DOWN_FLOW_COPY.unsurePlaceOrBreak);
+      setNightPrepPhase('prep_unsure_place_or_break');
+      return;
+    }
+
+    if (phase === 'prep_unsure_break_down') {
+      appendNightPrepMessages({ role: 'user', text });
+      placeTasksOnTomorrowList([text]);
+      setDraft('');
+      draftRef.current = '';
+      sendBotReply(WIND_DOWN_FLOW_COPY.unsureTomorrowList(text));
+      setNightPrepPhase('prep_unsure_add_more');
       return;
     }
 
@@ -456,8 +540,8 @@ export default function NightPrepModal() {
     setNightPrepFields({ tomorrowTasks: next });
   };
 
-  const finishNightPrep = () => {
-    const tasks = flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+  const finishNightPrep = (tasksOverride?: NightPrepTomorrowTask[]) => {
+    const tasks = tasksOverride ?? flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
     if (!tasks.length) return;
     const time = flow.firstWorkBlockTime || fieldsRef.current.firstWorkBlockTime;
     const plan = buildNightPrepPlan({
@@ -553,9 +637,45 @@ export default function NightPrepModal() {
     if (typing) return;
     appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.notSureYet });
     fieldsRef.current.leveragePath = 'unsure';
-    setNightPrepFields({ leveragePath: 'unsure' });
-    sendBotReply(WIND_DOWN_FLOW_COPY.notSurePlaceholder);
-    setNightPrepPhase('prep_not_sure_placeholder');
+    fieldsRef.current.unsureMvpTasks = [];
+    setNightPrepFields({ leveragePath: 'unsure', unsureMvpTasks: [] });
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.unsureIntro });
+      schedule(() => {
+        appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.unsureQProject });
+        setNightPrepPhase('prep_project_mode');
+        setTyping(false);
+      }, BOT_TYPING_MS);
+    }, BOT_TYPING_MS);
+  };
+
+  const handlePlaceOnTaskList = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.placeOnTaskList });
+    const texts = flow.unsureMvpTasks ?? fieldsRef.current.unsureMvpTasks;
+    const merged = placeTasksOnTomorrowList(texts);
+    finishNightPrep(merged);
+  };
+
+  const handleBreakDownFarther = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.breakDownFarther });
+    sendBotReply(WIND_DOWN_FLOW_COPY.unsureBreakDown);
+    setNightPrepPhase('prep_unsure_break_down');
+  };
+
+  const handleUnsureAddMoreYes = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.unsureAddMoreYes });
+    setNightPrepPhase('prep_project_mode');
+  };
+
+  const handleUnsureAddMoreNo = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.unsureAddMoreNo });
+    finishNightPrep();
   };
 
   const selectProject = (project: ProjectBoard) => {
@@ -573,6 +693,10 @@ export default function NightPrepModal() {
     });
     appendNightPrepMessages({ role: 'user', text: name });
     requestFocusProject(project.id);
+    if ((flow.leveragePath || fieldsRef.current.leveragePath) === 'unsure') {
+      beginUnsureMvp();
+      return;
+    }
     setNightPrepPhase('prep_task_pick');
   };
 
@@ -625,6 +749,7 @@ export default function NightPrepModal() {
       taskText: '',
       windDownIndex: 0,
       tomorrowTasks: [],
+      unsureMvpTasks: [],
     };
     setChooseProjectError(false);
     openedRef.current = false;
@@ -950,9 +1075,11 @@ export default function NightPrepModal() {
                       ? WIND_DOWN_FLOW_COPY.projectNamePlaceholder
                       : phase === 'prep_task_name'
                         ? WIND_DOWN_FLOW_COPY.taskNamePlaceholder
-                        : phase === 'prep_time'
-                          ? '2pm'
-                          : 'Message'
+                        : phase === 'prep_unsure_mvp' || phase === 'prep_unsure_break_down'
+                          ? WIND_DOWN_FLOW_COPY.addTaskPlaceholder
+                          : phase === 'prep_time'
+                            ? '2pm'
+                            : 'Message'
                   }
                   style={styles.input}
                 />
@@ -971,14 +1098,24 @@ export default function NightPrepModal() {
               </div>
             ) : null}
 
-            {phase === 'prep_not_sure_placeholder' && !typing ? (
+            {phase === 'prep_unsure_place_or_break' && !typing ? (
               <div style={styles.chipWrap}>
-                <button
-                  type="button"
-                  onClick={closeNightPrepChat}
-                  style={{ ...styles.chip, ...styles.chipFinish }}
-                >
-                  {WIND_DOWN_FLOW_COPY.closeChat}
+                <button type="button" onClick={handlePlaceOnTaskList} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.placeOnTaskList}
+                </button>
+                <button type="button" onClick={handleBreakDownFarther} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.breakDownFarther}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_unsure_add_more' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={handleUnsureAddMoreYes} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.unsureAddMoreYes}
+                </button>
+                <button type="button" onClick={handleUnsureAddMoreNo} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.unsureAddMoreNo}
                 </button>
               </div>
             ) : null}
