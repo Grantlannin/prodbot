@@ -48,7 +48,6 @@ const COMPOSE_PHASES: NightPrepFlowPhase[] = [
   'prep_project_name',
   'prep_unsure_mvp',
   'prep_unsure_break_down',
-  'prep_tee_up',
 ];
 
 function TypingBubble() {
@@ -490,20 +489,6 @@ export default function NightPrepModal() {
       draftRef.current = '';
       sendBotReply(WIND_DOWN_FLOW_COPY.unsureTomorrowList(text));
       setNightPrepPhase('prep_unsure_add_more');
-      return;
-    }
-
-    if (phase === 'prep_tee_up') {
-      appendNightPrepMessages({ role: 'user', text });
-      setDraft('');
-      draftRef.current = '';
-      if (/^ready\s+for\s+tomorrow[.!?]*$/i.test(text)) {
-        completeAfterTeeUp();
-      } else {
-        sendBotReply(
-          `When you're done teeing things up, say "${WIND_DOWN_FLOW_COPY.readyForTomorrow}".`
-        );
-      }
       return;
     }
 
@@ -1113,11 +1098,9 @@ export default function NightPrepModal() {
                         ? WIND_DOWN_FLOW_COPY.taskNamePlaceholder
                         : phase === 'prep_unsure_mvp' || phase === 'prep_unsure_break_down'
                           ? WIND_DOWN_FLOW_COPY.addTaskPlaceholder
-                          : phase === 'prep_tee_up'
-                            ? WIND_DOWN_FLOW_COPY.readyForTomorrow
-                            : phase === 'prep_time'
-                              ? '2pm'
-                              : 'Message'
+                          : phase === 'prep_time'
+                            ? '2pm'
+                            : 'Message'
                   }
                   style={styles.input}
                 />
