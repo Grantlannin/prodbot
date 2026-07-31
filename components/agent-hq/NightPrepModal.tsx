@@ -669,6 +669,14 @@ export default function NightPrepModal() {
   const handleUnsureAddMoreYes = () => {
     if (typing) return;
     appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.unsureAddMoreYes });
+    // Leave the unsure MVP loop — add more like the normal have-it task list flow.
+    fieldsRef.current.leveragePath = 'have_it';
+    setNightPrepFields({ leveragePath: 'have_it' });
+    const projectId = flow.projectId || fieldsRef.current.projectId;
+    if (projectId) {
+      setNightPrepPhase('prep_task_list');
+      return;
+    }
     setNightPrepPhase('prep_project_mode');
   };
 
