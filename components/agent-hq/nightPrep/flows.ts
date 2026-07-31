@@ -62,6 +62,10 @@ export const WIND_DOWN_FLOW_COPY = {
   unsureAddMoreNo: 'no',
   projectCreatedAddTask:
     'project created. Now add the most important task that you need to get done tomorrow, and I will place it on your task list',
+  needAddTaskPrompt:
+    'Now add the most important task that you need to get done tomorrow, and I will place it on your task list',
+  projectNameTaken: (name: string) =>
+    `you already have this named ${name}, please choose another name`,
   chooseProject: 'choose project',
   inputProject: 'create project',
   addNewTask: 'add new task into this project',

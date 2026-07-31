@@ -18,6 +18,7 @@ import {
 import { buildWindDownItems } from './nightPrep/windDownItems';
 import {
   addProjectTask,
+  createProjectBoard,
   requestFocusProject,
   upsertProject,
 } from './stuckHelp/projectMutations';
@@ -427,12 +428,18 @@ export default function NightPrepModal() {
     }
 
     if (phase === 'prep_project_name') {
-      let project!: ProjectBoard;
-      setProjects(prev => {
-        const result = upsertProject(prev, text);
-        project = result.project;
-        return result.projects;
-      });
+      const trimmedName = text.trim();
+      const existing = projects.find(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase());
+      if (existing) {
+        appendNightPrepMessages({ role: 'user', text: trimmedName });
+        sendBotReply(WIND_DOWN_FLOW_COPY.projectNameTaken(existing.name.trim() || trimmedName));
+        setDraft('');
+        draftRef.current = '';
+        return;
+      }
+
+      const project = createProjectBoard(trimmedName);
+      setProjects(prev => [project, ...prev]);
       fieldsRef.current.projectMode = 'input';
       fieldsRef.current.projectId = project.id;
       fieldsRef.current.projectName = project.name.trim();
@@ -640,10 +647,9 @@ export default function NightPrepModal() {
     if (typing) return;
     appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.needToAddIt });
     fieldsRef.current.leveragePath = 'need_add';
-    fieldsRef.current.projectMode = 'input';
-    setNightPrepFields({ leveragePath: 'need_add', projectMode: 'input' });
-    setNightPrepPhase('prep_project_name');
-    requestAnimationFrame(() => inputRef.current?.focus());
+    fieldsRef.current.projectMode = null;
+    setNightPrepFields({ leveragePath: 'need_add', projectMode: null });
+    setNightPrepPhase('prep_project_mode');
   };
 
   const handleNotSureYet = () => {
@@ -714,8 +720,15 @@ export default function NightPrepModal() {
     });
     appendNightPrepMessages({ role: 'user', text: name });
     requestFocusProject(project.id);
-    if ((flow.leveragePath || fieldsRef.current.leveragePath) === 'unsure') {
+    const leverage = flow.leveragePath || fieldsRef.current.leveragePath;
+    if (leverage === 'unsure') {
       beginUnsureMvp();
+      return;
+    }
+    if (leverage === 'need_add') {
+      sendBotReply(WIND_DOWN_FLOW_COPY.needAddTaskPrompt);
+      setNightPrepPhase('prep_task_name');
+      requestAnimationFrame(() => inputRef.current?.focus());
       return;
     }
     setNightPrepPhase('prep_task_pick');
