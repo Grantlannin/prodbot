@@ -44,7 +44,7 @@ export const WIND_DOWN_FLOW_COPY = {
   haveItPrompt:
     'great. Take a second and think about what task(s) are most important to get done tomorrow, choose them, and i will add them to your task list',
   needToAddIt: 'I need to add it',
-  notSureYet: "I'm not sure what yet",
+  notSureYet: "I'm not sure what my task is yet",
   unsureIntro: "Ok, great. let's figure it out.",
   unsureQProject: 'What project/goal are you working on?',
   unsureMvp:
