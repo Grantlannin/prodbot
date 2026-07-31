@@ -48,6 +48,7 @@ const COMPOSE_PHASES: NightPrepFlowPhase[] = [
   'prep_project_name',
   'prep_unsure_mvp',
   'prep_unsure_break_down',
+  'prep_tee_up',
 ];
 
 function TypingBubble() {
@@ -492,6 +493,20 @@ export default function NightPrepModal() {
       return;
     }
 
+    if (phase === 'prep_tee_up') {
+      appendNightPrepMessages({ role: 'user', text });
+      setDraft('');
+      draftRef.current = '';
+      if (/^ready\s+for\s+tomorrow[.!?]*$/i.test(text)) {
+        completeAfterTeeUp();
+      } else {
+        sendBotReply(
+          `When you're done teeing things up, say "${WIND_DOWN_FLOW_COPY.readyForTomorrow}".`
+        );
+      }
+      return;
+    }
+
     if (phase === 'prep_task_name') {
       const projectId = flow.projectId || fieldsRef.current.projectId;
       if (!projectId) return;
@@ -551,6 +566,13 @@ export default function NightPrepModal() {
       tasks,
     });
     setNightPrepPlan(plan);
+    sendBotReply(WIND_DOWN_FLOW_COPY.teeUpPrep);
+    setNightPrepPhase('prep_tee_up');
+  };
+
+  const completeAfterTeeUp = () => {
+    if (typing) return;
+    const time = flow.firstWorkBlockTime || fieldsRef.current.firstWorkBlockTime;
     sendBotReply(WIND_DOWN_FLOW_COPY.doneSeeTomorrow(time));
     setNightPrepPhase('complete');
   };
@@ -559,6 +581,12 @@ export default function NightPrepModal() {
     if (typing) return;
     appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.taskListFinished });
     finishNightPrep();
+  };
+
+  const handleReadyForTomorrow = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.readyForTomorrow });
+    completeAfterTeeUp();
   };
 
   const beginAddAnotherTask = () => {
@@ -1085,9 +1113,11 @@ export default function NightPrepModal() {
                         ? WIND_DOWN_FLOW_COPY.taskNamePlaceholder
                         : phase === 'prep_unsure_mvp' || phase === 'prep_unsure_break_down'
                           ? WIND_DOWN_FLOW_COPY.addTaskPlaceholder
-                          : phase === 'prep_time'
-                            ? '2pm'
-                            : 'Message'
+                          : phase === 'prep_tee_up'
+                            ? WIND_DOWN_FLOW_COPY.readyForTomorrow
+                            : phase === 'prep_time'
+                              ? '2pm'
+                              : 'Message'
                   }
                   style={styles.input}
                 />
@@ -1124,6 +1154,18 @@ export default function NightPrepModal() {
                 </button>
                 <button type="button" onClick={handleUnsureAddMoreNo} style={styles.chip}>
                   {WIND_DOWN_FLOW_COPY.unsureAddMoreNo}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_tee_up' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button
+                  type="button"
+                  onClick={handleReadyForTomorrow}
+                  style={{ ...styles.chip, ...styles.chipFinish }}
+                >
+                  {WIND_DOWN_FLOW_COPY.readyForTomorrow}
                 </button>
               </div>
             ) : null}

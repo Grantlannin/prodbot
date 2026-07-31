@@ -71,6 +71,9 @@ export const WIND_DOWN_FLOW_COPY = {
   chooseTaskLabel: 'choose a task',
   taskListEmpty: 'No tasks on your list yet.',
   addTaskPlaceholder: 'Add a task',
+  teeUpPrep:
+    "Great. We have our task list for tomorrow. The last thing to do is quickly get these tasks prepped - meaning, set them up now in a way where there's zero friction for tomorrow. This could be logging into an account & having the page ready, getting tabs/docs open, etc. \"teeing it up\" will remove all resistance. I'll wait here for you to do that now. When finished, just say \"ready for tomorrow\" & i'll see you tomorrow.",
+  readyForTomorrow: 'ready for tomorrow',
   doneSeeTomorrow: (time: string) => `great. See you tomorrow around ${time}.`,
   closeChat: 'close chat',
   clearChat: 'clear chat',
@@ -102,6 +105,7 @@ export type NightPrepFlowPhase =
   | 'prep_unsure_place_or_break'
   | 'prep_unsure_break_down'
   | 'prep_unsure_add_more'
+  | 'prep_tee_up'
   | 'complete';
 
 export type NightPrepProjectMode = 'choose' | 'input' | null;
