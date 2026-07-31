@@ -51,6 +51,40 @@ function HowToUseLink({ url, label = 'how do I use this' }: { url: string; label
   );
 }
 
+const howToUseIconStyle: CSSProperties = {
+  border: '1px solid #cbd5e1',
+  background: '#fff',
+  width: 16,
+  height: 16,
+  borderRadius: '50%',
+  padding: 0,
+  margin: 0,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: 10,
+  fontWeight: 600,
+  fontFamily: font,
+  color: '#94a3b8',
+  cursor: 'pointer',
+  lineHeight: 1,
+  flexShrink: 0,
+};
+
+function HowToUseIcon({ url }: { url: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => openTutorialVideo(url)}
+      style={howToUseIconStyle}
+      title="how do I use this"
+      aria-label="how do I use this"
+    >
+      ?
+    </button>
+  );
+}
+
 interface DashboardTabProps {
   infractions: Infraction[];
   focusNightPrep?: boolean;
@@ -357,7 +391,15 @@ export default function DashboardTab({
 
         <div style={styles.lowerHalf}>
           <div style={styles.lowerLeft}>
-            <DashCard title="Notes" noPad howToUseUrl={TUTORIAL_LOOM_URLS.notes}>
+            <DashCard
+              title={
+                <>
+                  Notes
+                  <HowToUseIcon url={TUTORIAL_LOOM_URLS.notes} />
+                </>
+              }
+              noPad
+            >
               <AppleNotesPanel />
             </DashCard>
           </div>
