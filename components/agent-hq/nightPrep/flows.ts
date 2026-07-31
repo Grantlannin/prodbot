@@ -51,9 +51,9 @@ export const WIND_DOWN_FLOW_COPY = {
     'Great. Now, take a second and think about what can get us to the finish line for this project in 48 hours with the most ghetto MVP (minimum viable product) imaginable. It just needs to WORK, not be pretty. Thinking/overanalyzing gets us nothing, shitty action gets us everything. So if we HAD to get this finished & "up" or "in motion" in 48 hrs (product launched, outreach message sent, funnel finished, thing completed etc), what are the 2 single most important things we\'d work on or do? (Enter them 1 by 1)',
   unsureMvpSecond: "Got it. What's the second most important thing?",
   unsurePlaceOrBreak:
-    'great. Now are these tasks you want to throw on your task list for tomorrow? Or do we need to break these down farther?',
+    'great. Now are these tasks you want to throw on your task list for tomorrow? Or do we need to break these down further?',
   placeOnTaskList: 'place on task list',
-  breakDownFarther: 'Break down farther',
+  breakDownFarther: 'Break down further',
   unsureBreakDown:
     'ok, great. If you had to pick the most important part of this for tomorrow, what would it be?',
   unsureTomorrowList: (task: string) =>
