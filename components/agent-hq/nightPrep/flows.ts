@@ -54,6 +54,9 @@ export const WIND_DOWN_FLOW_COPY = {
   addNewTask: 'add new task into this project',
   addAnotherTask: 'add task from another project to task list',
   taskListFinished: 'task list finished',
+  taskListLabel: 'task list',
+  chooseTaskLabel: 'choose a task',
+  taskListEmpty: 'No tasks on your list yet.',
   doneSeeTomorrow: (time: string) => `great. See you tomorrow around ${time}.`,
   closeChat: 'close chat',
   clearChat: 'clear chat',
@@ -77,6 +80,7 @@ export type NightPrepFlowPhase =
   | 'prep_project_name'
   | 'prep_task_pick'
   | 'prep_task_name'
+  | 'prep_task_list'
   | 'prep_after_task'
   | 'prep_not_sure_placeholder'
   | 'complete';

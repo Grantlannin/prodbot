@@ -436,13 +436,24 @@ export default function NightPrepModal() {
 
   const appendTomorrowTask = (task: NightPrepTomorrowTask) => {
     const current = flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
-    if (current.some(t => t.projectId === task.projectId && t.taskId === task.taskId)) return;
+    if (current.some(t => t.projectId === task.projectId && t.taskId === task.taskId)) {
+      setNightPrepPhase('prep_task_list');
+      return;
+    }
 
     const next = [...current, task];
     fieldsRef.current.tomorrowTasks = next;
     setNightPrepFields({ tomorrowTasks: next });
     appendNightPrepMessages({ role: 'user', text: task.taskText });
-    setNightPrepPhase('prep_task_pick');
+    setNightPrepPhase('prep_task_list');
+  };
+
+  const removeTomorrowTask = (projectId: string, taskId: string) => {
+    if (typing) return;
+    const current = flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+    const next = current.filter(t => !(t.projectId === projectId && t.taskId === taskId));
+    fieldsRef.current.tomorrowTasks = next;
+    setNightPrepFields({ tomorrowTasks: next });
   };
 
   const finishNightPrep = () => {
@@ -640,6 +651,8 @@ export default function NightPrepModal() {
   );
   const hasTomorrowTasks = tomorrowTasks.length > 0;
   const inProjectTaskPick = phase === 'prep_task_pick' || phase === 'prep_task_name';
+  const showTaskList = phase === 'prep_task_list' && !typing;
+  const availableOpenTasks = openTasks.filter(task => !selectedTaskIds.has(task.id));
 
   return createPortal(
     <>
@@ -789,25 +802,23 @@ export default function NightPrepModal() {
 
             {inProjectTaskPick && !typing ? (
               <div style={styles.chipWrap}>
-                <div style={styles.chipSectionLabel}>tasks in this project</div>
-                {openTasks.length > 0 ? (
+                <div style={styles.chipSectionLabel}>{WIND_DOWN_FLOW_COPY.chooseTaskLabel}</div>
+                {availableOpenTasks.length > 0 ? (
                   <div style={styles.chipTaskGroup}>
-                    {openTasks.map(task => {
-                      const picked = selectedTaskIds.has(task.id);
-                      return (
-                        <button
-                          key={task.id}
-                          type="button"
-                          onClick={() => selectTask(task.text.trim(), task.id)}
-                          style={{
-                            ...styles.chip,
-                            ...(picked ? styles.chipSelected : {}),
-                          }}
-                        >
-                          {picked ? `✓ ${task.text.trim()}` : task.text.trim()}
-                        </button>
-                      );
-                    })}
+                    {availableOpenTasks.map(task => (
+                      <button
+                        key={task.id}
+                        type="button"
+                        onClick={() => selectTask(task.text.trim(), task.id)}
+                        style={styles.chip}
+                      >
+                        {task.text.trim()}
+                      </button>
+                    ))}
+                  </div>
+                ) : openTasks.length > 0 ? (
+                  <div style={styles.chipSectionEmpty}>
+                    All open tasks from this project are already on your list.
                   </div>
                 ) : (
                   <div style={styles.chipSectionEmpty}>No open tasks in this project yet.</div>
@@ -816,13 +827,15 @@ export default function NightPrepModal() {
                   <button type="button" onClick={beginAddTask} style={{ ...styles.chip, ...styles.chipAddNew }}>
                     {WIND_DOWN_FLOW_COPY.addNewTask}
                   </button>
-                  <button
-                    type="button"
-                    onClick={beginAddAnotherTask}
-                    style={{ ...styles.chip, ...styles.chipAddOther }}
-                  >
-                    {WIND_DOWN_FLOW_COPY.addAnotherTask}
-                  </button>
+                  {hasTomorrowTasks ? (
+                    <button
+                      type="button"
+                      onClick={() => setNightPrepPhase('prep_task_list')}
+                      style={styles.chip}
+                    >
+                      {WIND_DOWN_FLOW_COPY.taskListLabel}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     disabled={!hasTomorrowTasks}
@@ -865,6 +878,58 @@ export default function NightPrepModal() {
                     </button>
                   </div>
                 ) : null}
+              </div>
+            ) : null}
+
+            {showTaskList ? (
+              <div style={styles.chipWrap}>
+                <div style={styles.chipSectionLabel}>{WIND_DOWN_FLOW_COPY.taskListLabel}</div>
+                {tomorrowTasks.length > 0 ? (
+                  <div style={styles.chipTaskGroup}>
+                    {tomorrowTasks.map(task => (
+                      <div key={`${task.projectId}-${task.taskId}`} style={styles.taskListRow}>
+                        <span style={styles.taskListText}>{task.taskText.trim()}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeTomorrowTask(task.projectId, task.taskId)}
+                          style={styles.taskListRemove}
+                          aria-label={`Remove ${task.taskText.trim()}`}
+                          title="Remove from task list"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={styles.chipSectionEmpty}>{WIND_DOWN_FLOW_COPY.taskListEmpty}</div>
+                )}
+                <div style={styles.chipActionGroup}>
+                  {selectedProjectId ? (
+                    <button type="button" onClick={beginAddTask} style={{ ...styles.chip, ...styles.chipAddNew }}>
+                      {WIND_DOWN_FLOW_COPY.addNewTask}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={beginAddAnotherTask}
+                    style={{ ...styles.chip, ...styles.chipAddOther }}
+                  >
+                    {WIND_DOWN_FLOW_COPY.addAnotherTask}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!hasTomorrowTasks}
+                    onClick={finishTaskList}
+                    style={{
+                      ...styles.chip,
+                      ...styles.chipFinish,
+                      ...(!hasTomorrowTasks ? styles.chipDisabled : {}),
+                    }}
+                  >
+                    {WIND_DOWN_FLOW_COPY.taskListFinished}
+                  </button>
+                </div>
               </div>
             ) : null}
 
@@ -1082,6 +1147,39 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: 6,
+  },
+  taskListRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    border: '1px solid #cbd5e1',
+    borderRadius: 18,
+    padding: '8px 10px 8px 13px',
+    background: '#fff',
+  },
+  taskListText: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#0f172a',
+    lineHeight: 1.4,
+    wordBreak: 'break-word',
+  },
+  taskListRemove: {
+    flexShrink: 0,
+    width: 28,
+    height: 28,
+    border: 'none',
+    borderRadius: '50%',
+    background: 'transparent',
+    color: '#94a3b8',
+    fontSize: 22,
+    fontWeight: 500,
+    fontFamily: font,
+    lineHeight: 1,
+    cursor: 'pointer',
+    padding: 0,
   },
   chipActionGroup: {
     display: 'flex',
