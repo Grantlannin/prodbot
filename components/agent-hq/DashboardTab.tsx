@@ -24,7 +24,8 @@ import StartWorkModal, { type StartWorkPreset } from './StartWorkModal';
 import HowToStartBanner from './HowToStartBanner';
 import { sessionLabel } from './quickstartTask';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
-import { openTutorialVideo, TUTORIAL_LOOM_URLS } from './tutorialLinks';
+import { openTutorialVideo, SHOW_SECTION_HELP_KEY, TUTORIAL_LOOM_URLS } from './tutorialLinks';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -88,6 +89,7 @@ export default function DashboardTab({
     currentBreak,
   } = useWorkTrackerContext();
   const { items: doneTodayItems, addItem: addDoneToday } = useDoneToday();
+  const [showSectionHelp] = useLocalStorage<boolean>(SHOW_SECTION_HELP_KEY, true);
   const todayStats = getTodayStats();
   const projectStatsToday = todayStats.projectStats;
 
@@ -305,7 +307,7 @@ export default function DashboardTab({
                 Send EOD
               </button>
             </div>
-            <HowToUseLink url={TUTORIAL_LOOM_URLS.eod} />
+            {showSectionHelp ? <HowToUseLink url={TUTORIAL_LOOM_URLS.eod} /> : null}
           </div>
         </div>
       </div>
@@ -323,7 +325,7 @@ export default function DashboardTab({
                 Add project
               </button>
             }
-            howToUseUrl={TUTORIAL_LOOM_URLS.projects}
+            howToUseUrl={showSectionHelp ? TUTORIAL_LOOM_URLS.projects : undefined}
             headerRight={
               selectedProjectProgress && selectedProjectProgress.total > 0 ? (
                 <ProjectProgressBar progress={selectedProjectProgress} compact />
@@ -342,7 +344,10 @@ export default function DashboardTab({
             />
           </DashCard>
           <div ref={nightPrepRef} id="night-prep" style={styles.nightPrepCell}>
-            <DashCard title="WIND DOWN & NIGHT PREP" howToUseUrl={TUTORIAL_LOOM_URLS.windDown}>
+            <DashCard
+              title="WIND DOWN & NIGHT PREP"
+              howToUseUrl={showSectionHelp ? TUTORIAL_LOOM_URLS.windDown : undefined}
+            >
               <NightPrepPanel
                 autoStartWindDown={focusNightPrep}
                 onAutoStartHandled={onNightPrepFocused}
@@ -355,13 +360,17 @@ export default function DashboardTab({
 
         <div style={styles.lowerHalf}>
           <div style={styles.lowerLeft}>
-            <DashCard title="Notes" noPad howToUseUrl={TUTORIAL_LOOM_URLS.notes}>
+            <DashCard
+              title="Notes"
+              noPad
+              howToUseUrl={showSectionHelp ? TUTORIAL_LOOM_URLS.notes : undefined}
+            >
               <AppleNotesPanel />
             </DashCard>
           </div>
           <DashCard
             title="open loops / unmade decisions"
-            howToUseUrl={TUTORIAL_LOOM_URLS.openLoops}
+            howToUseUrl={showSectionHelp ? TUTORIAL_LOOM_URLS.openLoops : undefined}
             headerRight={
               <button
                 type="button"
