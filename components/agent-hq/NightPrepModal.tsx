@@ -646,9 +646,10 @@ export default function NightPrepModal() {
     if (typing) return;
     appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.needToAddIt });
     fieldsRef.current.leveragePath = 'need_add';
-    fieldsRef.current.projectMode = null;
-    setNightPrepFields({ leveragePath: 'need_add', projectMode: null });
-    setNightPrepPhase('prep_project_mode');
+    fieldsRef.current.projectMode = 'input';
+    setNightPrepFields({ leveragePath: 'need_add', projectMode: 'input' });
+    setNightPrepPhase('prep_project_name');
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   const handleNotSureYet = () => {
