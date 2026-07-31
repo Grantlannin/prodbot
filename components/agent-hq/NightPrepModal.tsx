@@ -519,7 +519,13 @@ export default function NightPrepModal() {
     appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.haveIt });
     fieldsRef.current.leveragePath = 'have_it';
     setNightPrepFields({ leveragePath: 'have_it' });
-    setNightPrepPhase('prep_project_mode');
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.haveItPrompt });
+      setNightPrepPhase('prep_project_mode');
+      setTyping(false);
+    }, BOT_TYPING_MS);
   };
 
   const handleNeedToAddIt = () => {
