@@ -51,40 +51,6 @@ function HowToUseLink({ url, label = 'how do I use this' }: { url: string; label
   );
 }
 
-const howToUseIconStyle: CSSProperties = {
-  border: '1px solid #cbd5e1',
-  background: '#fff',
-  width: 16,
-  height: 16,
-  borderRadius: '50%',
-  padding: 0,
-  margin: 0,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: 10,
-  fontWeight: 600,
-  fontFamily: font,
-  color: '#94a3b8',
-  cursor: 'pointer',
-  lineHeight: 1,
-  flexShrink: 0,
-};
-
-function HowToUseIcon({ url }: { url: string }) {
-  return (
-    <button
-      type="button"
-      onClick={() => openTutorialVideo(url)}
-      style={howToUseIconStyle}
-      title="how do I use this"
-      aria-label="how do I use this"
-    >
-      ?
-    </button>
-  );
-}
-
 interface DashboardTabProps {
   infractions: Infraction[];
   focusNightPrep?: boolean;
@@ -347,17 +313,15 @@ export default function DashboardTab({
       <div style={styles.captureSection}>
         <div style={styles.upperHalf}>
           <DashCard
-            title={
-              <>
-                Projects
-                <button
-                  type="button"
-                  onClick={() => projectsRef.current?.addProject()}
-                  style={addProjectBtnStyle}
-                >
-                  Add project
-                </button>
-              </>
+            title="Projects"
+            titleBeside={
+              <button
+                type="button"
+                onClick={() => projectsRef.current?.addProject()}
+                style={addProjectBtnStyle}
+              >
+                Add project
+              </button>
             }
             howToUseUrl={TUTORIAL_LOOM_URLS.projects}
             headerRight={
@@ -391,15 +355,7 @@ export default function DashboardTab({
 
         <div style={styles.lowerHalf}>
           <div style={styles.lowerLeft}>
-            <DashCard
-              title={
-                <>
-                  Notes
-                  <HowToUseIcon url={TUTORIAL_LOOM_URLS.notes} />
-                </>
-              }
-              noPad
-            >
+            <DashCard title="Notes" noPad howToUseUrl={TUTORIAL_LOOM_URLS.notes}>
               <AppleNotesPanel />
             </DashCard>
           </div>
@@ -432,12 +388,14 @@ function DashCard({
   children,
   noPad,
   headerRight,
+  titleBeside,
   howToUseUrl,
 }: {
   title: React.ReactNode;
   children: React.ReactNode;
   noPad?: boolean;
   headerRight?: ReactNode;
+  titleBeside?: ReactNode;
   howToUseUrl?: string;
 }) {
   return (
@@ -459,9 +417,8 @@ function DashCard({
           padding: howToUseUrl ? '8px 14px 9px' : '10px 14px',
           borderBottom: '1px solid #e2e8f0',
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-          gap: howToUseUrl ? 4 : 0,
+          alignItems: 'flex-start',
+          gap: 10,
           minHeight: 40,
           boxSizing: 'border-box',
           flexShrink: 0,
@@ -469,40 +426,42 @@ function DashCard({
       >
         <div
           style={{
+            flex: 1,
+            minWidth: 0,
             display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            minHeight: howToUseUrl ? 0 : 20,
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: howToUseUrl ? 3 : 0,
           }}
         >
-          <span
+          <div
             style={{
-              flex: 1,
-              minWidth: 0,
-              color: '#0f172a',
-              fontFamily: font,
-              fontSize: 14,
-              fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
               gap: 10,
+              width: '100%',
+              minHeight: 20,
             }}
           >
             <span
               style={{
+                color: '#0f172a',
+                fontFamily: font,
+                fontSize: 14,
+                fontWeight: 600,
+                lineHeight: 1.25,
                 minWidth: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
               }}
             >
               {title}
             </span>
-            {headerRight ? <span style={{ flexShrink: 0 }}>{headerRight}</span> : null}
-          </span>
+            {titleBeside ? <span style={{ flexShrink: 0 }}>{titleBeside}</span> : null}
+            {headerRight ? (
+              <span style={{ flexShrink: 0, marginLeft: 'auto' }}>{headerRight}</span>
+            ) : null}
+          </div>
+          {howToUseUrl !== undefined ? <HowToUseLink url={howToUseUrl} /> : null}
         </div>
-        {howToUseUrl !== undefined ? <HowToUseLink url={howToUseUrl} /> : null}
       </div>
       <div
         style={
