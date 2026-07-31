@@ -38,8 +38,15 @@ export const WIND_DOWN_FLOW_COPY = {
     "Now let's prep your tasks/work for tomorrow, so you can begin quickly & clearly",
   qFirstBlockTime: 'roughly what time are you putting in your 1st work block tomorrow?',
   qWorkLocation: 'where are you going to be doing this work?',
-  qWhatWorkingOn:
-    'Great. Now let\'s figure out what you\'re working on. For the "perfect task list", we can use a 2-question seqeunce. You can first ask yourself "what, if finished tomorrow, would make me feel like it was a productive day?". The 2nd question is "do i have high confidence that i can finish these?". The best task lists make you feel good, and are manageable.',
+  qHighestLeverage:
+    "Great. Now let's place your highest leverage task on your task list for tomorrow + prep it so you can just wake up & get at it. Doing the *right* tasks at normal speed will get us farther faster than doing 'more' of the wrong tasks. No magic involved in winning - just working on the correct thing, day in & day out. Do you already have your most important task in your projects/tasks or do you need to add it?",
+  haveIt: 'I have it',
+  needToAddIt: 'I need to add it',
+  notSureYet: "I'm not sure what yet",
+  projectCreatedAddTask:
+    'project created. Now add the most important task that you need to get done tomorrow, and I will place it on your task list',
+  notSurePlaceholder:
+    "Placeholder — this will open the organizing help flow next. We'll wire that up in a sec.",
   chooseProject: 'choose project',
   inputProject: 'create project',
   addNewTask: 'add new task into this project',
@@ -62,15 +69,19 @@ export type NightPrepFlowPhase =
   | 'empty_logged_prompt'
   | 'prep_time'
   | 'prep_location'
+  | 'prep_leverage_fork'
   | 'prep_project_mode'
   | 'prep_project_pick'
   | 'prep_project_name'
   | 'prep_task_pick'
   | 'prep_task_name'
   | 'prep_after_task'
+  | 'prep_not_sure_placeholder'
   | 'complete';
 
 export type NightPrepProjectMode = 'choose' | 'input' | null;
+
+export type NightPrepLeveragePath = 'have_it' | 'need_add' | 'unsure' | null;
 
 export interface NightPrepFlowState {
   phase: NightPrepFlowPhase;
@@ -80,6 +91,7 @@ export interface NightPrepFlowState {
   firstWorkBlockTime: string;
   workLocation: string;
   projectMode: NightPrepProjectMode;
+  leveragePath: NightPrepLeveragePath;
   projectId: string;
   projectName: string;
   taskId: string;

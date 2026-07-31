@@ -86,6 +86,7 @@ export default function NightPrepModal() {
     firstWorkBlockTime: '',
     workLocation: '',
     projectMode: null as 'choose' | 'input' | null,
+    leveragePath: null as 'have_it' | 'need_add' | 'unsure' | null,
     projectId: '',
     projectName: '',
     taskId: '',
@@ -368,8 +369,8 @@ export default function NightPrepModal() {
       fieldsRef.current.workLocation = text;
       setNightPrepFields({ workLocation: text });
       appendNightPrepMessages({ role: 'user', text });
-      sendBotReply(WIND_DOWN_FLOW_COPY.qWhatWorkingOn);
-      setNightPrepPhase('prep_project_mode');
+      sendBotReply(WIND_DOWN_FLOW_COPY.qHighestLeverage);
+      setNightPrepPhase('prep_leverage_fork');
       setDraft('');
       draftRef.current = '';
       return;
@@ -396,6 +397,10 @@ export default function NightPrepModal() {
       });
       appendNightPrepMessages({ role: 'user', text: project.name.trim() });
       requestFocusProject(project.id);
+      const fromNeedAdd = (flow.leveragePath || fieldsRef.current.leveragePath) === 'need_add';
+      if (fromNeedAdd) {
+        sendBotReply(WIND_DOWN_FLOW_COPY.projectCreatedAddTask);
+      }
       setNightPrepPhase('prep_task_name');
       setDraft('');
       draftRef.current = '';
@@ -509,6 +514,33 @@ export default function NightPrepModal() {
     requestAnimationFrame(() => inputRef.current?.focus());
   };
 
+  const handleHaveIt = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.haveIt });
+    fieldsRef.current.leveragePath = 'have_it';
+    setNightPrepFields({ leveragePath: 'have_it' });
+    setNightPrepPhase('prep_project_mode');
+  };
+
+  const handleNeedToAddIt = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.needToAddIt });
+    fieldsRef.current.leveragePath = 'need_add';
+    fieldsRef.current.projectMode = 'input';
+    setNightPrepFields({ leveragePath: 'need_add', projectMode: 'input' });
+    setNightPrepPhase('prep_project_name');
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const handleNotSureYet = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.notSureYet });
+    fieldsRef.current.leveragePath = 'unsure';
+    setNightPrepFields({ leveragePath: 'unsure' });
+    sendBotReply(WIND_DOWN_FLOW_COPY.notSurePlaceholder);
+    setNightPrepPhase('prep_not_sure_placeholder');
+  };
+
   const selectProject = (project: ProjectBoard) => {
     if (typing) return;
     const name = project.name.trim() || 'Unnamed project';
@@ -569,6 +601,7 @@ export default function NightPrepModal() {
       firstWorkBlockTime: '',
       workLocation: '',
       projectMode: null,
+      leveragePath: null,
       projectId: '',
       projectName: '',
       taskId: '',
@@ -691,6 +724,20 @@ export default function NightPrepModal() {
                 </button>
                 <button type="button" onClick={handleEmptyNo} style={styles.chip}>
                   {WIND_DOWN_FLOW_COPY.emptyNo}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_leverage_fork' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={handleHaveIt} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.haveIt}
+                </button>
+                <button type="button" onClick={handleNeedToAddIt} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.needToAddIt}
+                </button>
+                <button type="button" onClick={handleNotSureYet} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.notSureYet}
                 </button>
               </div>
             ) : null}
@@ -849,6 +896,18 @@ export default function NightPrepModal() {
                   aria-label="Send"
                 >
                   ↑
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_not_sure_placeholder' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button
+                  type="button"
+                  onClick={closeNightPrepChat}
+                  style={{ ...styles.chip, ...styles.chipFinish }}
+                >
+                  {WIND_DOWN_FLOW_COPY.closeChat}
                 </button>
               </div>
             ) : null}

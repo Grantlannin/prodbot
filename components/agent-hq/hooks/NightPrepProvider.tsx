@@ -28,6 +28,7 @@ function initialFlowState(items: WindDownItem[]): NightPrepFlowState {
     firstWorkBlockTime: '',
     workLocation: '',
     projectMode: null,
+    leveragePath: null,
     projectId: '',
     projectName: '',
     taskId: '',
@@ -55,6 +56,7 @@ interface NightPrepContextValue {
         | 'firstWorkBlockTime'
         | 'workLocation'
         | 'projectMode'
+        | 'leveragePath'
         | 'projectId'
         | 'projectName'
         | 'taskId'
@@ -103,6 +105,7 @@ export function NightPrepProvider({ children }: { children: ReactNode }) {
           | 'firstWorkBlockTime'
           | 'workLocation'
           | 'projectMode'
+          | 'leveragePath'
           | 'projectId'
           | 'projectName'
           | 'taskId'
