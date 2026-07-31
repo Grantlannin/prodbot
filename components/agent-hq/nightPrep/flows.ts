@@ -76,7 +76,7 @@ export const WIND_DOWN_FLOW_COPY = {
   taskListEmpty: 'No tasks on your list yet.',
   addTaskPlaceholder: 'Add a task',
   teeUpPrep:
-    'Great. We have our task list for tomorrow. The last thing to do is quickly get these tasks prepped - meaning, set them up now in a way where there\'s zero friction for tomorrow, so the second you start working it is the *actual work you need to do. This could be logging into an account & having the page ready, getting tabs/docs open, pulling specific files etc. "teeing it up" will remove all resistance. I\'ll wait here for you to do that now. When finished, just click "ready for tomorrow" & i\'ll see you tomorrow.',
+    'Great. We have our task list for tomorrow. The last thing to do is quickly get these tasks prepped - meaning, set them up now in a way where there\'s zero friction for tomorrow, so the second you start working it is the *actual* work you need to do. This could be logging into an account & having the page ready, getting tabs/docs open, creating a quick outline, pulling specific files etc. "teeing it up" will remove all resistance. I\'ll wait here for you to do that now. When finished, just click "ready for tomorrow" & i\'ll see you tomorrow.',
   readyForTomorrow: 'ready for tomorrow',
   doneSeeTomorrow: (time: string) => `great. See you tomorrow around ${time}.`,
   closeChat: 'close chat',
