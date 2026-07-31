@@ -24,8 +24,32 @@ import StartWorkModal, { type StartWorkPreset } from './StartWorkModal';
 import HowToStartBanner from './HowToStartBanner';
 import { sessionLabel } from './quickstartTask';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
+import { openTutorialVideo, TUTORIAL_LOOM_URLS } from './tutorialLinks';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+const howToUseLinkStyle: CSSProperties = {
+  border: 'none',
+  background: 'transparent',
+  padding: 0,
+  margin: 0,
+  fontSize: 11,
+  fontWeight: 500,
+  fontFamily: font,
+  color: '#94a3b8',
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  textUnderlineOffset: 2,
+  lineHeight: 1.2,
+};
+
+function HowToUseLink({ url, label = 'how do I use this' }: { url: string; label?: string }) {
+  return (
+    <button type="button" onClick={() => openTutorialVideo(url)} style={howToUseLinkStyle}>
+      {label}
+    </button>
+  );
+}
 
 interface DashboardTabProps {
   infractions: Infraction[];
@@ -281,6 +305,7 @@ export default function DashboardTab({
                 Send EOD
               </button>
             </div>
+            <HowToUseLink url={TUTORIAL_LOOM_URLS.eod} />
           </div>
         </div>
       </div>
@@ -300,6 +325,7 @@ export default function DashboardTab({
                 </button>
               </>
             }
+            howToUseUrl={TUTORIAL_LOOM_URLS.projects}
             headerRight={
               selectedProjectProgress && selectedProjectProgress.total > 0 ? (
                 <ProjectProgressBar progress={selectedProjectProgress} compact />
@@ -318,7 +344,7 @@ export default function DashboardTab({
             />
           </DashCard>
           <div ref={nightPrepRef} id="night-prep" style={styles.nightPrepCell}>
-            <DashCard title="WIND DOWN & NIGHT PREP">
+            <DashCard title="WIND DOWN & NIGHT PREP" howToUseUrl={TUTORIAL_LOOM_URLS.windDown}>
               <NightPrepPanel
                 autoStartWindDown={focusNightPrep}
                 onAutoStartHandled={onNightPrepFocused}
@@ -331,12 +357,13 @@ export default function DashboardTab({
 
         <div style={styles.lowerHalf}>
           <div style={styles.lowerLeft}>
-            <DashCard title="Notes" noPad>
+            <DashCard title="Notes" noPad howToUseUrl={TUTORIAL_LOOM_URLS.notes}>
               <AppleNotesPanel />
             </DashCard>
           </div>
           <DashCard
             title="open loops / unmade decisions"
+            howToUseUrl={TUTORIAL_LOOM_URLS.openLoops}
             headerRight={
               <button
                 type="button"
@@ -363,11 +390,13 @@ function DashCard({
   children,
   noPad,
   headerRight,
+  howToUseUrl,
 }: {
   title: React.ReactNode;
   children: React.ReactNode;
   noPad?: boolean;
   headerRight?: ReactNode;
+  howToUseUrl?: string;
 }) {
   return (
     <div
@@ -385,42 +414,53 @@ function DashCard({
     >
       <div
         style={{
-          padding: '10px 14px',
+          padding: howToUseUrl ? '8px 14px 9px' : '10px 14px',
           borderBottom: '1px solid #e2e8f0',
           display: 'flex',
-          alignItems: 'center',
-          gap: 10,
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          gap: howToUseUrl ? 4 : 0,
           minHeight: 40,
           boxSizing: 'border-box',
           flexShrink: 0,
         }}
       >
-        <span
+        <div
           style={{
-            flex: 1,
-            minWidth: 0,
-            color: '#0f172a',
-            fontFamily: font,
-            fontSize: 14,
-            fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             gap: 10,
+            minHeight: howToUseUrl ? 0 : 20,
           }}
         >
           <span
             style={{
+              flex: 1,
               minWidth: 0,
+              color: '#0f172a',
+              fontFamily: font,
+              fontSize: 14,
+              fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'space-between',
               gap: 10,
             }}
           >
-            {title}
+            <span
+              style={{
+                minWidth: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
+              {title}
+            </span>
+            {headerRight ? <span style={{ flexShrink: 0 }}>{headerRight}</span> : null}
           </span>
-          {headerRight ? <span style={{ flexShrink: 0 }}>{headerRight}</span> : null}
-        </span>
+        </div>
+        {howToUseUrl !== undefined ? <HowToUseLink url={howToUseUrl} /> : null}
       </div>
       <div
         style={

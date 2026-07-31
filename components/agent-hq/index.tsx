@@ -30,8 +30,24 @@ import { clearNightPrepDeepLinkParam, readNightPrepDeepLink } from './nightPrepR
 import { fetchProfileDisplayName } from '@/lib/supabase/profile';
 import { isPlaceholderDisplayName } from './userProfile';
 import OnboardingNameModal from './OnboardingNameModal';
+import { openTutorialVideo, TUTORIAL_LOOM_URLS } from './tutorialLinks';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+const fullBotTutorialLinkStyle = {
+  border: 'none',
+  background: 'transparent',
+  padding: '0 2px',
+  margin: 0,
+  fontSize: 11,
+  fontWeight: 500,
+  fontFamily: font,
+  color: '#94a3b8',
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  textUnderlineOffset: 2,
+  whiteSpace: 'nowrap' as const,
+};
 
 function makeInfractionId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -142,6 +158,13 @@ function AgentHQInner() {
             <AccountMenu />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <GetCourseModal variant="nav" />
+              <button
+                type="button"
+                onClick={() => openTutorialVideo(TUTORIAL_LOOM_URLS.fullBot)}
+                style={fullBotTutorialLinkStyle}
+              >
+                full bot tutorial
+              </button>
               <FocusExtensionModal variant="nav" />
               <StuckHelpNavButton />
             </div>
