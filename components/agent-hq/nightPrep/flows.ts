@@ -41,6 +41,8 @@ export const WIND_DOWN_FLOW_COPY = {
   qHighestLeverage:
     "Great. Now let's place your highest leverage task on your task list for tomorrow + prep it so you can just wake up & get at it. Doing the *right* tasks at normal speed will get us farther faster than doing 'more' of the wrong tasks. No magic involved in winning - just working on the correct thing, day in & day out. Do you already have your most important task in your projects/tasks or do you need to add it?",
   haveIt: 'I have it',
+  haveItPrompt:
+    'great. Take a second and think about what task(s) are most important to get done tomorrow, choose them, and i will add them to your task list',
   needToAddIt: 'I need to add it',
   notSureYet: "I'm not sure what yet",
   projectCreatedAddTask:
