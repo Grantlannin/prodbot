@@ -20,7 +20,6 @@ import {
   addProjectTask,
   createProjectBoard,
   requestFocusProject,
-  upsertProject,
 } from './stuckHelp/projectMutations';
 import {
   appendWindDownContextToProjects,
