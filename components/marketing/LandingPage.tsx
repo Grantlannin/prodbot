@@ -143,23 +143,25 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <h2 className="mb-4 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
-          Every work session easily tracked, every task organized effortlessly.
-        </h2>
-        <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-          Every session is tracked by task (forcing you to stay organized — because if you don&apos;t organize,
-          you can&apos;t track)
-        </p>
-        <video
-          className="h-auto w-full"
-          src="/marketing/sessions-tracked.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          controls={false}
-          aria-label="Daywinner dashboard with sessions tracked by task"
-        />
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Every Work Session Easily Tracked, Every Task Organized Effortlessly.
+          </h2>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            Every session is tracked by task (forcing you to stay organized — because if you don&apos;t organize,
+            you can&apos;t track)
+          </p>
+          <video
+            className="h-auto w-full"
+            src="/marketing/sessions-tracked.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls={false}
+            aria-label="Daywinner dashboard with sessions tracked by task"
+          />
+        </div>
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
