@@ -98,14 +98,6 @@ export default function LandingPage() {
           unoptimized
           priority
         />
-        <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600">
-          Built around the exact workflow of people making multiple hundreds of thousands of dollars per month,
-          daywinner bot helps you prioritize the 1 most important task (or tasks) for the day &amp; work until
-          completed by creating timed work blocks &amp; force-blocking out your most distracting tabs/websites. You
-          now not only have a &ldquo;homebase&rdquo; for your most important work, but you can also track how long
-          you worked on what task each day, and even keep yourself accountable by sending daily reports to friends
-          or accountability buddies (or yourself).
-        </p>
 
         <div className="mb-10 flex flex-wrap items-center gap-3">
           <Link
