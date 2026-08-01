@@ -83,12 +83,17 @@ export default function LandingPage() {
           <h1 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
           </h1>
+          <p className="mb-4 max-w-2xl text-lg leading-relaxed text-slate-600">
+            Daywinner bot is a productivity dashboard that functions as your &ldquo;work homebase&rdquo; — a tab in
+            your browser that helps you organize &amp; finish the tasks you need to do to hit your first six figures
+            (or make your first $1 online), finally build &amp; launch the project you&apos;ve been sitting on, pass
+            any exam, or land the remote job you actually want.
+          </p>
           <p className="mb-5 max-w-2xl text-lg leading-relaxed text-slate-600">
-            Daywinner bot is your &ldquo;work homebase&rdquo; — a tab in your browser that helps you hit your first six
-            figures (or make your first $1 online), finally build &amp; ship the project you&apos;ve been sitting on,
-            pass any exam, or land the remote job you actually want. Structure your work blocks and block distractions
-            the way 7-figure entrepreneurs do, so you get sh*t done, follow your dreams, and make more progress in 30
-            days than you have in the last 5 years.
+            Here&apos;s the key: You don&apos;t have a discipline problem — you just have no structure. Until now.
+            Daywinner bot helps you build your tasks and work sessions the way 7-figure entrepreneurs run theirs while
+            blocking your most distracting websites, so you get sh*t done and make more progress in 30 days than you
+            have in the last 5 years.
           </p>
           <Image
             src="/marketing/dashboard.jpg"
