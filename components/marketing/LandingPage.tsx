@@ -88,6 +88,15 @@ export default function LandingPage() {
           6 figures, finish/launch that project, overdeliver for your clients, get that remote job, or study
           efficiently — and make more progress in 30 days than you have in the past 5 years.
         </p>
+        <Image
+          src="/marketing/dashboard.jpg"
+          alt="Daywinner bot dashboard"
+          width={1024}
+          height={522}
+          className="mb-8 h-auto w-full"
+          unoptimized
+          priority
+        />
         <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600">
           Built around the exact workflow of people making multiple hundreds of thousands of dollars per month,
           daywinner bot helps you prioritize the 1 most important task (or tasks) for the day &amp; work until
