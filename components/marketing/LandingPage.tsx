@@ -115,14 +115,22 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <h2 className="mb-4 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
-          You&apos;re Not Unproductive or Lazy, You&apos;ve Just Never Had a Work System Before.
+        <h2 className="mb-4 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+          What Did You Get Done Today?
         </h2>
-        <p className="max-w-2xl text-base leading-relaxed text-slate-600">
-          Daywinner bot isn&apos;t just a tool, it&apos;s a work system that guides you through specific work flows
-          so you can think, get organized, and stay on track without having to do it all yourself. Your Daywinner
-          bot will guide you daily.
+        <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+          There is nowhere to hide. Your daywinner bot will ask you daily if you{' '}
+          <em>actually</em> got stuff done, and if it was the right stuff. No more wasting time doing nothing or
+          doing the wrong stuff.
         </p>
+        <Image
+          src="/marketing/wind-down.jpg"
+          alt="Wind down bot asking what you got done today"
+          width={1024}
+          height={665}
+          className="h-auto w-full"
+          unoptimized
+        />
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
