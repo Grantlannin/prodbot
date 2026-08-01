@@ -152,8 +152,9 @@ export default function LandingPage() {
             Every Work Session Easily Tracked. Every Task Organized Effortlessly.
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Every session is tracked by task (forcing you to stay organized) — because if you don&apos;t organize,
-            you can&apos;t track.
+            Every session is tracked by task, which not only shows you exactly what you worked on &amp; for how long —
+            but also forces you to stay organized. Because if you don&apos;t organize, you can&apos;t start the
+            session.
           </p>
           <video
             className="h-auto w-full"
