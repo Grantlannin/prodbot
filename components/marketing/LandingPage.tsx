@@ -83,10 +83,10 @@ export default function LandingPage() {
           Fighter pilots have their cockpit. You have your daywinner bot.
         </h1>
         <p className="mb-5 max-w-2xl text-lg leading-relaxed text-slate-600">
-          Daywinner bot is your &ldquo;productivity dashboard&rdquo; tool that helps you WIN THE DAY by helping
-          you organize your work &amp; block distractions like 7/8 figure entrepreneurs so you can hit your first
-          6 figures, finish/launch that project, overdeliver for your clients, get that remote job, or study
-          efficiently — and make more progress in 30 days than you have in the past 5 years.
+          Hit your first six figures (or make your first $1 online), finally build &amp; ship the project you&apos;ve
+          been sitting on, land the remote job you actually want. Daywinner bot helps people get sh*t done &amp;
+          follow their dreams by structuring their work blocks and blocking distractions the way 7-figure
+          entrepreneurs do — so you make more progress in 30 days than you have in the last 5 years.
         </p>
         <Image
           src="/marketing/dashboard.jpg"
