@@ -116,7 +116,7 @@ export default function LandingPage() {
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
         <h2 className="mb-4 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
-          You&apos;re not unproductive or lazy, you&apos;ve just never had a work system before.
+          You&apos;re Not Unproductive or Lazy, You&apos;ve Just Never Had a Work System Before.
         </h2>
         <p className="max-w-2xl text-base leading-relaxed text-slate-600">
           Daywinner bot isn&apos;t just a tool, it&apos;s a work system that guides you through specific work flows
