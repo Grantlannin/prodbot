@@ -121,6 +121,9 @@ export default function LandingPage() {
         </div>
 
         <div className="mb-10 border-t border-slate-200 pt-8">
+          <h2 className="mb-4 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+            Easy-to-view timer + blocks all distracting sites effortlessly
+          </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
             Floating timer lets you run pomodoro sessions (or timed work sessions of the length of your choosing)
             while always allowing you to see exactly how much time is left
