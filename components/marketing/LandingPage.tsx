@@ -162,7 +162,7 @@ export default function LandingPage() {
               to Daywinner — or keep working.
             </p>
             <Image
-              src="/marketing/focus-session.png"
+              src="/marketing/focus-session.jpg"
               alt="Focus session active — blocked site with countdown"
               width={1200}
               height={800}
@@ -183,7 +183,7 @@ export default function LandingPage() {
               resistance, or a messy task list — and get walked into the next move without overthinking it.
             </p>
             <Image
-              src="/marketing/stuck-help.png"
+              src="/marketing/stuck-help.jpg"
               alt="Stuck help options — trouble starting or organizing"
               width={1200}
               height={800}
@@ -204,7 +204,7 @@ export default function LandingPage() {
               then you hit LET&apos;S GO and move.
             </p>
             <Image
-              src="/marketing/celebration.png"
+              src="/marketing/celebration.jpg"
               alt="Project completion celebration overlay"
               width={1200}
               height={800}
@@ -225,7 +225,7 @@ export default function LandingPage() {
               work time, tomorrow. You review and hit Send — nothing leaves Daywinner automatically.
             </p>
             <Image
-              src="/marketing/eod-send.png"
+              src="/marketing/eod-send.jpg"
               alt="Send EOD to partner modal"
               width={1200}
               height={800}
