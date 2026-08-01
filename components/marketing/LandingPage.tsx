@@ -136,6 +136,134 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">
+          Inside the cockpit
+        </p>
+        <h2 className="mb-4 max-w-xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+          The moments that keep you locked in.
+        </h2>
+        <p className="mb-10 max-w-2xl text-base leading-relaxed text-slate-600">
+          Same dashboard you live in all day — focus locks, stuck-help, celebrations when you finish, and an
+          end-of-day send that keeps you honest.
+        </p>
+
+        <div className="space-y-6">
+          <article className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-slate-100 shadow-sm">
+            <div className="px-6 py-8 sm:px-8 sm:py-10">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Site blocking
+              </p>
+              <h3 className="mb-3 text-xl font-bold tracking-tight text-white sm:text-2xl">
+                Focus session active
+              </h3>
+              <p className="mb-6 max-w-lg text-sm leading-relaxed text-slate-300">
+                When you start a work block, distracting sites get locked. You see the countdown, the site that
+                tried to pull you out, and a clear message: this tab is blocked until your session ends. Return
+                to Daywinner — or keep working.
+              </p>
+              <div className="mx-auto max-w-sm rounded-2xl border border-slate-700 bg-slate-900/80 px-6 py-8 text-center">
+                <p className="mb-1 text-lg font-bold text-white">Focus session active</p>
+                <p className="mb-4 text-sm text-slate-400">twitter.com</p>
+                <p className="mb-4 font-mono text-4xl font-bold tracking-tight text-emerald-300">56:25</p>
+                <p className="text-xs leading-relaxed text-slate-400">
+                  This site is blocked until your session ends. Return to Daywinner or keep working.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Stuck help
+            </p>
+            <h3 className="mb-3 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              When friction shows up, the bot meets you there.
+            </h3>
+            <p className="mb-6 max-w-lg text-sm leading-relaxed text-slate-600">
+              Not every day starts clean. Tap into the stuck-help flows when you&apos;re spinning — friction and
+              resistance, or a messy task list — and get walked into the next move without overthinking it.
+            </p>
+            <ul className="space-y-3">
+              <li className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold text-slate-800">
+                I&apos;m having trouble starting (friction/resistance)
+              </li>
+              <li className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold text-slate-800">
+                im having trouble organizing my task list today
+              </li>
+            </ul>
+          </article>
+
+          <article className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 text-white shadow-sm">
+            <div className="px-6 py-8 text-center sm:px-10 sm:py-12">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Finish energy
+              </p>
+              <h3 className="mb-4 text-xl font-bold tracking-tight sm:text-2xl">
+                Close the loop like you mean it.
+              </h3>
+              <p className="mx-auto mb-8 max-w-md text-sm leading-relaxed text-slate-300">
+                When a project hits done, Daywinner doesn&apos;t whisper. You get a full-screen celebration —
+                then you hit LET&apos;S GO and move.
+              </p>
+              <p className="mx-auto mb-8 max-w-md text-base font-bold uppercase leading-snug tracking-wide text-white sm:text-lg">
+                YOU&apos;RE A FUCKING BEAST. YOU&apos;RE A FUCKING ANIMAL. NOBODY CAN TAME YOU. THE WORLD IS
+                YOURS.
+              </p>
+              <span className="inline-flex items-center justify-center rounded-xl bg-sky-500 px-8 py-3 text-sm font-bold text-white">
+                LET&apos;S GO
+              </span>
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              End of day
+            </p>
+            <h3 className="mb-3 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Send EOD to your partner — or yourself.
+            </h3>
+            <p className="mb-6 max-w-lg text-sm leading-relaxed text-slate-600">
+              Opens Gmail (or your mail app) with today&apos;s report pre-filled: what you got done, insights,
+              work time, tomorrow. You review and hit Send — nothing leaves Daywinner automatically.
+            </p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Email body preview
+              </p>
+              <p className="mb-1 font-bold text-slate-900">END OF DAY REPORT</p>
+              <p className="mb-3 text-slate-500">Your day, summarized</p>
+              <div className="space-y-2 border-t border-slate-200 pt-3 text-slate-600">
+                <p>
+                  <span className="font-semibold text-slate-800">TOTAL WORK TIME</span> — logged from your
+                  sessions
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-800">WHAT YOU GOT DONE TODAY</span> — your wins
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-800">TOMORROW</span> — what you prepped in wind
+                  down
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-800">INSIGHTS / LEARNINGS</span> — optional
+                </p>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div className="mt-10 flex flex-wrap items-center gap-3">
+          <Link
+            href={ctaHref}
+            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-slate-800"
+          >
+            {ctaLabel}
+          </Link>
+          <span className="text-sm text-slate-500">Same cockpit. Fewer excuses.</span>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
         <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Who it&apos;s for</p>
         <h2 className="mb-4 max-w-xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
           Already working? Daywinner is your homebase.
