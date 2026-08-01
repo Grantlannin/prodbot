@@ -130,7 +130,7 @@ export default function LandingPage() {
             src="/marketing/projects.jpg"
             alt="Projects dashboard with tasks and subtasks"
             width={1024}
-            height={518}
+            height={443}
             className="h-auto w-full"
             unoptimized
           />
