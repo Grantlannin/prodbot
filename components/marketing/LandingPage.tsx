@@ -115,17 +115,17 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+          What Did You Get Done Today?
+        </h2>
         <Image
           src="/marketing/wind-down.jpg"
           alt="Wind down bot asking what you got done today"
           width={942}
           height={1024}
-          className="mb-6 h-auto w-full"
+          className="mb-6 h-auto w-full max-w-md sm:max-w-lg"
           unoptimized
         />
-        <h2 className="mb-4 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-          What Did You Get Done Today?
-        </h2>
         <p className="max-w-2xl text-base leading-relaxed text-slate-600">
           There is nowhere to hide. Your daywinner bot will ask you one simple question daily:
         </p>
