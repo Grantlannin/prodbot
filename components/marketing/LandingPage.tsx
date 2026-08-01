@@ -222,6 +222,21 @@ export default function LandingPage() {
 
         <div className="space-y-10">
           <article>
+            <h3 className="mb-5 max-w-2xl text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              block all of the most distracting social media sites with the click of a button. Add any site you
+              like.
+            </h3>
+            <Image
+              src="/marketing/blocked-sites.jpg"
+              alt="Blocked sites list with social media pack and custom sites"
+              width={1024}
+              height={745}
+              className="h-auto w-full"
+              unoptimized
+            />
+          </article>
+
+          <article>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
               Site blocking
             </p>
