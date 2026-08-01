@@ -201,6 +201,47 @@ export default function LandingPage() {
           />
         </div>
 
+        <div className="mb-10 border-t border-slate-200 pt-8">
+          <div className="grid items-start gap-4 sm:grid-cols-[1fr_auto_1fr] sm:gap-3">
+            <div>
+              <h2 className="mb-4 text-xl font-bold leading-tight tracking-tight text-slate-900 sm:text-2xl">
+                Trouble starting a task? The bot has an exact flow for that
+              </h2>
+              <Image
+                src="/marketing/stuck-start.jpg"
+                alt="Stuck help options — trouble starting"
+                width={1024}
+                height={654}
+                className="h-auto w-full"
+                unoptimized
+              />
+            </div>
+
+            <div className="flex flex-col items-center justify-center gap-1 py-2 sm:min-h-[12rem] sm:px-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                here to here
+              </span>
+              <span className="text-3xl font-bold leading-none text-slate-400" aria-hidden>
+                →
+              </span>
+            </div>
+
+            <div>
+              <h2 className="mb-4 text-xl font-bold leading-tight tracking-tight text-slate-900 sm:text-2xl">
+                Let your bot walk you through your own work resistance to the promise land
+              </h2>
+              <Image
+                src="/marketing/stuck-flow.jpg"
+                alt="Bot walking you through work resistance"
+                width={1024}
+                height={808}
+                className="h-auto w-full"
+                unoptimized
+              />
+            </div>
+          </div>
+        </div>
+
         <ul className="mb-12 space-y-3 border-t border-slate-200 pt-8">
           {features.map(feature => (
             <li key={feature} className="flex items-start gap-3 text-sm text-slate-700">
