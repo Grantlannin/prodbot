@@ -231,6 +231,36 @@ export default function LandingPage() {
           />
         </div>
 
+        <div className="mb-10 border-t border-slate-200 pt-8">
+          <h2 className="mb-5 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+            trouble organizing your task list? The bot has a flow for that
+          </h2>
+          <Image
+            src="/marketing/organize-start.jpg"
+            alt="Stuck help options — trouble organizing task list"
+            width={1024}
+            height={599}
+            className="h-auto w-full border-4 border-red-500"
+            unoptimized
+          />
+
+          <div className="flex justify-center py-6" aria-hidden>
+            <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
+          </div>
+
+          <h2 className="mb-5 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+            Let your bot help you tee up the most important task that will actually move for you forward
+          </h2>
+          <Image
+            src="/marketing/organize-flow.jpg"
+            alt="Bot teeing up the most important task"
+            width={1024}
+            height={898}
+            className="h-auto w-full border-4 border-red-500"
+            unoptimized
+          />
+        </div>
+
         <ul className="mb-12 space-y-3 border-t border-slate-200 pt-8">
           {features.map(feature => (
             <li key={feature} className="flex items-start gap-3 text-sm text-slate-700">
