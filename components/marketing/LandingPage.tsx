@@ -185,6 +185,24 @@ export default function LandingPage() {
 
         <div className="mb-10 border-t border-slate-200 pt-8">
           <h2 className="mb-4 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+            Every work session easily tracked, every task organized effortlessly.
+          </h2>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            Every session is tracked by task (forcing you to stay organized — because if you don&apos;t organize,
+            you can&apos;t track)
+          </p>
+          <Image
+            src="/marketing/sessions-tracked.gif"
+            alt="Daywinner dashboard with sessions tracked by task"
+            width={400}
+            height={226}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="mb-10 border-t border-slate-200 pt-8">
+          <h2 className="mb-4 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
             custom note ui allows you to bring your notes on any tab and save specific chunks to specific tasks,
             effortlessly.
           </h2>
