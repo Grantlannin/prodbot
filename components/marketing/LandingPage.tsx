@@ -137,7 +137,7 @@ export default function LandingPage() {
             &ldquo;what did you objectively get done today?&rdquo;.
           </p>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600">
-            No more wasting time doing nothing or doing the wrong stuff.
+            No more wasting time doing nothing, or doing the wrong stuff.
           </p>
         </div>
       </section>
