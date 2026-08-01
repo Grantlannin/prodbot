@@ -131,20 +131,23 @@ export default function LandingPage() {
             alt="Projects dashboard with tasks and subtasks"
             width={1024}
             height={518}
-            className="mb-6 h-auto w-full"
+            className="h-auto w-full"
             unoptimized
           />
+        </div>
+
+        <div className="mb-10 border-t border-slate-200 pt-8">
+          <h2 className="mb-5 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+            store your ai/doc links into individual tasks so you never lose them again.
+          </h2>
           <Image
             src="/marketing/context-links.jpg"
             alt="Context links modal for storing AI and doc links on a task"
             width={1024}
             height={444}
-            className="mb-4 h-auto w-full"
+            className="h-auto w-full"
             unoptimized
           />
-          <p className="mb-0 max-w-2xl text-base leading-relaxed text-slate-600">
-            store your ai/doc links into individual tasks so you never lose them again.
-          </p>
         </div>
 
         <div className="mb-10 border-t border-slate-200 pt-8">
