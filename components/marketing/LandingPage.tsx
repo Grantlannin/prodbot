@@ -127,6 +127,14 @@ export default function LandingPage() {
             lose context (and pay the clarity tax)
           </h2>
           <Image
+            src="/marketing/projects.jpg"
+            alt="Projects dashboard with tasks and subtasks"
+            width={1024}
+            height={518}
+            className="mb-6 h-auto w-full"
+            unoptimized
+          />
+          <Image
             src="/marketing/context-links.jpg"
             alt="Context links modal for storing AI and doc links on a task"
             width={1024}
