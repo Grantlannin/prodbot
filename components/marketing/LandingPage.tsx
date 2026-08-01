@@ -183,6 +183,24 @@ export default function LandingPage() {
           />
         </div>
 
+        <div className="mb-10 border-t border-slate-200 pt-8">
+          <h2 className="mb-4 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+            custom note ui allows you to bring your notes on any tab and save specific chunks to specific tasks,
+            effortlessly.
+          </h2>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            Even allowing you to add additional context so you don&apos;t forget why you put the note there.
+          </p>
+          <Image
+            src="/marketing/custom-notes.jpg"
+            alt="Custom notes UI saving a chunk to a specific task with context"
+            width={1024}
+            height={596}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
         <ul className="mb-12 space-y-3 border-t border-slate-200 pt-8">
           {features.map(feature => (
             <li key={feature} className="flex items-start gap-3 text-sm text-slate-700">
