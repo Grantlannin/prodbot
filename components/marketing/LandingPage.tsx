@@ -119,8 +119,57 @@ export default function LandingPage() {
             <span className="text-sm text-slate-500">Paywall off for testing — create an account to try the full flow</span>
           ) : null}
         </div>
+      </section>
 
-        <div className="mb-10 border-t border-slate-200 pt-8">
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Who it&apos;s for</p>
+        <h2 className="mb-4 max-w-xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+          Already working? Daywinner is your homebase.
+        </h2>
+        <p className="mb-10 max-w-lg text-base leading-relaxed text-slate-600">
+          Daywinner isn&apos;t for &ldquo;someday I&apos;ll get organized.&rdquo; It&apos;s for people who are already
+          building, shipping, selling, studying, or grinding — and need one calm place to focus, track projects, and
+          block distractions. Same workflow. Less chaos.
+        </p>
+
+        <ul className="mb-10 grid gap-4 sm:grid-cols-2">
+          {whoItsFor.map(item => (
+            <li
+              key={item.title}
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              <h3 className="mb-2 text-sm font-bold leading-snug text-slate-900">{item.title}</h3>
+              <p className="text-sm leading-relaxed text-slate-600">{item.body}</p>
+            </li>
+          ))}
+        </ul>
+
+        <p className="mb-8 max-w-lg text-base leading-relaxed text-slate-600">
+          If you&apos;re already doing the work — building, billing, creating, applying, or grinding on the side —
+          Daywinner gives you structure without changing how you move.
+        </p>
+
+        <div className="mb-8 rounded-2xl border border-slate-200 bg-slate-100/80 p-5">
+          <p className="mb-1 text-sm font-bold text-slate-900">Is this for teams?</p>
+          <p className="text-sm leading-relaxed text-slate-600">
+            Daywinner is personal — for your projects, your timer, your focus. Not corporate project-management
+            theater. If you&apos;re the person doing the work (not only assigning it), you&apos;re who we built this for.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={ctaHref}
+            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-slate-800"
+          >
+            {ctaLabel}
+          </Link>
+          <span className="text-sm text-slate-500">Chrome recommended for focus blocking</span>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="mb-10">
           <h2 className="mb-5 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
             A work dashboard for all of your most important, ball-moving projects. Break every project down into
             tasks &amp; subtasks, each with their own independent storage containers + notes sections so you never
@@ -428,53 +477,6 @@ export default function LandingPage() {
             {ctaLabel}
           </Link>
           <span className="text-sm text-slate-500">Same cockpit. Fewer excuses.</span>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Who it&apos;s for</p>
-        <h2 className="mb-4 max-w-xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
-          Already working? Daywinner is your homebase.
-        </h2>
-        <p className="mb-10 max-w-lg text-base leading-relaxed text-slate-600">
-          Daywinner isn&apos;t for &ldquo;someday I&apos;ll get organized.&rdquo; It&apos;s for people who are already
-          building, shipping, selling, studying, or grinding — and need one calm place to focus, track projects, and
-          block distractions. Same workflow. Less chaos.
-        </p>
-
-        <ul className="mb-10 grid gap-4 sm:grid-cols-2">
-          {whoItsFor.map(item => (
-            <li
-              key={item.title}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <h3 className="mb-2 text-sm font-bold leading-snug text-slate-900">{item.title}</h3>
-              <p className="text-sm leading-relaxed text-slate-600">{item.body}</p>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mb-8 max-w-lg text-base leading-relaxed text-slate-600">
-          If you&apos;re already doing the work — building, billing, creating, applying, or grinding on the side —
-          Daywinner gives you structure without changing how you move.
-        </p>
-
-        <div className="mb-8 rounded-2xl border border-slate-200 bg-slate-100/80 p-5">
-          <p className="mb-1 text-sm font-bold text-slate-900">Is this for teams?</p>
-          <p className="text-sm leading-relaxed text-slate-600">
-            Daywinner is personal — for your projects, your timer, your focus. Not corporate project-management
-            theater. If you&apos;re the person doing the work (not only assigning it), you&apos;re who we built this for.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={ctaHref}
-            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-slate-800"
-          >
-            {ctaLabel}
-          </Link>
-          <span className="text-sm text-slate-500">Chrome recommended for focus blocking</span>
         </div>
       </section>
 
