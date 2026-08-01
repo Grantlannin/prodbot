@@ -210,17 +210,12 @@ export default function LandingPage() {
             alt="Stuck help options — trouble starting"
             width={1024}
             height={654}
-            className="h-auto w-full"
+            className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
 
-          <div className="flex flex-col items-center gap-1 py-6">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              here to here
-            </span>
-            <span className="text-3xl font-bold leading-none text-slate-400" aria-hidden>
-              ↓
-            </span>
+          <div className="flex justify-center py-6" aria-hidden>
+            <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
           </div>
 
           <h2 className="mb-5 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
@@ -231,7 +226,7 @@ export default function LandingPage() {
             alt="Bot walking you through work resistance"
             width={1024}
             height={808}
-            className="h-auto w-full"
+            className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
         </div>
