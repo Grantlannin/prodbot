@@ -191,13 +191,15 @@ export default function LandingPage() {
             Every session is tracked by task (forcing you to stay organized — because if you don&apos;t organize,
             you can&apos;t track)
           </p>
-          <Image
-            src="/marketing/sessions-tracked.gif"
-            alt="Daywinner dashboard with sessions tracked by task"
-            width={400}
-            height={226}
+          <video
             className="h-auto w-full"
-            unoptimized
+            src="/marketing/sessions-tracked.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls={false}
+            aria-label="Daywinner dashboard with sessions tracked by task"
           />
         </div>
 
