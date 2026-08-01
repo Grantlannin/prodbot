@@ -120,6 +120,21 @@ export default function LandingPage() {
           ) : null}
         </div>
 
+        <div className="mb-10 border-t border-slate-200 pt-8">
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            Floating timer lets you run pomodoro sessions (or timed work sessions of the length of your choosing)
+            while always allowing you to see exactly how much time is left
+          </p>
+          <Image
+            src="/marketing/floating-timer.jpg"
+            alt="Floating timer over a Google Doc with live countdown"
+            width={1024}
+            height={579}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
         <ul className="mb-12 space-y-3 border-t border-slate-200 pt-8">
           {features.map(feature => (
             <li key={feature} className="flex items-start gap-3 text-sm text-slate-700">
