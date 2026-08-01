@@ -79,38 +79,42 @@ export default function LandingPage() {
   return (
     <MarketingShell>
       <section className="pt-8 sm:pt-14">
-        <h1 className="mb-5 max-w-xl text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-          Fighter pilots have their cockpit. You have your daywinner bot.
-        </h1>
-        <p className="mb-5 max-w-2xl text-lg leading-relaxed text-slate-600">
-          Daywinner bot is your &ldquo;work homebase&rdquo; that sits as a tab on your browser that helps you hit your
-          first six figures (or make your first $1 online), finally build &amp; ship the project you&apos;ve been
-          sitting on, pass any exam, or land the remote job you actually want. Daywinner bot helps people get sh*t done
-          &amp; follow their dreams by structuring their work blocks (and blocking distractions) the way 7-figure
-          entrepreneurs do — so you make more progress in 30 days than you have in the last 5 years.
-        </p>
-        <Image
-          src="/marketing/dashboard.jpg"
-          alt="Daywinner bot dashboard"
-          width={1024}
-          height={522}
-          className="mb-8 h-auto w-full"
-          unoptimized
-          priority
-        />
+        <div className="flex flex-col items-center text-center">
+          <h1 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
+          </h1>
+          <p className="mb-5 max-w-2xl text-lg leading-relaxed text-slate-600">
+            Daywinner bot is your &ldquo;work homebase&rdquo; that sits as a tab on your browser that helps you hit your
+            first six figures (or make your first $1 online), finally build &amp; ship the project you&apos;ve been
+            sitting on, pass any exam, or land the remote job you actually want. Daywinner bot helps people get sh*t
+            done &amp; follow their dreams by structuring their work blocks (and blocking distractions) the way
+            7-figure entrepreneurs do — so you make more progress in 30 days than you have in the last 5 years.
+          </p>
+          <Image
+            src="/marketing/dashboard.jpg"
+            alt="Daywinner bot dashboard"
+            width={1024}
+            height={522}
+            className="mb-8 h-auto w-full"
+            unoptimized
+            priority
+          />
 
-        <div className="mb-10 flex flex-wrap items-center gap-3">
-          <Link
-            href={ctaHref}
-            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-slate-800"
-          >
-            {ctaLabel}
-          </Link>
-          {paywall ? (
-            <span className="text-sm text-slate-500">Subscribe first, then create your account</span>
-          ) : paywallOff ? (
-            <span className="text-sm text-slate-500">Paywall off for testing — create an account to try the full flow</span>
-          ) : null}
+          <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href={ctaHref}
+              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-slate-800"
+            >
+              {ctaLabel}
+            </Link>
+            {paywall ? (
+              <span className="text-sm text-slate-500">Subscribe first, then create your account</span>
+            ) : paywallOff ? (
+              <span className="text-sm text-slate-500">
+                Paywall off for testing — create an account to try the full flow
+              </span>
+            ) : null}
+          </div>
         </div>
       </section>
 
@@ -145,11 +149,11 @@ export default function LandingPage() {
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Every Work Session Easily Tracked, Every Task Organized Effortlessly.
+            Every Work Session Easily Tracked. Every Task Organized Effortlessly.
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Every session is tracked by task (forcing you to stay organized — because if you don&apos;t organize,
-            you can&apos;t track)
+            Every session is tracked by task (forcing you to stay organized) — because if you don&apos;t organize,
+            you can&apos;t track.
           </p>
           <video
             className="h-auto w-full"
