@@ -168,6 +168,21 @@ export default function LandingPage() {
           />
         </div>
 
+        <div className="mb-10 border-t border-slate-200 pt-8">
+          <h2 className="mb-5 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+            each task is tracked individually (along with your total work time), and you cannot begin a work session
+            unless there is a task attached (forcing you to stay organized):
+          </h2>
+          <Image
+            src="/marketing/task-tracking.jpg"
+            alt="Work today timer and time by project breakdown"
+            width={1024}
+            height={220}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
         <ul className="mb-12 space-y-3 border-t border-slate-200 pt-8">
           {features.map(feature => (
             <li key={feature} className="flex items-start gap-3 text-sm text-slate-700">
