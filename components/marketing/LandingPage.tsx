@@ -115,22 +115,26 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <h2 className="mb-4 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-          What Did You Get Done Today?
-        </h2>
-        <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-          There is nowhere to hide. Your daywinner bot will ask you daily if you{' '}
-          <em>actually</em> got stuff done, and if it was the right stuff. No more wasting time doing nothing or
-          doing the wrong stuff.
-        </p>
         <Image
           src="/marketing/wind-down.jpg"
           alt="Wind down bot asking what you got done today"
-          width={1024}
-          height={665}
-          className="h-auto w-full"
+          width={942}
+          height={1024}
+          className="mb-6 h-auto w-full"
           unoptimized
         />
+        <h2 className="mb-4 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+          What Did You Get Done Today?
+        </h2>
+        <p className="max-w-2xl text-base leading-relaxed text-slate-600">
+          There is nowhere to hide. Your daywinner bot will ask you one simple question daily:
+        </p>
+        <p className="mt-3 max-w-2xl text-base font-semibold leading-relaxed text-slate-900">
+          &ldquo;what did you objectively get done today?&rdquo;.
+        </p>
+        <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600">
+          No more wasting time doing nothing or doing the wrong stuff.
+        </p>
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
