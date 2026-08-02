@@ -124,10 +124,15 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="mx-auto max-w-2xl rounded-sm border border-slate-200 bg-[#faf8f5] px-6 py-10 shadow-sm sm:px-12 sm:py-14">
-          <p className="mb-8 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-            A letter from Daywinner
-          </p>
+        <div className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-white px-6 py-10 shadow-sm sm:px-12 sm:py-14">
+          <div className="mb-8 space-y-1 border-b border-slate-200 pb-6 font-mono text-sm text-slate-700">
+            <p>
+              <span className="text-slate-500">FROM:</span> productivity tool hater
+            </p>
+            <p>
+              <span className="text-slate-500">RE:</span> Wait, daywinner bot actually works?
+            </p>
+          </div>
           <div className="space-y-6 text-left text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
             <p>
               Every productivity tool that&apos;s ever been put out is fake &amp; doesn&apos;t actually work. They all
@@ -144,7 +149,7 @@ export default function LandingPage() {
               &ldquo;wind down flow&rdquo; walks you through a simple process to stay organized, every single evening.
             </p>
             <p className="min-h-[16rem] border-t border-dashed border-slate-300 pt-6 italic text-slate-400">
-              (keep writing here…)
+              (keep writing…)
             </p>
           </div>
         </div>
