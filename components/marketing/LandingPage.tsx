@@ -124,6 +124,33 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="mx-auto max-w-2xl rounded-sm border border-slate-200 bg-[#faf8f5] px-6 py-10 shadow-sm sm:px-12 sm:py-14">
+          <p className="mb-8 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            A letter from Daywinner
+          </p>
+          <div className="space-y-6 text-left text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
+            <p>
+              Every productivity tool that&apos;s ever been put out is fake &amp; doesn&apos;t actually work. They all
+              &ldquo;sound good&rdquo; but don&apos;t actually do anything and you aren&apos;t actually getting anything
+              done.
+            </p>
+            <p>
+              But your daywinner bot is different. Your daywinner bot isn&apos;t just a random productivity tool that
+              says &ldquo;good luck&rdquo;. It has <em>actual</em> workflows, ACTUAL systems for you to follow. It will
+              walk you through so you can create your task list.
+            </p>
+            <p>
+              Have ADHD and have trouble staying organized with all your stuff in 1,000 different places? Your bot&apos;s
+              &ldquo;wind down flow&rdquo; walks you through a simple process to stay organized, every single evening.
+            </p>
+            <p className="min-h-[16rem] border-t border-dashed border-slate-300 pt-6 italic text-slate-400">
+              (keep writing here…)
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Every Work Session Easily Tracked. Every Task Organized Effortlessly.
