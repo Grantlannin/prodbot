@@ -152,6 +152,28 @@ export default function LandingPage() {
               Have ADHD and have trouble staying organized with all your stuff in 1,000 different places? Your bot&apos;s
               &ldquo;wind down flow&rdquo; walks you through a simple process to stay organized, every single evening.
             </p>
+
+            <hr className="my-10 border-slate-300" />
+
+            <p>
+              The entire productivity industry is fake. Every productivity tool that&apos;s ever been created doesn&apos;t
+              actually work. They all &ldquo;sound good&rdquo; but don&apos;t actually do anything, and you end up not
+              actually getting more stuff done.
+            </p>
+            <p>
+              And why is this so? The reason is because getting stuff done requires elimination/removal/prioritization,
+              not ADDING a bunch of unimportant stuff. Getting more stuff done = <em>less</em> stuff in your way, not
+              adding MORE.
+            </p>
+            <p>
+              And this is why your daywinner bot is different. Your daywinner bot isn&apos;t just a random productivity
+              tool that says &ldquo;good luck&rdquo;. It has <em>actual</em> workflows, ACTUAL systems for you to follow,
+              that help you remove everything that isn&apos;t what you need to be doing. It strips away everything that
+              isn&apos;t your single most important task. And that&apos;s exactly why it looks like it came from the early
+              2000&apos;s. And it even helps you think through things so you know you&apos;re doing the right tasks. It
+              will walk you through the same question-sequences that 7-figure entrepreneurs ask themselves so you can
+              create your task list just like them.
+            </p>
             <p className="min-h-[16rem] border-t border-dashed border-slate-300 pt-6 italic text-slate-400">
               (keep writing…)
             </p>
