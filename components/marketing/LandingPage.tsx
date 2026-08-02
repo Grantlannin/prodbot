@@ -174,6 +174,55 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="space-y-14 border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-2xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
+            Step 1: Organize your most important tasks (which links them to your tracker)
+          </h2>
+          <Image
+            src="/marketing/dashboard.jpg"
+            alt="Daywinner work dashboard with projects and tasks"
+            width={1024}
+            height={522}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-2xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
+            Step 2: Choose which task you want to work on
+          </h2>
+          <Image
+            src="/marketing/choose-task.jpg"
+            alt="What are you working on — choose a task"
+            width={1024}
+            height={672}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-4 max-w-3xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
+            Step 3: Pick a work session length (25 mins for pomodoro, 60 mins etc) &amp; choose your lock strength
+            (which blocks your most distracting sites)
+          </h2>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            Soft lock allows you to exit the lock after waiting for 2 minutes, hard lock makes it so you can&apos;t
+            escape, and all you can do is work.
+          </p>
+          <Image
+            src="/marketing/focus-session-setup.jpg"
+            alt="Focus session length and lock strength options"
+            width={1024}
+            height={724}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+      </section>
+
       <section className="space-y-16 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
