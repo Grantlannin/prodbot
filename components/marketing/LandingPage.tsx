@@ -229,7 +229,19 @@ export default function LandingPage() {
             alt="Focus session length and lock strength options"
             width={1024}
             height={724}
-            className="h-auto w-full"
+            className="mb-10 h-auto w-full"
+            unoptimized
+          />
+          <h3 className="mb-5 max-w-2xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
+            If you try to escape to a distracting site, it blocks you &amp; counts it as an infraction. You are then
+            able to see how many infractions you make per day.
+          </h3>
+          <Image
+            src="/marketing/focus-session.jpg"
+            alt="Focus session active — blocked site with countdown"
+            width={1200}
+            height={800}
+            className="h-auto w-full max-w-3xl"
             unoptimized
           />
         </div>
