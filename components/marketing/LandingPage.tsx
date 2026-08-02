@@ -180,11 +180,11 @@ export default function LandingPage() {
             Step 1: Organize your most important tasks (which links them to your tracker)
           </h2>
           <Image
-            src="/marketing/dashboard.jpg"
-            alt="Daywinner work dashboard with projects and tasks"
+            src="/marketing/projects.jpg"
+            alt="Projects dashboard with tasks and subtasks"
             width={1024}
-            height={522}
-            className="h-auto w-full"
+            height={443}
+            className="h-auto w-full max-w-3xl"
             unoptimized
           />
         </div>
