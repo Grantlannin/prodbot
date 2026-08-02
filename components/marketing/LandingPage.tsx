@@ -135,6 +135,9 @@ export default function LandingPage() {
           </div>
           <div className="space-y-6 text-left text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
             <p>
+              Hey it&apos;s me, The OG productivity tool hater. I genuinely hate all productivity tools.
+            </p>
+            <p>
               Every productivity tool that&apos;s ever been put out is fake &amp; doesn&apos;t actually work. They all
               &ldquo;sound good&rdquo; but don&apos;t actually do anything and you aren&apos;t actually getting anything
               done.
