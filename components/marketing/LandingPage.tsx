@@ -124,7 +124,7 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-white px-6 py-10 shadow-sm sm:px-12 sm:py-14">
+        <div className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-10 shadow-sm sm:px-12 sm:py-14">
           <div className="mb-8 space-y-1 border-b border-slate-200 pb-6 font-mono text-sm text-slate-700">
             <p>
               <span className="text-slate-500">FROM:</span> productivity tool hater
