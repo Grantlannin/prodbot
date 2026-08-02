@@ -139,9 +139,9 @@ export default function LandingPage() {
             </p>
             <p>Why?</p>
             <p>
-              Every productivity tool that&apos;s ever been put out is fake &amp; doesn&apos;t actually work. They all
-              &ldquo;sound good&rdquo; but don&apos;t actually do anything and you aren&apos;t actually getting anything
-              done.
+              Because every productivity tool that&apos;s ever been put out is fake &amp; doesn&apos;t actually work.
+              They all &ldquo;sound good&rdquo; but don&apos;t actually do anything and you aren&apos;t actually getting
+              anything done.
             </p>
             <p>
               But your daywinner bot is different. Your daywinner bot isn&apos;t just a random productivity tool that
