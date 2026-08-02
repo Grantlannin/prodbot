@@ -204,9 +204,9 @@ export default function LandingPage() {
         </div>
 
         <div className="flex flex-col items-center text-center">
-          <h2 className="mb-4 max-w-3xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
-            Step 3: Pick a work session length (25 mins for pomodoro, 60 mins etc) &amp; choose your lock strength
-            (which blocks your most distracting sites)
+          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Pick a work session length (25 mins for pomodoro, 60 mins etc) &amp; choose your lock strength (which
+            blocks your most distracting sites)
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
             Soft lock allows you to exit the lock after waiting for 2 minutes, hard lock makes it so you can&apos;t
