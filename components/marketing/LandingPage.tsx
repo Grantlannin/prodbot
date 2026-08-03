@@ -382,8 +382,12 @@ export default function LandingPage() {
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             And then what are you left with, before the day even starts tomorrow?
           </h2>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            The single most important task you need to do, already ready to go.
+          <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-snug tracking-tight text-slate-900 sm:text-4xl">
+            The{' '}
+            <span className="underline decoration-red-500 decoration-[3px] underline-offset-[6px]">
+              single most important task
+            </span>{' '}
+            you need to do, already ready to go.
           </p>
           <Image
             src="/marketing/tomorrow-task-list.jpg"
