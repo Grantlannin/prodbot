@@ -382,7 +382,7 @@ export default function LandingPage() {
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             And then what are you left with, before the day even starts tomorrow?
           </h2>
-          <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-snug tracking-tight text-red-600 sm:text-4xl">
+          <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-snug tracking-tight text-green-600 underline decoration-black decoration-[3px] underline-offset-[6px] sm:text-4xl">
             The single most important task you need to do, already ready to go.
           </p>
           <Image
