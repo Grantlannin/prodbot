@@ -360,6 +360,39 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="flex flex-col items-center text-center">
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            Your wind-down flow forces you to stay organized, and then helps you choose the next most important task
+            (crucial for people with ADHD or hyper-active minds, like me)
+          </p>
+          <Image
+            src="/marketing/wind-down-context.jpg"
+            alt="Wind down flow adding context and organizing for tomorrow"
+            width={1024}
+            height={955}
+            className="mb-10 h-auto w-full max-w-2xl"
+            unoptimized
+          />
+          <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            The single most important task:
+          </h2>
+          <Image
+            src="/marketing/tomorrow-task-list.jpg"
+            alt="Tomorrow's task list ready after wind down"
+            width={1024}
+            height={723}
+            className="mb-5 h-auto w-full max-w-md"
+            unoptimized
+          />
+          <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            And what you&apos;re left with is a very simple task-list for tomorrow, ready to go, that allows you to just
+            sit down and knock it down with zero resistance. It&apos;s already been decided, already been prepped,
+            already been organized. It&apos;s now just you, the task &amp; your destiny.
+          </p>
+        </div>
+      </section>
+
       <section className="space-y-16 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
