@@ -327,7 +327,7 @@ export default function LandingPage() {
               <em>actual work</em>, and then procrastinated for the rest.
             </p>
             <p>
-              And this is where daywinner bot shines. it&apos;s end-of-day workflow gets you to reflect on what you{' '}
+              And this is where daywinner bot shines. its end-of-day workflow gets you to reflect on what you{' '}
               <em>actually</em> did, and makes sure it was the absolute best use of your time by asking 1 simple
               question daily:
             </p>
