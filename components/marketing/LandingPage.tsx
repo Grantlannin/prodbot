@@ -246,10 +246,12 @@ export default function LandingPage() {
         </div>
 
         <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 3: Pick a focus session length (25 mins for pomodoro, 45 mins for the ambitious, 2+ hours for the
-            ruthless)
+          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Step 3: Pick a focus session length
           </h2>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            (25 mins for pomodoro, 45 mins for the ambitious, 2+ hours for the ruthless)
+          </p>
           <Image
             src="/marketing/step3-timer.jpg"
             alt="Focus session length options"
