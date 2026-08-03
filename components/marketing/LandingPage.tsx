@@ -409,6 +409,72 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Trouble starting a task? The bot has an exact flow for that
+          </h2>
+          <Image
+            src="/marketing/stuck-start.jpg"
+            alt="Stuck help options — trouble starting"
+            width={1024}
+            height={654}
+            className="h-auto w-full border-4 border-red-500"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex justify-center py-2" aria-hidden>
+          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Let your bot walk you through your own work resistance to the promise land
+          </h2>
+          <Image
+            src="/marketing/stuck-flow.jpg"
+            alt="Bot walking you through work resistance"
+            width={1024}
+            height={808}
+            className="h-auto w-full border-4 border-red-500"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex flex-col items-center text-center pt-10">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            trouble organizing your task list? The bot has a flow for that
+          </h2>
+          <Image
+            src="/marketing/organize-start.jpg"
+            alt="Stuck help options — trouble organizing task list"
+            width={1024}
+            height={599}
+            className="h-auto w-full border-4 border-red-500"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex justify-center py-2" aria-hidden>
+          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Let your bot help you tee up the most important task that will actually move for you forward
+          </h2>
+          <Image
+            src="/marketing/organize-flow.jpg"
+            alt="Bot teeing up the most important task"
+            width={1024}
+            height={898}
+            className="h-auto w-full border-4 border-red-500"
+            unoptimized
+          />
+        </div>
+      </section>
+
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
         <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Who it&apos;s for</p>
         <h2 className="mb-4 max-w-xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
@@ -534,66 +600,6 @@ export default function LandingPage() {
             width={1024}
             height={596}
             className="h-auto w-full"
-            unoptimized
-          />
-        </div>
-
-        <div className="mb-10 border-t border-slate-200 pt-8">
-          <h2 className="mb-5 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
-            Trouble starting a task? The bot has an exact flow for that
-          </h2>
-          <Image
-            src="/marketing/stuck-start.jpg"
-            alt="Stuck help options — trouble starting"
-            width={1024}
-            height={654}
-            className="h-auto w-full border-4 border-red-500"
-            unoptimized
-          />
-
-          <div className="flex justify-center py-6" aria-hidden>
-            <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
-          </div>
-
-          <h2 className="mb-5 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
-            Let your bot walk you through your own work resistance to the promise land
-          </h2>
-          <Image
-            src="/marketing/stuck-flow.jpg"
-            alt="Bot walking you through work resistance"
-            width={1024}
-            height={808}
-            className="h-auto w-full border-4 border-red-500"
-            unoptimized
-          />
-        </div>
-
-        <div className="mb-10 border-t border-slate-200 pt-8">
-          <h2 className="mb-5 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
-            trouble organizing your task list? The bot has a flow for that
-          </h2>
-          <Image
-            src="/marketing/organize-start.jpg"
-            alt="Stuck help options — trouble organizing task list"
-            width={1024}
-            height={599}
-            className="h-auto w-full border-4 border-red-500"
-            unoptimized
-          />
-
-          <div className="flex justify-center py-6" aria-hidden>
-            <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
-          </div>
-
-          <h2 className="mb-5 max-w-2xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
-            Let your bot help you tee up the most important task that will actually move for you forward
-          </h2>
-          <Image
-            src="/marketing/organize-flow.jpg"
-            alt="Bot teeing up the most important task"
-            width={1024}
-            height={898}
-            className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
         </div>
