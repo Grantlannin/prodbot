@@ -251,10 +251,10 @@ export default function LandingPage() {
             ruthless)
           </h2>
           <Image
-            src="/marketing/focus-session-setup.jpg"
+            src="/marketing/step3-timer.jpg"
             alt="Focus session length options"
             width={1024}
-            height={724}
+            height={717}
             className="h-auto w-full"
             unoptimized
           />
@@ -275,10 +275,10 @@ export default function LandingPage() {
             access again, hard lock blocks it entirely until your work block is complete.
           </p>
           <Image
-            src="/marketing/blocked-sites.jpg"
-            alt="Blocked sites list with social media pack"
+            src="/marketing/step4-lock.jpg"
+            alt="Focus session soft and hard lock options"
             width={1024}
-            height={745}
+            height={723}
             className="mb-10 h-auto w-full"
             unoptimized
           />
