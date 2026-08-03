@@ -246,19 +246,39 @@ export default function LandingPage() {
         </div>
 
         <div className="flex flex-col items-center text-center">
-          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 3: Pick a work session length (25 mins for pomodoro, 60 mins etc) &amp; choose your lock strength
-            (which blocks your most distracting sites)
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Step 3: Pick a focus session length (25 mins for pomodoro, 45 mins for the ambitious, 2+ hours for the
+            ruthless)
           </h2>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Soft lock allows you to exit the lock after waiting for 2 minutes, hard lock makes it so you can&apos;t
-            escape, and all you can do is work.
-          </p>
           <Image
             src="/marketing/focus-session-setup.jpg"
-            alt="Focus session length and lock strength options"
+            alt="Focus session length options"
             width={1024}
             height={724}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex justify-center py-2" aria-hidden>
+          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Step 4: Choose the strength of your distraction blocker — &ldquo;soft lock&rdquo; or &ldquo;hard
+            lock&rdquo;
+          </h2>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            Your distraction blocker blocks all distracting websites, and you can add as many as you want. During your
+            work session, you will be unable to access the sites you choose. Soft lock makes you wait 2 minutes for
+            access again, hard lock blocks it entirely until your work block is complete.
+          </p>
+          <Image
+            src="/marketing/blocked-sites.jpg"
+            alt="Blocked sites list with social media pack"
+            width={1024}
+            height={745}
             className="mb-10 h-auto w-full"
             unoptimized
           />
