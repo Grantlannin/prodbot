@@ -204,34 +204,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="flex flex-col items-center text-center">
-          <p className="mb-2 text-sm font-medium text-slate-500 sm:text-base">
-            The 1 golden question:
-          </p>
-          <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            &ldquo;What Did You Get Done Today?&rdquo;
-          </h2>
-          <Image
-            src="/marketing/wind-down.jpg"
-            alt="Wind down bot asking what you got done today"
-            width={942}
-            height={1024}
-            className="mb-6 h-auto w-full max-w-md sm:max-w-lg"
-            unoptimized
-          />
-          <p className="max-w-2xl text-base leading-relaxed text-slate-600">
-            There is nowhere to hide. Your daywinner bot will ask you one simple question daily:
-          </p>
-          <p className="mt-3 max-w-2xl text-base font-semibold leading-relaxed text-slate-900">
-            &ldquo;what did you objectively get done today?&rdquo;.
-          </p>
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600">
-            No more wasting time doing nothing, or doing the wrong stuff.
-          </p>
-        </div>
-      </section>
-
       <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
@@ -329,6 +301,34 @@ export default function LandingPage() {
               />
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="flex flex-col items-center text-center">
+          <p className="mb-2 text-sm font-medium text-slate-500 sm:text-base">
+            The 1 golden question:
+          </p>
+          <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            &ldquo;What Did You Get Done Today?&rdquo;
+          </h2>
+          <Image
+            src="/marketing/wind-down.jpg"
+            alt="Wind down bot asking what you got done today"
+            width={942}
+            height={1024}
+            className="mb-6 h-auto w-full max-w-md sm:max-w-lg"
+            unoptimized
+          />
+          <p className="max-w-2xl text-base leading-relaxed text-slate-600">
+            There is nowhere to hide. Your daywinner bot will ask you one simple question daily:
+          </p>
+          <p className="mt-3 max-w-2xl text-base font-semibold leading-relaxed text-slate-900">
+            &ldquo;what did you objectively get done today?&rdquo;.
+          </p>
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600">
+            No more wasting time doing nothing, or doing the wrong stuff.
+          </p>
         </div>
       </section>
 
