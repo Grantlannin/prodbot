@@ -310,7 +310,29 @@ export default function LandingPage() {
             unoptimized
           />
         </div>
+      </section>
 
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-10 shadow-sm sm:px-12 sm:py-12">
+          <div className="space-y-6 text-left text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
+            <p className="text-xl font-bold text-slate-900 sm:text-2xl">Now...</p>
+            <p>
+              simplifying your entire task list down to the 1 most important task (and then blocking all distraction to
+              actually do it) is only half the battle. The other half is making sure you &ldquo;live in reality&rdquo;
+              and this is where 99% of people mess up.
+            </p>
+            <p>
+              Your mind will trick you. It will say &ldquo;we were working so hard!&rdquo; when you actually did
+              nothing. It will say &ldquo;we worked for 8 hours today!!&rdquo; when you did 15 minutes of{' '}
+              <em>actual work</em>, and then procrastinated for the rest.
+            </p>
+            <p>
+              And this is where daywinner bot shines. it&apos;s end-of-day workflow gets you to reflect on what you{' '}
+              <em>actually</em> did, and makes sure it was the absolute best use of your time by asking 1 simple
+              question daily:
+            </p>
+          </div>
+        </div>
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
