@@ -311,47 +311,6 @@ export default function LandingPage() {
           />
         </div>
 
-        <div className="flex flex-col items-center text-center pt-10">
-          <h3 className="mb-5 max-w-2xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
-            If you try to escape to a distracting site, it blocks you &amp; counts it as an infraction. You are then
-            able to see how many infractions you make per day.
-          </h3>
-          <div className="grid w-full items-center gap-4 sm:grid-cols-[1fr_auto_1fr] sm:gap-3">
-            <div className="flex flex-col items-center text-center">
-              <p className="mb-3 text-sm font-semibold leading-snug text-slate-800 sm:text-base">
-                You tried to distract yourself, but your bot got you
-              </p>
-              <Image
-                src="/marketing/focus-session.jpg"
-                alt="Focus session active — blocked site with countdown"
-                width={1200}
-                height={800}
-                className="h-auto w-full"
-                unoptimized
-              />
-            </div>
-
-            <div className="flex justify-center py-2 sm:px-1" aria-hidden>
-              <span className="rotate-90 text-5xl font-bold leading-none text-red-500 sm:rotate-0 sm:text-6xl">
-                →
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center text-center">
-              <p className="mb-3 text-sm font-semibold leading-snug text-slate-800 sm:text-base">
-                Your infraction has been recorded
-              </p>
-              <Image
-                src="/marketing/infraction-recorded.png"
-                alt="Infraction recorded on the dashboard"
-                width={793}
-                height={511}
-                className="h-auto w-full"
-                unoptimized
-              />
-            </div>
-          </div>
-        </div>
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
@@ -790,6 +749,50 @@ export default function LandingPage() {
             {ctaLabel}
           </Link>
           <span className="text-sm text-slate-500">Same cockpit. Fewer excuses.</span>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="flex flex-col items-center text-center">
+          <h3 className="mb-5 max-w-2xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
+            If you try to escape to a distracting site, it blocks you &amp; counts it as an infraction. You are then
+            able to see how many infractions you make per day.
+          </h3>
+          <div className="grid w-full items-center gap-4 sm:grid-cols-[1fr_auto_1fr] sm:gap-3">
+            <div className="flex flex-col items-center text-center">
+              <p className="mb-3 text-sm font-semibold leading-snug text-slate-800 sm:text-base">
+                You tried to distract yourself, but your bot got you
+              </p>
+              <Image
+                src="/marketing/focus-session.jpg"
+                alt="Focus session active — blocked site with countdown"
+                width={1200}
+                height={800}
+                className="h-auto w-full"
+                unoptimized
+              />
+            </div>
+
+            <div className="flex justify-center py-2 sm:px-1" aria-hidden>
+              <span className="rotate-90 text-5xl font-bold leading-none text-red-500 sm:rotate-0 sm:text-6xl">
+                →
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center text-center">
+              <p className="mb-3 text-sm font-semibold leading-snug text-slate-800 sm:text-base">
+                Your infraction has been recorded
+              </p>
+              <Image
+                src="/marketing/infraction-recorded.png"
+                alt="Infraction recorded on the dashboard"
+                width={793}
+                height={511}
+                className="h-auto w-full"
+                unoptimized
+              />
+            </div>
+          </div>
         </div>
       </section>
 
