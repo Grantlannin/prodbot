@@ -411,15 +411,9 @@ export default function LandingPage() {
 
       <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-6 w-full border-y-4 border-slate-900 bg-[#faf8f5] px-6 py-8 sm:px-10 sm:py-10">
-            <h2 className="mx-auto max-w-3xl text-2xl font-extrabold leading-snug tracking-tight text-slate-900 sm:text-4xl">
-              But... what if I still have resistance starting? Or what if I&apos;m not exactly sure what to do or
-              what&apos;s most important?
-            </h2>
-          </div>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            Don&apos;t worry — Your Daywinner bot has an exact flow for that
-          </p>
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Trouble starting a task? The bot has an exact flow for that
+          </h2>
           <Image
             src="/marketing/stuck-start.jpg"
             alt="Stuck help options — trouble starting"
