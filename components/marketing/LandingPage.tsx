@@ -83,6 +83,11 @@ export default function LandingPage() {
           <h1 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
           </h1>
+          <blockquote className="mb-5 max-w-2xl text-base italic leading-relaxed text-slate-600 sm:text-lg">
+            &ldquo;my entire workflow consists of google docs, claude, and my daywinner bot. it&apos;s simpler than ever
+            before and I am getting 10x done what I used to get done. Having daywinner as my work homebase changed the
+            game for me&rdquo;
+          </blockquote>
           <p className="mb-4 max-w-2xl text-lg leading-relaxed text-slate-600">
             Daywinner bot is a productivity dashboard that functions as your &ldquo;work homebase&rdquo; — a tab in
             your browser that helps you organize &amp; finish the tasks you need to do to hit your first six figures
