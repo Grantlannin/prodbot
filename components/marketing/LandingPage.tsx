@@ -235,7 +235,7 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 2: Choose which task you want to work on
+            Step 2: Choose the most important task that will <em>actually</em> move the ball forward for you
           </h2>
           <Image
             src="/marketing/choose-task.jpg"
