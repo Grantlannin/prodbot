@@ -393,20 +393,19 @@ export default function LandingPage() {
             className="mb-5 h-auto w-full max-w-md"
             unoptimized
           />
-          <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            And what you&apos;re left with is a very simple task-list for tomorrow, ready to go, that allows you to just
-            sit down and knock it down with zero resistance. It&apos;s already been decided, already been prepped,
-            already been organized. It&apos;s now just you, the task &amp; your destiny.
-          </p>
-          <p className="mt-6 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            while everyone you know is spending their &ldquo;best energy of the day&rdquo; figuring out WHAT to do
-            (which means that day is already lost), you&apos;ve already done the prep and know exactly what you&apos;re
-            doing. You&apos;re now able to use your best energy of the day on stuff that <em>actually</em> moves your
-            life forward consistently. And run this process out for even 1 month, and you&apos;re getting ahead &amp;
-            speeding by of everyone you know. And the best part? It&apos;s not magic (like they think it will be while
-            they wonder WTF got into you). It&apos;s just a repeatable SYSTEM, that you&apos;re following, just like
-            7-figure entrepreneurs do.
-          </p>
+          <div className="mx-auto mt-8 max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-8 text-left shadow-sm sm:px-10 sm:py-10">
+            <div className="space-y-6 text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
+              <p>
+                while everyone you know is spending their &ldquo;best energy of the day&rdquo; figuring out WHAT to do
+                (which means that day is already lost), you&apos;ve already done the prep and know exactly what
+                you&apos;re doing. You&apos;re now able to use your best energy of the day on stuff that{' '}
+                <em>actually</em> moves your life forward consistently. And run this process out for even 1 month, and
+                you&apos;re getting ahead &amp; speeding by of everyone you know. And the best part? It&apos;s not magic
+                (like they think it will be while they wonder WTF got into you). It&apos;s just a repeatable SYSTEM,
+                that you&apos;re following, just like 7-figure entrepreneurs do.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
