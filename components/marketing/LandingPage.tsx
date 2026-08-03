@@ -363,7 +363,8 @@ export default function LandingPage() {
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Your wind-down flow forces you to stay organized (by walking you through it, zero effort on your end)
+            Your bot then puts you through a wind-down flow that forces you to stay organized (by walking you through
+            it, zero effort on your end)
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             ...and then helps you choose the next most important task (crucial for people with ADHD or hyper-active
