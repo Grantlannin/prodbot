@@ -337,9 +337,6 @@ export default function LandingPage() {
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
-          <p className="mb-2 text-sm font-medium text-slate-500 sm:text-base">
-            The 1 golden question:
-          </p>
           <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             &ldquo;What Did You Get Done Today?&rdquo;
           </h2>
