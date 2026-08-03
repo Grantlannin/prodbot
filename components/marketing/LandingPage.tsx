@@ -523,7 +523,7 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <ul className="mb-12 space-y-3 border-t border-slate-200 pt-8">
+        <ul className="mb-12 space-y-3">
           {features.map(feature => (
             <li key={feature} className="flex items-start gap-3 text-sm text-slate-700">
               <span className="mt-0.5 text-slate-400" aria-hidden>
