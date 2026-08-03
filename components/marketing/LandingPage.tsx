@@ -409,78 +409,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="space-y-16 border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Break Your Work Into Timed Work Sessions (Pomodoro or a Time of Your Choosing)
-          </h2>
-          <Image
-            src="/marketing/floating-timer.jpg"
-            alt="Floating timer for timed work sessions"
-            width={1024}
-            height={579}
-            className="h-auto w-full"
-            unoptimized
-          />
-        </div>
-
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Track Every Task by Time
-          </h2>
-          <Image
-            src="/marketing/task-tracking.jpg"
-            alt="Work today and time by project tracking"
-            width={1024}
-            height={220}
-            className="h-auto w-full"
-            unoptimized
-          />
-        </div>
-
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Block Your Most Distracting Sites
-          </h2>
-          <Image
-            src="/marketing/blocked-sites.jpg"
-            alt="Blocked sites list with social media pack"
-            width={1024}
-            height={745}
-            className="h-auto w-full"
-            unoptimized
-          />
-        </div>
-
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Create an Accountability Report That You Can Send to Either Yourself or a Partner
-          </h2>
-          <Image
-            src="/marketing/eod-send.jpg"
-            alt="Send EOD accountability report"
-            width={1200}
-            height={800}
-            className="h-auto w-full"
-            unoptimized
-          />
-        </div>
-
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Celebrate When You Finish a Project
-          </h2>
-          <Image
-            src="/marketing/celebration.jpg"
-            alt="Project completion celebration"
-            width={1200}
-            height={800}
-            className="h-auto w-full"
-            unoptimized
-          />
-        </div>
-      </section>
-
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
         <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Who it&apos;s for</p>
         <h2 className="mb-4 max-w-xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
@@ -861,6 +789,78 @@ export default function LandingPage() {
               />
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="space-y-16 border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Break Your Work Into Timed Work Sessions (Pomodoro or a Time of Your Choosing)
+          </h2>
+          <Image
+            src="/marketing/floating-timer.jpg"
+            alt="Floating timer for timed work sessions"
+            width={1024}
+            height={579}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Track Every Task by Time
+          </h2>
+          <Image
+            src="/marketing/task-tracking.jpg"
+            alt="Work today and time by project tracking"
+            width={1024}
+            height={220}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Block Your Most Distracting Sites
+          </h2>
+          <Image
+            src="/marketing/blocked-sites.jpg"
+            alt="Blocked sites list with social media pack"
+            width={1024}
+            height={745}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Create an Accountability Report That You Can Send to Either Yourself or a Partner
+          </h2>
+          <Image
+            src="/marketing/eod-send.jpg"
+            alt="Send EOD accountability report"
+            width={1200}
+            height={800}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Celebrate When You Finish a Project
+          </h2>
+          <Image
+            src="/marketing/celebration.jpg"
+            alt="Project completion celebration"
+            width={1200}
+            height={800}
+            className="h-auto w-full"
+            unoptimized
+          />
         </div>
       </section>
 
