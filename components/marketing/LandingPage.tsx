@@ -367,9 +367,9 @@ export default function LandingPage() {
             it, zero effort on your end)
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            ...and then helps you choose the next most important task (crucial for people with ADHD or hyper-active
-            minds, like me). It walks you through the exact process that 7-figure entrepreneurs put themselves through
-            to dominate everyone.
+            ...and then helps you choose the next important task for the following day (crucial for people with ADHD or
+            hyper-active minds, like me). Your bot will walk you through the exact process that 7-figure entrepreneurs
+            put themselves through to dominate everyone.
           </p>
           <Image
             src="/marketing/wind-down-context.jpg"
