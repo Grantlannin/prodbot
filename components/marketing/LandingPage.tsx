@@ -330,6 +330,25 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+
+        <div className="flex justify-center py-2" aria-hidden>
+          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Step 5: Put in an AMAZING work session, and allow your daywinner bot to show you exactly how long you went
+            at it
+          </h2>
+          <Image
+            src="/marketing/task-tracking.jpg"
+            alt="Work today and time by project tracking"
+            width={1024}
+            height={220}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
