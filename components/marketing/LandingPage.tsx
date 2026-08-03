@@ -86,7 +86,8 @@ export default function LandingPage() {
           <blockquote className="mb-5 max-w-2xl text-base italic leading-relaxed text-slate-600 sm:text-lg">
             &ldquo;my entire workflow consists of google docs, claude, and my daywinner bot. it&apos;s simpler than ever
             before and I am getting 10x done what I used to get done. Having daywinner as my work homebase changed the
-            game for me&rdquo;
+            game for me because i can just isolate my most important task, put a timer on it, and block every
+            distraction. I wish I had this 10 years ago. I&apos;d be a f****** billionaire&rdquo;
           </blockquote>
           <p className="mb-4 max-w-2xl text-lg leading-relaxed text-slate-600">
             Daywinner bot is a productivity dashboard that functions as your &ldquo;work homebase&rdquo; — a tab in
