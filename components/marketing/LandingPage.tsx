@@ -287,9 +287,31 @@ export default function LandingPage() {
             alt="Focus session soft and hard lock options"
             width={1024}
             height={723}
-            className="mb-10 h-auto w-full"
+            className="h-auto w-full"
             unoptimized
           />
+        </div>
+
+        <div className="flex justify-center py-2" aria-hidden>
+          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Step 5: Put in an AMAZING work session, and allow your daywinner bot to show you exactly how long you went
+            at it
+          </h2>
+          <Image
+            src="/marketing/task-tracking.jpg"
+            alt="Work today and time by project tracking"
+            width={1024}
+            height={220}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex flex-col items-center text-center pt-10">
           <h3 className="mb-5 max-w-2xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
             If you try to escape to a distracting site, it blocks you &amp; counts it as an infraction. You are then
             able to see how many infractions you make per day.
@@ -329,25 +351,6 @@ export default function LandingPage() {
               />
             </div>
           </div>
-        </div>
-
-        <div className="flex justify-center py-2" aria-hidden>
-          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
-        </div>
-
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 5: Put in an AMAZING work session, and allow your daywinner bot to show you exactly how long you went
-            at it
-          </h2>
-          <Image
-            src="/marketing/task-tracking.jpg"
-            alt="Work today and time by project tracking"
-            width={1024}
-            height={220}
-            className="h-auto w-full"
-            unoptimized
-          />
         </div>
       </section>
 
