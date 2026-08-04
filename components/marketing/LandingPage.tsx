@@ -80,28 +80,61 @@ export default function LandingPage() {
     <MarketingShell>
       <section className="pt-8 sm:pt-14">
         <div className="flex flex-col items-center text-center">
-          <h1 className="mb-6 max-w-3xl text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:text-4xl sm:leading-[1.25]">
-            You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media) LIVES on
-            the device that you&apos;re supposed to get stuff done with. Until now.
-          </h1>
-          <div className="mb-10 max-w-2xl text-left">
-            <p className="mb-4 text-lg leading-relaxed text-slate-700">
+          <div className="mb-12 w-full max-w-2xl text-left">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The problem</p>
+            <h1 className="text-[1.65rem] font-bold leading-[1.35] tracking-tight text-slate-900 sm:text-[2.15rem] sm:leading-[1.3]">
+              You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media){' '}
+              <span className="underline decoration-slate-900 decoration-2 underline-offset-[5px]">LIVES</span> on the
+              device that you&apos;re supposed to get stuff done with.
+            </h1>
+            <p className="mt-5 inline-block border-b-2 border-slate-900 pb-0.5 text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
+              Until now.
+            </p>
+          </div>
+
+          <div className="mb-14 w-full max-w-2xl text-left">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The fix</p>
+            <p className="mb-6 text-lg leading-relaxed text-slate-700 sm:text-xl sm:leading-relaxed">
               Daywinner bot is your personal robot that helps you win the day. And it does this by:
             </p>
-            <ul className="list-disc space-y-3 pl-5 text-base leading-relaxed text-slate-600 sm:text-lg">
-              <li>
-                Providing you with a work homebase (your productivity dashboard) that exists as a normal tab in your
-                browser (download nothing)
+            <ol className="space-y-5">
+              <li className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
+                >
+                  01
+                </span>
+                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+                  Providing you with a work homebase (your productivity dashboard) that exists as a normal tab in your
+                  browser (download nothing)
+                </p>
               </li>
-              <li>
-                Blocking out every social media site / any site you want to block that distracts you (with the click of
-                a button)
+              <li className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
+                >
+                  02
+                </span>
+                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+                  Blocking out every social media site / any site you want to block that distracts you (with the click
+                  of a button)
+                </p>
               </li>
-              <li>
-                Helps you set up your &ldquo;most important task&rdquo; like 7-figure entrepreneurs do so all that&apos;s
-                left is you &amp; the most important thing you need to do. Zero other distractions.
+              <li className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
+                >
+                  03
+                </span>
+                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+                  Helps you set up your &ldquo;most important task&rdquo; like 7-figure entrepreneurs do so all
+                  that&apos;s left is you &amp; the most important thing you need to do. Zero other distractions.
+                </p>
               </li>
-            </ul>
+            </ol>
           </div>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
