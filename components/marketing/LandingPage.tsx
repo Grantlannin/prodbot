@@ -105,7 +105,10 @@ export default function LandingPage() {
             className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
           >
             <span className="text-sm font-semibold text-white">let&apos;s go</span>
-            <span className="text-sm font-medium text-slate-400">{MONTHLY_PRICE_LABEL}</span>
+            <span className="inline-flex items-center gap-1.5 text-sm">
+              <span className="font-medium text-slate-500 line-through">$12.99</span>
+              <span className="font-semibold text-white">{MONTHLY_PRICE_LABEL}</span>
+            </span>
           </Link>
         </div>
       </section>
