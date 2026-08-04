@@ -109,8 +109,8 @@ export default function LandingPage() {
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The problem</p>
             <h2 className="text-[1.65rem] font-bold leading-[1.35] tracking-tight text-slate-900 sm:text-[2.15rem] sm:leading-[1.3]">
               You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media) is
-              accessible on the device that you&apos;re supposed to get stuff done with. This is the 1st thing daywinner
-              bot fixes.
+              accessible on the device that you&apos;re supposed to get stuff done with. Which is pretty insane if you
+              think about it. This is the 1st thing daywinner bot fixes.
             </h2>
             <p className="mt-5 text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
               Same laptop. Same browser. One tab is your future — the other 47 are engineered to steal it. Your brain
@@ -120,7 +120,7 @@ export default function LandingPage() {
             </p>
             <Image
               src="/marketing/focus-session-branded.jpg"
-              alt="Focus session active — Daywinner bot blocking a distracting site with countdown"
+              alt="Focus session active — site blocked with countdown; if you try to distract yourself, your bot blocks you and records the infraction"
               width={1400}
               height={788}
               className="mx-auto mt-8 h-auto w-full max-w-lg"
