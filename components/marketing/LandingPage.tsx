@@ -84,6 +84,25 @@ export default function LandingPage() {
             You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media) LIVES on
             the device that you&apos;re supposed to get stuff done with. Until now.
           </h1>
+          <div className="mb-8 max-w-2xl text-left">
+            <p className="mb-4 text-lg leading-relaxed text-slate-700">
+              Daywinner bot is your personal robot that helps you win the day. And it does this by:
+            </p>
+            <ul className="list-disc space-y-3 pl-5 text-base leading-relaxed text-slate-600 sm:text-lg">
+              <li>
+                Providing you with a work homebase (your productivity dashboard) that exists as a normal tab in your
+                browser (download nothing)
+              </li>
+              <li>
+                Blocking out every social media site / any site you want to block that distracts you (with the click of
+                a button)
+              </li>
+              <li>
+                Helps you set up your &ldquo;most important task&rdquo; like 7-figure entrepreneurs do so all that&apos;s
+                left is you &amp; the most important thing you need to do. Zero other distractions.
+              </li>
+            </ul>
+          </div>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
           </h2>
