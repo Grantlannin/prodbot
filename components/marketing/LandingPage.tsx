@@ -103,11 +103,33 @@ export default function LandingPage() {
           <div className="mt-5 flex flex-col items-center gap-2">
             <Link
               href={ctaHref}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
+              className="inline-flex items-center gap-3 rounded-full bg-[#0b0e14] py-2 pl-5 pr-2.5 no-underline shadow-sm transition hover:bg-[#151922]"
             >
-              <span className="text-sm font-semibold text-white">let&apos;s go</span>
-              <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
-              <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
+              <span className="text-[15px] font-semibold text-white">let&apos;s go</span>
+              <span aria-hidden className="h-7 w-px shrink-0 bg-white/20" />
+              <span className="flex flex-col items-start leading-none">
+                <span className="text-[11px] font-medium text-slate-400 line-through decoration-red-500 decoration-2">
+                  $12.99/mo
+                </span>
+                <span className="mt-0.5 text-[15px] font-bold text-white">{MONTHLY_PRICE_SHORT}</span>
+              </span>
+              <span className="ml-0.5 inline-flex items-center gap-1 rounded-full border border-emerald-400/80 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-400">
+                <svg
+                  aria-hidden
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  className="h-3 w-3"
+                >
+                  <path
+                    d="M2.5 8.5V3.5a1 1 0 0 1 1-1h5l5 5-5 5-5-5Z"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="5.25" cy="5.25" r="0.9" fill="currentColor" />
+                </svg>
+                61% OFF
+              </span>
             </Link>
             <p className="text-xs text-slate-500 sm:text-sm">
               No commitments. No hidden fees. Cancel anytime.
