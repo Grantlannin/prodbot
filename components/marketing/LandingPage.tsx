@@ -107,24 +107,71 @@ export default function LandingPage() {
               <span className="rounded-md bg-slate-900 px-1.5 py-0.5 text-lime-300">Until now.</span>
             </h1>
           </div>
-          <div className="mb-8 max-w-2xl text-left">
-            <p className="mb-4 text-lg leading-relaxed text-slate-700">
-              Daywinner bot is your personal robot that helps you win the day. And it does this by:
-            </p>
-            <ul className="list-disc space-y-3 pl-5 text-base leading-relaxed text-slate-600 sm:text-lg">
-              <li>
-                Providing you with a work homebase (your productivity dashboard) that exists as a normal tab in your
-                browser (download nothing)
-              </li>
-              <li>
-                Blocking out every social media site / any site you want to block that distracts you (with the click of
-                a button)
-              </li>
-              <li>
-                Helps you set up your &ldquo;most important task&rdquo; like 7-figure entrepreneurs do so all that&apos;s
-                left is you &amp; the most important thing you need to do. Zero other distractions.
-              </li>
-            </ul>
+          <div className="relative mb-8 w-full max-w-3xl overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-[linear-gradient(145deg,#bae6fd_0%,#fbcfe8_50%,#fde68a_100%)] px-5 py-6 shadow-[5px_5px_0_0_#0f172a] sm:px-7 sm:py-8">
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.14]"
+              style={{
+                backgroundImage: 'radial-gradient(#0f172a 1.2px, transparent 1.2px)',
+                backgroundSize: '16px 16px',
+              }}
+              aria-hidden
+            />
+            <div className="relative z-[1] flex items-start gap-4 text-left sm:gap-6">
+              <Image
+                src="/marketing/daywinner-bot.svg"
+                alt=""
+                width={88}
+                height={88}
+                className="daywinner-bot-bob mt-1 h-16 w-16 shrink-0 sm:h-[5.5rem] sm:w-[5.5rem]"
+                style={{ animationDelay: '0.4s' }}
+                unoptimized
+              />
+              <div className="min-w-0 flex-1">
+                <p className="mb-4 text-lg font-extrabold leading-snug tracking-tight text-slate-900 sm:text-xl">
+                  Daywinner bot is your personal robot that helps you{' '}
+                  <span className="rounded-md bg-slate-900 px-1.5 py-0.5 text-sky-300">win the day</span>. And it does
+                  this by:
+                </p>
+                <ul className="space-y-3 text-base font-semibold leading-relaxed text-slate-800 sm:text-lg">
+                  <li className="flex gap-3 rounded-xl border-2 border-slate-900/15 bg-white/55 px-3 py-2.5 backdrop-blur-[2px]">
+                    <span
+                      aria-hidden
+                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-slate-900 bg-lime-300 text-xs font-black text-slate-900"
+                    >
+                      1
+                    </span>
+                    <span>
+                      Providing you with a work homebase (your productivity dashboard) that exists as a normal tab in
+                      your browser (download nothing)
+                    </span>
+                  </li>
+                  <li className="flex gap-3 rounded-xl border-2 border-slate-900/15 bg-white/55 px-3 py-2.5 backdrop-blur-[2px]">
+                    <span
+                      aria-hidden
+                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-slate-900 bg-sky-300 text-xs font-black text-slate-900"
+                    >
+                      2
+                    </span>
+                    <span>
+                      Blocking out every social media site / any site you want to block that distracts you (with the
+                      click of a button)
+                    </span>
+                  </li>
+                  <li className="flex gap-3 rounded-xl border-2 border-slate-900/15 bg-white/55 px-3 py-2.5 backdrop-blur-[2px]">
+                    <span
+                      aria-hidden
+                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-slate-900 bg-pink-300 text-xs font-black text-slate-900"
+                    >
+                      3
+                    </span>
+                    <span>
+                      Helps you set up your &ldquo;most important task&rdquo; like 7-figure entrepreneurs do so all
+                      that&apos;s left is you &amp; the most important thing you need to do. Zero other distractions.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
