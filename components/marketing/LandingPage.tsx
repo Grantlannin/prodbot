@@ -78,30 +78,32 @@ export default function LandingPage() {
 
   return (
     <MarketingShell>
-      <section className="pt-4 sm:pt-6">
-        <div className="flex flex-col items-center text-center">
-          <div className="mb-8 flex w-full max-w-2xl flex-col items-center text-center">
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Introducing</p>
-            <h1 className="mb-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Daywinner bot</h1>
-            <Image
-              src="/marketing/daywinner-bot-hero.png"
-              alt="Daywinner bot presenting the productivity dashboard"
-              width={1000}
-              height={667}
-              className="mb-3 h-auto w-full max-w-[300px] sm:max-w-[380px]"
-              unoptimized
-              priority
-            />
-            <p className="max-w-lg text-[15px] leading-relaxed text-slate-700 sm:text-base sm:leading-relaxed">
-              Daywinner bot is your personal productivity dashboard + robot that helps you{' '}
-              <span className="whitespace-nowrap rounded-md bg-slate-900 px-1.5 py-0.5 font-semibold text-white">
-                win the day
-              </span>{' '}
-              by blocking your most important distractions &amp; walking you through the same organizational flows that
-              7-figure entrepreneurs use to keep you hyper-organized, daily.
-            </p>
-          </div>
+      <section className="flex min-h-[calc(100svh-4.5rem)] flex-col items-center justify-center py-6">
+        <div className="flex w-full max-w-2xl flex-col items-center text-center">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Introducing</p>
+          <h1 className="mb-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Daywinner bot</h1>
+          <Image
+            src="/marketing/daywinner-bot-hero.png"
+            alt="Daywinner bot presenting the productivity dashboard"
+            width={1000}
+            height={667}
+            className="mb-5 h-auto w-full max-w-[340px] sm:max-w-[420px]"
+            unoptimized
+            priority
+          />
+          <p className="max-w-xl text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+            Daywinner bot is your personal productivity dashboard + robot that helps you{' '}
+            <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
+              win the day
+            </span>{' '}
+            by blocking your most important distractions &amp; walking you through the same organizational flows that
+            7-figure entrepreneurs use to keep you hyper-organized, daily.
+          </p>
+        </div>
+      </section>
 
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="flex flex-col items-center text-center">
           <div className="mb-12 w-full max-w-2xl text-left">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The problem</p>
             <h2 className="text-[1.65rem] font-bold leading-[1.35] tracking-tight text-slate-900 sm:text-[2.15rem] sm:leading-[1.3]">
