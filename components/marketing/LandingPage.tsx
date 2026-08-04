@@ -110,11 +110,22 @@ export default function LandingPage() {
             <h2 className="text-[1.65rem] font-bold leading-[1.35] tracking-tight text-slate-900 sm:text-[2.15rem] sm:leading-[1.3]">
               You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media){' '}
               <span className="underline decoration-slate-900 decoration-2 underline-offset-[5px]">LIVES</span> on the
-              device that you&apos;re supposed to get stuff done with.
+              device that you&apos;re supposed to get stuff done with. Daywinner bot fixes that.
             </h2>
-            <p className="mt-5 inline-block border-b-2 border-slate-900 pb-0.5 text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
-              Until now.
+            <p className="mt-5 text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
+              Same laptop. Same browser. One tab is your future — the other 47 are engineered to steal it. Your brain
+              doesn&apos;t stand a chance against infinite scroll, dopamine pings, and &ldquo;just five minutes.&rdquo;
+              Discipline isn&apos;t the missing piece. A system that blocks the noise and puts the real work front and
+              center is.
             </p>
+            <Image
+              src="/marketing/bot-work-distracted.png"
+              alt="Daywinner bot trying to work while social media apps swarm as distractions"
+              width={1400}
+              height={788}
+              className="mx-auto mt-8 h-auto w-full max-w-lg"
+              unoptimized
+            />
           </div>
 
           <div className="mb-14 w-full max-w-2xl text-left">
