@@ -16,3 +16,17 @@ body {
   color: #737373;
   opacity: 1;
 }
+
+@keyframes daywinner-bot-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(4deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-2deg);
+  }
+}
+
+.daywinner-bot-bob {
+  animation: daywinner-bot-bob 2.8s ease-in-out infinite;
+}

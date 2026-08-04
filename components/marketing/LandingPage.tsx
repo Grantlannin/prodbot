@@ -80,10 +80,33 @@ export default function LandingPage() {
     <MarketingShell>
       <section className="pt-8 sm:pt-14">
         <div className="flex flex-col items-center text-center">
-          <h1 className="mb-6 max-w-3xl text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:text-4xl sm:leading-[1.25]">
-            You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media) LIVES on
-            the device that you&apos;re supposed to get stuff done with. Until now.
-          </h1>
+          <div className="relative mb-8 w-full max-w-3xl overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-[linear-gradient(145deg,#d9f99d_0%,#99f6e4_45%,#fef08a_100%)] px-5 pb-7 pt-8 shadow-[5px_5px_0_0_#0f172a] sm:px-9 sm:pb-9 sm:pt-10">
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.18]"
+              style={{
+                backgroundImage: 'radial-gradient(#0f172a 1.2px, transparent 1.2px)',
+                backgroundSize: '16px 16px',
+              }}
+              aria-hidden
+            />
+            <Image
+              src="/marketing/daywinner-bot.svg"
+              alt=""
+              width={80}
+              height={80}
+              className="daywinner-bot-bob absolute right-2 top-2 h-14 w-14 sm:right-3 sm:top-3 sm:h-20 sm:w-20"
+              unoptimized
+              priority
+            />
+            <h1 className="relative z-[1] max-w-[34rem] pr-16 text-left text-2xl font-extrabold leading-snug tracking-tight text-slate-900 sm:pr-24 sm:text-4xl sm:leading-[1.25]">
+              You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media){' '}
+              <span className="underline decoration-[3px] decoration-skip-ink-none underline-offset-[0.12em]">
+                LIVES
+              </span>{' '}
+              on the device that you&apos;re supposed to get stuff done with.{' '}
+              <span className="rounded-md bg-slate-900 px-1.5 py-0.5 text-lime-300">Until now.</span>
+            </h1>
+          </div>
           <div className="mb-8 max-w-2xl text-left">
             <p className="mb-4 text-lg leading-relaxed text-slate-700">
               Daywinner bot is your personal robot that helps you win the day. And it does this by:
