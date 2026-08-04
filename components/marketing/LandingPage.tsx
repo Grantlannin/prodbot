@@ -120,7 +120,7 @@ export default function LandingPage() {
             </p>
             <Image
               src="/marketing/focus-session-branded.jpg"
-              alt="Focus session active — site blocked with countdown; if you try to distract yourself, your bot blocks you and records the infraction"
+              alt="Focus session active — if you try to distract yourself, your bot blocks you and records the infraction"
               width={1400}
               height={788}
               className="mx-auto mt-8 h-auto w-full max-w-lg"
