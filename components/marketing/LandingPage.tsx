@@ -80,82 +80,28 @@ export default function LandingPage() {
     <MarketingShell>
       <section className="pt-8 sm:pt-14">
         <div className="flex flex-col items-center text-center">
-          <div className="relative mb-8 w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white px-5 pb-7 pt-8 shadow-sm sm:px-9 sm:pb-9 sm:pt-10">
-            <Image
-              src="/marketing/daywinner-bot.svg"
-              alt=""
-              width={80}
-              height={80}
-              className="daywinner-bot-bob absolute right-2 top-2 h-14 w-14 sm:right-3 sm:top-3 sm:h-20 sm:w-20"
-              unoptimized
-              priority
-            />
-            <h1 className="relative z-[1] max-w-[34rem] pr-16 text-left text-2xl font-extrabold leading-snug tracking-tight text-slate-900 sm:pr-24 sm:text-4xl sm:leading-[1.25]">
-              You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media){' '}
-              <span className="underline decoration-[3px] decoration-skip-ink-none underline-offset-[0.12em]">
-                LIVES
-              </span>{' '}
-              on the device that you&apos;re supposed to get stuff done with.{' '}
-              <span className="rounded-md bg-slate-900 px-1.5 py-0.5 text-white">Until now.</span>
-            </h1>
-          </div>
-          <div className="relative mb-10 w-full max-w-3xl px-1 sm:px-2">
-            <div className="relative z-[1] flex items-start gap-4 text-left sm:gap-6">
-              <Image
-                src="/marketing/daywinner-bot.svg"
-                alt=""
-                width={88}
-                height={88}
-                className="daywinner-bot-bob mt-1 h-16 w-16 shrink-0 sm:h-[5.5rem] sm:w-[5.5rem]"
-                style={{ animationDelay: '0.4s' }}
-                unoptimized
-              />
-              <div className="min-w-0 flex-1">
-                <p className="mb-4 text-lg font-extrabold leading-snug tracking-tight text-slate-900 sm:text-xl">
-                  Daywinner bot is your personal robot that helps you{' '}
-                  <span className="rounded-md bg-slate-900 px-1.5 py-0.5 text-sky-300">win the day</span>. And it does
-                  this by:
-                </p>
-                <ul className="space-y-3 text-base font-semibold leading-relaxed text-slate-800 sm:text-lg">
-                  <li className="flex gap-3">
-                    <span
-                      aria-hidden
-                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-slate-900 bg-lime-300 text-xs font-black text-slate-900"
-                    >
-                      1
-                    </span>
-                    <span>
-                      Providing you with a work homebase (your productivity dashboard) that exists as a normal tab in
-                      your browser (download nothing)
-                    </span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span
-                      aria-hidden
-                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-slate-900 bg-sky-300 text-xs font-black text-slate-900"
-                    >
-                      2
-                    </span>
-                    <span>
-                      Blocking out every social media site / any site you want to block that distracts you (with the
-                      click of a button)
-                    </span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span
-                      aria-hidden
-                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-slate-900 bg-pink-300 text-xs font-black text-slate-900"
-                    >
-                      3
-                    </span>
-                    <span>
-                      Helps you set up your &ldquo;most important task&rdquo; like 7-figure entrepreneurs do so all
-                      that&apos;s left is you &amp; the most important thing you need to do. Zero other distractions.
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            </div>
+          <h1 className="mb-6 max-w-3xl text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:text-4xl sm:leading-[1.25]">
+            You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media) LIVES on
+            the device that you&apos;re supposed to get stuff done with. Until now.
+          </h1>
+          <div className="mb-10 max-w-2xl text-left">
+            <p className="mb-4 text-lg leading-relaxed text-slate-700">
+              Daywinner bot is your personal robot that helps you win the day. And it does this by:
+            </p>
+            <ul className="list-disc space-y-3 pl-5 text-base leading-relaxed text-slate-600 sm:text-lg">
+              <li>
+                Providing you with a work homebase (your productivity dashboard) that exists as a normal tab in your
+                browser (download nothing)
+              </li>
+              <li>
+                Blocking out every social media site / any site you want to block that distracts you (with the click of
+                a button)
+              </li>
+              <li>
+                Helps you set up your &ldquo;most important task&rdquo; like 7-figure entrepreneurs do so all that&apos;s
+                left is you &amp; the most important thing you need to do. Zero other distractions.
+              </li>
+            </ul>
           </div>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
