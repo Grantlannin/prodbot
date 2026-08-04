@@ -9,7 +9,7 @@ interface MarketingShellProps {
 export default function MarketingShell({ children, showSignIn = true }: MarketingShellProps) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-6">
+      <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-4">
         <Link href="/" className="text-sm font-bold tracking-tight text-slate-900 no-underline">
           Daywinner bot
         </Link>
