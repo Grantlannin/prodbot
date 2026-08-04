@@ -116,67 +116,88 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden border-t border-slate-200 bg-gradient-to-b from-slate-50 via-white to-white py-14 sm:py-20">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_at_top,_rgba(15,23,42,0.06),_transparent_70%)]"
-        />
-        <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center px-1 text-center">
-          <Image
-            src="/marketing/daywinner-bot-salute.png"
-            alt=""
-            width={280}
-            height={280}
-            className="mb-5 h-16 w-16 object-contain sm:h-20 sm:w-20"
-            unoptimized
-          />
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">What you get</p>
-          <h2 className="mb-10 max-w-xl text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl sm:leading-[1.1]">
-            Daywinner bot is{' '}
-            <span className="whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-0.5 text-white">4 things</span> in 1
-          </h2>
+      <section className="border-t border-slate-200 py-14 sm:py-20">
+        <div className="mx-auto w-full max-w-2xl">
+          <div className="mb-10 text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+              What it is
+            </p>
+            <h2 className="text-[1.85rem] font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-[2.5rem] sm:leading-[1.1]">
+              Daywinner bot is{' '}
+              <span className="whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-0.5 text-white">
+                4 things
+              </span>{' '}
+              in 1
+            </h2>
+          </div>
 
-          <ol className="w-full space-y-0 text-left">
-            {[
-              {
-                n: '01',
-                title: 'A productivity dashboard',
-                body: 'Your work homebase — where all of your most important tasks live.',
-              },
-              {
-                n: '02',
-                title: 'A digital work session timer',
-                body: 'Track specific tasks & see exactly how long you worked.',
-              },
-              {
-                n: '03',
-                title: 'A website blocker',
-                body: 'Blocks any website you want during your focus sessions.',
-              },
-              {
-                n: '04',
-                title: 'Workflows 7-figure entrepreneurs use',
-                body: 'Find your most important task, destroy resistance, and stay organized at the end of the day. You turn off your mind — Daywinner bot walks you through exactly what to do.',
-              },
-            ].map((item, i) => (
-              <li
-                key={item.n}
-                className={`flex gap-4 py-6 sm:gap-5 sm:py-7 ${i > 0 ? 'border-t border-slate-200' : ''}`}
+          <ol className="space-y-0 divide-y divide-slate-200 border-y border-slate-200">
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
               >
-                <span
-                  aria-hidden
-                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-xs font-bold tabular-nums text-white sm:h-10 sm:w-10 sm:text-sm"
-                >
-                  {item.n}
-                </span>
-                <div className="min-w-0 pt-0.5">
-                  <p className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">{item.title}</p>
-                  <p className="mt-1.5 text-base leading-relaxed text-slate-600 sm:text-[17px] sm:leading-relaxed">
-                    {item.body}
-                  </p>
-                </div>
-              </li>
-            ))}
+                01
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Productivity dashboard
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  Your work homebase — where all of your most important tasks live.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                02
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Digital work session timer
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  Track specific tasks &amp; see exactly how long you worked for.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                03
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Website blocker
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  Blocks any website you want during your focus sessions.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                04
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Entrepreneur workflows
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  The same flows 7-figure entrepreneurs use to find their most important task, destroy
+                  resistance, and stay organized at the end of the day. You turn off your mind —
+                  Daywinner bot walks you through exactly what to do.
+                </p>
+              </div>
+            </li>
           </ol>
         </div>
       </section>
@@ -198,6 +219,51 @@ export default function LandingPage() {
               className="mx-auto mt-8 h-auto w-full max-w-lg"
               unoptimized
             />
+          </div>
+
+          <div className="mb-14 w-full max-w-2xl text-left">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The fix</p>
+            <p className="mb-6 text-lg leading-relaxed text-slate-700 sm:text-xl sm:leading-relaxed">
+              Daywinner bot is your personal robot that helps you win the day. And it does this by:
+            </p>
+            <ol className="space-y-5">
+              <li className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
+                >
+                  01
+                </span>
+                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+                  Providing you with a work homebase (your productivity dashboard) that exists as a normal tab in your
+                  browser (download nothing)
+                </p>
+              </li>
+              <li className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
+                >
+                  02
+                </span>
+                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+                  Blocking out every social media site / any site you want to block that distracts you (with the click
+                  of a button)
+                </p>
+              </li>
+              <li className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
+                >
+                  03
+                </span>
+                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+                  Helps you set up your &ldquo;most important task&rdquo; like 7-figure entrepreneurs do so all
+                  that&apos;s left is you &amp; the most important thing you need to do. Zero other distractions.
+                </p>
+              </li>
+            </ol>
           </div>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
