@@ -182,7 +182,7 @@ export default function DashboardTab({
   }, [focusNightPrep, onNightPrepFocused]);
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100%', overflowY: 'auto', fontFamily: font, position: 'relative' }}>
+    <div style={{ background: '#fafafa', minHeight: '100%', overflowY: 'auto', fontFamily: font, position: 'relative' }}>
       <BeginMyDayButton />
       <HowToStartBanner />
       <StartWorkModal
@@ -254,7 +254,7 @@ export default function DashboardTab({
           <div style={styles.divider} />
           <div>
             <div style={styles.bannerLabel}>Break</div>
-            <div style={{ color: '#b45309', fontSize: 26, fontWeight: 700 }}>{formatDuration(todayStats.totalBreakMs)}</div>
+            <div style={{ color: '#0f172a', fontSize: 26, fontWeight: 700 }}>{formatDuration(todayStats.totalBreakMs)}</div>
           </div>
           <div style={styles.divider} />
           <div>
@@ -506,16 +506,15 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 600,
     fontFamily: font,
     letterSpacing: '-0.01em',
-    background: '#ecfdf5',
-    color: '#047857',
+    background: '#0f172a',
+    color: '#f8fafc',
     cursor: 'pointer',
-    boxShadow: 'inset 0 0 0 1px rgba(16, 185, 129, 0.2)',
   },
   liveCountdown: {
     fontSize: 15,
     fontWeight: 700,
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-    color: '#047857',
+    color: '#0f172a',
     fontVariantNumeric: 'tabular-nums',
     letterSpacing: '0.02em',
   },
@@ -542,14 +541,14 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 600,
     fontFamily: font,
     letterSpacing: '-0.01em',
-    background: '#ecfdf5',
-    color: '#047857',
+    background: '#f1f5f9',
+    color: '#334155',
     cursor: 'pointer',
-    boxShadow: 'inset 0 0 0 1px rgba(16, 185, 129, 0.25)',
+    boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.08)',
     whiteSpace: 'nowrap',
   },
   timerFloatBtnActive: {
-    background: '#eef2f6',
+    background: '#e2e8f0',
     color: '#64748b',
     boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.06)',
   },
@@ -572,7 +571,7 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
   },
   timerSegmentBtnEmphasis: {
-    color: '#1d4ed8',
+    color: '#0f172a',
   },
   timerEndBtn: {
     border: 'none',
@@ -639,7 +638,7 @@ const styles: Record<string, CSSProperties> = {
   },
   projectBarFill: {
     height: '100%',
-    background: '#3b82f6',
+    background: '#0f172a',
     borderRadius: 3,
   },
   projectEmpty: {

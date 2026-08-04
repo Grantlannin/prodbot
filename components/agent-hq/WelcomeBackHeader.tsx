@@ -91,7 +91,7 @@ const styles: Record<string, CSSProperties> = {
   },
   input: {
     border: 'none',
-    borderBottom: '2px solid #3b82f6',
+    borderBottom: '2px solid #0f172a',
     outline: 'none',
     background: 'transparent',
     fontFamily: font,
