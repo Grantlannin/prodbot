@@ -108,9 +108,9 @@ export default function LandingPage() {
           <div className="mb-12 w-full max-w-2xl text-left">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The problem</p>
             <h2 className="text-[1.65rem] font-bold leading-[1.35] tracking-tight text-slate-900 sm:text-[2.15rem] sm:leading-[1.3]">
-              You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media){' '}
-              <span className="underline decoration-slate-900 decoration-2 underline-offset-[5px]">LIVES</span> on the
-              device that you&apos;re supposed to get stuff done with. Daywinner bot fixes that.
+              You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media) is
+              accessible on the device that you&apos;re supposed to get stuff done with. This is the 1st thing daywinner
+              bot fixes.
             </h2>
             <p className="mt-5 text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
               Same laptop. Same browser. One tab is your future — the other 47 are engineered to steal it. Your brain
@@ -119,8 +119,8 @@ export default function LandingPage() {
               center is.
             </p>
             <Image
-              src="/marketing/bot-work-distracted.png"
-              alt="Daywinner bot trying to work while social media apps swarm as distractions"
+              src="/marketing/focus-session-branded.jpg"
+              alt="Focus session active — Daywinner bot blocking a distracting site with countdown"
               width={1400}
               height={788}
               className="mx-auto mt-8 h-auto w-full max-w-lg"
