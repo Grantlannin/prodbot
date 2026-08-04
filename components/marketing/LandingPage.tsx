@@ -99,7 +99,7 @@ export default function LandingPage() {
             by blocking your most important distractions &amp; walking you through the same organizational flows that
             7-figure entrepreneurs use to keep you hyper-organized, daily.
           </p>
-          <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">(no downloading required)</p>
+          <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">(no download required)</p>
         </div>
       </section>
 
