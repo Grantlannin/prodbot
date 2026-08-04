@@ -84,7 +84,7 @@ export default function LandingPage() {
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Introducing</p>
             <h1 className="mb-6 text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">Daywinner bot</h1>
             <Image
-              src="/marketing/daywinner-bot-salute.jpg"
+              src="/marketing/daywinner-bot-salute.png"
               alt="Daywinner bot saluting: I'm here to block all of your distractions. I'm here to organize your most important tasks."
               width={520}
               height={520}
