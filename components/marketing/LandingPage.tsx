@@ -102,10 +102,10 @@ export default function LandingPage() {
           <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">(no download required)</p>
           <Link
             href={ctaHref}
-            className="mt-5 inline-flex flex-col items-center justify-center rounded-xl bg-slate-900 px-8 py-3.5 no-underline shadow-sm transition hover:bg-slate-800"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
           >
-            <span className="text-base font-bold text-white">let&apos;s go</span>
-            <span className="mt-0.5 text-sm font-semibold text-slate-300">{MONTHLY_PRICE_LABEL}</span>
+            <span className="text-sm font-semibold text-white">let&apos;s go</span>
+            <span className="text-sm font-medium text-slate-400">{MONTHLY_PRICE_LABEL}</span>
           </Link>
         </div>
       </section>
