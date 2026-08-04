@@ -85,8 +85,8 @@ export default function LandingPage() {
           <Image
             src="/marketing/daywinner-bot-hero.png"
             alt="Daywinner bot presenting the productivity dashboard"
-            width={1600}
-            height={1067}
+            width={1400}
+            height={934}
             className="mb-5 h-auto w-full max-w-[400px] sm:max-w-[520px]"
             unoptimized
             priority
@@ -99,7 +99,7 @@ export default function LandingPage() {
             by blocking your most important distractions &amp; walking you through the same organizational flows that
             7-figure entrepreneurs use to keep you hyper-organized, daily.
           </p>
-          <p className="mt-2 text-sm text-slate-500">(no downloading required)</p>
+          <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">(no downloading required)</p>
         </div>
       </section>
 
