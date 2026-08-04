@@ -80,9 +80,14 @@ export default function LandingPage() {
     <MarketingShell>
       <section className="pt-8 sm:pt-14">
         <div className="flex flex-col items-center text-center">
-          <h1 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
+          <h1 className="mb-6 max-w-3xl text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:text-4xl sm:leading-[1.25]">
+            &ldquo;Have you ever wondered why your most powerful distraction (social media) — the one engineered by
+            psychological-scientists to keep you addicted &amp; hold your attention hostage — is on the SAME device as
+            the one you&apos;re supposed to move your life forward with?&rdquo;
           </h1>
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
+          </h2>
           <blockquote className="mb-5 max-w-2xl text-base italic leading-relaxed text-slate-600 sm:text-lg">
             &ldquo;my entire workflow consists of google docs, claude, and my daywinner bot. it&apos;s simpler than ever
             before and I am getting 10x done what I used to get done. Having daywinner as my work homebase changed the
@@ -349,13 +354,8 @@ export default function LandingPage() {
             unoptimized
           />
           <p className="max-w-2xl text-base leading-relaxed text-slate-600">
-            There is nowhere to hide. Your daywinner bot will ask you one simple question daily:
-          </p>
-          <p className="mt-3 max-w-2xl text-base font-semibold leading-relaxed text-slate-900">
-            &ldquo;what did you objectively get done today?&rdquo;.
-          </p>
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600">
-            No more wasting time doing nothing, or doing the wrong stuff.
+            There is nowhere to hide. Your bot will ask you what you got done, and you are able to see if it was the
+            most important thing, or if you just &ldquo;productively procrastinated&rdquo;
           </p>
         </div>
       </section>
@@ -382,7 +382,7 @@ export default function LandingPage() {
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             And then what are you left with, before the day even starts tomorrow?
           </h2>
-          <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-snug tracking-tight text-green-600 underline decoration-black decoration-[3px] underline-offset-[6px] sm:text-4xl">
+          <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-[1.55] tracking-tight text-green-600 underline decoration-black decoration-[3px] decoration-skip-ink-none underline-offset-[0.18em] sm:text-4xl">
             The single most important task you need to do, already ready to go.
           </p>
           <Image
