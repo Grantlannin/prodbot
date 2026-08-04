@@ -96,7 +96,7 @@ export default function LandingPage() {
             <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
               win the day
             </span>{' '}
-            by blocking your most important distractions &amp; walking you through the same organizational flows that
+            by blocking your most important distractions &amp; walks you through the same organizational flows that
             7-figure entrepreneurs use to keep you hyper-organized, daily.
           </p>
           <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">(no download required)</p>
