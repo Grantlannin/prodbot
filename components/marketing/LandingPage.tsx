@@ -80,15 +80,7 @@ export default function LandingPage() {
     <MarketingShell>
       <section className="pt-8 sm:pt-14">
         <div className="flex flex-col items-center text-center">
-          <div className="relative mb-8 w-full max-w-3xl overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-[linear-gradient(145deg,#d9f99d_0%,#99f6e4_45%,#fef08a_100%)] px-5 pb-7 pt-8 shadow-[5px_5px_0_0_#0f172a] sm:px-9 sm:pb-9 sm:pt-10">
-            <div
-              className="pointer-events-none absolute inset-0 opacity-[0.18]"
-              style={{
-                backgroundImage: 'radial-gradient(#0f172a 1.2px, transparent 1.2px)',
-                backgroundSize: '16px 16px',
-              }}
-              aria-hidden
-            />
+          <div className="relative mb-8 w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white px-5 pb-7 pt-8 shadow-sm sm:px-9 sm:pb-9 sm:pt-10">
             <Image
               src="/marketing/daywinner-bot.svg"
               alt=""
@@ -104,7 +96,7 @@ export default function LandingPage() {
                 LIVES
               </span>{' '}
               on the device that you&apos;re supposed to get stuff done with.{' '}
-              <span className="rounded-md bg-slate-900 px-1.5 py-0.5 text-lime-300">Until now.</span>
+              <span className="rounded-md bg-slate-900 px-1.5 py-0.5 text-white">Until now.</span>
             </h1>
           </div>
           <div className="relative mb-10 w-full max-w-3xl px-1 sm:px-2">
