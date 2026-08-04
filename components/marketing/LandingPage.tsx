@@ -87,7 +87,7 @@ export default function LandingPage() {
             alt="Daywinner bot presenting the productivity dashboard"
             width={1000}
             height={667}
-            className="mb-5 h-auto w-full max-w-[340px] sm:max-w-[420px]"
+            className="mb-5 h-auto w-full max-w-[440px] sm:max-w-[560px]"
             unoptimized
             priority
           />
