@@ -107,8 +107,8 @@ export default function LandingPage() {
             >
               <span className="text-sm font-semibold text-white">let&apos;s go</span>
               <span className="flex flex-col items-start leading-none">
-                <span className="text-[11px] font-medium text-slate-500 line-through">$12.99</span>
-                <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_LABEL}</span>
+                <span className="text-[11px] font-medium text-slate-500 line-through">$12.99/mo</span>
+                <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
               </span>
             </Link>
             <p className="text-xs text-slate-500 sm:text-sm">
