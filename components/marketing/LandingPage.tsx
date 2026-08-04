@@ -84,11 +84,11 @@ export default function LandingPage() {
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Introducing</p>
             <h1 className="mb-6 text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">Daywinner bot</h1>
             <Image
-              src="/marketing/daywinner-bot-salute.png"
-              alt="Daywinner bot saluting: I'm here to block all of your distractions. I'm here to organize your most important tasks."
-              width={520}
-              height={520}
-              className="mb-6 h-auto w-full max-w-[280px] sm:max-w-[340px]"
+              src="/marketing/daywinner-bot-hero.jpg"
+              alt="Daywinner bot presenting the productivity dashboard"
+              width={1200}
+              height={800}
+              className="mb-6 h-auto w-full max-w-xl sm:max-w-2xl"
               unoptimized
               priority
             />
