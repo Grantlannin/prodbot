@@ -114,10 +114,10 @@ export default function LandingPage() {
         <div className="flex flex-col items-center text-center">
           <div className="mb-12 w-full max-w-2xl text-center">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The problem</p>
-            <h2 className="text-[1.65rem] font-bold leading-[1.35] tracking-tight text-slate-900 sm:text-[2.15rem] sm:leading-[1.3]">
-              You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media) is
-              accessible on the device that you&apos;re supposed to get stuff done with. Which is pretty insane if you
-              think about it. This is the 1st thing daywinner bot fixes.
+            <h2 className="text-[1.85rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.5rem] sm:leading-[1.15]">
+              You&apos;re Not Undisciplined. The World&apos;s Most Addictive Thing Ever Created (Social Media) Is
+              Accessible On The Device That You&apos;re Supposed To Get Stuff Done With. Which Is Pretty Insane If You
+              Think About It. This Is The 1st Thing Daywinner Bot Fixes.
             </h2>
             <Image
               src="/marketing/focus-session-branded.jpg"
