@@ -81,8 +81,8 @@ export default function LandingPage() {
       <section className="pt-8 sm:pt-14">
         <div className="flex flex-col items-center text-center">
           <h1 className="mb-6 max-w-3xl text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:text-4xl sm:leading-[1.25]">
-            You&apos;re not undisciplined. It&apos;s just that the world&apos;s most addictive thing ever created
-            (social media) LIVES on the device that you&apos;re supposed to get stuff done with. Until now.
+            You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media) LIVES on
+            the device that you&apos;re supposed to get stuff done with. Until now.
           </h1>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
