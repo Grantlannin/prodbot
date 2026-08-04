@@ -80,13 +80,35 @@ export default function LandingPage() {
     <MarketingShell>
       <section className="pt-8 sm:pt-14">
         <div className="flex flex-col items-center text-center">
+          <div className="mb-12 flex w-full max-w-2xl flex-col items-center text-center">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Introducing</p>
+            <h1 className="mb-6 text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">Daywinner bot</h1>
+            <Image
+              src="/marketing/daywinner-bot-salute.jpg"
+              alt="Daywinner bot saluting: I'm here to block all of your distractions. I'm here to organize your most important tasks."
+              width={520}
+              height={520}
+              className="mb-6 h-auto w-full max-w-[280px] sm:max-w-[340px]"
+              unoptimized
+              priority
+            />
+            <p className="max-w-xl text-lg leading-relaxed text-slate-700 sm:text-xl sm:leading-relaxed">
+              Your personal robot that helps you{' '}
+              <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
+                win the day
+              </span>
+              . Blocks your most important distractions &amp; walks you through organizational flows to keep you
+              hyper-organized, daily.
+            </p>
+          </div>
+
           <div className="mb-12 w-full max-w-2xl text-left">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The problem</p>
-            <h1 className="text-[1.65rem] font-bold leading-[1.35] tracking-tight text-slate-900 sm:text-[2.15rem] sm:leading-[1.3]">
+            <h2 className="text-[1.65rem] font-bold leading-[1.35] tracking-tight text-slate-900 sm:text-[2.15rem] sm:leading-[1.3]">
               You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media){' '}
               <span className="underline decoration-slate-900 decoration-2 underline-offset-[5px]">LIVES</span> on the
               device that you&apos;re supposed to get stuff done with.
-            </h1>
+            </h2>
             <p className="mt-5 inline-block border-b-2 border-slate-900 pb-0.5 text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
               Until now.
             </p>
