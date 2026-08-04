@@ -93,12 +93,12 @@ export default function LandingPage() {
               priority
             />
             <p className="max-w-xl text-lg leading-relaxed text-slate-700 sm:text-xl sm:leading-relaxed">
-              Your personal robot that helps you{' '}
+              Daywinner bot is your personal productivity dashboard + robot that helps you{' '}
               <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
                 win the day
-              </span>
-              . Blocks your most important distractions &amp; walks you through organizational flows to keep you
-              hyper-organized, daily.
+              </span>{' '}
+              by locking your most important distractions &amp; walking you through the same organizational flows that
+              7-figure entrepreneurs use to keep you hyper-organized, daily.
             </p>
           </div>
 
