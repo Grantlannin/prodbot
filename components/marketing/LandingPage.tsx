@@ -105,24 +105,18 @@ export default function LandingPage() {
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-12 w-full max-w-2xl text-left">
+          <div className="mb-12 w-full max-w-2xl text-center">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The problem</p>
             <h2 className="text-[1.65rem] font-bold leading-[1.35] tracking-tight text-slate-900 sm:text-[2.15rem] sm:leading-[1.3]">
               You&apos;re not undisciplined. The world&apos;s most addictive thing ever created (social media) is
               accessible on the device that you&apos;re supposed to get stuff done with. Which is pretty insane if you
               think about it. This is the 1st thing daywinner bot fixes.
             </h2>
-            <p className="mt-5 text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
-              Same laptop. Same browser. One tab is your future — the other 47 are engineered to steal it. Your brain
-              doesn&apos;t stand a chance against infinite scroll, dopamine pings, and &ldquo;just five minutes.&rdquo;
-              Discipline isn&apos;t the missing piece. A system that blocks the noise and puts the real work front and
-              center is.
-            </p>
             <Image
               src="/marketing/focus-session-branded.jpg"
-              alt="Focus session active — if you try to distract yourself, your bot blocks you and records the infraction"
+              alt="Focus session active — add any distracting website to your block list and Daywinner blocks it for you"
               width={1400}
-              height={788}
+              height={1000}
               className="mx-auto mt-8 h-auto w-full max-w-lg"
               unoptimized
             />
