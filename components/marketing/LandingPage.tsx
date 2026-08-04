@@ -107,15 +107,7 @@ export default function LandingPage() {
               <span className="rounded-md bg-slate-900 px-1.5 py-0.5 text-lime-300">Until now.</span>
             </h1>
           </div>
-          <div className="relative mb-8 w-full max-w-3xl overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-[linear-gradient(145deg,#bae6fd_0%,#fbcfe8_50%,#fde68a_100%)] px-5 py-6 shadow-[5px_5px_0_0_#0f172a] sm:px-7 sm:py-8">
-            <div
-              className="pointer-events-none absolute inset-0 opacity-[0.14]"
-              style={{
-                backgroundImage: 'radial-gradient(#0f172a 1.2px, transparent 1.2px)',
-                backgroundSize: '16px 16px',
-              }}
-              aria-hidden
-            />
+          <div className="relative mb-10 w-full max-w-3xl px-1 sm:px-2">
             <div className="relative z-[1] flex items-start gap-4 text-left sm:gap-6">
               <Image
                 src="/marketing/daywinner-bot.svg"
@@ -133,7 +125,7 @@ export default function LandingPage() {
                   this by:
                 </p>
                 <ul className="space-y-3 text-base font-semibold leading-relaxed text-slate-800 sm:text-lg">
-                  <li className="flex gap-3 rounded-xl border-2 border-slate-900/15 bg-white/55 px-3 py-2.5 backdrop-blur-[2px]">
+                  <li className="flex gap-3">
                     <span
                       aria-hidden
                       className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-slate-900 bg-lime-300 text-xs font-black text-slate-900"
@@ -145,7 +137,7 @@ export default function LandingPage() {
                       your browser (download nothing)
                     </span>
                   </li>
-                  <li className="flex gap-3 rounded-xl border-2 border-slate-900/15 bg-white/55 px-3 py-2.5 backdrop-blur-[2px]">
+                  <li className="flex gap-3">
                     <span
                       aria-hidden
                       className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-slate-900 bg-sky-300 text-xs font-black text-slate-900"
@@ -157,7 +149,7 @@ export default function LandingPage() {
                       click of a button)
                     </span>
                   </li>
-                  <li className="flex gap-3 rounded-xl border-2 border-slate-900/15 bg-white/55 px-3 py-2.5 backdrop-blur-[2px]">
+                  <li className="flex gap-3">
                     <span
                       aria-hidden
                       className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-slate-900 bg-pink-300 text-xs font-black text-slate-900"
