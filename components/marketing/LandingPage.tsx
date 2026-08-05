@@ -121,9 +121,9 @@ export default function LandingPage() {
           <div className="mb-14 text-center">
             <Image
               src="/marketing/sessions-flow-steps.png"
-              alt="Choose your task > set your work timer > Begin working (with social media blocked)"
-              width={1496}
-              height={89}
+              alt="Step 1 Choose your task > Step 2 set your work timer > Step 3 Begin working (with social media blocked)"
+              width={1500}
+              height={162}
               className="mx-auto mb-5 h-auto w-full max-w-xl"
               unoptimized
               priority
