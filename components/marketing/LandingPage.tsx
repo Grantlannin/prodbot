@@ -266,6 +266,9 @@ export default function LandingPage() {
         </div>
 
         <div className="flex flex-col items-center text-center">
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            Now the real magic starts... and this is what separates high performers from the rest of the population...
+          </p>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Once finished with your work for the day, you then enter the &ldquo;wind down flow&rdquo; that does many
             things for:
