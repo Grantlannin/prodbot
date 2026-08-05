@@ -204,7 +204,8 @@ export default function LandingPage() {
             Step 3: Pick a focus session length
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            (25 mins for pomodoro, 45 mins for the ambitious, 2+ hours for the ruthless)
+            (25 mins for pomodoro, 45 mins for the ambitious, 2+ hours for the ruthless - your task is linked to your
+            timer)
           </p>
           <Image
             src="/marketing/step3-timer.jpg"
