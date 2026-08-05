@@ -128,13 +128,8 @@ export default function LandingPage() {
               unoptimized
               priority
             />
-            <p className="mx-auto mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-              Every session is tracked by task, which not only shows you exactly what you worked on &amp; for how long —
-              but also forces you to stay organized. Because if you don&apos;t organize, you can&apos;t start the
-              session.
-            </p>
             <video
-              className="h-auto w-full"
+              className="mb-5 h-auto w-full"
               src="/marketing/sessions-tracked.mp4"
               autoPlay
               muted
@@ -143,6 +138,11 @@ export default function LandingPage() {
               controls={false}
               aria-label="Daywinner dashboard with sessions tracked by task"
             />
+            <p className="mx-auto max-w-2xl text-base leading-relaxed text-slate-600">
+              Every session is tracked by task, which not only shows you exactly what you worked on &amp; for how long —
+              but also forces you to stay organized. Because if you don&apos;t organize, you can&apos;t start the
+              session.
+            </p>
           </div>
 
           <div className="mb-12 text-center">
