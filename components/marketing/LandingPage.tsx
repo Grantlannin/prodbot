@@ -128,7 +128,7 @@ export default function LandingPage() {
               unoptimized
             />
             <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
-              Let Your Personal Productivity Robot Take You To The Promise Land.
+              Let Your Personal Productivity Robot Take You To The Promised Land.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
               Many people who struggle to get stuff done aren&apos;t aware the day is won before it even starts. Prep
