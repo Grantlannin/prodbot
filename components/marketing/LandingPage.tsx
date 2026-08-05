@@ -122,9 +122,9 @@ export default function LandingPage() {
             <Image
               src="/marketing/daywinner-bot-flying.png"
               alt="Daywinner bot flying with a stick figure typing on a laptop while money flies out"
-              width={1024}
-              height={1024}
-              className="mx-auto mb-6 h-auto w-full max-w-[280px] sm:max-w-[340px]"
+              width={1376}
+              height={768}
+              className="mx-auto mb-5 h-auto w-full max-w-[180px] sm:max-w-[220px]"
               unoptimized
             />
             <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
