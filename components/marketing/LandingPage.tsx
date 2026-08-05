@@ -381,12 +381,12 @@ export default function LandingPage() {
             </div>
           </div>
           <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            you&apos;ve just &ldquo;tee&apos;d up&rdquo; tomorrow&apos;s work session like a 7-figure entrepreneur. Pair
+            Boom - you&apos;ve just &ldquo;tee&apos;d up&rdquo; tomorrow&apos;s task like a 7-figure entrepreneur. Pair
             that with your social media blocker &amp; timer, and you&apos;re about to{' '}
             <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
               WIN THE DAY
             </span>
-            .
+            . It&apos;s been won before it even started.
           </p>
           <div className="mx-auto mt-8 max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-8 text-center shadow-sm sm:px-10 sm:py-10">
             <div className="space-y-6 text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
