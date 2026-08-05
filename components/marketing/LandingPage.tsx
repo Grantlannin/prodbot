@@ -134,8 +134,9 @@ export default function LandingPage() {
               Let Your Personal Productivity Robot Take You To The Promised Land.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
-              Your day is won or lost before it starts. Most people waste their energy deciding what to do instead of
-              doing it. High performers know this — which is why they prep the night before.{' '}
+              Your day is won or lost before it starts. Most people waste their &ldquo;best energy of the day&rdquo;
+              deciding what to do instead of <em>actually</em> doing it. High performers know this — which is why they
+              prep the night before.{' '}
               <span className="underline decoration-slate-900 decoration-2 underline-offset-[3px] text-slate-900">
                 Your entire day is won or lost in your prep.
               </span>{' '}
