@@ -341,7 +341,7 @@ export default function LandingPage() {
             unoptimized
           />
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            And then what are you left with, before the day even starts tomorrow?
+            ....And then when finished, what are you left with, before the day even starts tomorrow?
           </h2>
           <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-[1.55] tracking-tight text-green-600 underline decoration-black decoration-[3px] decoration-skip-ink-none underline-offset-[0.18em] sm:text-4xl">
             The single most important task you need to do, already ready to go.
@@ -354,6 +354,14 @@ export default function LandingPage() {
             className="mb-5 h-auto w-full max-w-md"
             unoptimized
           />
+          <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            you&apos;ve just &ldquo;tee&apos;d up&rdquo; tomorrow&apos;s work session like a 7-figure entrepreneur. Pair
+            that with your social media blocker &amp; timer, and you&apos;re about to{' '}
+            <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
+              WIN THE DAY
+            </span>
+            .
+          </p>
           <div className="mx-auto mt-8 max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-8 text-center shadow-sm sm:px-10 sm:py-10">
             <div className="space-y-6 text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
               <p>
