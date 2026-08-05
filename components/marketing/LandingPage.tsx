@@ -395,7 +395,7 @@ export default function LandingPage() {
       <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-6 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            ...But what if it&apos;s a &ldquo;low&rdquo; day?
+            ...But what if it&apos;s a &ldquo;low&rdquo; day? One of those days where things feel harder than usual?
           </h2>
           <Image
             src="/marketing/daywinner-bot-flow-for-that.png"
