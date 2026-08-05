@@ -147,11 +147,18 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
-        <h2 className="mb-4 text-center text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-          HERE&apos;S HOW IT WORKS:
-        </h2>
+      <section className="border-t border-slate-200 py-10 sm:py-14">
+        <div className="flex flex-col items-center text-center">
+          <h2 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            HERE&apos;S HOW IT WORKS:
+          </h2>
+          <span aria-hidden className="mt-4 text-6xl font-bold leading-none text-red-500 sm:text-7xl">
+            ↓
+          </span>
+        </div>
+      </section>
 
+      <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Step 1: Organize your most important tasks into 1 place (which links them to your tracker)
