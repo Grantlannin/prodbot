@@ -474,6 +474,28 @@ export default function LandingPage() {
             unoptimized
           />
         </div>
+
+        <div className="flex flex-col items-center text-center pt-10">
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Need additional accountability? Easily send your EOD report to an accountability buddy (or yourself)
+            easily via email with 1 click so they can see the <em>truth</em> of your productivity
+          </h2>
+          <Image
+            src="/marketing/eod-send.jpg"
+            alt="Send EOD to partner modal"
+            width={1200}
+            height={800}
+            className="mb-6 h-auto w-full border-4 border-red-500"
+            unoptimized
+          />
+          <h3 className="mb-3 max-w-2xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
+            Send EOD to your partner — or yourself.
+          </h3>
+          <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            Opens Gmail (or your mail app) with today&apos;s report pre-filled: what you got done, insights, work
+            time, tomorrow. You review and hit Send — nothing leaves Daywinner automatically.
+          </p>
+        </div>
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
