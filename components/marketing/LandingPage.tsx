@@ -134,14 +134,13 @@ export default function LandingPage() {
               Let Your Personal Productivity Robot Take You To The Promised Land.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
-              If you&apos;re struggling to get stuff done, you probably aren&apos;t yet aware your day is won or lost
-              before it even starts. Prep is EVERYTHING (literally), but there&apos;s a very specific way to do it.
-              Most people <em>start</em> working by figuring out what to do, but if they do this, they already lost,
-              because their energy is being used to move stuff around, not push the most important thing forward.
-              7-figure entrepreneurs already know. They&apos;ve prepped. And that&apos;s exactly what your bot helps you
-              do. Your bot does that repetitive thinking for you &amp; walks you through your organizational/prep
-              process daily so you end up, the night before, with 1 thing ready for tomorrow: your single most
-              important task. Zero friction.
+              Your day is won or lost before it starts. Most people waste their energy deciding what to do instead of
+              doing it. High performers know this — which is why they prep the night before.{' '}
+              <span className="underline decoration-slate-900 decoration-2 underline-offset-[3px] text-slate-900">
+                Your entire day is won or lost in your prep.
+              </span>{' '}
+              And that&apos;s what your bot does: it guides you through a quick daily planning process so you end each
+              day with one thing ready for tomorrow — your single most important task. Zero friction.
             </p>
           </div>
 
