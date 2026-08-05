@@ -388,321 +388,9 @@ export default function LandingPage() {
             </span>
             . It&apos;s been won before it even started.
           </p>
-          <div className="mx-auto mt-8 max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-8 text-center shadow-sm sm:px-10 sm:py-10">
-            <div className="space-y-6 text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
-              <p>
-                while everyone you know is spending their &ldquo;best energy of the day&rdquo; figuring out WHAT to do
-                (which means that day is already lost), you&apos;ve already done the prep and know exactly what
-                you&apos;re doing. You&apos;re now able to use your best energy of the day on stuff that{' '}
-                <em>actually</em> moves your life forward consistently. And run this process out for even 1 month, and
-                you&apos;re getting ahead &amp; speeding by of everyone you know. And the best part? It&apos;s not magic
-                (like they think it will be while they wonder WTF got into you). It&apos;s just a repeatable SYSTEM,
-                that you&apos;re following, just like 7-figure entrepreneurs do.
-              </p>
-            </div>
-          </div>
         </div>
       </section>
 
-      <section className="border-t border-slate-200 pb-14 pt-12 sm:pb-20 sm:pt-16">
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-          <div className="mb-12 text-center">
-            <Image
-              src="/marketing/daywinner-bot-flying.png"
-              alt="Daywinner bot organizing for you while you print cash — stick figure on laptop riding the flying bot"
-              width={1513}
-              height={1024}
-              className="mx-auto mb-4 h-auto w-full max-w-[260px] sm:max-w-[320px]"
-              unoptimized
-            />
-            <p className="mb-3 text-sm text-slate-500 sm:text-[15px]">
-              ADHD brain &amp; have trouble organizing?
-            </p>
-            <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
-              Let Your Personal Productivity Robot Take You To The Promised Land.
-            </h2>
-            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
-              Your day is won or lost before it starts. Most people begin working (and lose their day) by figuring what
-              to do instead of <em>actually</em> doing it. High performers know this — which is why they prep the night
-              before. That&apos;s what your bot does: it guides you through a quick daily planning process (linked to
-              your personal dashboard) so you end each day with one thing ready for tomorrow — your single most
-              important task. Zero friction.
-            </p>
-          </div>
-
-          <div className="mb-8 text-center">
-            <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-              Daywinner bot is{' '}
-              <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 text-white">
-                4 things
-              </span>{' '}
-              in 1
-            </h3>
-          </div>
-
-          <ol className="mx-auto w-full max-w-xl space-y-0 divide-y divide-slate-200 border-y border-slate-200 text-left">
-            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
-              >
-                01
-              </span>
-              <div>
-                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
-                  Productivity dashboard
-                </p>
-                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
-                  Your work homebase — where all of your most important tasks live.
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
-              >
-                02
-              </span>
-              <div>
-                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
-                  Digital work session timer
-                </p>
-                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
-                  Track specific tasks &amp; see exactly how long you worked for.
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
-              >
-                03
-              </span>
-              <div>
-                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
-                  Website blocker
-                </p>
-                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
-                  Blocks any website you want during your focus sessions.
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
-              >
-                04
-              </span>
-              <div>
-                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
-                  Entrepreneur workflows
-                </p>
-                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
-                  The same flows 7-figure entrepreneurs use to find their most important task, destroy
-                  resistance, and stay organized at the end of the day. You turn off your mind —
-                  Daywinner bot walks you through exactly what to do.
-                </p>
-              </div>
-            </li>
-          </ol>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-          <div className="mb-12 w-full max-w-2xl text-center">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The problem</p>
-            <h2 className="text-[1.85rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.5rem] sm:leading-[1.15]">
-              You&apos;re Not Undisciplined. The World&apos;s Most Addictive Thing Ever Created (Social Media) Is
-              Accessible On The Device That You&apos;re Supposed To Get Stuff Done With. Which Is Pretty Insane If You
-              Think About It. This Is The 1st Thing Daywinner Bot Fixes.
-            </h2>
-            <Image
-              src="/marketing/focus-session-branded.jpg"
-              alt="Focus session active — add any distracting website to your block list and Daywinner blocks it for you"
-              width={1400}
-              height={1000}
-              className="mx-auto mt-8 h-auto w-full max-w-lg"
-              unoptimized
-            />
-          </div>
-
-          <div className="mb-14 w-full max-w-2xl text-center">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The fix</p>
-            <p className="mb-6 text-lg leading-relaxed text-slate-700 sm:text-xl sm:leading-relaxed">
-              Daywinner bot is your personal robot that helps you win the day. And it does this by:
-            </p>
-            <ol className="mx-auto max-w-xl space-y-5 text-left">
-              <li className="flex gap-4">
-                <span
-                  aria-hidden
-                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
-                >
-                  01
-                </span>
-                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
-                  Providing you with a work homebase (your productivity dashboard) that exists as a normal tab in your
-                  browser (download nothing)
-                </p>
-              </li>
-              <li className="flex gap-4">
-                <span
-                  aria-hidden
-                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
-                >
-                  02
-                </span>
-                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
-                  Blocking out every social media site / any site you want to block that distracts you (with the click
-                  of a button)
-                </p>
-              </li>
-              <li className="flex gap-4">
-                <span
-                  aria-hidden
-                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
-                >
-                  03
-                </span>
-                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
-                  Helps you set up your &ldquo;most important task&rdquo; like 7-figure entrepreneurs do so all
-                  that&apos;s left is you &amp; the most important thing you need to do. Zero other distractions.
-                </p>
-              </li>
-            </ol>
-          </div>
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
-          </h2>
-          <blockquote className="mb-5 max-w-2xl text-base italic leading-relaxed text-slate-600 sm:text-lg">
-            &ldquo;my entire workflow consists of google docs, claude, and my daywinner bot. it&apos;s simpler than ever
-            before and I am getting 10x done what I used to get done. Having daywinner as my work homebase changed the
-            game for me because i can just isolate my most important task, put a timer on it, and block every
-            distraction. I wish I had this 10 years ago. I&apos;d be a f****** billionaire&rdquo;
-          </blockquote>
-          <p className="mb-4 max-w-2xl text-lg leading-relaxed text-slate-600">
-            Daywinner bot is a productivity dashboard that functions as your &ldquo;work homebase&rdquo; — a tab in
-            your browser that helps you organize &amp; finish the tasks you need to do to hit your first six figures
-            (or make your first $1 online), finally build &amp; launch the project you&apos;ve been sitting on, pass
-            any exam, or land the remote job you actually want.
-          </p>
-          <p className="mb-5 max-w-2xl text-lg leading-relaxed text-slate-600">
-            Here&apos;s the key: You don&apos;t have a discipline problem — you just have no structure. Until now.
-            Daywinner bot helps you build your tasks and work sessions the way 7-figure entrepreneurs run theirs while
-            blocking your most distracting websites, so you get sh*t done and make more progress in 30 days than you
-            have in the last 5 years.
-          </p>
-          <Image
-            src="/marketing/dashboard.jpg"
-            alt="Daywinner bot dashboard"
-            width={1024}
-            height={522}
-            className="mb-8 h-auto w-full"
-            unoptimized
-            priority
-          />
-
-          <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href={ctaHref}
-              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-slate-800"
-            >
-              {ctaLabel}
-            </Link>
-            {paywall ? (
-              <span className="text-sm text-slate-500">Subscribe first, then create your account</span>
-            ) : paywallOff ? (
-              <span className="text-sm text-slate-500">
-                Paywall off for testing — create an account to try the full flow
-              </span>
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-10 shadow-sm sm:px-12 sm:py-14">
-          <div className="mb-8 space-y-1 border-b border-slate-200 pb-6 font-mono text-sm text-slate-700">
-            <p>
-              <span className="text-slate-500">FROM:</span> productivity tool hater
-            </p>
-            <p>
-              <span className="text-slate-500">RE:</span> Wait, daywinner bot actually works?
-            </p>
-          </div>
-          <div className="space-y-6 text-left text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
-            <p>
-              Hey — it&apos;s me, The OG productivity tool hater. I genuinely hate all productivity tools.
-            </p>
-            <p>Why?</p>
-            <p>
-              Because every productivity tool that&apos;s ever been put out is fake &amp; doesn&apos;t actually work.
-              They all &ldquo;sound good&rdquo; but don&apos;t actually do anything and you aren&apos;t actually getting
-              anything done.
-            </p>
-            <p>
-              But your daywinner bot is different. Your daywinner bot isn&apos;t just a random productivity tool that
-              says &ldquo;good luck&rdquo;. It has <em>actual</em> workflows, ACTUAL systems for you to follow. It will
-              walk you through so you can create your task list.
-            </p>
-            <p>
-              Have ADHD and have trouble staying organized with all your stuff in 1,000 different places? Your bot&apos;s
-              &ldquo;wind down flow&rdquo; walks you through a simple process to stay organized, every single evening.
-            </p>
-
-            <hr className="my-10 border-slate-300" />
-
-            <p>
-              The entire productivity industry is fake. Every productivity tool that&apos;s ever been created doesn&apos;t
-              actually work. They all &ldquo;sound good&rdquo; but don&apos;t actually do anything, and you end up not
-              actually getting more stuff done.
-            </p>
-            <p>
-              And why is this so? The reason is because getting stuff done requires elimination/removal/prioritization,
-              not ADDING a bunch of unimportant stuff. Getting more stuff done = <em>less</em> stuff in your way, not
-              adding MORE.
-            </p>
-            <p>
-              And this is why your daywinner bot is different. Your daywinner bot isn&apos;t just a random productivity
-              tool that says &ldquo;good luck&rdquo;. It has <em>actual</em> workflows, ACTUAL systems for you to follow,
-              that help you remove everything that isn&apos;t what you need to be doing. It strips away everything that
-              isn&apos;t your single most important task. And that&apos;s exactly why it looks like it came from the early
-              2000&apos;s. And it even helps you think through things so you know you&apos;re doing the right tasks. It
-              will walk you through the same question-sequences that 7-figure entrepreneurs ask themselves so you can
-              create your task list just like them.
-            </p>
-            <p className="min-h-[16rem] border-t border-dashed border-slate-300 pt-6 italic text-slate-400">
-              (keep writing…)
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-10 shadow-sm sm:px-12 sm:py-12">
-          <div className="space-y-6 text-left text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
-            <p className="text-xl font-bold text-slate-900 sm:text-2xl">Now...</p>
-            <p>
-              simplifying your entire task list down to the 1 most important task (and then blocking all distraction to
-              actually do it) is only half the battle. The other half is making sure you &ldquo;live in reality&rdquo;
-              and this is where 99% of people mess up.
-            </p>
-            <p>
-              Your mind will trick you. It will say &ldquo;we were working so hard!&rdquo; when you actually did
-              nothing. It will say &ldquo;we worked for 8 hours today!!&rdquo; when you did 15 minutes of{' '}
-              <em>actual work</em>, and then procrastinated for the rest.
-            </p>
-            <p>
-              And this is where daywinner bot shines. its end-of-day workflow gets you to reflect on what you{' '}
-              <em>actually</em> did, and makes sure it was the absolute best use of your time by asking 1 simple
-              question daily:
-            </p>
-          </div>
-        </div>
-      </section>
 
       <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
@@ -1084,6 +772,323 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+          <div className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-8 text-center shadow-sm sm:px-10 sm:py-10">
+            <div className="space-y-6 text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
+              <p>
+                while everyone you know is spending their &ldquo;best energy of the day&rdquo; figuring out WHAT to do
+                (which means that day is already lost), you&apos;ve already done the prep and know exactly what
+                you&apos;re doing. You&apos;re now able to use your best energy of the day on stuff that{' '}
+                <em>actually</em> moves your life forward consistently. And run this process out for even 1 month, and
+                you&apos;re getting ahead &amp; speeding by of everyone you know. And the best part? It&apos;s not magic
+                (like they think it will be while they wonder WTF got into you). It&apos;s just a repeatable SYSTEM,
+                that you&apos;re following, just like 7-figure entrepreneurs do.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 pb-14 pt-12 sm:pb-20 sm:pt-16">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+          <div className="mb-12 text-center">
+            <Image
+              src="/marketing/daywinner-bot-flying.png"
+              alt="Daywinner bot organizing for you while you print cash — stick figure on laptop riding the flying bot"
+              width={1513}
+              height={1024}
+              className="mx-auto mb-4 h-auto w-full max-w-[260px] sm:max-w-[320px]"
+              unoptimized
+            />
+            <p className="mb-3 text-sm text-slate-500 sm:text-[15px]">
+              ADHD brain &amp; have trouble organizing?
+            </p>
+            <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
+              Let Your Personal Productivity Robot Take You To The Promised Land.
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
+              Your day is won or lost before it starts. Most people begin working (and lose their day) by figuring what
+              to do instead of <em>actually</em> doing it. High performers know this — which is why they prep the night
+              before. That&apos;s what your bot does: it guides you through a quick daily planning process (linked to
+              your personal dashboard) so you end each day with one thing ready for tomorrow — your single most
+              important task. Zero friction.
+            </p>
+          </div>
+
+          <div className="mb-8 text-center">
+            <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+              Daywinner bot is{' '}
+              <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 text-white">
+                4 things
+              </span>{' '}
+              in 1
+            </h3>
+          </div>
+
+          <ol className="mx-auto w-full max-w-xl space-y-0 divide-y divide-slate-200 border-y border-slate-200 text-left">
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                01
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Productivity dashboard
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  Your work homebase — where all of your most important tasks live.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                02
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Digital work session timer
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  Track specific tasks &amp; see exactly how long you worked for.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                03
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Website blocker
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  Blocks any website you want during your focus sessions.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                04
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Entrepreneur workflows
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  The same flows 7-figure entrepreneurs use to find their most important task, destroy
+                  resistance, and stay organized at the end of the day. You turn off your mind —
+                  Daywinner bot walks you through exactly what to do.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+          <div className="mb-12 w-full max-w-2xl text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The problem</p>
+            <h2 className="text-[1.85rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.5rem] sm:leading-[1.15]">
+              You&apos;re Not Undisciplined. The World&apos;s Most Addictive Thing Ever Created (Social Media) Is
+              Accessible On The Device That You&apos;re Supposed To Get Stuff Done With. Which Is Pretty Insane If You
+              Think About It. This Is The 1st Thing Daywinner Bot Fixes.
+            </h2>
+            <Image
+              src="/marketing/focus-session-branded.jpg"
+              alt="Focus session active — add any distracting website to your block list and Daywinner blocks it for you"
+              width={1400}
+              height={1000}
+              className="mx-auto mt-8 h-auto w-full max-w-lg"
+              unoptimized
+            />
+          </div>
+
+          <div className="mb-14 w-full max-w-2xl text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The fix</p>
+            <p className="mb-6 text-lg leading-relaxed text-slate-700 sm:text-xl sm:leading-relaxed">
+              Daywinner bot is your personal robot that helps you win the day. And it does this by:
+            </p>
+            <ol className="mx-auto max-w-xl space-y-5 text-left">
+              <li className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
+                >
+                  01
+                </span>
+                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+                  Providing you with a work homebase (your productivity dashboard) that exists as a normal tab in your
+                  browser (download nothing)
+                </p>
+              </li>
+              <li className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
+                >
+                  02
+                </span>
+                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+                  Blocking out every social media site / any site you want to block that distracts you (with the click
+                  of a button)
+                </p>
+              </li>
+              <li className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="mt-0.5 w-7 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400"
+                >
+                  03
+                </span>
+                <p className="text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+                  Helps you set up your &ldquo;most important task&rdquo; like 7-figure entrepreneurs do so all
+                  that&apos;s left is you &amp; the most important thing you need to do. Zero other distractions.
+                </p>
+              </li>
+            </ol>
+          </div>
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Fighter Pilots Have Their Cockpit. You Have Your Daywinner Bot.
+          </h2>
+          <blockquote className="mb-5 max-w-2xl text-base italic leading-relaxed text-slate-600 sm:text-lg">
+            &ldquo;my entire workflow consists of google docs, claude, and my daywinner bot. it&apos;s simpler than ever
+            before and I am getting 10x done what I used to get done. Having daywinner as my work homebase changed the
+            game for me because i can just isolate my most important task, put a timer on it, and block every
+            distraction. I wish I had this 10 years ago. I&apos;d be a f****** billionaire&rdquo;
+          </blockquote>
+          <p className="mb-4 max-w-2xl text-lg leading-relaxed text-slate-600">
+            Daywinner bot is a productivity dashboard that functions as your &ldquo;work homebase&rdquo; — a tab in
+            your browser that helps you organize &amp; finish the tasks you need to do to hit your first six figures
+            (or make your first $1 online), finally build &amp; launch the project you&apos;ve been sitting on, pass
+            any exam, or land the remote job you actually want.
+          </p>
+          <p className="mb-5 max-w-2xl text-lg leading-relaxed text-slate-600">
+            Here&apos;s the key: You don&apos;t have a discipline problem — you just have no structure. Until now.
+            Daywinner bot helps you build your tasks and work sessions the way 7-figure entrepreneurs run theirs while
+            blocking your most distracting websites, so you get sh*t done and make more progress in 30 days than you
+            have in the last 5 years.
+          </p>
+          <Image
+            src="/marketing/dashboard.jpg"
+            alt="Daywinner bot dashboard"
+            width={1024}
+            height={522}
+            className="mb-8 h-auto w-full"
+            unoptimized
+            priority
+          />
+
+          <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href={ctaHref}
+              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-slate-800"
+            >
+              {ctaLabel}
+            </Link>
+            {paywall ? (
+              <span className="text-sm text-slate-500">Subscribe first, then create your account</span>
+            ) : paywallOff ? (
+              <span className="text-sm text-slate-500">
+                Paywall off for testing — create an account to try the full flow
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-10 shadow-sm sm:px-12 sm:py-14">
+          <div className="mb-8 space-y-1 border-b border-slate-200 pb-6 font-mono text-sm text-slate-700">
+            <p>
+              <span className="text-slate-500">FROM:</span> productivity tool hater
+            </p>
+            <p>
+              <span className="text-slate-500">RE:</span> Wait, daywinner bot actually works?
+            </p>
+          </div>
+          <div className="space-y-6 text-left text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
+            <p>
+              Hey — it&apos;s me, The OG productivity tool hater. I genuinely hate all productivity tools.
+            </p>
+            <p>Why?</p>
+            <p>
+              Because every productivity tool that&apos;s ever been put out is fake &amp; doesn&apos;t actually work.
+              They all &ldquo;sound good&rdquo; but don&apos;t actually do anything and you aren&apos;t actually getting
+              anything done.
+            </p>
+            <p>
+              But your daywinner bot is different. Your daywinner bot isn&apos;t just a random productivity tool that
+              says &ldquo;good luck&rdquo;. It has <em>actual</em> workflows, ACTUAL systems for you to follow. It will
+              walk you through so you can create your task list.
+            </p>
+            <p>
+              Have ADHD and have trouble staying organized with all your stuff in 1,000 different places? Your bot&apos;s
+              &ldquo;wind down flow&rdquo; walks you through a simple process to stay organized, every single evening.
+            </p>
+
+            <hr className="my-10 border-slate-300" />
+
+            <p>
+              The entire productivity industry is fake. Every productivity tool that&apos;s ever been created doesn&apos;t
+              actually work. They all &ldquo;sound good&rdquo; but don&apos;t actually do anything, and you end up not
+              actually getting more stuff done.
+            </p>
+            <p>
+              And why is this so? The reason is because getting stuff done requires elimination/removal/prioritization,
+              not ADDING a bunch of unimportant stuff. Getting more stuff done = <em>less</em> stuff in your way, not
+              adding MORE.
+            </p>
+            <p>
+              And this is why your daywinner bot is different. Your daywinner bot isn&apos;t just a random productivity
+              tool that says &ldquo;good luck&rdquo;. It has <em>actual</em> workflows, ACTUAL systems for you to follow,
+              that help you remove everything that isn&apos;t what you need to be doing. It strips away everything that
+              isn&apos;t your single most important task. And that&apos;s exactly why it looks like it came from the early
+              2000&apos;s. And it even helps you think through things so you know you&apos;re doing the right tasks. It
+              will walk you through the same question-sequences that 7-figure entrepreneurs ask themselves so you can
+              create your task list just like them.
+            </p>
+            <p className="min-h-[16rem] border-t border-dashed border-slate-300 pt-6 italic text-slate-400">
+              (keep writing…)
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="mx-auto max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-10 shadow-sm sm:px-12 sm:py-12">
+          <div className="space-y-6 text-left text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
+            <p className="text-xl font-bold text-slate-900 sm:text-2xl">Now...</p>
+            <p>
+              simplifying your entire task list down to the 1 most important task (and then blocking all distraction to
+              actually do it) is only half the battle. The other half is making sure you &ldquo;live in reality&rdquo;
+              and this is where 99% of people mess up.
+            </p>
+            <p>
+              Your mind will trick you. It will say &ldquo;we were working so hard!&rdquo; when you actually did
+              nothing. It will say &ldquo;we worked for 8 hours today!!&rdquo; when you did 15 minutes of{' '}
+              <em>actual work</em>, and then procrastinated for the rest.
+            </p>
+            <p>
+              And this is where daywinner bot shines. its end-of-day workflow gets you to reflect on what you{' '}
+              <em>actually</em> did, and makes sure it was the absolute best use of your time by asking 1 simple
+              question daily:
+            </p>
+          </div>
+        </div>
+      </section>
       <section className="border-t border-slate-200 py-14 sm:py-20">
         <div className="mx-auto w-full max-w-2xl">
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
