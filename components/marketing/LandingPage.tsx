@@ -277,7 +277,7 @@ export default function LandingPage() {
             unoptimized
           />
           <p className="mb-4 text-base font-semibold tracking-tight text-slate-600 sm:text-lg">
-            introducing...
+            introducing... your secret weapon:
           </p>
           <div className="relative mb-8 w-full max-w-xl">
             <div className="overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-white px-6 py-6 shadow-[6px_6px_0_0_#ef4444] sm:px-10 sm:py-7">
