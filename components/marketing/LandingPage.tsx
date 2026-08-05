@@ -147,7 +147,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-t border-slate-200 py-3 sm:py-4">
+      <section className="border-t border-slate-200 py-5 sm:py-6">
         <div className="flex flex-col items-center text-center">
           <h2 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             HERE&apos;S HOW IT WORKS:
@@ -155,9 +155,14 @@ export default function LandingPage() {
           <span aria-hidden className="mt-1.5 text-5xl font-bold leading-none text-red-500 sm:text-6xl">
             ↓
           </span>
-          <p className="mt-3 text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Phase 1: your workday
-          </p>
+          <div className="mt-5 inline-flex min-w-[min(100%,22rem)] flex-col items-center rounded-2xl bg-slate-900 px-8 py-5 text-white shadow-md sm:min-w-[28rem] sm:px-12 sm:py-6">
+            <span className="font-mono text-xs font-bold tracking-[0.25em] text-red-400 sm:text-sm">
+              PHASE 01
+            </span>
+            <span className="mt-1.5 text-2xl font-bold leading-none tracking-tight sm:text-4xl">
+              your workday
+            </span>
+          </div>
         </div>
       </section>
 
@@ -267,9 +272,14 @@ export default function LandingPage() {
 
       <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
-          <p className="mb-4 text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Phase 2: your prep for tomorrow
-          </p>
+          <div className="mb-6 inline-flex min-w-[min(100%,22rem)] flex-col items-center rounded-2xl bg-slate-900 px-8 py-5 text-white shadow-md sm:min-w-[28rem] sm:px-12 sm:py-6">
+            <span className="font-mono text-xs font-bold tracking-[0.25em] text-red-400 sm:text-sm">
+              PHASE 02
+            </span>
+            <span className="mt-1.5 text-2xl font-bold leading-none tracking-tight sm:text-4xl">
+              your prep for tomorrow
+            </span>
+          </div>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Work done for the day? Your wind-down flow begins. And this is what separates high-performers from the
             average person: reflection &amp; preparation for the next day.
