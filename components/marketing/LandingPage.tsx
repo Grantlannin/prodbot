@@ -152,15 +152,25 @@ export default function LandingPage() {
           <h2 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             HERE&apos;S HOW IT WORKS:
           </h2>
-          <span aria-hidden className="mt-1.5 text-5xl font-bold leading-none text-red-500 sm:text-6xl">
+          <p className="mt-3 text-base font-semibold text-slate-700 sm:text-lg">There are 2 phases.</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-base font-bold tracking-tight text-slate-900 sm:gap-3 sm:text-xl">
+            <span className="rounded-lg bg-slate-900 px-3 py-1.5 text-white sm:px-4">Current workday</span>
+            <span aria-hidden className="text-red-500">
+              &gt;
+            </span>
+            <span className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-slate-500 sm:px-4">
+              Prep for tomorrow
+            </span>
+          </div>
+          <span aria-hidden className="mt-4 text-5xl font-bold leading-none text-red-500 sm:text-6xl">
             ↓
           </span>
-          <div className="mt-5 inline-flex min-w-[min(100%,22rem)] flex-col items-center rounded-2xl bg-slate-900 px-8 py-5 text-white shadow-md sm:min-w-[28rem] sm:px-12 sm:py-6">
+          <div className="mt-4 inline-flex min-w-[min(100%,22rem)] flex-col items-center rounded-2xl bg-slate-900 px-8 py-5 text-white shadow-md sm:min-w-[28rem] sm:px-12 sm:py-6">
             <span className="font-mono text-xs font-bold tracking-[0.25em] text-red-400 sm:text-sm">
-              PHASE 01
+              ILLUSTRATING
             </span>
             <span className="mt-1.5 text-2xl font-bold leading-none tracking-tight sm:text-4xl">
-              your workday
+              Current workday
             </span>
           </div>
         </div>
@@ -274,10 +284,10 @@ export default function LandingPage() {
         <div className="flex flex-col items-center text-center">
           <div className="mb-6 inline-flex min-w-[min(100%,22rem)] flex-col items-center rounded-2xl bg-slate-900 px-8 py-5 text-white shadow-md sm:min-w-[28rem] sm:px-12 sm:py-6">
             <span className="font-mono text-xs font-bold tracking-[0.25em] text-red-400 sm:text-sm">
-              PHASE 02
+              ILLUSTRATING
             </span>
             <span className="mt-1.5 text-2xl font-bold leading-none tracking-tight sm:text-4xl">
-              your prep for tomorrow
+              Prep for tomorrow
             </span>
           </div>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
