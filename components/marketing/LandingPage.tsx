@@ -278,13 +278,21 @@ export default function LandingPage() {
           <p className="mb-6 max-w-xl text-sm leading-snug text-slate-500 sm:text-base">
             (a godsend for true ADHDers like me)
           </p>
+          <p className="mb-3 text-base font-semibold tracking-tight text-slate-600 sm:text-lg">
+            introducing...
+          </p>
+          <div className="mb-8 inline-flex max-w-xl flex-col items-center rounded-2xl bg-slate-900 px-8 py-5 text-white shadow-md sm:px-12 sm:py-6">
+            <span className="font-mono text-xs font-bold tracking-[0.25em] text-red-400 sm:text-sm">
+              NEW FLOW
+            </span>
+            <span className="mt-2 text-2xl font-bold leading-none tracking-tight sm:text-4xl">
+              The wind-down flow
+            </span>
+          </div>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             Most people just fill their day with busywork &amp; accomplish nothing... but your Daywinner bot simply
             doesn&apos;t allow that to happen.
           </p>
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Wind-down flow initiated:
-          </h2>
           <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             &ldquo;What Did You Get Done Today?&rdquo;
           </h2>
