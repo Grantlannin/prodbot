@@ -382,8 +382,8 @@ export default function LandingPage() {
           </div>
           <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             Boom - you&apos;ve just organized your dashboard &amp; &ldquo;tee&apos;d up&rdquo; tomorrow&apos;s
-            task like a 7-figure entrepreneur. Pair that with your social media blocker &amp; timer, and
-            you&apos;re about to{' '}
+            most important task like a 7-figure entrepreneur. Pair that with your social media blocker &amp; timer,
+            and you&apos;re about to{' '}
             <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
               WIN THE DAY
             </span>
