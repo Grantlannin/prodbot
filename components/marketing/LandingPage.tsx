@@ -267,8 +267,8 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 6: verify what you did wasn&apos;t busywork (productive procrastination), but actually moved your life
-            forward
+            Once finished with your work for the day, you then enter the &ldquo;wind down flow&rdquo; that does many
+            things for:
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
             Most people just fill their day with busywork &amp; accomplish nothing... but your Daywinner bot simply
