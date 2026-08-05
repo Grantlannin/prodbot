@@ -264,13 +264,10 @@ export default function LandingPage() {
 
       <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
-          <h2 className="mb-2 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+          <h2 className="mb-6 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Congrats. You just had a more productive 4 hours than you&apos;ve had in the past 4 years. But now, it&apos;s
             time for the real magic
           </h2>
-          <p className="mb-6 max-w-xl text-base italic leading-snug text-slate-500 sm:text-lg">
-            (a godsend for true ADHDers like me)
-          </p>
           <Image
             src="/marketing/daywinner-bot-salt-ws.png"
             alt="Daywinner bot sprinkling W's — now time for the real magic"
