@@ -372,8 +372,8 @@ export default function LandingPage() {
                 <Image
                   src="/marketing/tomorrow-task-list.png"
                   alt="Tomorrow's task list — finish onboarding"
-                  width={472}
-                  height={232}
+                  width={460}
+                  height={200}
                   className="h-auto w-[58%] max-w-[200px] rounded-lg bg-white"
                   unoptimized
                 />
