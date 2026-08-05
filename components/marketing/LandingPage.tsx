@@ -144,7 +144,8 @@ export default function LandingPage() {
 
           <div className="mb-14 text-center">
             <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-              Every Work Session Easily Tracked. Every Task Organized Effortlessly.
+              Choose your task &gt; Choose your focus session length (timed) &gt; Begin working &amp; keep distracting
+              sites blocked
             </h2>
             <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
               Every session is tracked by task, which not only shows you exactly what you worked on &amp; for how long —
