@@ -118,25 +118,24 @@ export default function LandingPage() {
 
       <section className="border-t border-slate-200 py-14 sm:py-20">
         <div className="mx-auto w-full max-w-2xl">
-          <div className="relative mb-12 text-center">
+          <div className="mb-12 text-center">
             <Image
               src="/marketing/daywinner-bot-logo.png"
               alt=""
               width={400}
               height={400}
-              className="pointer-events-none absolute -right-2 -top-4 h-auto w-[92px] opacity-[0.2] sm:-right-6 sm:-top-6 sm:w-[130px] sm:opacity-[0.25]"
+              className="mx-auto mb-5 h-auto w-[72px] opacity-70 sm:w-[88px]"
               unoptimized
               aria-hidden
             />
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-              What it is
-            </p>
-            <h2 className="relative text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
-              Let your personal productivity robot take you to the promise land.
+            <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
+              Let Your Personal Productivity Robot Take You To The Promise Land.
             </h2>
-            <p className="relative mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
-              Your bot does the repetitive thinking for you. It will walk you through your organizational process
-              daily so you end up with 1 thing ready for tomorrow: your single most important task.
+            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
+              Many people who struggle to get stuff done aren&apos;t aware the day is won before it even starts. Prep
+              is EVERYTHING, but there&apos;s a very specific way to do it. Your bot does that repetitive thinking for
+              you. It walks you through your organizational/prep process daily so you end up, the night before, with 1
+              thing ready for tomorrow: your single most important task. Zero friction.
             </p>
           </div>
 
