@@ -122,8 +122,8 @@ export default function LandingPage() {
             <Image
               src="/marketing/sessions-flow-steps.png"
               alt="Step 1 Choose your task > Step 2 set your work timer > Step 3 Begin working (with social media blocked)"
-              width={1479}
-              height={391}
+              width={2855}
+              height={295}
               className="mx-auto mb-5 h-auto w-full"
               unoptimized
               priority
