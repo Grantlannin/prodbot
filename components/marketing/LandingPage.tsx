@@ -256,9 +256,31 @@ export default function LandingPage() {
             alt="Work today and time by project tracking"
             width={1024}
             height={220}
-            className="h-auto w-full"
+            className="mb-8 h-auto w-full"
             unoptimized
           />
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            Most people just fill their day with busywork &amp; accomplish nothing... but your Daywinner bot simply
+            doesn&apos;t allow that to happen.
+          </p>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            Your bot asks you the golden question daily:
+          </p>
+          <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            &ldquo;What Did You Get Done Today?&rdquo;
+          </h2>
+          <Image
+            src="/marketing/wind-down.jpg"
+            alt="Wind down bot asking what you got done today"
+            width={942}
+            height={1024}
+            className="mb-6 h-auto w-full max-w-md sm:max-w-lg"
+            unoptimized
+          />
+          <p className="max-w-2xl text-base leading-relaxed text-slate-600">
+            There is nowhere to hide. Your bot will ask you what you got done, and you are able to see if it was the
+            most important thing, or if you just &ldquo;productively procrastinated&rdquo;
+          </p>
         </div>
       </section>
 
