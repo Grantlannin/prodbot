@@ -119,15 +119,47 @@ export default function LandingPage() {
       <section className="border-t border-slate-200 pb-14 pt-5 sm:pb-20 sm:pt-6">
         <div className="mx-auto w-full max-w-3xl">
           <div className="mb-14 text-center">
-            <Image
-              src="/marketing/sessions-flow-steps.png"
-              alt="Step 1 Choose your task > Step 2 set your work timer > Step 3 Begin working (with social media blocked)"
-              width={3012}
-              height={533}
-              className="mx-auto mb-5 h-auto w-full"
-              unoptimized
-              priority
-            />
+            <h2 className="mb-6 flex w-full items-start justify-center gap-2 sm:gap-4">
+              <span className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-green-500 sm:text-sm">
+                  Step 1
+                </span>
+                <span className="text-center text-[13px] font-bold leading-snug tracking-tight text-slate-900 sm:text-lg">
+                  Choose your task
+                </span>
+              </span>
+              <span
+                aria-hidden
+                className="mt-4 shrink-0 text-lg font-bold leading-none text-green-500 sm:mt-5 sm:text-2xl"
+              >
+                &gt;
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-green-500 sm:text-sm">
+                  Step 2
+                </span>
+                <span className="text-center text-[13px] font-bold leading-snug tracking-tight text-slate-900 sm:text-lg">
+                  set your work timer
+                </span>
+              </span>
+              <span
+                aria-hidden
+                className="mt-4 shrink-0 text-lg font-bold leading-none text-green-500 sm:mt-5 sm:text-2xl"
+              >
+                &gt;
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-green-500 sm:text-sm">
+                  Step 3
+                </span>
+                <span className="text-center text-[13px] font-bold leading-snug tracking-tight text-slate-900 sm:text-lg">
+                  Begin working
+                </span>
+                <span className="text-center text-[11px] font-semibold leading-snug text-slate-900 sm:text-sm">
+                  (with social media blocked)
+                </span>
+              </span>
+            </h2>
             <p className="mx-auto mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
               Every session is tracked by task, which not only shows you exactly what you worked on &amp; for how long —
               but also forces you to stay organized. Because if you don&apos;t organize, you can&apos;t start the
