@@ -260,19 +260,14 @@ export default function LandingPage() {
             unoptimized
           />
         </div>
+      </section>
 
-        <div className="flex justify-center py-2" aria-hidden>
-          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
-        </div>
-
+      <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
-          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Work done for the day? Now the real magic starts... and this is what separates high performers from the rest
-            of the population:
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Work done for the day? Your wind-down flow begins. And this is what separates high-performers from the
+            average person: reflection &amp; preparation for the next day.
           </h2>
-          <p className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Your wind-down flow.
-          </p>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
             Most people just fill their day with busywork &amp; accomplish nothing... but your Daywinner bot simply
             doesn&apos;t allow that to happen.
