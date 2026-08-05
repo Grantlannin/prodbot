@@ -405,17 +405,9 @@ export default function LandingPage() {
             className="mb-6 h-auto w-full max-w-xl sm:max-w-2xl"
             unoptimized
           />
-          <p className="mb-6 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+          <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             Your daywinner bot also has custom flows to help you in specific situations (that I personally use).
           </p>
-          <Image
-            src="/marketing/im-stuck-help-me-bot.png"
-            alt="I'm stuck, help me bot button in the Daywinner app"
-            width={957}
-            height={268}
-            className="mb-10 h-auto w-full max-w-3xl border-4 border-red-500"
-            unoptimized
-          />
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Trouble starting a task? The bot has an exact flow for that
           </h2>
