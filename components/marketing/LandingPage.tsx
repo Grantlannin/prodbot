@@ -226,9 +226,10 @@ export default function LandingPage() {
             lock&rdquo;
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Your distraction blocker blocks all distracting websites, and you can add as many as you want. During your
-            work session, you will be unable to access the sites you choose. Soft lock makes you wait 2 minutes for
-            access again, hard lock blocks it entirely until your work block is complete.
+            Block any distracting website you want. During your work session, you will be unable to access the sites you
+            choose until your timer hits zero. Soft lock makes you wait 2 minutes for access again (you&apos;ll usually
+            just start working more), &amp; hard lock &ldquo;locks you in&rdquo; &amp; blocks the sites entirely until
+            your work block is complete.
           </p>
           <Image
             src="/marketing/step4-lock.jpg"
