@@ -118,30 +118,6 @@ export default function LandingPage() {
 
       <section className="border-t border-slate-200 pb-14 pt-5 sm:pb-20 sm:pt-6">
         <div className="mx-auto w-full max-w-2xl">
-          <div className="mb-12 text-center">
-            <Image
-              src="/marketing/daywinner-bot-flying.png"
-              alt="Daywinner bot organizing for you while you print cash — stick figure on laptop riding the flying bot"
-              width={1513}
-              height={1024}
-              className="mx-auto mb-4 h-auto w-full max-w-[260px] sm:max-w-[320px]"
-              unoptimized
-            />
-            <p className="mb-3 text-sm text-slate-500 sm:text-[15px]">
-              ADHD brain &amp; have trouble organizing?
-            </p>
-            <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
-              Let Your Personal Productivity Robot Take You To The Promised Land.
-            </h2>
-            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
-              Your day is won or lost before it starts. Most people begin working (and lose their day) by figuring what
-              to do instead of <em>actually</em> doing it. High performers know this — which is why they prep the night
-              before. That&apos;s what your bot does: it guides you through a quick daily planning process (linked to
-              your personal dashboard) so you end each day with one thing ready for tomorrow — your single most
-              important task. Zero friction.
-            </p>
-          </div>
-
           <div className="mb-14 text-center">
             <h2 className="mb-4 overflow-x-auto text-center text-[12px] font-semibold leading-snug tracking-tight text-slate-900 sm:text-[13px]">
               <span className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:gap-2.5">
@@ -171,6 +147,30 @@ export default function LandingPage() {
               controls={false}
               aria-label="Daywinner dashboard with sessions tracked by task"
             />
+          </div>
+
+          <div className="mb-12 text-center">
+            <Image
+              src="/marketing/daywinner-bot-flying.png"
+              alt="Daywinner bot organizing for you while you print cash — stick figure on laptop riding the flying bot"
+              width={1513}
+              height={1024}
+              className="mx-auto mb-4 h-auto w-full max-w-[260px] sm:max-w-[320px]"
+              unoptimized
+            />
+            <p className="mb-3 text-sm text-slate-500 sm:text-[15px]">
+              ADHD brain &amp; have trouble organizing?
+            </p>
+            <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
+              Let Your Personal Productivity Robot Take You To The Promised Land.
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
+              Your day is won or lost before it starts. Most people begin working (and lose their day) by figuring what
+              to do instead of <em>actually</em> doing it. High performers know this — which is why they prep the night
+              before. That&apos;s what your bot does: it guides you through a quick daily planning process (linked to
+              your personal dashboard) so you end each day with one thing ready for tomorrow — your single most
+              important task. Zero friction.
+            </p>
           </div>
 
           <div className="mb-8 text-center">
