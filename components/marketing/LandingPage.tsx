@@ -133,7 +133,7 @@ export default function LandingPage() {
             <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
               Let Your Personal Productivity Robot Take You To The Promised Land.
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-slate-700 sm:text-xl sm:leading-relaxed">
+            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
               Your day is won or lost before it starts. Most people waste their &ldquo;best energy of the day&rdquo;
               deciding what to do instead of actually doing it. High performers know this — which is why they prep the
               night before. And that&apos;s what your bot does: it guides you through a quick daily planning process so
