@@ -149,11 +149,11 @@ export default function LandingPage() {
                 <span aria-hidden className="font-normal text-slate-400">
                   &gt;
                 </span>
-                <span>Choose your focus session length (timed)</span>
+                <span>set your work timer</span>
                 <span aria-hidden className="font-normal text-slate-400">
                   &gt;
                 </span>
-                <span>Begin working &amp; keep distracting sites blocked</span>
+                <span>Begin working (with social media blocked)</span>
               </span>
             </h2>
             <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
