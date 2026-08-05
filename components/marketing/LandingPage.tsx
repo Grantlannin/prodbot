@@ -120,11 +120,11 @@ export default function LandingPage() {
         <div className="mx-auto w-full max-w-2xl">
           <div className="mb-14 text-center">
             <Image
-              src="/marketing/sessions-flow-steps.svg"
+              src="/marketing/sessions-flow-steps.png"
               alt="Choose your task > set your work timer > Begin working (with social media blocked)"
-              width={920}
-              height={40}
-              className="mx-auto mb-5 h-auto w-full max-w-2xl"
+              width={1496}
+              height={89}
+              className="mx-auto mb-5 h-auto w-full max-w-xl"
               unoptimized
               priority
             />
