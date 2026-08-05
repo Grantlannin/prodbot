@@ -264,17 +264,20 @@ export default function LandingPage() {
 
       <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-6 inline-flex max-w-xl flex-col items-center rounded-2xl bg-slate-900 px-6 py-5 text-white shadow-md sm:px-10 sm:py-6">
-            <span className="font-mono text-xs font-bold tracking-[0.25em] text-red-400 sm:text-sm">
-              NEXT UP
-            </span>
-            <span className="mt-2 text-xl font-bold leading-snug tracking-tight sm:text-3xl">
-              now time for the real magic
-            </span>
-            <span className="mt-2 text-sm leading-snug text-slate-300 sm:text-base">
-              (a godsend for true ADHDers like me)
-            </span>
-          </div>
+          <Image
+            src="/marketing/daywinner-bot-salt-ws.png"
+            alt="Daywinner bot sprinkling W's — now time for the real magic"
+            width={1024}
+            height={1536}
+            className="mb-3 h-auto w-full max-w-[220px] sm:max-w-[280px]"
+            unoptimized
+          />
+          <p className="mb-1 max-w-xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
+            now time for the real magic
+          </p>
+          <p className="mb-6 max-w-xl text-sm leading-snug text-slate-500 sm:text-base">
+            (a godsend for true ADHDers like me)
+          </p>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             Most people just fill their day with busywork &amp; accomplish nothing... but your Daywinner bot simply
             doesn&apos;t allow that to happen.
