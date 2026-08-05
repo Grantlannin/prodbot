@@ -327,11 +327,6 @@ export default function LandingPage() {
             Your bot then puts you through a wind-down flow that forces you to stay organized &amp; prioritize the 1
             most important task for tomorrow (and it walks you through the whole thing, zero effort on your end)
           </h2>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            ...and then helps you choose the next important task for the following day (crucial for people with ADHD or
-            hyper-active minds, like me). Your bot will walk you through the exact process that 7-figure entrepreneurs
-            put themselves through to dominate everyone.
-          </p>
           <Image
             src="/marketing/wind-down-context.jpg"
             alt="Wind down flow adding context and organizing for tomorrow"
@@ -343,17 +338,67 @@ export default function LandingPage() {
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             ....And then when finished, what are you left with, before the day even starts tomorrow?
           </h2>
-          <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-[1.55] tracking-tight text-green-600 underline decoration-black decoration-[3px] decoration-skip-ink-none underline-offset-[0.18em] sm:text-4xl">
+          <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-[1.55] tracking-tight text-green-600 sm:text-4xl">
             The single most important task you need to do, already ready to go.
           </p>
-          <Image
-            src="/marketing/tomorrow-task-list.jpg"
-            alt="Tomorrow's task list ready after wind down"
-            width={1024}
-            height={723}
-            className="mb-5 h-auto w-full max-w-md"
-            unoptimized
-          />
+          <div className="relative mb-8 flex w-full max-w-md items-center justify-center px-8 py-8 sm:px-12 sm:py-10">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-5xl font-bold leading-none text-green-600 sm:text-6xl"
+            >
+              →
+            </span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-5xl font-bold leading-none text-green-600 sm:text-6xl"
+            >
+              ←
+            </span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 text-5xl font-bold leading-none text-green-600 sm:text-6xl"
+            >
+              ↓
+            </span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 text-5xl font-bold leading-none text-green-600 sm:text-6xl"
+            >
+              ↑
+            </span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-2 top-2 rotate-45 text-4xl font-bold leading-none text-green-600 sm:left-4 sm:top-4 sm:text-5xl"
+            >
+              →
+            </span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute right-2 top-2 -rotate-45 text-4xl font-bold leading-none text-green-600 sm:right-4 sm:top-4 sm:text-5xl"
+            >
+              ←
+            </span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute bottom-2 left-2 -rotate-45 text-4xl font-bold leading-none text-green-600 sm:bottom-4 sm:left-4 sm:text-5xl"
+            >
+              →
+            </span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute bottom-2 right-2 rotate-45 text-4xl font-bold leading-none text-green-600 sm:bottom-4 sm:right-4 sm:text-5xl"
+            >
+              ←
+            </span>
+            <Image
+              src="/marketing/tomorrow-task-list.png"
+              alt="Tomorrow's task list ready after wind down — finish onboarding"
+              width={565}
+              height={452}
+              className="relative z-10 h-auto w-full max-w-[260px] rounded-lg sm:max-w-[300px]"
+              unoptimized
+            />
+          </div>
           <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             you&apos;ve just &ldquo;tee&apos;d up&rdquo; tomorrow&apos;s work session like a 7-figure entrepreneur. Pair
             that with your social media blocker &amp; timer, and you&apos;re about to{' '}
