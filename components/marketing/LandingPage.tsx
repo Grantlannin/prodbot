@@ -395,8 +395,7 @@ export default function LandingPage() {
       <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-8 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            The only other possible spot you can get stuck with your Bot is before-the-task resistance. Your Daywinner
-            bot has a flow for that.
+            your daywinner bot also has custom flows to help you in specific situations (that I personally use)
           </h2>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Trouble starting a task? The bot has an exact flow for that
