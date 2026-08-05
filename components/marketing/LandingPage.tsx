@@ -459,9 +459,12 @@ export default function LandingPage() {
         </div>
 
         <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Let your bot help you tee up the most important task that will actually move for you forward
           </h2>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            That gets automatically linked to your tracker, ready to begin.
+          </p>
           <Image
             src="/marketing/organize-flow.jpg"
             alt="Bot teeing up the most important task"
