@@ -144,109 +144,6 @@ export default function LandingPage() {
               session.
             </p>
           </div>
-
-          <div className="mb-12 text-center">
-            <Image
-              src="/marketing/daywinner-bot-flying.png"
-              alt="Daywinner bot organizing for you while you print cash — stick figure on laptop riding the flying bot"
-              width={1513}
-              height={1024}
-              className="mx-auto mb-4 h-auto w-full max-w-[260px] sm:max-w-[320px]"
-              unoptimized
-            />
-            <p className="mb-3 text-sm text-slate-500 sm:text-[15px]">
-              ADHD brain &amp; have trouble organizing?
-            </p>
-            <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
-              Let Your Personal Productivity Robot Take You To The Promised Land.
-            </h2>
-            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
-              Your day is won or lost before it starts. Most people begin working (and lose their day) by figuring what
-              to do instead of <em>actually</em> doing it. High performers know this — which is why they prep the night
-              before. That&apos;s what your bot does: it guides you through a quick daily planning process (linked to
-              your personal dashboard) so you end each day with one thing ready for tomorrow — your single most
-              important task. Zero friction.
-            </p>
-          </div>
-
-          <div className="mb-8 text-center">
-            <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-              Daywinner bot is{' '}
-              <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 text-white">
-                4 things
-              </span>{' '}
-              in 1
-            </h3>
-          </div>
-
-          <ol className="space-y-0 divide-y divide-slate-200 border-y border-slate-200">
-            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
-              >
-                01
-              </span>
-              <div>
-                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
-                  Productivity dashboard
-                </p>
-                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
-                  Your work homebase — where all of your most important tasks live.
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
-              >
-                02
-              </span>
-              <div>
-                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
-                  Digital work session timer
-                </p>
-                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
-                  Track specific tasks &amp; see exactly how long you worked for.
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
-              >
-                03
-              </span>
-              <div>
-                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
-                  Website blocker
-                </p>
-                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
-                  Blocks any website you want during your focus sessions.
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
-              >
-                04
-              </span>
-              <div>
-                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
-                  Entrepreneur workflows
-                </p>
-                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
-                  The same flows 7-figure entrepreneurs use to find their most important task, destroy
-                  resistance, and stay organized at the end of the day. You turn off your mind —
-                  Daywinner bot walks you through exactly what to do.
-                </p>
-              </div>
-            </li>
-          </ol>
         </div>
       </section>
 
@@ -353,6 +250,113 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 pb-14 pt-12 sm:pb-20 sm:pt-16">
+        <div className="mx-auto w-full max-w-3xl">
+          <div className="mb-12 text-center">
+            <Image
+              src="/marketing/daywinner-bot-flying.png"
+              alt="Daywinner bot organizing for you while you print cash — stick figure on laptop riding the flying bot"
+              width={1513}
+              height={1024}
+              className="mx-auto mb-4 h-auto w-full max-w-[260px] sm:max-w-[320px]"
+              unoptimized
+            />
+            <p className="mb-3 text-sm text-slate-500 sm:text-[15px]">
+              ADHD brain &amp; have trouble organizing?
+            </p>
+            <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
+              Let Your Personal Productivity Robot Take You To The Promised Land.
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
+              Your day is won or lost before it starts. Most people begin working (and lose their day) by figuring what
+              to do instead of <em>actually</em> doing it. High performers know this — which is why they prep the night
+              before. That&apos;s what your bot does: it guides you through a quick daily planning process (linked to
+              your personal dashboard) so you end each day with one thing ready for tomorrow — your single most
+              important task. Zero friction.
+            </p>
+          </div>
+
+          <div className="mb-8 text-center">
+            <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+              Daywinner bot is{' '}
+              <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 text-white">
+                4 things
+              </span>{' '}
+              in 1
+            </h3>
+          </div>
+
+          <ol className="space-y-0 divide-y divide-slate-200 border-y border-slate-200">
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                01
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Productivity dashboard
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  Your work homebase — where all of your most important tasks live.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                02
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Digital work session timer
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  Track specific tasks &amp; see exactly how long you worked for.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                03
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Website blocker
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  Blocks any website you want during your focus sessions.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 font-mono text-sm font-bold text-white sm:h-11 sm:w-11 sm:text-base"
+              >
+                04
+              </span>
+              <div>
+                <p className="mb-1 text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  Entrepreneur workflows
+                </p>
+                <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base sm:leading-relaxed">
+                  The same flows 7-figure entrepreneurs use to find their most important task, destroy
+                  resistance, and stay organized at the end of the day. You turn off your mind —
+                  Daywinner bot walks you through exactly what to do.
+                </p>
+              </div>
+            </li>
+          </ol>
         </div>
       </section>
 
