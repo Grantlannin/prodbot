@@ -118,76 +118,36 @@ export default function LandingPage() {
 
       <section className="border-t border-slate-200 py-14 sm:py-20">
         <div className="mx-auto w-full max-w-2xl">
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 bg-slate-900 px-6 py-5 sm:px-10 sm:py-6">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                From the founder
-              </p>
-              <h2 className="text-xl font-bold leading-snug tracking-tight text-white sm:text-2xl sm:leading-snug">
-                Built by a guy with &ldquo;super ADHD&rdquo; for people who want to get more sh*t done
-              </h2>
-            </div>
-
-            <div className="space-y-5 px-6 py-8 text-left text-[1.05rem] leading-[1.8] text-slate-700 sm:space-y-6 sm:px-10 sm:py-10 sm:text-lg sm:leading-[1.85]">
-              <p>
-                Hey, it&apos;s Grant. I&apos;m an idea guy / visionary (I hate using that term, but here it is) and I have
-                what you&apos;d call &ldquo;super ADHD.&rdquo; My notes look schizophrenic, I have an idea list that never
-                ends (that I genuinely believe I can do each one), and my brain goes 1 million mph.
-              </p>
-              <p>
-                One day, I was trying to get work done &amp; then I opened Twitter to ragebait someone online. I then got
-                &ldquo;sucked in&rdquo; and had spent an hour on the app. It was at that moment I realized &ldquo;oh,
-                I&apos;m not above getting sucked into this.&rdquo; If it&apos;s there, we&apos;re going to use it. I then
-                thought about how insane it was that the world&apos;s most addicting possible thing — the thing that smart
-                people have quite literally spent billions engineering so it grips our attention/psyche (social media) —
-                is on the <em>same device</em> (our laptop) that we&apos;re supposed to use to do our most important work
-                on. Is that not{' '}
-                <span className="font-bold text-slate-900">INSANE</span>?
-              </p>
-              <p>
-                I then realized &ldquo;I have to get rid of this.&rdquo; So I did. And I built a social media blocker that
-                is super easy to use. But I soon realized I wanted more. I wanted to break everything I had to do down to
-                my most important tasks, and then I wanted to track that task and see exactly how long I worked on it. I
-                was also astronomically lazy, so I also wanted a little personal robot to talk me through the organization
-                process that I use to prepare my tasks, for me. I didn&apos;t want to think about it. I just wanted to
-                click a button, and have my little robot help me get ready for the next day, organizing everything for me
-                as I went.
-              </p>
-              <p>
-                And that&apos;s what{' '}
-                <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 text-[0.95em] font-semibold text-white">
-                  Daywinner bot
-                </span>{' '}
-                is. It&apos;s not just a tool — it&apos;s a{' '}
-                <span className="font-bold text-slate-900">WAY TO WORK</span> that allows even the most
-                distracted/ADHD type of person to <em>actually</em> lock in &amp; make more progress in the next 5 days
-                than they have in the past 5 years. It&apos;s a tool I built for myself that I use daily, and finally, for
-                the first time ever, I am making it publicly available for those who want to <em>actually</em> get sh*t
-                done.
-              </p>
-              <p>
-                Stop giving your attention to other people. Let Daywinner bot re-capture it for you, and direct it into
-                the tasks that move your life forward.
-              </p>
-              <p className="pt-2 font-semibold text-slate-900">— Grant</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-200 py-14 sm:py-20">
-        <div className="mx-auto w-full max-w-2xl">
-          <div className="mb-10 text-center">
+          <div className="relative mb-12 text-center">
+            <Image
+              src="/marketing/daywinner-bot-logo.png"
+              alt=""
+              width={400}
+              height={400}
+              className="pointer-events-none absolute -right-2 -top-4 h-auto w-[92px] opacity-[0.2] sm:-right-6 sm:-top-6 sm:w-[130px] sm:opacity-[0.25]"
+              unoptimized
+              aria-hidden
+            />
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
               What it is
             </p>
-            <h2 className="text-[1.85rem] font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-[2.5rem] sm:leading-[1.1]">
+            <h2 className="relative text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
+              Let your personal productivity robot take you to the promise land.
+            </h2>
+            <p className="relative mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
+              Your bot does the repetitive thinking for you. It will walk you through your organizational process
+              daily so you end up with 1 thing ready for tomorrow: your single most important task.
+            </p>
+          </div>
+
+          <div className="mb-8 text-center">
+            <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
               Daywinner bot is{' '}
-              <span className="whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-0.5 text-white">
+              <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 text-white">
                 4 things
               </span>{' '}
               in 1
-            </h2>
+            </h3>
           </div>
 
           <ol className="space-y-0 divide-y divide-slate-200 border-y border-slate-200">
@@ -1025,6 +985,65 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 py-14 sm:py-20">
+        <div className="mx-auto w-full max-w-2xl">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 bg-slate-900 px-6 py-5 sm:px-10 sm:py-6">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                From the founder
+              </p>
+              <h2 className="text-xl font-bold leading-snug tracking-tight text-white sm:text-2xl sm:leading-snug">
+                Built by a guy with &ldquo;super ADHD&rdquo; for people who want to get more sh*t done
+              </h2>
+            </div>
+
+            <div className="space-y-5 px-6 py-8 text-left text-[1.05rem] leading-[1.8] text-slate-700 sm:space-y-6 sm:px-10 sm:py-10 sm:text-lg sm:leading-[1.85]">
+              <p>
+                Hey, it&apos;s Grant. I&apos;m an idea guy / visionary (I hate using that term, but here it is) and I have
+                what you&apos;d call &ldquo;super ADHD.&rdquo; My notes look schizophrenic, I have an idea list that never
+                ends (that I genuinely believe I can do each one), and my brain goes 1 million mph.
+              </p>
+              <p>
+                One day, I was trying to get work done &amp; then I opened Twitter to ragebait someone online. I then got
+                &ldquo;sucked in&rdquo; and had spent an hour on the app. It was at that moment I realized &ldquo;oh,
+                I&apos;m not above getting sucked into this.&rdquo; If it&apos;s there, we&apos;re going to use it. I then
+                thought about how insane it was that the world&apos;s most addicting possible thing — the thing that smart
+                people have quite literally spent billions engineering so it grips our attention/psyche (social media) —
+                is on the <em>same device</em> (our laptop) that we&apos;re supposed to use to do our most important work
+                on. Is that not{' '}
+                <span className="font-bold text-slate-900">INSANE</span>?
+              </p>
+              <p>
+                I then realized &ldquo;I have to get rid of this.&rdquo; So I did. And I built a social media blocker that
+                is super easy to use. But I soon realized I wanted more. I wanted to break everything I had to do down to
+                my most important tasks, and then I wanted to track that task and see exactly how long I worked on it. I
+                was also astronomically lazy, so I also wanted a little personal robot to talk me through the organization
+                process that I use to prepare my tasks, for me. I didn&apos;t want to think about it. I just wanted to
+                click a button, and have my little robot help me get ready for the next day, organizing everything for me
+                as I went.
+              </p>
+              <p>
+                And that&apos;s what{' '}
+                <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 text-[0.95em] font-semibold text-white">
+                  Daywinner bot
+                </span>{' '}
+                is. It&apos;s not just a tool — it&apos;s a{' '}
+                <span className="font-bold text-slate-900">WAY TO WORK</span> that allows even the most
+                distracted/ADHD type of person to <em>actually</em> lock in &amp; make more progress in the next 5 days
+                than they have in the past 5 years. It&apos;s a tool I built for myself that I use daily, and finally, for
+                the first time ever, I am making it publicly available for those who want to <em>actually</em> get sh*t
+                done.
+              </p>
+              <p>
+                Stop giving your attention to other people. Let Daywinner bot re-capture it for you, and direct it into
+                the tasks that move your life forward.
+              </p>
+              <p className="pt-2 font-semibold text-slate-900">— Grant</p>
+            </div>
+          </div>
         </div>
       </section>
 
