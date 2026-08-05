@@ -266,7 +266,7 @@ export default function LandingPage() {
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-6 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Congrats. You just had a more productive 4 hours than you&apos;ve had in the past 4 years. But now, it&apos;s
-            time for the real magic
+            time for the real magic...
           </h2>
           <Image
             src="/marketing/daywinner-bot-salt-ws.png"
@@ -276,16 +276,32 @@ export default function LandingPage() {
             className="mb-6 h-auto w-full max-w-[220px] sm:max-w-[280px]"
             unoptimized
           />
-          <p className="mb-3 text-base font-semibold tracking-tight text-slate-600 sm:text-lg">
+          <p className="mb-4 text-base font-semibold tracking-tight text-slate-600 sm:text-lg">
             introducing...
           </p>
-          <div className="mb-8 inline-flex max-w-xl flex-col items-center rounded-2xl bg-slate-900 px-8 py-5 text-white shadow-md sm:px-12 sm:py-6">
-            <span className="font-mono text-xs font-bold tracking-[0.25em] text-red-400 sm:text-sm">
-              NEW FLOW
-            </span>
-            <span className="mt-2 text-2xl font-bold leading-none tracking-tight sm:text-4xl">
-              The wind-down flow
-            </span>
+          <div className="relative mb-8 w-full max-w-xl">
+            <div className="overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-white px-6 py-6 shadow-[6px_6px_0_0_#ef4444] sm:px-10 sm:py-7">
+              <svg
+                className="mx-auto mb-3 h-6 w-40 text-teal-500 sm:h-7 sm:w-48"
+                viewBox="0 0 200 28"
+                fill="none"
+                aria-hidden
+              >
+                <path
+                  d="M2 14 C14 14 18 4 30 4 C42 4 46 24 58 24 C70 24 74 8 86 8 C98 8 102 20 114 20 C126 20 130 6 142 6 C154 6 158 22 170 22 C182 22 186 14 198 14"
+                  stroke="currentColor"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <p className="text-[2rem] font-bold leading-none tracking-tight text-slate-900 sm:text-5xl">
+                The wind-down flow
+              </p>
+              <p className="mt-3 text-sm font-medium text-slate-500 sm:text-base">
+                reflection + prep for tomorrow
+              </p>
+            </div>
           </div>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             Most people just fill their day with busywork &amp; accomplish nothing... but your Daywinner bot simply
