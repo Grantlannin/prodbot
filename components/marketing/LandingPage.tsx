@@ -119,43 +119,43 @@ export default function LandingPage() {
       <section className="border-t border-slate-200 pb-14 pt-5 sm:pb-20 sm:pt-6">
         <div className="mx-auto w-full max-w-3xl">
           <div className="mb-14 text-center">
-            <h2 className="mb-6 flex w-full items-start justify-center gap-2 sm:gap-4">
-              <span className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-green-500 sm:text-sm">
+            <h2 className="mb-6 flex w-full items-start justify-center gap-3 sm:gap-5">
+              <span className="flex min-w-0 flex-1 flex-col items-center gap-2 sm:gap-2.5">
+                <span className="text-sm font-extrabold uppercase tracking-[0.08em] text-green-500 sm:text-base">
                   Step 1
                 </span>
-                <span className="text-center text-[13px] font-bold leading-snug tracking-tight text-slate-900 sm:text-lg">
+                <span className="text-center text-base font-bold leading-snug tracking-tight text-slate-900 sm:text-xl">
                   Choose your task
                 </span>
               </span>
               <span
                 aria-hidden
-                className="mt-4 shrink-0 text-lg font-bold leading-none text-green-500 sm:mt-5 sm:text-2xl"
+                className="mt-5 shrink-0 text-2xl font-bold leading-none text-green-500 sm:mt-6 sm:text-3xl"
               >
                 &gt;
               </span>
-              <span className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-green-500 sm:text-sm">
+              <span className="flex min-w-0 flex-1 flex-col items-center gap-2 sm:gap-2.5">
+                <span className="text-sm font-extrabold uppercase tracking-[0.08em] text-green-500 sm:text-base">
                   Step 2
                 </span>
-                <span className="text-center text-[13px] font-bold leading-snug tracking-tight text-slate-900 sm:text-lg">
+                <span className="text-center text-base font-bold leading-snug tracking-tight text-slate-900 sm:text-xl">
                   set your work timer
                 </span>
               </span>
               <span
                 aria-hidden
-                className="mt-4 shrink-0 text-lg font-bold leading-none text-green-500 sm:mt-5 sm:text-2xl"
+                className="mt-5 shrink-0 text-2xl font-bold leading-none text-green-500 sm:mt-6 sm:text-3xl"
               >
                 &gt;
               </span>
-              <span className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-green-500 sm:text-sm">
+              <span className="flex min-w-0 flex-1 flex-col items-center gap-2 sm:gap-2.5">
+                <span className="text-sm font-extrabold uppercase tracking-[0.08em] text-green-500 sm:text-base">
                   Step 3
                 </span>
-                <span className="text-center text-[13px] font-bold leading-snug tracking-tight text-slate-900 sm:text-lg">
+                <span className="text-center text-base font-bold leading-snug tracking-tight text-slate-900 sm:text-xl">
                   Begin working
                 </span>
-                <span className="text-center text-[11px] font-semibold leading-snug text-slate-900 sm:text-sm">
+                <span className="text-center text-sm font-semibold leading-snug text-slate-900 sm:text-base">
                   (with social media blocked)
                 </span>
               </span>
