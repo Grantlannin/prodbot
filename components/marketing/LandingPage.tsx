@@ -299,7 +299,7 @@ export default function LandingPage() {
                 The wind-down flow
               </p>
               <p className="mt-3 text-sm font-medium text-slate-500 sm:text-base">
-                reflection + prep for tomorrow
+                Task reflection + task prep exactly like 7-figure entrepreneurs do it
               </p>
             </div>
           </div>
