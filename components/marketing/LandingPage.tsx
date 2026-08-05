@@ -264,7 +264,7 @@ export default function LandingPage() {
               src="/marketing/funnel-to-question.svg"
               alt=""
               width={1000}
-              height={200}
+              height={160}
               className="mx-auto h-auto w-full"
               unoptimized
               aria-hidden
