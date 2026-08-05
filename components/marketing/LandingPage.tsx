@@ -477,15 +477,22 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center text-center pt-10">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Need additional accountability? Easily send your EOD report to an accountability buddy (or yourself)
-            easily via email with 1 click so they can see the <em>truth</em> of your productivity
+            Need additional accountability?
           </h2>
+          <Image
+            src="/marketing/eod-accountability-copy.png"
+            alt="Easily send your EOD report to an accountability buddy (or yourself) easily via email with 1 click so they can see the truth of your productivity"
+            width={1600}
+            height={212}
+            className="mb-6 h-auto w-full max-w-3xl"
+            unoptimized
+          />
           <Image
             src="/marketing/eod-send.jpg"
             alt="Send EOD to partner modal"
             width={1200}
             height={800}
-            className="mb-6 h-auto w-full border-4 border-red-500"
+            className="mb-6 h-auto w-full"
             unoptimized
           />
           <h3 className="mb-3 max-w-2xl text-xl font-bold leading-snug tracking-tight text-slate-900 sm:text-2xl">
