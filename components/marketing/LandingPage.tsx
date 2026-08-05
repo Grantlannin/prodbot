@@ -116,15 +116,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-t border-slate-200 py-14 sm:py-20">
+      <section className="border-t border-slate-200 pb-14 pt-5 sm:pb-20 sm:pt-6">
         <div className="mx-auto w-full max-w-2xl">
           <div className="mb-12 text-center">
             <Image
               src="/marketing/daywinner-bot-flying.png"
               alt="Daywinner bot flying with a stick figure typing on a laptop while money flies out"
-              width={1376}
-              height={768}
-              className="mx-auto mb-5 h-auto w-full max-w-[180px] sm:max-w-[220px]"
+              width={1476}
+              height={934}
+              className="mx-auto mb-4 h-auto w-full max-w-[180px] sm:max-w-[220px]"
               unoptimized
             />
             <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
