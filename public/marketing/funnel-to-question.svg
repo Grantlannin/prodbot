@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 220" role="img" aria-label="Everything you do funnels into one simple question">
+  <!-- wide mouth -->
+  <path
+    d="M40 28 L600 28 L420 150 L420 190 L220 190 L220 150 Z"
+    fill="none"
+    stroke="#ef4444"
+    stroke-width="6"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
+  <!-- inner fill for presence -->
+  <path
+    d="M56 40 L584 40 L408 148 L408 178 L232 178 L232 148 Z"
+    fill="#ef4444"
+    fill-opacity="0.08"
+  />
+  <!-- tip arrow -->
+  <path
+    d="M320 190 L320 208"
+    stroke="#ef4444"
+    stroke-width="6"
+    stroke-linecap="round"
+  />
+  <path
+    d="M300 200 L320 218 L340 200"
+    fill="none"
+    stroke="#ef4444"
+    stroke-width="6"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
+</svg>

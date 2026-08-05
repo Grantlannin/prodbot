@@ -256,15 +256,26 @@ export default function LandingPage() {
             alt="Work today and time by project tracking"
             width={1024}
             height={220}
-            className="mb-8 h-auto w-full"
+            className="mb-3 h-auto w-full"
             unoptimized
           />
+          <div className="mb-5 flex w-full flex-col items-center">
+            <Image
+              src="/marketing/funnel-to-question.svg"
+              alt=""
+              width={640}
+              height={220}
+              className="mx-auto h-auto w-full max-w-md sm:max-w-lg"
+              unoptimized
+              aria-hidden
+            />
+          </div>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
             Most people just fill their day with busywork &amp; accomplish nothing... but your Daywinner bot simply
             doesn&apos;t allow that to happen.
           </p>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Your bot asks you the golden question daily:
+          <p className="mb-3 max-w-xl text-base font-semibold leading-snug text-slate-800 sm:text-lg">
+            everything you do funnels into 1 simple question:
           </p>
           <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             &ldquo;What Did You Get Done Today?&rdquo;
@@ -581,26 +592,6 @@ export default function LandingPage() {
               question daily:
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            &ldquo;What Did You Get Done Today?&rdquo;
-          </h2>
-          <Image
-            src="/marketing/wind-down.jpg"
-            alt="Wind down bot asking what you got done today"
-            width={942}
-            height={1024}
-            className="mb-6 h-auto w-full max-w-md sm:max-w-lg"
-            unoptimized
-          />
-          <p className="max-w-2xl text-base leading-relaxed text-slate-600">
-            There is nowhere to hide. Your bot will ask you what you got done, and you are able to see if it was the
-            most important thing, or if you just &ldquo;productively procrastinated&rdquo;
-          </p>
         </div>
       </section>
 
