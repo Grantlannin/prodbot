@@ -342,24 +342,23 @@ export default function LandingPage() {
           <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-[1.55] tracking-tight text-green-600 sm:text-4xl">
             The single most important task you need to do, already ready to go.
           </p>
-          <div className="relative mx-auto mb-8 w-full max-w-[20rem] sm:max-w-sm">
-            <div className="relative mx-auto aspect-square w-full max-w-[320px]">
+          <div className="relative mx-auto mb-8 w-full max-w-[22rem] sm:max-w-md">
+            <div className="relative mx-auto aspect-square w-full max-w-[360px]">
               <svg
-                className="pointer-events-none absolute inset-0 h-full w-full text-green-600"
-                viewBox="0 0 320 320"
+                className="pointer-events-none absolute inset-0 z-20 h-full w-full text-green-600"
+                viewBox="0 0 360 360"
                 aria-hidden
               >
                 {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
-                  <g key={deg} transform={`rotate(${deg} 160 160)`}>
-                    {/* shaft + arrowhead pointing toward center (down in local coords) */}
+                  <g key={deg} transform={`rotate(${deg} 180 180)`}>
                     <path
-                      d="M160 18 L160 46"
+                      d="M180 16 L180 48"
                       stroke="currentColor"
                       strokeWidth="7"
                       strokeLinecap="round"
                     />
                     <path
-                      d="M146 40 L160 58 L174 40"
+                      d="M164 40 L180 60 L196 40"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="7"
@@ -369,13 +368,13 @@ export default function LandingPage() {
                   </g>
                 ))}
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center p-12">
+              <div className="absolute inset-0 z-0 flex items-center justify-center">
                 <Image
                   src="/marketing/tomorrow-task-list.png"
                   alt="Tomorrow's task list — finish onboarding"
                   width={472}
                   height={232}
-                  className="h-auto w-full max-w-[240px] rounded-lg bg-white"
+                  className="h-auto w-[58%] max-w-[200px] rounded-lg bg-white"
                   unoptimized
                 />
               </div>
