@@ -428,7 +428,7 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Let your bot walk you through your own work resistance to the promise land
+            Let your bot walk you through your own work resistance to the promised land
           </h2>
           <Image
             src="/marketing/stuck-flow.jpg"
