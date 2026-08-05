@@ -135,10 +135,11 @@ export default function LandingPage() {
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-relaxed">
               Your day is won or lost before it starts. Most people waste their &ldquo;best energy of the day&rdquo;
-              deciding what to do instead of <em>actually</em> doing it. High performers know this — which is why they
-              prep the night before. And that&apos;s what your bot does: it guides you through a quick daily planning
-              process so you end each day with one thing ready for tomorrow — your single most important task. Zero
-              friction.
+              deciding what to do instead of actually doing it. High performers know this — which is why they prep the
+              night before. And that&apos;s what your bot does: it guides you through a quick daily planning process so
+              you end each day with one thing ready for tomorrow — your single most important task. Zero friction. Oh,
+              and it also creates timed work sessions &amp; blocks every social media site that you hate while
+              you&apos;re working.
             </p>
           </div>
 
