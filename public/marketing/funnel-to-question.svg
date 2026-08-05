@@ -1,31 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 220" role="img" aria-label="Everything you do funnels into one simple question">
-  <!-- wide mouth -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 200" role="img" aria-label="Everything you do funnels into one simple question">
+  <!-- classic funnel: wide mouth → taper → spout -->
   <path
-    d="M40 28 L600 28 L420 150 L420 190 L220 190 L220 150 Z"
-    fill="none"
+    d="M40 24
+       L960 24
+       L580 128
+       L580 152
+       L420 152
+       L420 128
+       Z"
+    fill="#ef4444"
+    fill-opacity="0.1"
     stroke="#ef4444"
-    stroke-width="6"
+    stroke-width="5"
     stroke-linejoin="round"
     stroke-linecap="round"
   />
-  <!-- inner fill for presence -->
-  <path
-    d="M56 40 L584 40 L408 148 L408 178 L232 178 L232 148 Z"
-    fill="#ef4444"
-    fill-opacity="0.08"
-  />
-  <!-- tip arrow -->
-  <path
-    d="M320 190 L320 208"
+  <!-- spout stem -->
+  <line
+    x1="500"
+    y1="152"
+    x2="500"
+    y2="172"
     stroke="#ef4444"
-    stroke-width="6"
+    stroke-width="5"
     stroke-linecap="round"
   />
+  <!-- arrow tip -->
   <path
-    d="M300 200 L320 218 L340 200"
+    d="M470 168 L500 192 L530 168"
     fill="none"
     stroke="#ef4444"
-    stroke-width="6"
+    stroke-width="5"
     stroke-linejoin="round"
     stroke-linecap="round"
   />
