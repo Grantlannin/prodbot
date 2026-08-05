@@ -121,10 +121,10 @@ export default function LandingPage() {
           <div className="mb-12 text-center">
             <Image
               src="/marketing/daywinner-bot-flying.png"
-              alt="Daywinner bot flying with a stick figure typing on a laptop while money flies out"
-              width={1476}
-              height={934}
-              className="mx-auto mb-4 h-auto w-full max-w-[180px] sm:max-w-[220px]"
+              alt="Daywinner bot organizing for you while you print cash — stick figure on laptop riding the flying bot"
+              width={1489}
+              height={1012}
+              className="mx-auto mb-4 h-auto w-full max-w-[260px] sm:max-w-[320px]"
               unoptimized
             />
             <p className="mb-3 text-sm text-slate-500 sm:text-[15px]">
