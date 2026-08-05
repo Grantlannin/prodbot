@@ -232,7 +232,7 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
         />
 
         <label style={styles.label} htmlFor="eod-learnings">
-          Insights / learnings
+          insights / what you learned today (if any)
         </label>
         <textarea
           id="eod-learnings"
