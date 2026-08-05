@@ -1,33 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 200" role="img" aria-label="Everything you do funnels into one simple question">
-  <!-- classic funnel: wide mouth → taper → spout -->
-  <path
-    d="M40 24
-       L960 24
-       L580 128
-       L580 152
-       L420 152
-       L420 128
-       Z"
-    fill="#ef4444"
-    fill-opacity="0.1"
-    stroke="#ef4444"
-    stroke-width="5"
-    stroke-linejoin="round"
-    stroke-linecap="round"
-  />
-  <!-- spout stem -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 160" role="img" aria-label="Everything you do funnels into one simple question">
+  <!-- left diagonal → shared tip -->
   <line
-    x1="500"
-    y1="152"
-    x2="500"
-    y2="172"
+    x1="40"
+    y1="16"
+    x2="488"
+    y2="128"
     stroke="#ef4444"
     stroke-width="5"
     stroke-linecap="round"
   />
-  <!-- arrow tip -->
+  <!-- right diagonal → shared tip -->
+  <line
+    x1="960"
+    y1="16"
+    x2="512"
+    y2="128"
+    stroke="#ef4444"
+    stroke-width="5"
+    stroke-linecap="round"
+  />
+  <!-- shared arrowhead pointing down -->
   <path
-    d="M470 168 L500 192 L530 168"
+    d="M468 118 L500 148 L532 118"
     fill="none"
     stroke="#ef4444"
     stroke-width="5"
