@@ -247,7 +247,7 @@ export default function LandingPage() {
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Step 5: Put in an AMAZING work session, and allow your daywinner bot to show you exactly how long you went
-            at it + what you did
+            at it + what you did (while all social media sites are blocked, so it&apos;s just you &amp; the work)
           </h2>
           <Image
             src="/marketing/task-tracking.jpg"
