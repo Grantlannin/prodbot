@@ -119,14 +119,19 @@ export default function LandingPage() {
       <section className="border-t border-slate-200 pb-14 pt-5 sm:pb-20 sm:pt-6">
         <div className="mx-auto w-full max-w-2xl">
           <div className="mb-14 text-center">
-            <Image
-              src="/marketing/sessions-flow-steps.png"
-              alt="Choose your task > set your work timer > Begin working (with social media blocked)"
-              width={1433}
-              height={185}
-              className="mx-auto mb-5 h-auto w-full max-w-xl"
-              unoptimized
-            />
+            <h2 className="mb-5 overflow-x-auto px-1">
+              <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-[13px] font-semibold tracking-tight text-slate-900 sm:gap-3 sm:text-[15px]">
+                <span>Choose your task</span>
+                <span aria-hidden className="font-bold text-teal-500">
+                  &gt;
+                </span>
+                <span>set your work timer</span>
+                <span aria-hidden className="font-bold text-teal-500">
+                  &gt;
+                </span>
+                <span>Begin working (with social media blocked)</span>
+              </span>
+            </h2>
             <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
               Every session is tracked by task, which not only shows you exactly what you worked on &amp; for how long —
               but also forces you to stay organized. Because if you don&apos;t organize, you can&apos;t start the
