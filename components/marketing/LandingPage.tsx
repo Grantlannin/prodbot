@@ -503,15 +503,17 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Who it&apos;s for</p>
-        <h2 className="mb-4 max-w-xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
-          Already working? Daywinner is your homebase.
-        </h2>
-        <p className="mb-10 max-w-lg text-base leading-relaxed text-slate-600">
-          Daywinner isn&apos;t for &ldquo;someday I&apos;ll get organized.&rdquo; It&apos;s for people who are already
-          building, shipping, selling, studying, or grinding — and need one calm place to focus, track projects, and
-          block distractions. Same workflow. Less chaos.
-        </p>
+        <div className="mb-10 flex flex-col items-center text-center">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Who it&apos;s for</p>
+          <h2 className="mb-4 max-w-xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+            Already working? Daywinner is your homebase.
+          </h2>
+          <p className="max-w-lg text-base leading-relaxed text-slate-600">
+            Daywinner isn&apos;t for &ldquo;someday I&apos;ll get organized.&rdquo; It&apos;s for people who are already
+            building, shipping, selling, studying, or grinding — and need one calm place to focus, track projects, and
+            block distractions. Same workflow. Less chaos.
+          </p>
+        </div>
 
         <ul className="mb-10 grid gap-4 sm:grid-cols-2">
           {whoItsFor.map(item => (
