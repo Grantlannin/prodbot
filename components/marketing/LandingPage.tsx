@@ -250,6 +250,112 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
+        <h2 className="mb-8 text-center text-3xl font-extrabold uppercase tracking-tight text-slate-900 sm:mb-10 sm:text-5xl">
+          Here&apos;s how it works:
+        </h2>
+
+        <div className="flex flex-col items-center text-center">
+          <h3 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Step 1: Organize your most important tasks into 1 place (which links them to your tracker)
+          </h3>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            You can now store links and notes in tasks/projects specifically, instead of losing them all over your
+            computer.
+          </p>
+          <Image
+            src="/marketing/projects.jpg"
+            alt="Projects dashboard with tasks and subtasks"
+            width={1024}
+            height={443}
+            className="h-auto w-full max-w-3xl"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex justify-center py-2" aria-hidden>
+          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h3 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Step 2: Choose the most important task that will actually move the ball forward for you
+          </h3>
+          <Image
+            src="/marketing/choose-task.jpg"
+            alt="What are you working on — choose a task"
+            width={1024}
+            height={672}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex justify-center py-2" aria-hidden>
+          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h3 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Step 3: Pick a focus session length
+          </h3>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            (25 mins for pomodoro, 45 mins for the ambitious, 2+ hours for the ruthless)
+          </p>
+          <Image
+            src="/marketing/step3-timer.jpg"
+            alt="Focus session length options"
+            width={1024}
+            height={717}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex justify-center py-2" aria-hidden>
+          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h3 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Step 4: Choose the strength of your distraction blocker — &ldquo;soft lock&rdquo; or &ldquo;hard
+            lock&rdquo;
+          </h3>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+            Your distraction blocker blocks all distracting websites, and you can add as many as you want. During your
+            work session, you will be unable to access the sites you choose. Soft lock makes you wait 2 minutes for
+            access again, hard lock blocks it entirely until your work block is complete.
+          </p>
+          <Image
+            src="/marketing/step4-lock.jpg"
+            alt="Focus session soft and hard lock options"
+            width={1024}
+            height={723}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+
+        <div className="flex justify-center py-2" aria-hidden>
+          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <h3 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Step 5: Put in an AMAZING work session, and allow your daywinner bot to show you exactly how long you went
+            at it + what you did
+          </h3>
+          <Image
+            src="/marketing/task-tracking.jpg"
+            alt="Work today and time by project tracking"
+            width={1024}
+            height={220}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
+      </section>
+
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <div className="mb-12 w-full max-w-2xl text-center">
@@ -417,108 +523,6 @@ export default function LandingPage() {
               (keep writing…)
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 1: Organize your most important tasks into 1 place (which links them to your tracker)
-          </h2>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            You can now store links and notes in tasks/projects specifically, instead of losing them all over your
-            computer.
-          </p>
-          <Image
-            src="/marketing/projects.jpg"
-            alt="Projects dashboard with tasks and subtasks"
-            width={1024}
-            height={443}
-            className="h-auto w-full max-w-3xl"
-            unoptimized
-          />
-        </div>
-
-        <div className="flex justify-center py-2" aria-hidden>
-          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
-        </div>
-
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 2: Choose the most important task that will <em>actually</em> move the ball forward for you
-          </h2>
-          <Image
-            src="/marketing/choose-task.jpg"
-            alt="What are you working on — choose a task"
-            width={1024}
-            height={672}
-            className="h-auto w-full"
-            unoptimized
-          />
-        </div>
-
-        <div className="flex justify-center py-2" aria-hidden>
-          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
-        </div>
-
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 3: Pick a focus session length
-          </h2>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            (25 mins for pomodoro, 45 mins for the ambitious, 2+ hours for the ruthless)
-          </p>
-          <Image
-            src="/marketing/step3-timer.jpg"
-            alt="Focus session length options"
-            width={1024}
-            height={717}
-            className="h-auto w-full"
-            unoptimized
-          />
-        </div>
-
-        <div className="flex justify-center py-2" aria-hidden>
-          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
-        </div>
-
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 4: Choose the strength of your distraction blocker — &ldquo;soft lock&rdquo; or &ldquo;hard
-            lock&rdquo;
-          </h2>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Your distraction blocker blocks all distracting websites, and you can add as many as you want. During your
-            work session, you will be unable to access the sites you choose. Soft lock makes you wait 2 minutes for
-            access again, hard lock blocks it entirely until your work block is complete.
-          </p>
-          <Image
-            src="/marketing/step4-lock.jpg"
-            alt="Focus session soft and hard lock options"
-            width={1024}
-            height={723}
-            className="h-auto w-full"
-            unoptimized
-          />
-        </div>
-
-        <div className="flex justify-center py-2" aria-hidden>
-          <span className="text-6xl font-bold leading-none text-red-500 sm:text-7xl">↓</span>
-        </div>
-
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 5: Put in an AMAZING work session, and allow your daywinner bot to show you exactly how long you went
-            at it + what you did
-          </h2>
-          <Image
-            src="/marketing/task-tracking.jpg"
-            alt="Work today and time by project tracking"
-            width={1024}
-            height={220}
-            className="h-auto w-full"
-            unoptimized
-          />
         </div>
       </section>
 
