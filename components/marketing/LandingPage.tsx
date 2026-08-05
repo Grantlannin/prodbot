@@ -127,6 +127,9 @@ export default function LandingPage() {
               className="mx-auto mb-4 h-auto w-full max-w-[180px] sm:max-w-[220px]"
               unoptimized
             />
+            <p className="mb-3 text-sm text-slate-500 sm:text-[15px]">
+              ADHD brain &amp; have trouble organizing?
+            </p>
             <h2 className="text-[1.75rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.35rem] sm:leading-[1.15]">
               Let Your Personal Productivity Robot Take You To The Promised Land.
             </h2>
