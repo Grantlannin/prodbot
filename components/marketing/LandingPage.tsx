@@ -479,14 +479,11 @@ export default function LandingPage() {
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Need additional accountability?
           </h2>
-          <Image
-            src="/marketing/eod-accountability-copy.png"
-            alt="Easily send your EOD report to an accountability buddy (or yourself) easily via email with 1 click so they can see the truth of your productivity"
-            width={1600}
-            height={212}
-            className="mb-6 h-auto w-full max-w-3xl"
-            unoptimized
-          />
+          <p className="mb-6 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            You can turn every task you worked on into an EOD report &amp; send it to an accountability buddy (or
+            yourself) easily via email with 1 click so they can see the{' '}
+            <span className="underline decoration-[2px] underline-offset-2">truth</span> of your productivity.
+          </p>
           <Image
             src="/marketing/eod-send.jpg"
             alt="Send EOD to partner modal"
