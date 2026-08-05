@@ -319,15 +319,59 @@ export default function LandingPage() {
             className="mb-6 h-auto w-full max-w-md sm:max-w-lg"
             unoptimized
           />
-          <p className="max-w-2xl text-base leading-relaxed text-slate-600">
+          <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600">
             There is nowhere to hide. Your bot will ask you what you got done, and you are able to see if it was the
             most important thing, or if you just &ldquo;productively procrastinated&rdquo;
           </p>
+          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Your bot then puts you through a wind-down flow that forces you to stay organized (by walking you through
+            the organization process, zero effort on your end)
+          </h2>
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            ...and then helps you choose the next important task for the following day (crucial for people with ADHD or
+            hyper-active minds, like me). Your bot will walk you through the exact process that 7-figure entrepreneurs
+            put themselves through to dominate everyone.
+          </p>
+          <Image
+            src="/marketing/wind-down-context.jpg"
+            alt="Wind down flow adding context and organizing for tomorrow"
+            width={1024}
+            height={955}
+            className="mb-10 h-auto w-full max-w-2xl"
+            unoptimized
+          />
+          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            And then what are you left with, before the day even starts tomorrow?
+          </h2>
+          <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-[1.55] tracking-tight text-green-600 underline decoration-black decoration-[3px] decoration-skip-ink-none underline-offset-[0.18em] sm:text-4xl">
+            The single most important task you need to do, already ready to go.
+          </p>
+          <Image
+            src="/marketing/tomorrow-task-list.jpg"
+            alt="Tomorrow's task list ready after wind down"
+            width={1024}
+            height={723}
+            className="mb-5 h-auto w-full max-w-md"
+            unoptimized
+          />
+          <div className="mx-auto mt-8 max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-8 text-center shadow-sm sm:px-10 sm:py-10">
+            <div className="space-y-6 text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
+              <p>
+                while everyone you know is spending their &ldquo;best energy of the day&rdquo; figuring out WHAT to do
+                (which means that day is already lost), you&apos;ve already done the prep and know exactly what
+                you&apos;re doing. You&apos;re now able to use your best energy of the day on stuff that{' '}
+                <em>actually</em> moves your life forward consistently. And run this process out for even 1 month, and
+                you&apos;re getting ahead &amp; speeding by of everyone you know. And the best part? It&apos;s not magic
+                (like they think it will be while they wonder WTF got into you). It&apos;s just a repeatable SYSTEM,
+                that you&apos;re following, just like 7-figure entrepreneurs do.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
       <section className="border-t border-slate-200 pb-14 pt-12 sm:pb-20 sm:pt-16">
-        <div className="mx-auto w-full max-w-3xl">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
           <div className="mb-12 text-center">
             <Image
               src="/marketing/daywinner-bot-flying.png"
@@ -362,7 +406,7 @@ export default function LandingPage() {
             </h3>
           </div>
 
-          <ol className="space-y-0 divide-y divide-slate-200 border-y border-slate-200">
+          <ol className="mx-auto w-full max-w-xl space-y-0 divide-y divide-slate-200 border-y border-slate-200 text-left">
             <li className="flex gap-5 py-6 sm:gap-7 sm:py-7">
               <span
                 aria-hidden
@@ -434,7 +478,7 @@ export default function LandingPage() {
       </section>
 
       <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="flex flex-col items-center text-center">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
           <div className="mb-12 w-full max-w-2xl text-center">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The problem</p>
             <h2 className="text-[1.85rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.5rem] sm:leading-[1.15]">
@@ -452,12 +496,12 @@ export default function LandingPage() {
             />
           </div>
 
-          <div className="mb-14 w-full max-w-2xl text-left">
+          <div className="mb-14 w-full max-w-2xl text-center">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">The fix</p>
             <p className="mb-6 text-lg leading-relaxed text-slate-700 sm:text-xl sm:leading-relaxed">
               Daywinner bot is your personal robot that helps you win the day. And it does this by:
             </p>
-            <ol className="space-y-5">
+            <ol className="mx-auto max-w-xl space-y-5 text-left">
               <li className="flex gap-4">
                 <span
                   aria-hidden
@@ -622,55 +666,6 @@ export default function LandingPage() {
               <em>actually</em> did, and makes sure it was the absolute best use of your time by asking 1 simple
               question daily:
             </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Your bot then puts you through a wind-down flow that forces you to stay organized (by walking you through
-            the organization process, zero effort on your end)
-          </h2>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            ...and then helps you choose the next important task for the following day (crucial for people with ADHD or
-            hyper-active minds, like me). Your bot will walk you through the exact process that 7-figure entrepreneurs
-            put themselves through to dominate everyone.
-          </p>
-          <Image
-            src="/marketing/wind-down-context.jpg"
-            alt="Wind down flow adding context and organizing for tomorrow"
-            width={1024}
-            height={955}
-            className="mb-10 h-auto w-full max-w-2xl"
-            unoptimized
-          />
-          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            And then what are you left with, before the day even starts tomorrow?
-          </h2>
-          <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-[1.55] tracking-tight text-green-600 underline decoration-black decoration-[3px] decoration-skip-ink-none underline-offset-[0.18em] sm:text-4xl">
-            The single most important task you need to do, already ready to go.
-          </p>
-          <Image
-            src="/marketing/tomorrow-task-list.jpg"
-            alt="Tomorrow's task list ready after wind down"
-            width={1024}
-            height={723}
-            className="mb-5 h-auto w-full max-w-md"
-            unoptimized
-          />
-          <div className="mx-auto mt-8 max-w-2xl rounded-lg border border-slate-200 bg-[#faf8f5] px-6 py-8 text-left shadow-sm sm:px-10 sm:py-10">
-            <div className="space-y-6 text-[1.05rem] leading-[1.85] text-slate-800 sm:text-lg">
-              <p>
-                while everyone you know is spending their &ldquo;best energy of the day&rdquo; figuring out WHAT to do
-                (which means that day is already lost), you&apos;ve already done the prep and know exactly what
-                you&apos;re doing. You&apos;re now able to use your best energy of the day on stuff that{' '}
-                <em>actually</em> moves your life forward consistently. And run this process out for even 1 month, and
-                you&apos;re getting ahead &amp; speeding by of everyone you know. And the best part? It&apos;s not magic
-                (like they think it will be while they wonder WTF got into you). It&apos;s just a repeatable SYSTEM,
-                that you&apos;re following, just like 7-figure entrepreneurs do.
-              </p>
-            </div>
           </div>
         </div>
       </section>
