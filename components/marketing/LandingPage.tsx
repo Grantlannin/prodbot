@@ -304,11 +304,12 @@ export default function LandingPage() {
             </div>
           </div>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            Most people just fill their day with busywork &amp; accomplish nothing... but your Daywinner bot simply
-            doesn&apos;t allow that to happen.
+            99% of people just fill their day with busywork &amp; don&apos;t actually accomplish anything... but your
+            Daywinner bot simply doesn&apos;t allow that to happen. Your Daywinner bot knows you&apos;re destined for
+            the 1%. And this is why it asks you...
           </p>
           <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            &ldquo;What Did You Get Done Today?&rdquo;
+            &ldquo;What Did You <em>actually</em> Get Done Today?&rdquo;
           </h2>
           <Image
             src="/marketing/wind-down.jpg"
