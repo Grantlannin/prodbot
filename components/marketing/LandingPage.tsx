@@ -406,7 +406,7 @@ export default function LandingPage() {
             unoptimized
           />
           <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            your daywinner bot also has custom flows to help you in specific situations (that I personally use)
+            Your daywinner bot also has custom flows to help you in specific situations (that I personally use).
           </p>
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Trouble starting a task? The bot has an exact flow for that
