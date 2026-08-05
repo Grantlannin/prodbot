@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 40" role="img" aria-label="Choose your task, set your work timer, Begin working with social media blocked">
+  <text
+    x="460"
+    y="26"
+    text-anchor="middle"
+    font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"
+    font-size="15"
+    font-weight="600"
+    letter-spacing="-0.01em"
+  >
+    <tspan fill="#0f172a">Choose your task</tspan>
+    <tspan fill="#14b8a6" dx="10">:</tspan>
+    <tspan fill="#0f172a" dx="10">set your work timer</tspan>
+    <tspan fill="#14b8a6" dx="10">:</tspan>
+    <tspan fill="#0f172a" dx="10">Begin working (with social media blocked)</tspan>
+  </text>
+</svg>
