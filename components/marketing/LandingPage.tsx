@@ -342,64 +342,43 @@ export default function LandingPage() {
           <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-[1.55] tracking-tight text-green-600 sm:text-4xl">
             The single most important task you need to do, already ready to go.
           </p>
-          <div className="relative mx-auto mb-8 w-full max-w-[22rem] sm:max-w-md">
-            <div className="relative mx-auto w-fit px-14 py-14 sm:px-16 sm:py-16">
-              <span
+          <div className="relative mx-auto mb-8 w-full max-w-[20rem] sm:max-w-sm">
+            <div className="relative mx-auto aspect-square w-full max-w-[320px]">
+              <svg
+                className="pointer-events-none absolute inset-0 h-full w-full text-green-600"
+                viewBox="0 0 320 320"
                 aria-hidden
-                className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
               >
-                ↓
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute right-1 top-[18%] z-20 rotate-[45deg] text-4xl font-bold leading-none text-green-600 sm:right-2 sm:text-5xl"
-              >
-                ←
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute right-0 top-1/2 z-20 -translate-y-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
-              >
-                ←
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute bottom-[18%] right-1 z-20 -rotate-[45deg] text-4xl font-bold leading-none text-green-600 sm:right-2 sm:text-5xl"
-              >
-                ←
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute bottom-0 left-1/2 z-20 -translate-x-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
-              >
-                ↑
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute bottom-[18%] left-1 z-20 rotate-[45deg] text-4xl font-bold leading-none text-green-600 sm:left-2 sm:text-5xl"
-              >
-                →
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute left-0 top-1/2 z-20 -translate-y-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
-              >
-                →
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute left-1 top-[18%] z-20 -rotate-[45deg] text-4xl font-bold leading-none text-green-600 sm:left-2 sm:text-5xl"
-              >
-                →
-              </span>
-              <Image
-                src="/marketing/tomorrow-task-list.png"
-                alt="Tomorrow's task list — finish onboarding"
-                width={472}
-                height={232}
-                className="relative z-0 h-auto w-full max-w-[240px] rounded-lg bg-white sm:max-w-[280px]"
-                unoptimized
-              />
+                {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
+                  <g key={deg} transform={`rotate(${deg} 160 160)`}>
+                    {/* shaft + arrowhead pointing toward center (down in local coords) */}
+                    <path
+                      d="M160 18 L160 46"
+                      stroke="currentColor"
+                      strokeWidth="7"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M146 40 L160 58 L174 40"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </g>
+                ))}
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center p-12">
+                <Image
+                  src="/marketing/tomorrow-task-list.png"
+                  alt="Tomorrow's task list — finish onboarding"
+                  width={472}
+                  height={232}
+                  className="h-auto w-full max-w-[240px] rounded-lg bg-white"
+                  unoptimized
+                />
+              </div>
             </div>
           </div>
           <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
