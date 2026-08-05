@@ -264,14 +264,13 @@ export default function LandingPage() {
 
       <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
-          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Work done for the day? Your wind-down flow begins. And this is what separates high-performers from the
-            average person: reflection &amp; preparation for the next day.
-          </h2>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
+          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             Most people just fill their day with busywork &amp; accomplish nothing... but your Daywinner bot simply
             doesn&apos;t allow that to happen.
           </p>
+          <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Wind-down flow initiated:
+          </h2>
           <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             &ldquo;What Did You Get Done Today?&rdquo;
           </h2>
