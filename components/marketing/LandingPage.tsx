@@ -142,6 +142,27 @@ export default function LandingPage() {
             </p>
           </div>
 
+          <div className="mb-14 text-center">
+            <h2 className="mb-4 text-[1.65rem] font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
+              Every Work Session Easily Tracked. Every Task Organized Effortlessly.
+            </h2>
+            <p className="mx-auto mb-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+              Every session is tracked by task, which not only shows you exactly what you worked on &amp; for how long —
+              but also forces you to stay organized. Because if you don&apos;t organize, you can&apos;t start the
+              session.
+            </p>
+            <video
+              className="h-auto w-full"
+              src="/marketing/sessions-tracked.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls={false}
+              aria-label="Daywinner dashboard with sessions tracked by task"
+            />
+          </div>
+
           <div className="mb-8 text-center">
             <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
               Daywinner bot is{' '}
@@ -220,29 +241,6 @@ export default function LandingPage() {
               </div>
             </li>
           </ol>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <div className="flex flex-col items-center text-center">
-          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Every Work Session Easily Tracked. Every Task Organized Effortlessly.
-          </h2>
-          <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Every session is tracked by task, which not only shows you exactly what you worked on &amp; for how long —
-            but also forces you to stay organized. Because if you don&apos;t organize, you can&apos;t start the
-            session.
-          </p>
-          <video
-            className="h-auto w-full"
-            src="/marketing/sessions-tracked.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            controls={false}
-            aria-label="Daywinner dashboard with sessions tracked by task"
-          />
         </div>
       </section>
 
