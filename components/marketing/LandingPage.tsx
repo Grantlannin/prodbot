@@ -306,7 +306,7 @@ export default function LandingPage() {
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             99% of people just fill their day with busywork &amp; don&apos;t actually accomplish anything... but your
             Daywinner bot simply doesn&apos;t allow that to happen. Your Daywinner bot knows you&apos;re destined for
-            the 1%. And this is why it asks you...
+            the 1%. And this is why it holds you accountable &amp; asks you...
           </p>
           <h2 className="mb-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             &ldquo;What Did You <em>actually</em> Get Done Today?&rdquo;
@@ -324,8 +324,8 @@ export default function LandingPage() {
             most important thing, or if you just &ldquo;productively procrastinated&rdquo;
           </p>
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Your bot then puts you through a wind-down flow that forces you to stay organized (by walking you through
-            the organization process, zero effort on your end)
+            Your bot then puts you through a wind-down flow that forces you to stay organized &amp; prioritize the 1
+            most important task for tomorrow (and it walks you through the whole thing, zero effort on your end)
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             ...and then helps you choose the next important task for the following day (crucial for people with ADHD or
