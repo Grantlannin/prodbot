@@ -341,63 +341,41 @@ export default function LandingPage() {
           <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-[1.55] tracking-tight text-green-600 sm:text-4xl">
             The single most important task you need to do, already ready to go.
           </p>
-          <div className="relative mb-8 flex w-full max-w-md items-center justify-center px-10 py-10 sm:px-14 sm:py-12">
-            <span
-              aria-hidden
-              className="pointer-events-none absolute left-1 top-1/2 z-20 -translate-y-1/2 text-5xl font-bold leading-none text-green-600 sm:left-2 sm:text-6xl"
-            >
-              →
-            </span>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute right-1 top-1/2 z-20 -translate-y-1/2 text-5xl font-bold leading-none text-green-600 sm:right-2 sm:text-6xl"
-            >
-              ←
-            </span>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute left-1/2 top-1 z-20 -translate-x-1/2 text-5xl font-bold leading-none text-green-600 sm:top-2 sm:text-6xl"
-            >
-              ↓
-            </span>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute bottom-1 left-1/2 z-20 -translate-x-1/2 text-5xl font-bold leading-none text-green-600 sm:bottom-2 sm:text-6xl"
-            >
-              ↑
-            </span>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute left-3 top-3 z-20 rotate-45 text-4xl font-bold leading-none text-green-600 sm:left-5 sm:top-5 sm:text-5xl"
-            >
-              →
-            </span>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute right-3 top-3 z-20 -rotate-45 text-4xl font-bold leading-none text-green-600 sm:right-5 sm:top-5 sm:text-5xl"
-            >
-              ←
-            </span>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute bottom-3 left-3 z-20 -rotate-45 text-4xl font-bold leading-none text-green-600 sm:bottom-5 sm:left-5 sm:text-5xl"
-            >
-              →
-            </span>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute bottom-3 right-3 z-20 rotate-45 text-4xl font-bold leading-none text-green-600 sm:bottom-5 sm:right-5 sm:text-5xl"
-            >
-              ←
-            </span>
-            <Image
-              src="/marketing/tomorrow-task-list.png"
-              alt="Tomorrow's task list — finish onboarding"
-              width={472}
-              height={232}
-              className="relative z-0 h-auto w-full max-w-[260px] rounded-lg bg-white sm:max-w-[300px]"
-              unoptimized
-            />
+          <div className="relative mx-auto mb-8 w-full max-w-[22rem] sm:max-w-md">
+            <div className="relative mx-auto w-fit px-14 py-14 sm:px-16 sm:py-16">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute left-0 top-1/2 z-20 -translate-y-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
+              >
+                →
+              </span>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute right-0 top-1/2 z-20 -translate-y-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
+              >
+                ←
+              </span>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
+              >
+                ↓
+              </span>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute bottom-0 left-1/2 z-20 -translate-x-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
+              >
+                ↑
+              </span>
+              <Image
+                src="/marketing/tomorrow-task-list.png"
+                alt="Tomorrow's task list — finish onboarding"
+                width={472}
+                height={232}
+                className="relative z-0 h-auto w-full max-w-[240px] rounded-lg bg-white sm:max-w-[280px]"
+                unoptimized
+              />
+            </div>
           </div>
           <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             you&apos;ve just &ldquo;tee&apos;d up&rdquo; tomorrow&apos;s work session like a 7-figure entrepreneur. Pair
