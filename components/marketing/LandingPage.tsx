@@ -346,9 +346,15 @@ export default function LandingPage() {
             <div className="relative mx-auto w-fit px-14 py-14 sm:px-16 sm:py-16">
               <span
                 aria-hidden
-                className="pointer-events-none absolute left-0 top-1/2 z-20 -translate-y-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
+                className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
               >
-                →
+                ↓
+              </span>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute right-1 top-[18%] z-20 rotate-[45deg] text-4xl font-bold leading-none text-green-600 sm:right-2 sm:text-5xl"
+              >
+                ←
               </span>
               <span
                 aria-hidden
@@ -358,9 +364,9 @@ export default function LandingPage() {
               </span>
               <span
                 aria-hidden
-                className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
+                className="pointer-events-none absolute bottom-[18%] right-1 z-20 -rotate-[45deg] text-4xl font-bold leading-none text-green-600 sm:right-2 sm:text-5xl"
               >
-                ↓
+                ←
               </span>
               <span
                 aria-hidden
@@ -370,75 +376,21 @@ export default function LandingPage() {
               </span>
               <span
                 aria-hidden
-                className="pointer-events-none absolute left-1 top-1 z-20 rotate-45 text-3xl font-bold leading-none text-green-600 sm:left-2 sm:top-2 sm:text-4xl"
+                className="pointer-events-none absolute bottom-[18%] left-1 z-20 rotate-[45deg] text-4xl font-bold leading-none text-green-600 sm:left-2 sm:text-5xl"
               >
                 →
               </span>
               <span
                 aria-hidden
-                className="pointer-events-none absolute right-1 top-1 z-20 -rotate-45 text-3xl font-bold leading-none text-green-600 sm:right-2 sm:top-2 sm:text-4xl"
-              >
-                ←
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute bottom-1 left-1 z-20 -rotate-45 text-3xl font-bold leading-none text-green-600 sm:bottom-2 sm:left-2 sm:text-4xl"
+                className="pointer-events-none absolute left-0 top-1/2 z-20 -translate-y-1/2 text-4xl font-bold leading-none text-green-600 sm:text-5xl"
               >
                 →
               </span>
               <span
                 aria-hidden
-                className="pointer-events-none absolute bottom-1 right-1 z-20 rotate-45 text-3xl font-bold leading-none text-green-600 sm:bottom-2 sm:right-2 sm:text-4xl"
-              >
-                ←
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute left-0 top-[28%] z-20 rotate-[20deg] text-3xl font-bold leading-none text-green-600 sm:text-4xl"
+                className="pointer-events-none absolute left-1 top-[18%] z-20 -rotate-[45deg] text-4xl font-bold leading-none text-green-600 sm:left-2 sm:text-5xl"
               >
                 →
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute left-0 top-[72%] z-20 -rotate-[20deg] text-3xl font-bold leading-none text-green-600 sm:text-4xl"
-              >
-                →
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute right-0 top-[28%] z-20 -rotate-[20deg] text-3xl font-bold leading-none text-green-600 sm:text-4xl"
-              >
-                ←
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute right-0 top-[72%] z-20 rotate-[20deg] text-3xl font-bold leading-none text-green-600 sm:text-4xl"
-              >
-                ←
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute left-[28%] top-0 z-20 -rotate-[20deg] text-3xl font-bold leading-none text-green-600 sm:text-4xl"
-              >
-                ↓
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute left-[72%] top-0 z-20 rotate-[20deg] text-3xl font-bold leading-none text-green-600 sm:text-4xl"
-              >
-                ↓
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute bottom-0 left-[28%] z-20 rotate-[20deg] text-3xl font-bold leading-none text-green-600 sm:text-4xl"
-              >
-                ↑
-              </span>
-              <span
-                aria-hidden
-                className="pointer-events-none absolute bottom-0 left-[72%] z-20 -rotate-[20deg] text-3xl font-bold leading-none text-green-600 sm:text-4xl"
-              >
-                ↑
               </span>
               <Image
                 src="/marketing/tomorrow-task-list.png"
