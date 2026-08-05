@@ -143,9 +143,18 @@ export default function LandingPage() {
           </div>
 
           <div className="mb-14 text-center">
-            <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-              Choose your task &gt; Choose your focus session length (timed) &gt; Begin working &amp; keep distracting
-              sites blocked
+            <h2 className="mb-4 overflow-x-auto text-center text-[12px] font-semibold leading-snug tracking-tight text-slate-900 sm:text-[13px]">
+              <span className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:gap-2.5">
+                <span>Choose your task</span>
+                <span aria-hidden className="font-normal text-slate-400">
+                  &gt;
+                </span>
+                <span>Choose your focus session length (timed)</span>
+                <span aria-hidden className="font-normal text-slate-400">
+                  &gt;
+                </span>
+                <span>Begin working &amp; keep distracting sites blocked</span>
+              </span>
             </h2>
             <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
               Every session is tracked by task, which not only shows you exactly what you worked on &amp; for how long —
