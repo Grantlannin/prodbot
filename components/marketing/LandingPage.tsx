@@ -545,14 +545,6 @@ export default function LandingPage() {
           Daywinner gives you structure without changing how you move.
         </p>
 
-        <div className="mb-8 rounded-2xl border border-slate-200 bg-slate-100/80 p-5">
-          <p className="mb-1 text-sm font-bold text-slate-900">Is this for teams?</p>
-          <p className="text-sm leading-relaxed text-slate-600">
-            Daywinner is personal — for your projects, your timer, your focus. Not corporate project-management
-            theater. If you&apos;re the person doing the work (not only assigning it), you&apos;re who we built this for.
-          </p>
-        </div>
-
         <div className="flex flex-col items-center">
           <SectionCta href={ctaHref} label="YES. I'M IN." />
           <p className="mt-2 text-sm text-slate-500">Chrome recommended for focus blocking</p>
