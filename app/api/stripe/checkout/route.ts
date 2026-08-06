@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { fetchBillingForUser, upsertBillingForUser } from '@/lib/billing/profile';
-import { getAppOrigin, isBillingEnabled } from '@/lib/stripe/config';
+import { DEMO_CHECKOUT_SESSION_ID } from '@/lib/billing/demo';
+import { getAppOrigin, isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
 import { getStripeClient } from '@/lib/stripe/client';
 import { resolveMonthlyPriceId } from '@/lib/stripe/resolve-price';
+import { fetchBillingForUser, upsertBillingForUser } from '@/lib/billing/profile';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
@@ -10,6 +11,16 @@ const SUCCESS_URL = (origin: string) =>
   `${origin}/subscribe/success?session_id={CHECKOUT_SESSION_ID}`;
 
 export async function POST() {
+  const origin = getAppOrigin();
+
+  // Fake purchase path for ripping through purchase → OTO → onboard.
+  if (isBillingDemoFlow()) {
+    return NextResponse.json({
+      url: `${origin}/subscribe/success?session_id=${DEMO_CHECKOUT_SESSION_ID}`,
+      demo: true,
+    });
+  }
+
   if (!isBillingEnabled()) {
     return NextResponse.json({ error: 'Billing is not configured' }, { status: 503 });
   }
@@ -17,7 +28,6 @@ export async function POST() {
   try {
     const stripe = getStripeClient();
     const priceId = await resolveMonthlyPriceId(stripe);
-    const origin = getAppOrigin();
 
     const supabase = createServerSupabaseClient();
     const {

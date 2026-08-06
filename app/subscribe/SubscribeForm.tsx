@@ -11,6 +11,7 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 
 interface BillingChecks {
   paywallDisabled: boolean;
+  demoFlow?: boolean;
   hasStripeSecret: boolean;
   supabaseConfigured: boolean;
   billingEnabled: boolean;
@@ -76,7 +77,10 @@ export default function SubscribeForm() {
     );
   }
 
-  if (!status.billingEnabled) {
+  const demoFlow = status.checks?.demoFlow === true;
+  const showCheckout = status.billingEnabled || demoFlow;
+
+  if (!showCheckout) {
     const checks = status.checks;
     const paywallOff = checks?.paywallDisabled === true;
 
@@ -135,36 +139,47 @@ export default function SubscribeForm() {
     <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
-          <h1 style={styles.title}>Subscribe to Daywinner</h1>
+          <h1 style={styles.title}>{demoFlow ? 'Simulate purchase (demo)' : 'Subscribe to Daywinner'}</h1>
           <p style={styles.lead}>
-            {MONTHLY_PRICE_LABEL}/month. Your projects, timer, and day plan stay in your browser — we only store your
-            account and subscription status.
+            {demoFlow
+              ? 'Fake checkout — no Stripe charge. Runs purchase → course upsell → account → onboard so you can test the full flow.'
+              : `${MONTHLY_PRICE_LABEL}/month. Your projects, timer, and day plan stay in your browser — we only store your account and subscription status.`}
           </p>
 
           {notice ? <p style={styles.notice}>{notice}</p> : null}
           {error ? <p style={styles.error}>{error}</p> : null}
 
-          <ul style={styles.featureList}>
-            <li>Dashboard, timer, and session locks</li>
-            <li>Projects, notes, and EOD reports</li>
-            <li>Chrome extension for site blocking</li>
-          </ul>
+          {!demoFlow ? (
+            <>
+              <ul style={styles.featureList}>
+                <li>Dashboard, timer, and session locks</li>
+                <li>Projects, notes, and EOD reports</li>
+                <li>Chrome extension for site blocking</li>
+              </ul>
 
-          <div style={styles.chromeNote}>
-            <p style={styles.chromeNoteTitle}>Requires Google Chrome (desktop)</p>
-            <p style={styles.chromeNoteText}>
-              Daywinner and the focus extension run in Chrome — not Safari or Firefox.{' '}
-              <a href={CHROME_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" style={styles.chromeLink}>
-                Download Chrome
-              </a>
-            </p>
-          </div>
+              <div style={styles.chromeNote}>
+                <p style={styles.chromeNoteTitle}>Requires Google Chrome (desktop)</p>
+                <p style={styles.chromeNoteText}>
+                  Daywinner and the focus extension run in Chrome — not Safari or Firefox.{' '}
+                  <a href={CHROME_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" style={styles.chromeLink}>
+                    Download Chrome
+                  </a>
+                </p>
+              </div>
+            </>
+          ) : null}
 
           <button type="button" onClick={startCheckout} disabled={busy} style={styles.primaryBtn}>
-            {busy ? 'Redirecting to Stripe…' : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
+            {busy
+              ? 'Redirecting…'
+              : demoFlow
+                ? 'Simulate purchase →'
+                : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
           </button>
 
-          <p style={styles.footerNote}>You&apos;ll create your account after checkout.</p>
+          <p style={styles.footerNote}>
+            {demoFlow ? 'Demo mode — nothing is charged.' : "You'll create your account after checkout."}
+          </p>
 
           <p style={styles.legal}>
             <Link href="/terms" style={styles.legalLink}>

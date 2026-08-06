@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { COURSE_PRICE_CENTS, COURSE_PRODUCT_NAME } from '@/lib/billing/price';
-import { isBillingEnabled, getAppOrigin } from '@/lib/stripe/config';
+import { DEMO_COURSE_COOKIE, isDemoCheckoutSessionId } from '@/lib/billing/demo';
+import { isBillingDemoFlow, isBillingEnabled, getAppOrigin } from '@/lib/stripe/config';
 import { getStripeClient } from '@/lib/stripe/client';
 import { resolveCoursePriceId } from '@/lib/stripe/resolve-price';
 
@@ -32,15 +33,27 @@ async function resolvePaymentMethodId(
 }
 
 export async function POST(request: Request) {
-  if (!isBillingEnabled()) {
-    return NextResponse.json({ error: 'Billing is not configured' }, { status: 503 });
-  }
-
   try {
     const body = (await request.json()) as { sessionId?: unknown };
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId.trim() : '';
     if (!sessionId.startsWith('cs_')) {
       return NextResponse.json({ error: 'Missing checkout session' }, { status: 400 });
+    }
+
+    if (isBillingDemoFlow() && isDemoCheckoutSessionId(sessionId)) {
+      const res = NextResponse.json({ ok: true, demo: true });
+      res.cookies.set(DEMO_COURSE_COOKIE, '1', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60,
+      });
+      return res;
+    }
+
+    if (!isBillingEnabled()) {
+      return NextResponse.json({ error: 'Billing is not configured' }, { status: 503 });
     }
 
     const stripe = getStripeClient();

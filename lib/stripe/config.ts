@@ -28,6 +28,17 @@ export function isPaywallDisabled(): boolean {
   return isPaywallExplicitlyDisabled();
 }
 
+/**
+ * Fake purchase flow: subscribe → OTO → account, with no Stripe charges.
+ * Enable with BILLING_DEMO_FLOW=true or NEXT_PUBLIC_BILLING_DEMO_FLOW=true.
+ */
+export function isBillingDemoFlow(): boolean {
+  return (
+    process.env.BILLING_DEMO_FLOW === 'true' ||
+    process.env.NEXT_PUBLIC_BILLING_DEMO_FLOW === 'true'
+  );
+}
+
 /** Paywall is on when Stripe + Supabase are configured and not explicitly disabled. */
 export function isBillingEnabled(): boolean {
   if (isPaywallExplicitlyDisabled()) return false;
@@ -38,6 +49,7 @@ export function isBillingEnabled(): boolean {
 export function getBillingConfigChecks() {
   return {
     paywallDisabled: isPaywallExplicitlyDisabled(),
+    demoFlow: isBillingDemoFlow(),
     hasStripeSecret: !!getStripeSecretKey(),
     supabaseConfigured: isSupabaseConfigured(),
     billingEnabled: isBillingEnabled(),

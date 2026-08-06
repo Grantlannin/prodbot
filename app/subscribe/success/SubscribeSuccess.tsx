@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import MarketingShell from '@/components/marketing/MarketingShell';
 import { COURSE_PRICE_LABEL } from '@/lib/billing/price';
+import { DEMO_CHECKOUT_SESSION_ID } from '@/lib/billing/demo';
 
 const CREATE_ACCOUNT_HREF = '/login?mode=signup&next=/intro/chrome';
 
@@ -16,8 +17,25 @@ export default function SubscribeSuccess() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bought, setBought] = useState(courseDone);
+  const [armed, setArmed] = useState(false);
 
   const showOto = useMemo(() => Boolean(sessionId) && !bought, [sessionId, bought]);
+  const isDemo = sessionId === DEMO_CHECKOUT_SESSION_ID;
+
+  useEffect(() => {
+    if (!isDemo || armed) return;
+    void fetch('/api/billing/demo/arm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId }),
+    })
+      .then(async res => {
+        if (res.ok) setArmed(true);
+      })
+      .catch(() => {
+        /* non-blocking — signup still works with paywall off */
+      });
+  }, [isDemo, sessionId, armed]);
 
   const buyCourse = async () => {
     if (!sessionId) {
@@ -57,12 +75,19 @@ export default function SubscribeSuccess() {
     <MarketingShell showSignIn={false}>
       <div className="flex justify-center pt-12">
         <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+          {isDemo ? (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-center text-xs font-semibold text-amber-800">
+              Demo mode — no real charges
+            </p>
+          ) : null}
+
           {showOto ? (
             <>
               <div className="text-center">
                 <p className="mb-2 text-lg font-bold text-slate-900">One more thing</p>
                 <p className="text-sm leading-relaxed text-slate-600">
-                  Add the Daywinner Course for {COURSE_PRICE_LABEL} — one-time, charged to the card you just used.
+                  Add the Daywinner Course for {COURSE_PRICE_LABEL} — one-time
+                  {isDemo ? ' (simulated)' : ', charged to the card you just used'}.
                 </p>
               </div>
 

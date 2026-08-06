@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
+import { isBillingDemoFlow, isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { MONTHLY_PRICE_LABEL, MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
 import MarketingShell from './MarketingShell';
 
@@ -81,7 +81,12 @@ const whoItsFor = [
 export default function LandingPage() {
   const paywall = isBillingEnabled();
   const paywallOff = isPaywallDisabled();
-  const ctaHref = paywall ? '/subscribe' : paywallOff ? '/login?mode=signup&next=/intro/chrome' : '/app';
+  const demoFlow = isBillingDemoFlow();
+  const ctaHref = paywall || demoFlow
+    ? '/subscribe'
+    : paywallOff
+      ? '/login?mode=signup&next=/intro/chrome'
+      : '/app';
 
   return (
     <MarketingShell>

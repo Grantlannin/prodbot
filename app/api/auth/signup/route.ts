@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { DEMO_PAID_COOKIE } from '@/lib/billing/demo';
 import { linkStripeCustomerToUser } from '@/lib/billing/link-stripe';
-import { isBillingEnabled } from '@/lib/stripe/config';
+import { upsertBillingForUser } from '@/lib/billing/profile';
+import { isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 
 function normalizeEmail(email: string): string {
@@ -11,6 +14,17 @@ async function findUserByEmail(admin: ReturnType<typeof createAdminSupabaseClien
   const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000 });
   if (error) throw error;
   return data.users.find(u => u.email?.toLowerCase() === email) ?? null;
+}
+
+async function attachDemoSubscription(userId: string) {
+  const cookieStore = cookies();
+  if (cookieStore.get(DEMO_PAID_COOKIE)?.value !== '1') return;
+
+  await upsertBillingForUser(createAdminSupabaseClient(), userId, {
+    stripe_customer_id: `cus_demo_${userId.slice(0, 8)}`,
+    subscription_status: 'active',
+    subscription_ends_at: null,
+  });
 }
 
 export async function POST(req: Request) {
@@ -35,7 +49,13 @@ export async function POST(req: Request) {
     });
 
     if (!error) {
-      if (isBillingEnabled()) {
+      if (isBillingDemoFlow()) {
+        try {
+          await attachDemoSubscription(data.user.id);
+        } catch (demoError) {
+          console.error('[auth/signup] demo billing', demoError);
+        }
+      } else if (isBillingEnabled()) {
         try {
           await linkStripeCustomerToUser(data.user.id, email);
         } catch (linkError) {
@@ -64,7 +84,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: updateError.message }, { status: 400 });
       }
 
-      if (isBillingEnabled()) {
+      if (isBillingDemoFlow()) {
+        try {
+          await attachDemoSubscription(existing.id);
+        } catch (demoError) {
+          console.error('[auth/signup] demo billing', demoError);
+        }
+      } else if (isBillingEnabled()) {
         try {
           await linkStripeCustomerToUser(existing.id, email);
         } catch (linkError) {

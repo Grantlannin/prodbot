@@ -29,6 +29,7 @@ export async function GET() {
         active: false,
         status: 'none',
         endsAt: null,
+        checks: getBillingConfigChecks(),
       });
     }
 
@@ -40,6 +41,7 @@ export async function GET() {
       active,
       status: billing?.subscription_status ?? 'none',
       endsAt: billing?.subscription_ends_at ?? null,
+      checks: getBillingConfigChecks(),
     });
   } catch (error) {
     console.error('[billing/status]', error);
