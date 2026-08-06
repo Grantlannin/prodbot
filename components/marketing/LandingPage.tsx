@@ -190,7 +190,6 @@ export default function LandingPage() {
             className="h-auto w-full max-w-3xl"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="organize my tasks" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -209,7 +208,6 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="pick my task" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -232,7 +230,6 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="set my timer" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -258,7 +255,6 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="lock distractions" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -441,7 +437,6 @@ export default function LandingPage() {
             className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="get unstuck" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -460,7 +455,6 @@ export default function LandingPage() {
             className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="beat resistance" />
         </div>
 
         <div className="flex flex-col items-center text-center pt-10">
@@ -475,7 +469,6 @@ export default function LandingPage() {
             className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="organize my list" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
