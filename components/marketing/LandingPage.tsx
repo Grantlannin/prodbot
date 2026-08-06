@@ -6,7 +6,7 @@ import MarketingShell from './MarketingShell';
 
 function SectionCta({ href, label }: { href: string; label: string }) {
   return (
-    <div className="mt-6 flex justify-center">
+    <div className="mt-6 mb-2 flex justify-center">
       <Link
         href={href}
         className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
@@ -404,7 +404,7 @@ export default function LandingPage() {
       </section>
 
 
-      <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
+      <section className="space-y-6 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-6 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             ...But what if it&apos;s a &ldquo;low&rdquo; day? One of those days where things feel harder than usual?
@@ -515,7 +515,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+      <section className="pt-12 sm:pt-16">
         <div className="mb-10 flex flex-col items-center text-center">
           <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Who it&apos;s for</p>
           <h2 className="mb-4 max-w-xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
