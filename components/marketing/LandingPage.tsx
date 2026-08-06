@@ -4,9 +4,9 @@ import { isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { MONTHLY_PRICE_LABEL, MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
 import MarketingShell from './MarketingShell';
 
-function SectionCta({ href, label }: { href: string; label: string }) {
+function SectionCta({ href, label, className = '' }: { href: string; label: string; className?: string }) {
   return (
-    <div className="mt-6 mb-2 flex justify-center">
+    <div className={`mt-6 mb-2 flex justify-center ${className}`.trim()}>
       <Link
         href={href}
         className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
@@ -268,11 +268,11 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="I'm ready to WORK" />
+          <SectionCta href={ctaHref} label="I'm ready to WORK" className="mt-10" />
         </div>
       </section>
 
-      <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
+      <section className="space-y-6 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-6 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Congrats. You just had a more productive 4 hours than you&apos;ve had in the past 4 years. But now, it&apos;s
