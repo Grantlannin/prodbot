@@ -4,6 +4,21 @@ import { isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { MONTHLY_PRICE_LABEL, MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
 import MarketingShell from './MarketingShell';
 
+function SectionCta({ href, label }: { href: string; label: string }) {
+  return (
+    <div className="mt-6 flex justify-center">
+      <Link
+        href={href}
+        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
+      >
+        <span className="text-sm font-semibold text-white">{label}</span>
+        <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
+        <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
+      </Link>
+    </div>
+  );
+}
+
 const features = [
   "Work timer with soft & hard session locks (so you can't distract yourself)",
   'A homebase for your most important projects, tasks, notes, and context links in 1 easy-to-use, central location',
@@ -74,7 +89,6 @@ export default function LandingPage() {
   const paywall = isBillingEnabled();
   const paywallOff = isPaywallDisabled();
   const ctaHref = paywall ? '/subscribe' : paywallOff ? '/login?mode=signup&next=/intro/chrome' : '/app';
-  const ctaLabel = paywall ? `Subscribe — ${MONTHLY_PRICE_SHORT}` : paywallOff ? 'Get started' : 'Open app';
 
   return (
     <MarketingShell>
@@ -143,6 +157,7 @@ export default function LandingPage() {
               but also forces you to stay organized. Because if you don&apos;t organize, you can&apos;t start the
               session.
             </p>
+            <SectionCta href={ctaHref} label="track my sessions" />
           </div>
         </div>
       </section>
@@ -175,6 +190,7 @@ export default function LandingPage() {
             className="h-auto w-full max-w-3xl"
             unoptimized
           />
+          <SectionCta href={ctaHref} label="organize my tasks" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -193,6 +209,7 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
+          <SectionCta href={ctaHref} label="pick my task" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -215,6 +232,7 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
+          <SectionCta href={ctaHref} label="set my timer" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -240,6 +258,7 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
+          <SectionCta href={ctaHref} label="lock distractions" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -259,6 +278,7 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
+          <SectionCta href={ctaHref} label="crush a session" />
         </div>
       </section>
 
@@ -389,6 +409,7 @@ export default function LandingPage() {
             </span>
             . It&apos;s been won before it even started.
           </p>
+          <SectionCta href={ctaHref} label="tee up tomorrow" />
         </div>
       </section>
 
@@ -420,6 +441,7 @@ export default function LandingPage() {
             className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
+          <SectionCta href={ctaHref} label="get unstuck" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -438,6 +460,7 @@ export default function LandingPage() {
             className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
+          <SectionCta href={ctaHref} label="beat resistance" />
         </div>
 
         <div className="flex flex-col items-center text-center pt-10">
@@ -452,6 +475,7 @@ export default function LandingPage() {
             className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
+          <SectionCta href={ctaHref} label="organize my list" />
         </div>
 
         <div className="flex justify-center py-2" aria-hidden>
@@ -473,6 +497,7 @@ export default function LandingPage() {
             className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
+          <SectionCta href={ctaHref} label="tee up my task" />
         </div>
 
         <div className="flex flex-col items-center text-center pt-10">
@@ -499,6 +524,7 @@ export default function LandingPage() {
             Opens Gmail (or your mail app) with today&apos;s report pre-filled: what you got done, insights, work
             time, tomorrow. You review and hit Send — nothing leaves Daywinner automatically.
           </p>
+          <SectionCta href={ctaHref} label="send my EOD" />
         </div>
       </section>
 
@@ -540,14 +566,9 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={ctaHref}
-            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-slate-800"
-          >
-            {ctaLabel}
-          </Link>
-          <span className="text-sm text-slate-500">Chrome recommended for focus blocking</span>
+        <div className="flex flex-col items-center">
+          <SectionCta href={ctaHref} label="this is for me" />
+          <p className="mt-2 text-sm text-slate-500">Chrome recommended for focus blocking</p>
         </div>
       </section>
 
@@ -575,6 +596,7 @@ export default function LandingPage() {
             </p>
           </div>
         ) : null}
+        <SectionCta href={ctaHref} label="get daywinner" />
       </section>
 
       <footer className="mt-16 flex flex-wrap gap-4 border-t border-slate-200 pt-8 text-sm text-slate-500">
