@@ -131,7 +131,35 @@ export default function LandingPage() {
               <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
                 WIN
               </span>{' '}
-              Your Day, Every Single Day. Zero Misses.
+              Your Day,{' '}
+              <span className="relative inline-block whitespace-nowrap px-0.5 pb-1">
+                Every Single Day
+                <svg
+                  className="pointer-events-none absolute -bottom-0.5 left-[-2%] h-[0.55em] w-[104%] text-red-500 sm:-bottom-1"
+                  viewBox="0 0 220 18"
+                  fill="none"
+                  aria-hidden
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M3 11 C18 7 28 14 42 10 C56 6 68 13 84 9 C100 5 112 14 128 10 C144 6 158 13 174 9 C190 5 204 12 217 8"
+                    stroke="currentColor"
+                    strokeWidth="4.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.95"
+                  />
+                  <path
+                    d="M6 13 C22 9 34 15 50 11 C66 7 78 14 94 11 C110 8 122 15 138 11 C154 7 168 14 184 10 C198 7 208 13 214 11"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.55"
+                  />
+                </svg>
+              </span>
+              . Zero Misses.
             </h2>
             <Image
               src="/marketing/sessions-flow-steps.png"
