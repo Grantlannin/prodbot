@@ -9,7 +9,7 @@ function SectionCta({ href, label, className }: { href: string; label: string; c
     <div className={`mb-2 flex justify-center ${className ?? 'mt-6'}`}>
       <Link
         href={href}
-        className="cta-gas-flame inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline transition hover:bg-slate-800"
+        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
       >
         <span className="text-sm font-semibold text-white">{label}</span>
         <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
@@ -110,7 +110,7 @@ export default function LandingPage() {
           <div className="mt-5 flex flex-col items-center gap-2">
             <Link
               href={ctaHref}
-              className="cta-gas-flame inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline transition hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
             >
               <span className="text-sm font-semibold text-white">let&apos;s go</span>
               <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
