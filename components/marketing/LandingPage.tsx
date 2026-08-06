@@ -131,23 +131,7 @@ export default function LandingPage() {
               <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
                 WIN
               </span>{' '}
-              Your Day,{' '}
-              <span className="relative inline-block whitespace-nowrap px-0.5">
-                Every Single Day
-                <svg
-                  className="pointer-events-none absolute left-[-3%] top-[76%] h-[0.38em] w-[106%] text-red-500"
-                  viewBox="0 0 200 14"
-                  fill="none"
-                  aria-hidden
-                  preserveAspectRatio="none"
-                >
-                  <path
-                    d="M1.5 6.3 L5.6 6.9 L9.7 7.0 L13.8 6.8 L17.9 6.4 L22.0 6.3 L26.1 6.4 L30.2 6.6 L34.3 6.6 L38.4 6.1 L42.5 5.2 L46.6 4.2 L50.8 3.4 L54.9 3.3 L59.0 3.8 L63.1 4.6 L67.2 5.5 L71.3 6.2 L75.4 6.1 L79.5 5.6 L83.6 5.1 L87.7 4.9 L91.8 5.2 L95.9 5.7 L100.0 6.2 L104.1 6.3 L108.2 5.8 L112.3 4.7 L116.4 3.6 L120.5 2.8 L124.6 2.6 L128.7 3.0 L132.8 3.8 L136.9 4.5 L141.0 5.0 L145.1 5.3 L149.2 5.5 L153.4 5.9 L157.5 6.7 L161.6 7.8 L165.7 8.9 L169.8 9.5 L173.9 9.2 L178.0 8.3 L182.1 7.2 L186.2 6.2 L190.3 5.7 L194.4 5.6 L198.5 5.8 L198.5 8.3 L194.4 8.3 L190.3 8.6 L186.2 9.2 L182.1 10.2 L178.0 11.1 L173.9 11.7 L169.8 11.5 L165.7 10.7 L161.6 9.6 L157.5 8.5 L153.4 7.7 L149.2 7.4 L145.1 7.7 L141.0 8.0 L136.9 8.1 L132.8 7.7 L128.7 7.1 L124.6 6.8 L120.5 6.9 L116.4 7.7 L112.3 9.0 L108.2 10.2 L104.1 11.0 L100.0 11.2 L95.9 10.8 L91.8 10.1 L87.7 9.4 L83.6 9.0 L79.5 8.8 L75.4 8.5 L71.3 8.0 L67.2 7.3 L63.1 6.4 L59.0 5.6 L54.9 5.4 L50.8 6.0 L46.6 7.1 L42.5 8.3 L38.4 9.3 L34.3 9.7 L30.2 9.6 L26.1 9.3 L22.0 9.1 L17.9 9.3 L13.8 9.7 L9.7 10.1 L5.6 10.0 L1.5 9.2 Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </span>
-              . Zero Misses.
+              Your Day, Every Single Day. Zero Misses.
             </h2>
             <Image
               src="/marketing/sessions-flow-steps.png"
