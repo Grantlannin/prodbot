@@ -19,13 +19,6 @@ function SectionCta({ href, label }: { href: string; label: string }) {
   );
 }
 
-const features = [
-  "Work timer with soft & hard session locks (so you can't distract yourself)",
-  'A homebase for your most important projects, tasks, notes, and context links in 1 easy-to-use, central location',
-  'End-of-day reports of what you worked on / how long you worked (for yourself to be proud of) or that you can send to an accountability partner via email in 1 easy click',
-  'Chrome extension for site blocking + infraction tracker to track exactly how many times you distracted yourself in a work session (and for the day)',
-];
-
 const whoItsFor = [
   {
     title: 'You’re building something on your own',
@@ -157,7 +150,7 @@ export default function LandingPage() {
               but also forces you to stay organized. Because if you don&apos;t organize, you can&apos;t start the
               session.
             </p>
-            <SectionCta href={ctaHref} label="track my sessions" />
+            <SectionCta href={ctaHref} label="I'm ready to transcend" />
           </div>
         </div>
       </section>
@@ -274,7 +267,7 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="crush a session" />
+          <SectionCta href={ctaHref} label="I'm ready to WORK" />
         </div>
       </section>
 
@@ -405,7 +398,7 @@ export default function LandingPage() {
             </span>
             . It&apos;s been won before it even started.
           </p>
-          <SectionCta href={ctaHref} label="tee up tomorrow" />
+          <SectionCta href={ctaHref} label="I'm ready to dominate" />
         </div>
       </section>
 
@@ -490,7 +483,7 @@ export default function LandingPage() {
             className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="tee up my task" />
+          <SectionCta href={ctaHref} label="Need my bot ASAP" />
         </div>
 
         <div className="flex flex-col items-center text-center pt-10">
@@ -517,7 +510,7 @@ export default function LandingPage() {
             Opens Gmail (or your mail app) with today&apos;s report pre-filled: what you got done, insights, work
             time, tomorrow. You review and hit Send — nothing leaves Daywinner automatically.
           </p>
-          <SectionCta href={ctaHref} label="send my EOD" />
+          <SectionCta href={ctaHref} label="GIVE ME MY BOT" />
         </div>
       </section>
 
@@ -560,24 +553,13 @@ export default function LandingPage() {
         </div>
 
         <div className="flex flex-col items-center">
-          <SectionCta href={ctaHref} label="this is for me" />
+          <SectionCta href={ctaHref} label="YES. I'M IN." />
           <p className="mt-2 text-sm text-slate-500">Chrome recommended for focus blocking</p>
         </div>
       </section>
 
-      <section className="border-t border-slate-200 pt-12 sm:pt-16">
-        <ul className="mb-12 space-y-3">
-          {features.map(feature => (
-            <li key={feature} className="flex items-start gap-3 text-sm text-slate-700">
-              <span className="mt-0.5 text-slate-400" aria-hidden>
-                ✓
-              </span>
-              {feature}
-            </li>
-          ))}
-        </ul>
-
-        {paywall ? (
+      {paywall ? (
+        <section className="border-t border-slate-200 pt-12 sm:pt-16">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p className="mb-1 text-sm font-semibold text-slate-900">Simple pricing</p>
             <p className="mb-4 text-3xl font-bold text-slate-900">
@@ -588,9 +570,8 @@ export default function LandingPage() {
               not your projects or notes.
             </p>
           </div>
-        ) : null}
-        <SectionCta href={ctaHref} label="get daywinner" />
-      </section>
+        </section>
+      ) : null}
 
       <footer className="mt-16 flex flex-wrap gap-4 border-t border-slate-200 pt-8 text-sm text-slate-500">
         <Link href="/login" className="font-semibold text-slate-600 no-underline hover:text-slate-900">
