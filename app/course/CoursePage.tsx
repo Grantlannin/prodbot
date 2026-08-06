@@ -8,6 +8,8 @@ import { COURSE_PRICE_LABEL } from '@/lib/billing/price';
 import {
   COURSE_SECTIONS,
   COURSE_TAGLINE,
+  COURSE_TAGLINE_BEFORE,
+  COURSE_TAGLINE_EMPHASIS,
   COURSE_TITLE,
   toYouTubeEmbedUrl,
   type CourseLesson,
@@ -249,7 +251,10 @@ export default function CoursePage() {
               Daywinner · Course locked
             </p>
             <h1 className="mb-2 text-3xl font-bold tracking-tight text-slate-900">{COURSE_TITLE}</h1>
-            <p className="mb-6 text-sm leading-relaxed text-slate-600">{COURSE_TAGLINE}</p>
+            <p className="mb-6 text-sm leading-relaxed text-slate-600">
+              {COURSE_TAGLINE_BEFORE}
+              <em>{COURSE_TAGLINE_EMPHASIS}</em>.
+            </p>
 
             {demoHint ? (
               <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
@@ -299,7 +304,8 @@ export default function CoursePage() {
                 {COURSE_TITLE}
               </h1>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
-                {COURSE_TAGLINE}
+                {COURSE_TAGLINE_BEFORE}
+                <em>{COURSE_TAGLINE_EMPHASIS}</em>.
               </p>
               <p className="mt-4">
                 <span className="rounded-md bg-slate-900 px-2 py-0.5 text-xs font-semibold text-white">

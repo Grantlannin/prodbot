@@ -13,9 +13,10 @@ export interface CourseSection {
   lessons: CourseLesson[];
 }
 
-export const COURSE_TITLE = 'Daywinner Course';
-export const COURSE_TAGLINE =
-  'The system behind the bot — energy, environment, focus, and execution so you actually ship.';
+export const COURSE_TITLE = 'The Simple Productivity System';
+export const COURSE_TAGLINE_BEFORE = 'The system behind the bot — energy, environment, focus, and execution so you actually ';
+export const COURSE_TAGLINE_EMPHASIS = 'win your day';
+export const COURSE_TAGLINE = `${COURSE_TAGLINE_BEFORE}${COURSE_TAGLINE_EMPHASIS}.`;
 
 /** Convert a YouTube watch URL (optional &t=) into an embeddable player URL. */
 export function toYouTubeEmbedUrl(watchUrl: string): string | null {

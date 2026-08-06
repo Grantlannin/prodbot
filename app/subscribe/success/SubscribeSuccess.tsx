@@ -86,7 +86,7 @@ export default function SubscribeSuccess() {
               <div className="text-center">
                 <p className="mb-2 text-lg font-bold text-slate-900">One more thing</p>
                 <p className="text-sm leading-relaxed text-slate-600">
-                  Add the Daywinner Course for {COURSE_PRICE_LABEL} — one-time
+                  Add The Simple Productivity System for {COURSE_PRICE_LABEL} — one-time
                   {isDemo ? ' (simulated)' : ', charged to the card you just used'}.
                 </p>
               </div>
