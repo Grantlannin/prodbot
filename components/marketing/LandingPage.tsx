@@ -131,7 +131,7 @@ export default function LandingPage() {
               <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
                 WIN
               </span>{' '}
-              your day, every single day. Zero misses.
+              Your Day, Every Single Day. Zero Misses.
             </h2>
             <Image
               src="/marketing/sessions-flow-steps.png"
