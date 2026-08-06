@@ -17,6 +17,28 @@ export const COURSE_TITLE = 'Daywinner Course';
 export const COURSE_TAGLINE =
   'The system behind the bot — energy, environment, focus, and execution so you actually ship.';
 
+/** Convert a YouTube watch URL (optional &t=) into an embeddable player URL. */
+export function toYouTubeEmbedUrl(watchUrl: string): string | null {
+  try {
+    const url = new URL(watchUrl);
+    const id = url.searchParams.get('v');
+    if (!id) return null;
+
+    const embed = new URL(`https://www.youtube.com/embed/${id}`);
+    const t = url.searchParams.get('t');
+    if (t) {
+      const seconds = t.endsWith('s') ? Number.parseInt(t.slice(0, -1), 10) : Number.parseInt(t, 10);
+      if (Number.isFinite(seconds) && seconds > 0) {
+        embed.searchParams.set('start', String(seconds));
+      }
+    }
+    embed.searchParams.set('rel', '0');
+    return embed.toString();
+  } catch {
+    return null;
+  }
+}
+
 export const COURSE_SECTIONS: CourseSection[] = [
   {
     id: 'intro',
