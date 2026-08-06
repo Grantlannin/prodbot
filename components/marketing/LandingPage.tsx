@@ -127,6 +127,12 @@ export default function LandingPage() {
       <section className="border-t border-slate-200 pb-2 pt-5 sm:pb-3 sm:pt-6">
         <div className="mx-auto w-full max-w-3xl">
           <div className="mb-0 text-center">
+            <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+              <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
+                WIN
+              </span>{' '}
+              your day, every single day. Zero misses.
+            </h2>
             <Image
               src="/marketing/sessions-flow-steps.png"
               alt="Step 1 Choose your task > Step 2 set your work timer > Step 3 Begin working (with social media blocked)"
