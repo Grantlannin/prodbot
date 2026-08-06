@@ -117,7 +117,8 @@ export default function LandingPage() {
               <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
             </Link>
             <p className="text-xs text-slate-500 sm:text-sm">
-              No commitments. No hidden fees. Cancel anytime.
+              No commitments. No hidden fees. Cancel anytime. If it doesn&apos;t pay for itself for a year in 30 days,
+              send me a massive email cussing me out.
             </p>
           </div>
         </div>
