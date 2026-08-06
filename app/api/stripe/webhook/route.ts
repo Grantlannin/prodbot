@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
+import { grantCourseAccess } from '@/lib/billing/course';
 import { mapStripeSubscriptionStatus } from '@/lib/billing/subscription';
 import { upsertBillingForUser } from '@/lib/billing/profile';
 import { getStripeWebhookSecret, isBillingEnabled } from '@/lib/stripe/config';
@@ -65,6 +66,17 @@ async function resolveUserId(
   return data?.id ?? null;
 }
 
+function isCourseCheckoutSession(session: Stripe.Checkout.Session): boolean {
+  return (
+    session.mode === 'payment' &&
+    (session.metadata?.oto === 'course' || session.metadata?.daywinner_course === '1')
+  );
+}
+
+function isCoursePaymentIntent(pi: Stripe.PaymentIntent): boolean {
+  return pi.metadata?.oto === 'course' || pi.metadata?.daywinner_course === '1';
+}
+
 export async function POST(req: Request) {
   if (!isBillingEnabled()) {
     return NextResponse.json({ error: 'Billing is not configured' }, { status: 503 });
@@ -94,16 +106,26 @@ export async function POST(req: Request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        const customerId =
+          typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null;
         const userId = await resolveUserId(stripe, {
           userId: session.client_reference_id,
-          customerId: typeof session.customer === 'string' ? session.customer : session.customer?.id,
+          customerId,
         });
+
+        if (isCourseCheckoutSession(session)) {
+          if (customerId) {
+            await stripe.customers.update(customerId, {
+              metadata: { daywinner_course: '1' },
+            });
+          }
+          if (userId) await grantCourseAccess(userId);
+          break;
+        }
+
         if (!userId) break;
 
         const admin = createAdminSupabaseClient();
-        const customerId =
-          typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null;
-
         if (customerId) {
           await upsertBillingForUser(admin, userId, {
             stripe_customer_id: customerId,
@@ -115,6 +137,19 @@ export async function POST(req: Request) {
           const subscription = await stripe.subscriptions.retrieve(session.subscription);
           await syncSubscription(userId, subscription);
         }
+        break;
+      }
+      case 'payment_intent.succeeded': {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        if (!isCoursePaymentIntent(pi)) break;
+        const customerId = typeof pi.customer === 'string' ? pi.customer : pi.customer?.id ?? null;
+        if (customerId) {
+          await stripe.customers.update(customerId, {
+            metadata: { daywinner_course: '1' },
+          });
+        }
+        const userId = await resolveUserId(stripe, { customerId });
+        if (userId) await grantCourseAccess(userId);
         break;
       }
       case 'customer.subscription.created':

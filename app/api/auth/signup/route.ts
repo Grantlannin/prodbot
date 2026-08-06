@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { DEMO_PAID_COOKIE } from '@/lib/billing/demo';
+import { DEMO_COURSE_COOKIE, DEMO_PAID_COOKIE } from '@/lib/billing/demo';
+import { grantCourseAccess } from '@/lib/billing/course';
 import { linkStripeCustomerToUser } from '@/lib/billing/link-stripe';
 import { upsertBillingForUser } from '@/lib/billing/profile';
 import { isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
@@ -16,15 +17,22 @@ async function findUserByEmail(admin: ReturnType<typeof createAdminSupabaseClien
   return data.users.find(u => u.email?.toLowerCase() === email) ?? null;
 }
 
-async function attachDemoSubscription(userId: string) {
+async function attachDemoEntitlements(userId: string) {
   const cookieStore = cookies();
-  if (cookieStore.get(DEMO_PAID_COOKIE)?.value !== '1') return;
+  const paid = cookieStore.get(DEMO_PAID_COOKIE)?.value === '1';
+  const course = cookieStore.get(DEMO_COURSE_COOKIE)?.value === '1';
 
-  await upsertBillingForUser(createAdminSupabaseClient(), userId, {
-    stripe_customer_id: `cus_demo_${userId.slice(0, 8)}`,
-    subscription_status: 'active',
-    subscription_ends_at: null,
-  });
+  if (paid) {
+    await upsertBillingForUser(createAdminSupabaseClient(), userId, {
+      stripe_customer_id: `cus_demo_${userId.slice(0, 8)}`,
+      subscription_status: 'active',
+      subscription_ends_at: null,
+    });
+  }
+
+  if (course) {
+    await grantCourseAccess(userId);
+  }
 }
 
 export async function POST(req: Request) {
@@ -51,13 +59,17 @@ export async function POST(req: Request) {
     if (!error) {
       if (isBillingDemoFlow()) {
         try {
-          await attachDemoSubscription(data.user.id);
+          await attachDemoEntitlements(data.user.id);
         } catch (demoError) {
           console.error('[auth/signup] demo billing', demoError);
         }
       } else if (isBillingEnabled()) {
         try {
           await linkStripeCustomerToUser(data.user.id, email);
+          // Course bought at OTO before account — cookie bridge until webhook/link finds it.
+          if (cookies().get(DEMO_COURSE_COOKIE)?.value === '1') {
+            await grantCourseAccess(data.user.id);
+          }
         } catch (linkError) {
           console.error('[auth/signup] link stripe', linkError);
         }
@@ -86,13 +98,16 @@ export async function POST(req: Request) {
 
       if (isBillingDemoFlow()) {
         try {
-          await attachDemoSubscription(existing.id);
+          await attachDemoEntitlements(existing.id);
         } catch (demoError) {
           console.error('[auth/signup] demo billing', demoError);
         }
       } else if (isBillingEnabled()) {
         try {
           await linkStripeCustomerToUser(existing.id, email);
+          if (cookies().get(DEMO_COURSE_COOKIE)?.value === '1') {
+            await grantCourseAccess(existing.id);
+          }
         } catch (linkError) {
           console.error('[auth/signup] link stripe', linkError);
         }

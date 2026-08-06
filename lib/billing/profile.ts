@@ -18,6 +18,9 @@ export function parseBillingRow(row: Record<string, unknown> | null): BillingPro
     ),
     subscription_ends_at:
       typeof row.subscription_ends_at === 'string' ? row.subscription_ends_at : null,
+    course_access: row.course_access === true,
+    course_purchased_at:
+      typeof row.course_purchased_at === 'string' ? row.course_purchased_at : null,
   };
 }
 
@@ -27,7 +30,9 @@ export async function fetchBillingForUser(
 ): Promise<BillingProfile | null> {
   const { data, error } = await client
     .from('profiles')
-    .select('stripe_customer_id, subscription_status, subscription_ends_at')
+    .select(
+      'stripe_customer_id, subscription_status, subscription_ends_at, course_access, course_purchased_at'
+    )
     .eq('id', userId)
     .maybeSingle();
 

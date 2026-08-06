@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { COURSE_PRICE_CENTS, COURSE_PRODUCT_NAME } from '@/lib/billing/price';
+import {
+  grantCourseAccess,
+  markStripeCustomerCoursePurchased,
+} from '@/lib/billing/course';
 import { DEMO_COURSE_COOKIE, isDemoCheckoutSessionId } from '@/lib/billing/demo';
+import { fetchBillingForUser } from '@/lib/billing/profile';
 import { isBillingDemoFlow, isBillingEnabled, getAppOrigin } from '@/lib/stripe/config';
 import { getStripeClient } from '@/lib/stripe/client';
 import { resolveCoursePriceId } from '@/lib/stripe/resolve-price';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 function paymentMethodId(value: string | Stripe.PaymentMethod | null | undefined): string | null {
   if (!value) return null;
@@ -32,23 +38,39 @@ async function resolvePaymentMethodId(
   return cards.data[0]?.id ?? null;
 }
 
+function coursePaidCookie(res: NextResponse) {
+  res.cookies.set(DEMO_COURSE_COOKIE, '1', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7,
+  });
+}
+
+async function grantIfLoggedIn(userId: string | undefined) {
+  if (!userId) return;
+  await grantCourseAccess(userId);
+}
+
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { sessionId?: unknown };
+    const body = (await request.json().catch(() => ({}))) as { sessionId?: unknown };
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId.trim() : '';
-    if (!sessionId.startsWith('cs_')) {
-      return NextResponse.json({ error: 'Missing checkout session' }, { status: 400 });
-    }
 
-    if (isBillingDemoFlow() && isDemoCheckoutSessionId(sessionId)) {
+    const supabase = createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // Demo: fake purchase → grant course on account if logged in, else cookie for signup.
+    if (isBillingDemoFlow() && (isDemoCheckoutSessionId(sessionId) || !sessionId)) {
+      if (user) {
+        await grantCourseAccess(user.id);
+        return NextResponse.json({ ok: true, demo: true, courseAccess: true });
+      }
       const res = NextResponse.json({ ok: true, demo: true });
-      res.cookies.set(DEMO_COURSE_COOKIE, '1', {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: 60 * 60,
-      });
+      coursePaidCookie(res);
       return res;
     }
 
@@ -59,47 +81,72 @@ export async function POST(request: Request) {
     const stripe = getStripeClient();
     const origin = getAppOrigin();
 
-    const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId);
-    if (checkoutSession.status !== 'complete') {
-      return NextResponse.json({ error: 'Subscription checkout is not complete' }, { status: 400 });
+    let customerId: string | null = null;
+    let subscriptionId: string | null = null;
+    let idempotencyKey: string;
+
+    if (sessionId.startsWith('cs_')) {
+      const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId);
+      if (checkoutSession.status !== 'complete') {
+        return NextResponse.json({ error: 'Subscription checkout is not complete' }, { status: 400 });
+      }
+      customerId =
+        typeof checkoutSession.customer === 'string'
+          ? checkoutSession.customer
+          : checkoutSession.customer?.id ?? null;
+      subscriptionId =
+        typeof checkoutSession.subscription === 'string'
+          ? checkoutSession.subscription
+          : checkoutSession.subscription?.id ?? null;
+      idempotencyKey = `oto-course:${sessionId}`;
+    } else if (user) {
+      const billing = await fetchBillingForUser(supabase, user.id);
+      customerId = billing?.stripe_customer_id ?? null;
+      if (!customerId) {
+        return NextResponse.json({ error: 'No Stripe customer on this account' }, { status: 400 });
+      }
+      if (billing?.course_access) {
+        return NextResponse.json({ ok: true, alreadyPaid: true, courseAccess: true });
+      }
+      idempotencyKey = `oto-course:user:${user.id}`;
+    } else {
+      return NextResponse.json({ error: 'Missing checkout session' }, { status: 400 });
     }
 
-    const customerId =
-      typeof checkoutSession.customer === 'string'
-        ? checkoutSession.customer
-        : checkoutSession.customer?.id;
     if (!customerId) {
       return NextResponse.json({ error: 'No customer on checkout session' }, { status: 400 });
     }
 
-    // Idempotency: don't double-charge if they already bought the course from this session.
     const existing = await stripe.paymentIntents.list({ customer: customerId, limit: 20 });
     const alreadyPaid = existing.data.find(
-      pi =>
-        pi.status === 'succeeded' &&
-        pi.metadata?.oto === 'course' &&
-        pi.metadata?.checkout_session_id === sessionId
+      pi => pi.status === 'succeeded' && pi.metadata?.oto === 'course'
     );
     if (alreadyPaid) {
-      return NextResponse.json({ ok: true, alreadyPaid: true });
+      await markStripeCustomerCoursePurchased(stripe, customerId);
+      await grantIfLoggedIn(user?.id);
+      const res = NextResponse.json({ ok: true, alreadyPaid: true, courseAccess: Boolean(user) });
+      if (!user) coursePaidCookie(res);
+      return res;
     }
 
-    const subscriptionId =
-      typeof checkoutSession.subscription === 'string'
-        ? checkoutSession.subscription
-        : checkoutSession.subscription?.id ?? null;
+    const successPath = user
+      ? `${origin}/course?purchased=1`
+      : `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}&course=1`;
+    const cancelPath = user
+      ? `${origin}/course`
+      : `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}`;
 
     const pmId = await resolvePaymentMethodId(stripe, customerId, subscriptionId);
     if (!pmId) {
-      // Fallback: hosted one-time checkout if we can't find a saved card.
       const coursePriceId = await resolveCoursePriceId(stripe);
       const fallback = await stripe.checkout.sessions.create({
         mode: 'payment',
         customer: customerId,
+        client_reference_id: user?.id,
         line_items: [{ price: coursePriceId, quantity: 1 }],
-        success_url: `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}&course=1`,
-        cancel_url: `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}`,
-        metadata: { oto: 'course', checkout_session_id: sessionId },
+        success_url: successPath,
+        cancel_url: cancelPath,
+        metadata: { oto: 'course', checkout_session_id: sessionId || user?.id || '' },
       });
       if (!fallback.url) {
         return NextResponse.json({ error: 'Could not start course checkout' }, { status: 500 });
@@ -119,27 +166,30 @@ export async function POST(request: Request) {
           description: COURSE_PRODUCT_NAME,
           metadata: {
             oto: 'course',
-            checkout_session_id: sessionId,
+            checkout_session_id: sessionId || '',
+            supabase_user_id: user?.id || '',
           },
         },
-        {
-          idempotencyKey: `oto-course:${sessionId}`,
-        }
+        { idempotencyKey }
       );
 
       if (paymentIntent.status === 'succeeded') {
-        return NextResponse.json({ ok: true });
+        await markStripeCustomerCoursePurchased(stripe, customerId);
+        await grantIfLoggedIn(user?.id);
+        const res = NextResponse.json({ ok: true, courseAccess: Boolean(user) });
+        if (!user) coursePaidCookie(res);
+        return res;
       }
 
-      // Needs customer action (3DS) — fall back to Checkout.
       const coursePriceId = await resolveCoursePriceId(stripe);
       const fallback = await stripe.checkout.sessions.create({
         mode: 'payment',
         customer: customerId,
+        client_reference_id: user?.id,
         line_items: [{ price: coursePriceId, quantity: 1 }],
-        success_url: `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}&course=1`,
-        cancel_url: `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}`,
-        metadata: { oto: 'course', checkout_session_id: sessionId },
+        success_url: successPath,
+        cancel_url: cancelPath,
+        metadata: { oto: 'course', checkout_session_id: sessionId || user?.id || '' },
       });
       if (!fallback.url) {
         return NextResponse.json({ error: 'Authentication required for this card' }, { status: 402 });
@@ -156,10 +206,11 @@ export async function POST(request: Request) {
         const fallback = await stripe.checkout.sessions.create({
           mode: 'payment',
           customer: customerId,
+          client_reference_id: user?.id,
           line_items: [{ price: coursePriceId, quantity: 1 }],
-          success_url: `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}&course=1`,
-          cancel_url: `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}`,
-          metadata: { oto: 'course', checkout_session_id: sessionId },
+          success_url: successPath,
+          cancel_url: cancelPath,
+          metadata: { oto: 'course', checkout_session_id: sessionId || user?.id || '' },
         });
         if (fallback.url) {
           return NextResponse.json({ url: fallback.url });

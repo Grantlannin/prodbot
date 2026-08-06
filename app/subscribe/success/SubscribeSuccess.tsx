@@ -118,8 +118,9 @@ export default function SubscribeSuccess() {
                   {bought ? 'Course added' : 'Payment received'}
                 </p>
                 <p className="text-sm leading-relaxed text-slate-600">
-                  Create your account with the same email you used at checkout. You&apos;ll need Google Chrome on
-                  desktop.
+                  {bought
+                    ? 'Course unlocked on your Daywinner account. Create your account with the same email — then open Course from the bot anytime.'
+                    : "Create your account with the same email you used at checkout. You'll need Google Chrome on desktop."}
                 </p>
               </div>
               <Link

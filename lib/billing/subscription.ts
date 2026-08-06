@@ -4,6 +4,8 @@ export interface BillingProfile {
   stripe_customer_id: string | null;
   subscription_status: SubscriptionStatus;
   subscription_ends_at: string | null;
+  course_access: boolean;
+  course_purchased_at: string | null;
 }
 
 export function normalizeSubscriptionStatus(value: string | null | undefined): SubscriptionStatus {
@@ -29,6 +31,10 @@ export function isActiveSubscription(billing: BillingProfile | null | undefined)
   }
 
   return false;
+}
+
+export function hasCourseAccess(billing: BillingProfile | null | undefined): boolean {
+  return Boolean(billing?.course_access);
 }
 
 export function mapStripeSubscriptionStatus(

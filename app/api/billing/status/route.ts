@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isActiveSubscription } from '@/lib/billing/subscription';
+import { hasCourseAccess, isActiveSubscription } from '@/lib/billing/subscription';
 import { fetchBillingForUser } from '@/lib/billing/profile';
 import { getBillingConfigChecks, isBillingEnabled } from '@/lib/stripe/config';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
@@ -7,15 +7,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  if (!isBillingEnabled()) {
-    return NextResponse.json({
-      billingEnabled: false,
-      active: true,
-      status: 'none',
-      endsAt: null,
-      checks: getBillingConfigChecks(),
-    });
-  }
+  const checks = getBillingConfigChecks();
 
   try {
     const supabase = createServerSupabaseClient();
@@ -23,25 +15,42 @@ export async function GET() {
       data: { user },
     } = await supabase.auth.getUser();
 
+    if (!isBillingEnabled()) {
+      let courseAccess = false;
+      if (user) {
+        const billing = await fetchBillingForUser(supabase, user.id);
+        courseAccess = hasCourseAccess(billing);
+      }
+      return NextResponse.json({
+        billingEnabled: false,
+        active: true,
+        courseAccess,
+        status: 'none',
+        endsAt: null,
+        checks,
+      });
+    }
+
     if (!user) {
       return NextResponse.json({
         billingEnabled: true,
         active: false,
+        courseAccess: false,
         status: 'none',
         endsAt: null,
-        checks: getBillingConfigChecks(),
+        checks,
       });
     }
 
     const billing = await fetchBillingForUser(supabase, user.id);
-    const active = isActiveSubscription(billing);
 
     return NextResponse.json({
       billingEnabled: true,
-      active,
+      active: isActiveSubscription(billing),
+      courseAccess: hasCourseAccess(billing),
       status: billing?.subscription_status ?? 'none',
       endsAt: billing?.subscription_ends_at ?? null,
-      checks: getBillingConfigChecks(),
+      checks,
     });
   } catch (error) {
     console.error('[billing/status]', error);

@@ -1,4 +1,8 @@
 import type Stripe from 'stripe';
+import {
+  customerHasCoursePurchase,
+  grantCourseAccess,
+} from '@/lib/billing/course';
 import { upsertBillingForUser } from '@/lib/billing/profile';
 import { mapStripeSubscriptionStatus } from '@/lib/billing/subscription';
 import { getStripeClient } from '@/lib/stripe/client';
@@ -52,6 +56,10 @@ export async function linkStripeCustomerToUser(userId: string, email: string): P
       subscription_status: mapStripeSubscriptionStatus(subscription.status),
       subscription_ends_at: subscriptionPeriodEnd(subscription),
     });
+
+    if (await customerHasCoursePurchase(stripe, customer.id)) {
+      await grantCourseAccess(userId);
+    }
 
     return true;
   }
