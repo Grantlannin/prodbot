@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import MarketingShell from '@/components/marketing/MarketingShell';
 import { COURSE_PRICE_LABEL } from '@/lib/billing/price';
-import { COURSE_MODULES, COURSE_TAGLINE, COURSE_TITLE } from '@/lib/course/modules';
+import { COURSE_SECTIONS, COURSE_TAGLINE, COURSE_TITLE } from '@/lib/course/modules';
 import { isBillingDemoFlow } from '@/lib/stripe/config';
 
 interface BillingStatus {
@@ -152,53 +152,43 @@ export default function CoursePage() {
           </p>
         ) : null}
 
-        <ol className="flex flex-col gap-4">
-          {COURSE_MODULES.map((mod, index) => (
-            <li
-              key={mod.id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
+        <div className="flex flex-col gap-8">
+          {COURSE_SECTIONS.map((section, sectionIndex) => (
+            <section key={section.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Module {index + 1}
+                Section {sectionIndex + 1}
               </p>
-              <h2 className="mb-1 text-lg font-bold text-slate-900">{mod.title}</h2>
-              <p className="mb-3 text-sm leading-relaxed text-slate-600">{mod.summary}</p>
-
-              {mod.videoUrl ? (
-                <a
-                  href={mod.videoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex text-sm font-bold text-slate-900 underline-offset-2 hover:underline"
-                >
-                  Watch module →
-                </a>
-              ) : (
-                <p className="text-xs italic text-slate-400">
-                  Video link placeholder — paste your Loom/Vimeo URL in{' '}
-                  <code className="rounded bg-slate-100 px-1">lib/course/modules.ts</code>
-                </p>
-              )}
-
-              {mod.resources && mod.resources.length > 0 ? (
-                <ul className="mt-3 flex flex-col gap-1">
-                  {mod.resources.map(resource => (
-                    <li key={resource.href}>
-                      <a
-                        href={resource.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-semibold text-slate-700 underline-offset-2 hover:underline"
-                      >
-                        {resource.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+              <h2 className="text-lg font-bold text-slate-900">{section.title}</h2>
+              {section.subtitle ? (
+                <p className="mt-1 text-sm text-slate-500">{section.subtitle}</p>
               ) : null}
-            </li>
+
+              <ol className="mt-4 flex flex-col gap-3">
+                {section.lessons.map((lesson, lessonIndex) => (
+                  <li
+                    key={lesson.id}
+                    className="flex flex-col gap-1 border-t border-slate-100 pt-3 first:border-t-0 first:pt-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900">
+                        <span className="mr-2 text-slate-400">{lessonIndex + 1}.</span>
+                        {lesson.title}
+                      </p>
+                    </div>
+                    <a
+                      href={lesson.videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 text-sm font-bold text-slate-900 underline-offset-2 hover:underline"
+                    >
+                      Watch →
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </section>
           ))}
-        </ol>
+        </div>
       </div>
     </MarketingShell>
   );
