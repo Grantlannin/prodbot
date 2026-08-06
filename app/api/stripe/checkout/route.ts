@@ -6,6 +6,9 @@ import { resolveMonthlyPriceId } from '@/lib/stripe/resolve-price';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
+const SUCCESS_URL = (origin: string) =>
+  `${origin}/subscribe/success?session_id={CHECKOUT_SESSION_ID}`;
+
 export async function POST() {
   if (!isBillingEnabled()) {
     return NextResponse.json({ error: 'Billing is not configured' }, { status: 503 });
@@ -41,9 +44,10 @@ export async function POST() {
         customer: customerId,
         client_reference_id: user.id,
         line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${origin}/subscribe/success`,
+        success_url: SUCCESS_URL(origin),
         cancel_url: `${origin}/subscribe?canceled=1`,
         allow_promotion_codes: true,
+        payment_method_collection: 'always',
       });
 
       if (!session.url) {
@@ -56,9 +60,10 @@ export async function POST() {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/subscribe/success`,
+      success_url: SUCCESS_URL(origin),
       cancel_url: `${origin}/subscribe?canceled=1`,
       allow_promotion_codes: true,
+      payment_method_collection: 'always',
     });
 
     if (!session.url) {
