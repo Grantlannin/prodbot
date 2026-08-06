@@ -71,7 +71,7 @@ function LessonRow({
       </button>
 
       {open ? (
-        <div className="space-y-3 bg-slate-950 px-4 pb-4 pt-3">
+        <div className="bg-slate-950 px-4 pb-4 pt-3">
           {embedUrl ? (
             <div className="overflow-hidden rounded-xl border-[3px] border-slate-900 shadow-[4px_4px_0_0_#3b82f6]">
               <div className="relative aspect-video w-full bg-black">
@@ -87,14 +87,6 @@ function LessonRow({
           ) : (
             <p className="text-sm text-slate-300">Couldn’t embed this video.</p>
           )}
-          <a
-            href={lesson.videoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex text-xs font-bold text-slate-400 underline-offset-2 hover:text-white hover:underline"
-          >
-            Open on YouTube ↗
-          </a>
         </div>
       ) : null}
     </div>
