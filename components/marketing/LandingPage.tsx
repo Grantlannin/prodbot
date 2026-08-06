@@ -132,30 +132,18 @@ export default function LandingPage() {
                 WIN
               </span>{' '}
               Your Day,{' '}
-              <span className="relative inline-block whitespace-nowrap px-0.5 pb-1">
+              <span className="relative inline-block whitespace-nowrap px-0.5">
                 Every Single Day
                 <svg
-                  className="pointer-events-none absolute -bottom-0.5 left-[-2%] h-[0.55em] w-[104%] text-red-500 sm:-bottom-1"
-                  viewBox="0 0 220 18"
+                  className="pointer-events-none absolute left-[-3%] top-[76%] h-[0.38em] w-[106%] text-red-500"
+                  viewBox="0 0 200 14"
                   fill="none"
                   aria-hidden
                   preserveAspectRatio="none"
                 >
                   <path
-                    d="M3 11 C18 7 28 14 42 10 C56 6 68 13 84 9 C100 5 112 14 128 10 C144 6 158 13 174 9 C190 5 204 12 217 8"
-                    stroke="currentColor"
-                    strokeWidth="4.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    opacity="0.95"
-                  />
-                  <path
-                    d="M6 13 C22 9 34 15 50 11 C66 7 78 14 94 11 C110 8 122 15 138 11 C154 7 168 14 184 10 C198 7 208 13 214 11"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    opacity="0.55"
+                    d="M2 5.5 L6.9 6.1 L11.8 6.1 L16.7 5.8 L21.6 5.8 L26.5 6.1 L31.4 6.5 L36.3 6.4 L41.2 5.6 L46.1 4.6 L51 4 L55.9 4.4 L60.8 5.3 L65.7 6.2 L70.6 6.7 L75.5 6.6 L80.4 6.6 L85.3 6.8 L90.2 7.1 L95.1 7 L100 6.4 L104.9 5.3 L109.8 4.4 L114.7 4.2 L119.6 4.5 L124.5 5 L129.4 5.1 L134.3 4.9 L139.2 5 L144.1 5.7 L149 6.9 L153.9 7.9 L158.8 8.1 L163.7 7.5 L168.6 6.5 L173.5 5.8 L178.4 5.7 L183.3 5.8 L188.2 5.7 L193.1 5.3 L198 5 L198 7.7 L193.1 8 L188.2 8.4 L183.3 8.5 L178.4 8.3 L173.5 8.2 L168.6 8.7 L163.7 9.6 L158.8 10.4 L153.9 10.6 L149 10.2 L144.1 9.5 L139.2 9 L134.3 9 L129.4 9.1 L124.5 8.8 L119.6 8.2 L114.7 7.9 L109.8 8.2 L104.9 9.2 L100 10.3 L95.1 10.7 L90.2 10.3 L85.3 9.5 L80.4 8.9 L75.5 8.7 L70.6 8.7 L65.7 8.5 L60.8 7.9 L55.9 7.2 L51 6.9 L46.1 7.4 L41.2 8.4 L36.3 9.2 L31.4 9.6 L26.5 9.6 L21.6 9.7 L16.7 10.1 L11.8 10.5 L6.9 10.4 L2 9.5 Z"
+                    fill="currentColor"
                   />
                 </svg>
               </span>
