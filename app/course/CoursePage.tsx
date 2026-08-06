@@ -47,7 +47,7 @@ function LessonRow({
       >
         <span
           className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold ${
-            open ? 'bg-red-500 text-white' : 'bg-slate-900 text-white'
+            open ? 'bg-blue-500 text-white' : 'bg-slate-900 text-white'
           }`}
         >
           {index + 1}
@@ -61,7 +61,7 @@ function LessonRow({
         </span>
         <span
           className={`mt-0.5 shrink-0 text-xs font-bold uppercase tracking-wide ${
-            open ? 'text-red-400' : 'text-red-500'
+            open ? 'text-blue-300' : 'text-blue-500'
           }`}
         >
           {open ? 'Hide' : 'Watch'}
@@ -71,7 +71,7 @@ function LessonRow({
       {open ? (
         <div className="space-y-3 bg-slate-950 px-4 pb-4 pt-3">
           {embedUrl ? (
-            <div className="overflow-hidden rounded-xl border-[3px] border-slate-900 shadow-[4px_4px_0_0_#ef4444]">
+            <div className="overflow-hidden rounded-xl border-[3px] border-slate-900 shadow-[4px_4px_0_0_#3b82f6]">
               <div className="relative aspect-video w-full bg-black">
                 <iframe
                   title={lesson.title}
@@ -119,7 +119,7 @@ function SectionAccordion({
   return (
     <section
       className={`overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-white transition ${
-        open ? 'shadow-[6px_6px_0_0_#ef4444]' : 'shadow-[3px_3px_0_0_#cbd5e1]'
+        open ? 'shadow-[6px_6px_0_0_#3b82f6]' : 'shadow-[3px_3px_0_0_#cbd5e1]'
       }`}
     >
       <button
@@ -132,7 +132,7 @@ function SectionAccordion({
           {String(sectionIndex + 1).padStart(2, '0')}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-red-500">
+          <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-blue-500">
             Section {sectionIndex + 1} · {section.lessons.length} lessons
           </span>
           <span className="mt-1 block text-base font-bold leading-snug tracking-tight text-slate-900 sm:text-lg">
@@ -143,7 +143,7 @@ function SectionAccordion({
           ) : null}
         </span>
         <span
-          className={`mt-1 shrink-0 text-xl font-bold leading-none text-red-500 transition ${
+          className={`mt-1 shrink-0 text-xl font-bold leading-none text-blue-500 transition ${
             open ? 'rotate-180' : ''
           }`}
           aria-hidden
@@ -244,8 +244,8 @@ export default function CoursePage() {
     return (
       <MarketingShell showSignIn={false}>
         <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-16">
-          <div className="rounded-2xl border-[3px] border-slate-900 bg-white p-8 shadow-[6px_6px_0_0_#ef4444]">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-red-500">
+          <div className="rounded-2xl border-[3px] border-slate-900 bg-white p-8 shadow-[6px_6px_0_0_#3b82f6]">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-500">
               Daywinner · Course locked
             </p>
             <h1 className="mb-2 text-3xl font-bold tracking-tight text-slate-900">{COURSE_TITLE}</h1>
@@ -289,10 +289,10 @@ export default function CoursePage() {
   return (
     <MarketingShell showSignIn={false}>
       <div className="mx-auto max-w-2xl px-4 py-10">
-        <div className="mb-8 overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-white p-6 shadow-[6px_6px_0_0_#ef4444] sm:p-8">
+        <div className="mb-8 overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-white p-6 shadow-[6px_6px_0_0_#3b82f6] sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-red-500">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-500">
                 Daywinner · Member course
               </p>
               <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
@@ -312,7 +312,7 @@ export default function CoursePage() {
             </div>
             <Link
               href="/app"
-              className="rounded-full border-[2px] border-slate-900 bg-white px-4 py-2 text-sm font-bold text-slate-900 no-underline shadow-[3px_3px_0_0_#ef4444] transition hover:bg-slate-50"
+              className="rounded-full border-[2px] border-slate-900 bg-white px-4 py-2 text-sm font-bold text-slate-900 no-underline shadow-[3px_3px_0_0_#3b82f6] transition hover:bg-slate-50"
             >
               ← Back to bot
             </Link>
