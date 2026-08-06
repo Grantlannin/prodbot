@@ -281,17 +281,6 @@ export default function StartWorkModal({
                                 </button>
                                 {hasSubs && expanded ? (
                                   <div style={styles.subTaskList}>
-                                    <button
-                                      type="button"
-                                      disabled={busy}
-                                      onClick={() => handlePickTask(group.part)}
-                                      style={{
-                                        ...styles.subTaskBtn,
-                                        ...(busy ? styles.taskBtnDisabled : {}),
-                                      }}
-                                    >
-                                      <span style={styles.subTaskBtnText}>Whole part</span>
-                                    </button>
                                     {group.subTasks.map(sub => (
                                       <button
                                         key={sub.subTaskId}

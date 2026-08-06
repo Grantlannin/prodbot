@@ -64,14 +64,6 @@ export default function ChatTaskPicker({ disabled, onSelectTask, onNewTask }: Ch
                 </button>
                 {hasSubs && expanded ? (
                   <div style={styles.subTaskList}>
-                    <button
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => onSelectTask(group.part)}
-                      style={{ ...styles.subTaskBtn, ...(disabled ? styles.taskBtnDisabled : {}) }}
-                    >
-                      <span style={styles.subTaskText}>Whole part</span>
-                    </button>
                     {group.subTasks.map(sub => (
                       <button
                         key={sub.subTaskId}
