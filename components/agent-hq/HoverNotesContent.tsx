@@ -13,6 +13,7 @@ import {
 } from './appleNotesUtils';
 import { CornerResizeHandles, useCornerResize } from './hooks/useCornerResize';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useProjects } from './hooks/ProjectsProvider';
 import { useNoteClipBubble } from './NoteSelectionClipBubble';
 import type { AppleNote } from './types';
 
@@ -24,6 +25,7 @@ interface HoverNotesContentProps {
 }
 
 export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps) {
+  const { projects, setProjects } = useProjects();
   const [notes, setNotes] = useLocalStorage<AppleNote[]>(APPLE_NOTES_KEY, []);
   const [selectedId, setSelectedId] = useLocalStorage<string | null>(APPLE_NOTES_SELECTED_KEY, null);
   const [size, setSize] = useLocalStorage(HOVER_NOTES_SIZE_KEY, DEFAULT_HOVER_NOTES_SIZE);
@@ -34,19 +36,6 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
     () => notes.find(n => n.id === selectedId) ?? null,
     [notes, selectedId]
   );
-
-  const { textareaHandlers: clipHandlers, bubbleNode: clipBubble } = useNoteClipBubble({
-    textareaRef,
-    noteText: selected?.content ?? '',
-    portalDocument: pipWindow.document,
-  });
-
-  useEffect(() => {
-    if (notes.length === 0) return;
-    if (!selectedId || !notes.some(n => n.id === selectedId)) {
-      setSelectedId(sorted[0]?.id ?? null);
-    }
-  }, [notes, selectedId, sorted, setSelectedId]);
 
   const applyWindowSize = useCallback(
     (next: { w: number; h: number }) => {
@@ -59,6 +48,33 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
     [pipWindow]
   );
 
+  const ensureWindowHeight = useCallback(
+    (minInnerHeight: number) => {
+      const nextH = Math.min(900, Math.max(size.h, Math.ceil(minInnerHeight)));
+      if (nextH <= size.h + 1) return;
+      const next = { w: size.w, h: nextH };
+      setSize(next);
+      applyWindowSize(next);
+    },
+    [applyWindowSize, setSize, size.h, size.w]
+  );
+
+  const { textareaHandlers: clipHandlers, bubbleNode: clipBubble } = useNoteClipBubble({
+    textareaRef,
+    noteText: selected?.content ?? '',
+    projects,
+    setProjects,
+    portalDocument: pipWindow.document,
+    onEnsureWindowHeight: ensureWindowHeight,
+  });
+
+  useEffect(() => {
+    if (notes.length === 0) return;
+    if (!selectedId || !notes.some(n => n.id === selectedId)) {
+      setSelectedId(sorted[0]?.id ?? null);
+    }
+  }, [notes, selectedId, sorted, setSelectedId]);
+
   const { onResizeStart } = useCornerResize({
     size,
     onSizeChange: next => {
@@ -68,7 +84,8 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
     minW: 280,
     maxW: 720,
     minH: 280,
-    maxH: 720,
+    maxH: 900,
+    targetWindow: pipWindow,
   });
 
   useEffect(() => {

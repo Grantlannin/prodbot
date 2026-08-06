@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -62,6 +62,8 @@ interface UseNoteClipBubbleOptions {
   setProjects?: SetProjects;
   /** PiP / secondary window — portal + coords must use this document */
   portalDocument?: Document | null;
+  /** Grow the floating notes window so the clip panel is not clipped. */
+  onEnsureWindowHeight?: (minInnerHeight: number) => void;
 }
 
 function projectDisplayName(project: ProjectBoard): string {
@@ -156,6 +158,7 @@ export function useNoteClipBubble({
   projects: projectsProp,
   setProjects: setProjectsProp,
   portalDocument,
+  onEnsureWindowHeight,
 }: UseNoteClipBubbleOptions) {
   const [storedProjects, setStoredProjects] = useLocalStorage<ProjectBoard[]>(PROJECTS_STORAGE_KEY, []);
   const projects = projectsProp ?? storedProjects;
@@ -167,11 +170,13 @@ export function useNoteClipBubble({
 
   const [anchor, setAnchor] = useState<{ left: number; top: number } | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [panelPos, setPanelPos] = useState<{ left: number; top: number } | null>(null);
   const [projectId, setProjectId] = useState('');
   const [sectionKey, setSectionKey] = useState('project');
   const [addContext, setAddContext] = useState(false);
   const [contextText, setContextText] = useState('');
   const selectionRef = useRef<{ from: number; to: number } | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const expandedRef = useRef(false);
   expandedRef.current = expanded;
 
@@ -195,6 +200,7 @@ export function useNoteClipBubble({
   const clearClipUi = useCallback(() => {
     setAnchor(null);
     setExpanded(false);
+    setPanelPos(null);
     setAddContext(false);
     setContextText('');
     selectionRef.current = null;
@@ -227,6 +233,39 @@ export function useNoteClipBubble({
     }
     setExpanded(true);
   }, [mountDoc, textareaRef]);
+
+  useLayoutEffect(() => {
+    if (!expanded || !anchor || !mountWin || !panelRef.current) {
+      if (!expanded) setPanelPos(null);
+      return;
+    }
+
+    const placePanel = () => {
+      if (!panelRef.current || !anchor || !mountWin) return;
+      const panel = panelRef.current;
+      const panelW = panel.offsetWidth || 248;
+      const panelH = panel.offsetHeight || 220;
+      const left = Math.min(anchor.left, mountWin.innerWidth - panelW - 8);
+      let top = anchor.top + CHIP_SIZE + 6;
+
+      if (top + panelH > mountWin.innerHeight - 8) {
+        top = Math.max(8, anchor.top - panelH - 6);
+      }
+
+      if (top + panelH > mountWin.innerHeight - 8) {
+        onEnsureWindowHeight?.(top + panelH + 16);
+      }
+
+      setPanelPos({
+        left: Math.max(8, left),
+        top: Math.max(8, Math.min(top, Math.max(8, mountWin.innerHeight - panelH - 8))),
+      });
+    };
+
+    placePanel();
+    const timer = mountWin.setTimeout(placePanel, 80);
+    return () => mountWin.clearTimeout(timer);
+  }, [expanded, anchor, addContext, hasProjects, activeSectionKey, mountWin, onEnsureWindowHeight]);
 
   const addSelection = useCallback(() => {
     const el = textareaRef.current;
@@ -309,10 +348,10 @@ export function useNoteClipBubble({
     },
   };
 
-  const panelLeft = anchor && mountWin
+  const panelLeft = panelPos?.left ?? (anchor && mountWin
     ? Math.min(anchor.left, mountWin.innerWidth - 260)
-    : 0;
-  const panelTop = anchor ? anchor.top + CHIP_SIZE + 6 : 0;
+    : 0);
+  const panelTop = panelPos?.top ?? (anchor ? anchor.top + CHIP_SIZE + 6 : 0);
 
   const bubbleNode =
     anchor && mountDoc?.body
@@ -340,6 +379,7 @@ export function useNoteClipBubble({
               </button>
             ) : (
               <div
+                ref={panelRef}
                 data-note-clip-ui
                 style={{ ...styles.panel, left: panelLeft, top: panelTop }}
               >

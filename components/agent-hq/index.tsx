@@ -167,8 +167,8 @@ function AgentHQInner() {
 
   return (
     <HoverTimerProvider onAddInfraction={(k, l) => addInfraction(k, l, 'dashboard')}>
-      <HoverNotesProvider>
       <ProjectsProvider>
+      <HoverNotesProvider>
       <CloudSyncProvider>
       <NightPrepProvider>
       <MorningFlowProvider>
@@ -245,8 +245,8 @@ function AgentHQInner() {
       </MorningFlowProvider>
       </NightPrepProvider>
       </CloudSyncProvider>
-      </ProjectsProvider>
       </HoverNotesProvider>
+      </ProjectsProvider>
     </HoverTimerProvider>
   );
 }

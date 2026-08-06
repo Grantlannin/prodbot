@@ -18,6 +18,8 @@ interface UseCornerResizeOptions {
   maxH?: number;
   onPositionChange?: (next: { x: number; y: number }) => void;
   position?: { x: number; y: number } | null;
+  /** Use PiP / secondary window listeners instead of the opener window. */
+  targetWindow?: Window | null;
 }
 
 function clamp(n: number, min: number, max: number) {
@@ -33,6 +35,7 @@ export function useCornerResize({
   maxH = 220,
   onPositionChange,
   position,
+  targetWindow,
 }: UseCornerResizeOptions) {
   const resizing = useRef<{
     corner: ResizeCorner;
@@ -63,6 +66,9 @@ export function useCornerResize({
   );
 
   useEffect(() => {
+    const win = targetWindow ?? (typeof window !== 'undefined' ? window : null);
+    if (!win) return;
+
     const onMove = (e: PointerEvent) => {
       const r = resizing.current;
       if (!r) return;
@@ -114,13 +120,13 @@ export function useCornerResize({
       resizing.current = null;
     };
 
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
+    win.addEventListener('pointermove', onMove);
+    win.addEventListener('pointerup', onUp);
     return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
+      win.removeEventListener('pointermove', onMove);
+      win.removeEventListener('pointerup', onUp);
     };
-  }, [minW, maxW, minH, maxH, onSizeChange, onPositionChange, position]);
+  }, [minW, maxW, minH, maxH, onSizeChange, onPositionChange, position, targetWindow]);
 
   return { onResizeStart };
 }
