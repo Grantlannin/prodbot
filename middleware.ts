@@ -23,10 +23,6 @@ function isAppPath(pathname: string): boolean {
   return pathname === '/app' || pathname.startsWith('/app/');
 }
 
-function isCoursePath(pathname: string): boolean {
-  return pathname === '/course' || pathname.startsWith('/course/');
-}
-
 function isIntroChromePath(pathname: string): boolean {
   return pathname === INTRO_CHROME_PATH;
 }
@@ -103,7 +99,7 @@ export async function middleware(request: NextRequest) {
     if (requireAuth && !user && !isPublicPath(pathname)) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = '/login';
-      if (isAppPath(pathname) || isIntroPath(pathname) || isCoursePath(pathname)) {
+      if (isAppPath(pathname) || isIntroPath(pathname)) {
         loginUrl.searchParams.set('next', pathname);
       }
       return NextResponse.redirect(loginUrl);
@@ -111,25 +107,13 @@ export async function middleware(request: NextRequest) {
 
     if (user && (billingEnabled || paywallOff)) {
       let active = true;
-      let courseAccess = false;
       if (billingEnabled) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select(
-            'stripe_customer_id, subscription_status, subscription_ends_at, course_access, course_purchased_at'
-          )
+          .select('stripe_customer_id, subscription_status, subscription_ends_at')
           .eq('id', user.id)
           .maybeSingle();
-        const billing = parseBillingRow(profile);
-        active = isActiveSubscription(billing);
-        courseAccess = billing?.course_access === true;
-      } else if (paywallOff) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('course_access')
-          .eq('id', user.id)
-          .maybeSingle();
-        courseAccess = profile?.course_access === true;
+        active = isActiveSubscription(parseBillingRow(profile));
       }
 
       const chromeIntroComplete = hasChromeIntroComplete(request);
@@ -178,15 +162,6 @@ export async function middleware(request: NextRequest) {
       }
 
       if (!active && isIntroPath(pathname)) {
-        const subscribeUrl = request.nextUrl.clone();
-        subscribeUrl.pathname = '/subscribe';
-        subscribeUrl.search = '';
-        return NextResponse.redirect(subscribeUrl);
-      }
-
-      // Course stays available after cancel if they bought it; otherwise send to subscribe.
-      if (!active && isCoursePath(pathname)) {
-        if (courseAccess) return supabaseResponse;
         const subscribeUrl = request.nextUrl.clone();
         subscribeUrl.pathname = '/subscribe';
         subscribeUrl.search = '';
