@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { MONTHLY_PRICE_LABEL, MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
-import { CHROME_DOWNLOAD_URL } from '@/lib/intro';
+import {
+  COURSE_PRICE_LABEL,
+  MONTHLY_PRICE_LABEL,
+  MONTHLY_PRICE_SHORT,
+} from '@/lib/billing/price';
 import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -29,6 +32,7 @@ export default function SubscribeForm() {
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [includeCourse, setIncludeCourse] = useState(true);
 
   const canceled = searchParams.get('canceled') === '1';
   const notice = useMemo(() => {
@@ -48,11 +52,26 @@ export default function SubscribeForm() {
       .catch(() => setError('Could not load billing status.'));
   }, []);
 
+  const checkoutLabel = includeCourse
+    ? `Continue to checkout — ${MONTHLY_PRICE_SHORT} + ${COURSE_PRICE_LABEL}`
+    : `Continue to checkout — ${MONTHLY_PRICE_SHORT}`;
+
   const startCheckout = async () => {
+    if (!status?.billingEnabled) {
+      setError(
+        'Paywall is off on this deployment, so Stripe checkout is disabled. Turn off DISABLE_PAYWALL to test a real purchase.'
+      );
+      return;
+    }
+
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/stripe/checkout', { method: 'POST' });
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ includeCourse }),
+      });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
         throw new Error(data.error ?? 'Could not start checkout.');
@@ -64,7 +83,7 @@ export default function SubscribeForm() {
     }
   };
 
-  if (!status) {
+  if (!status && !error) {
     return (
       <MarketingShell showSignIn={false}>
         <div style={styles.wrap}>
@@ -76,45 +95,18 @@ export default function SubscribeForm() {
     );
   }
 
-  if (!status.billingEnabled) {
-    const checks = status.checks;
-    const paywallOff = checks?.paywallDisabled === true;
+  const checks = status?.checks;
+  const billingMissing =
+    status &&
+    !status.billingEnabled &&
+    checks &&
+    !checks.paywallDisabled &&
+    (!checks.hasStripeSecret || !checks.supabaseConfigured);
 
-    if (paywallOff) {
-      return (
-        <MarketingShell showSignIn={false}>
-          <div style={styles.wrap}>
-            <div style={styles.card}>
-              <h1 style={styles.title}>Paywall off (testing)</h1>
-              <p style={styles.lead}>
-                Subscription is temporarily disabled so you can run the full signup → onboard → app flow without
-                paying.
-              </p>
-              <Link
-                href="/login?mode=signup&next=/intro/chrome"
-                style={{ ...styles.primaryBtn, display: 'block', textAlign: 'center', textDecoration: 'none' }}
-              >
-                Create account →
-              </Link>
-              <p style={styles.footerNote}>
-                Already have an account?{' '}
-                <Link href="/login" style={styles.legalLink}>
-                  Sign in
-                </Link>
-              </p>
-            </div>
-          </div>
-        </MarketingShell>
-      );
-    }
-
-    const hint = !checks
-      ? 'Stripe env vars are not set on this deployment yet.'
-      : !checks.hasStripeSecret
-        ? 'STRIPE_SECRET_KEY is missing on the prodbot Vercel project — add it under Settings → Environment Variables, then redeploy.'
-        : !checks.supabaseConfigured
-          ? 'Supabase URL or anon key is missing on this deployment.'
-          : 'Billing checks failed after redeploy — open /api/billing/health for details.';
+  if (billingMissing) {
+    const hint = !checks.hasStripeSecret
+      ? 'STRIPE_SECRET_KEY is missing on this deployment.'
+      : 'Supabase URL or anon key is missing on this deployment.';
 
     return (
       <MarketingShell showSignIn={false}>
@@ -135,33 +127,33 @@ export default function SubscribeForm() {
     <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
-          <h1 style={styles.title}>Subscribe to Daywinner</h1>
-          <p style={styles.lead}>
-            {MONTHLY_PRICE_LABEL}/month. Your projects, timer, and day plan stay in your browser — we only store your
-            account and subscription status.
+          <h1 style={styles.title}>Checkout</h1>
+          <p style={styles.planLine}>
+            Daywinner bot — <strong>{MONTHLY_PRICE_LABEL}/mo</strong>
+            <span style={styles.strike}> $12.99/mo</span>
           </p>
 
           {notice ? <p style={styles.notice}>{notice}</p> : null}
           {error ? <p style={styles.error}>{error}</p> : null}
 
-          <ul style={styles.featureList}>
-            <li>Dashboard, timer, and session locks</li>
-            <li>Projects, notes, and EOD reports</li>
-            <li>Chrome extension for site blocking</li>
-          </ul>
-
-          <div style={styles.chromeNote}>
-            <p style={styles.chromeNoteTitle}>Requires Google Chrome (desktop)</p>
-            <p style={styles.chromeNoteText}>
-              Daywinner and the focus extension run in Chrome — not Safari or Firefox.{' '}
-              <a href={CHROME_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" style={styles.chromeLink}>
-                Download Chrome
-              </a>
-            </p>
-          </div>
+          <label style={styles.bump}>
+            <input
+              type="checkbox"
+              checked={includeCourse}
+              onChange={e => setIncludeCourse(e.target.checked)}
+              style={styles.bumpCheck}
+            />
+            <span style={styles.bumpBody}>
+              <span style={styles.bumpTitle}>
+                Yes — add the Daywinner Course for {COURSE_PRICE_LABEL}
+              </span>
+              <span style={styles.bumpSub}>One-time. Instant access after payment.</span>
+            </span>
+            <span style={styles.bumpPrice}>{COURSE_PRICE_LABEL}</span>
+          </label>
 
           <button type="button" onClick={startCheckout} disabled={busy} style={styles.primaryBtn}>
-            {busy ? 'Redirecting to Stripe…' : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
+            {busy ? 'Redirecting to Stripe…' : checkoutLabel}
           </button>
 
           <p style={styles.footerNote}>You&apos;ll create your account after checkout.</p>
@@ -199,7 +191,7 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
     display: 'flex',
     flexDirection: 'column',
-    gap: 12,
+    gap: 14,
   },
   title: {
     margin: 0,
@@ -213,12 +205,58 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.55,
     color: '#64748b',
   },
-  featureList: {
-    margin: '4px 0 8px',
-    paddingLeft: 18,
-    color: '#334155',
+  planLine: {
+    margin: 0,
+    fontSize: 15,
+    lineHeight: 1.5,
+    color: '#0f172a',
+  },
+  strike: {
+    color: '#94a3b8',
+    textDecoration: 'line-through',
+    fontWeight: 500,
+  },
+  bump: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 12,
+    margin: 0,
+    padding: '14px 14px',
+    borderRadius: 12,
+    border: '2px solid #f59e0b',
+    background: '#fffbeb',
+    cursor: 'pointer',
+  },
+  bumpCheck: {
+    marginTop: 3,
+    width: 18,
+    height: 18,
+    accentColor: '#0f172a',
+    flexShrink: 0,
+  },
+  bumpBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+    flex: 1,
+    minWidth: 0,
+  },
+  bumpTitle: {
     fontSize: 14,
-    lineHeight: 1.6,
+    fontWeight: 700,
+    color: '#0f172a',
+    lineHeight: 1.35,
+  },
+  bumpSub: {
+    fontSize: 12,
+    color: '#78716c',
+    lineHeight: 1.4,
+  },
+  bumpPrice: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: '#0f172a',
+    flexShrink: 0,
   },
   primaryBtn: {
     border: 'none',
@@ -261,34 +299,11 @@ const styles: Record<string, CSSProperties> = {
     color: '#94a3b8',
     textAlign: 'center',
   },
-  chromeNote: {
-    margin: 0,
-    padding: '12px 14px',
-    borderRadius: 10,
-    background: '#f8fafc',
-    border: '1px solid #e2e8f0',
-  },
-  chromeNoteTitle: {
-    margin: '0 0 4px',
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#334155',
-  },
-  chromeNoteText: {
-    margin: 0,
-    fontSize: 12,
-    lineHeight: 1.5,
-    color: '#64748b',
-  },
-  chromeLink: {
-    color: '#1d4ed8',
-    fontWeight: 600,
-    textDecoration: 'none',
-  },
   legal: {
-    margin: '8px 0 0',
+    margin: '4px 0 0',
     fontSize: 12,
     color: '#94a3b8',
+    textAlign: 'center',
   },
   legalLink: {
     color: '#64748b',

@@ -109,7 +109,7 @@ export default function LandingPage() {
           <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">(no download required)</p>
           <div className="mt-5 flex flex-col items-center gap-2">
             <Link
-              href={ctaHref}
+              href="/subscribe"
               className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
             >
               <span className="text-sm font-semibold text-white">let&apos;s go</span>

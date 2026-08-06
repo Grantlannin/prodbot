@@ -2,18 +2,33 @@ import { NextResponse } from 'next/server';
 import { fetchBillingForUser, upsertBillingForUser } from '@/lib/billing/profile';
 import { getAppOrigin, isBillingEnabled } from '@/lib/stripe/config';
 import { getStripeClient } from '@/lib/stripe/client';
-import { resolveMonthlyPriceId } from '@/lib/stripe/resolve-price';
+import { resolveCoursePriceId, resolveMonthlyPriceId } from '@/lib/stripe/resolve-price';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
-export async function POST() {
+export async function POST(request: Request) {
   if (!isBillingEnabled()) {
     return NextResponse.json({ error: 'Billing is not configured' }, { status: 503 });
   }
 
   try {
+    let includeCourse = false;
+    try {
+      const body = (await request.json()) as { includeCourse?: unknown };
+      includeCourse = body?.includeCourse === true;
+    } catch {
+      includeCourse = false;
+    }
+
     const stripe = getStripeClient();
     const priceId = await resolveMonthlyPriceId(stripe);
+    const lineItems: { price: string; quantity: number }[] = [{ price: priceId, quantity: 1 }];
+
+    if (includeCourse) {
+      const coursePriceId = await resolveCoursePriceId(stripe);
+      lineItems.push({ price: coursePriceId, quantity: 1 });
+    }
+
     const origin = getAppOrigin();
 
     const supabase = createServerSupabaseClient();
@@ -40,10 +55,11 @@ export async function POST() {
         mode: 'subscription',
         customer: customerId,
         client_reference_id: user.id,
-        line_items: [{ price: priceId, quantity: 1 }],
+        line_items: lineItems,
         success_url: `${origin}/subscribe/success`,
         cancel_url: `${origin}/subscribe?canceled=1`,
         allow_promotion_codes: true,
+        metadata: includeCourse ? { include_course: '1' } : undefined,
       });
 
       if (!session.url) {
@@ -55,10 +71,11 @@ export async function POST() {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: lineItems,
       success_url: `${origin}/subscribe/success`,
       cancel_url: `${origin}/subscribe?canceled=1`,
       allow_promotion_codes: true,
+      metadata: includeCourse ? { include_course: '1' } : undefined,
     });
 
     if (!session.url) {
