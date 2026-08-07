@@ -8,7 +8,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 const SUCCESS_URL = (origin: string) =>
-  `${origin}/subscribe/success?session_id={CHECKOUT_SESSION_ID}`;
+  `${origin}/login?mode=signup&next=/app&session_id={CHECKOUT_SESSION_ID}`;
 
 export async function POST() {
   const origin = getAppOrigin();

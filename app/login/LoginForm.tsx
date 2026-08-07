@@ -15,6 +15,7 @@ type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset';
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
+  const [emailLocked, setEmailLocked] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [mode, setMode] = useState<AuthMode>('signin');
@@ -25,16 +26,37 @@ export default function LoginForm() {
 
   const authError = searchParams.get('error');
   const nextPath = searchParams.get('next') || '/app';
+  const checkoutSessionId = searchParams.get('session_id')?.trim() || '';
+  const fromCheckout = checkoutSessionId.startsWith('cs_');
   const initialError = useMemo(() => {
     if (authError === 'auth') return 'Sign-in failed. Try again with email and password.';
     return null;
   }, [authError]);
 
   useEffect(() => {
-    if (searchParams.get('mode') === 'signup') {
+    if (searchParams.get('mode') === 'signup' || fromCheckout) {
       setMode('signup');
     }
-  }, [searchParams]);
+  }, [searchParams, fromCheckout]);
+
+  useEffect(() => {
+    if (!fromCheckout) return;
+    let cancelled = false;
+    void fetch(`/api/stripe/checkout-email?session_id=${encodeURIComponent(checkoutSessionId)}`)
+      .then(async res => {
+        const data = (await res.json()) as { email?: string; error?: string };
+        if (!res.ok || !data.email) return;
+        if (cancelled) return;
+        setEmail(data.email);
+        setEmailLocked(true);
+      })
+      .catch(() => {
+        /* user can still type email */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fromCheckout, checkoutSessionId]);
 
   useEffect(() => {
     if (searchParams.get('reset') !== '1') return;
@@ -184,7 +206,9 @@ export default function LoginForm() {
 
   const title =
     mode === 'signup'
-      ? 'Create your account'
+      ? fromCheckout
+        ? 'Create your Daywinner account'
+        : 'Create your account'
       : mode === 'forgot'
         ? 'Reset password'
         : mode === 'reset'
@@ -193,7 +217,9 @@ export default function LoginForm() {
 
   const lead =
     mode === 'signup'
-      ? 'Create your account with the same email you used at checkout.'
+      ? fromCheckout
+        ? "Payment received. Pick a password and you're in."
+        : 'Create an account to access Daywinner.'
       : mode === 'forgot'
         ? 'Enter your email and we will send a reset link.'
         : mode === 'reset'
@@ -273,22 +299,24 @@ export default function LoginForm() {
             </form>
           ) : (
             <form onSubmit={mode === 'signup' ? handleSignUp : handleSignIn} style={styles.form}>
-              <div style={styles.modeRow}>
-                <button
-                  type="button"
-                  style={{ ...styles.modeBtn, ...(mode === 'signin' ? styles.modeBtnActive : null) }}
-                  onClick={() => setMode('signin')}
-                >
-                  Sign in
-                </button>
-                <button
-                  type="button"
-                  style={{ ...styles.modeBtn, ...(mode === 'signup' ? styles.modeBtnActive : null) }}
-                  onClick={() => setMode('signup')}
-                >
-                  Create account
-                </button>
-              </div>
+              {!fromCheckout ? (
+                <div style={styles.modeRow}>
+                  <button
+                    type="button"
+                    style={{ ...styles.modeBtn, ...(mode === 'signin' ? styles.modeBtnActive : null) }}
+                    onClick={() => setMode('signin')}
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    type="button"
+                    style={{ ...styles.modeBtn, ...(mode === 'signup' ? styles.modeBtnActive : null) }}
+                    onClick={() => setMode('signup')}
+                  >
+                    Create account
+                  </button>
+                </div>
+              ) : null}
               <label style={styles.label} htmlFor="email">
                 Email
               </label>
@@ -298,9 +326,15 @@ export default function LoginForm() {
                 required
                 autoComplete="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={e => {
+                  if (!emailLocked) setEmail(e.target.value);
+                }}
+                readOnly={emailLocked}
                 placeholder="you@example.com"
-                style={styles.input}
+                style={{
+                  ...styles.input,
+                  ...(emailLocked ? styles.inputLocked : null),
+                }}
               />
               <label style={styles.label} htmlFor="password">
                 Password
@@ -332,9 +366,11 @@ export default function LoginForm() {
                   ? mode === 'signup'
                     ? 'Creating…'
                     : 'Signing in…'
-                  : mode === 'signup'
-                    ? 'Create account'
-                    : 'Sign in'}
+                  : fromCheckout
+                    ? 'Start Daywinner'
+                    : mode === 'signup'
+                      ? 'Create account'
+                      : 'Sign in'}
               </button>
             </form>
           )}
