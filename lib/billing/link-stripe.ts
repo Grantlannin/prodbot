@@ -3,10 +3,23 @@ import {
   customerHasCoursePurchase,
   grantCourseAccess,
 } from '@/lib/billing/course';
+import { isCheckoutSessionId } from '@/lib/billing/checkout-receipt';
 import { upsertBillingForUser } from '@/lib/billing/profile';
 import { mapStripeSubscriptionStatus } from '@/lib/billing/subscription';
 import { getStripeClient } from '@/lib/stripe/client';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
+
+export type LinkReason =
+  | 'linked'
+  | 'no_subscription'
+  | 'already_claimed'
+  | 'not_found'
+  | 'invalid_session';
+
+export interface LinkResult {
+  linked: boolean;
+  reason: LinkReason;
+}
 
 function subscriptionPeriodEnd(subscription: Stripe.Subscription): string | null {
   const periodEnd =
@@ -16,19 +29,144 @@ function subscriptionPeriodEnd(subscription: Stripe.Subscription): string | null
 }
 
 function isLinkableSubscription(subscription: Stripe.Subscription): boolean {
-  return subscription.status === 'active' || subscription.status === 'trialing' || subscription.status === 'past_due';
+  return (
+    subscription.status === 'active' ||
+    subscription.status === 'trialing' ||
+    subscription.status === 'past_due'
+  );
+}
+
+async function attachSubscriptionToUser(
+  userId: string,
+  customerId: string,
+  subscription: Stripe.Subscription
+): Promise<LinkResult> {
+  const stripe = getStripeClient();
+  const admin = createAdminSupabaseClient();
+
+  const { data: existingProfile } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('stripe_customer_id', customerId)
+    .maybeSingle();
+
+  if (existingProfile && existingProfile.id !== userId) {
+    return { linked: false, reason: 'already_claimed' };
+  }
+
+  await stripe.customers.update(customerId, {
+    metadata: { supabase_user_id: userId },
+  });
+
+  await upsertBillingForUser(admin, userId, {
+    stripe_customer_id: customerId,
+    subscription_status: mapStripeSubscriptionStatus(subscription.status),
+    subscription_ends_at: subscriptionPeriodEnd(subscription),
+  });
+
+  if (await customerHasCoursePurchase(stripe, customerId)) {
+    await grantCourseAccess(userId);
+  }
+
+  return { linked: true, reason: 'linked' };
+}
+
+async function findLinkableSubscription(
+  stripe: Stripe,
+  customerId: string
+): Promise<Stripe.Subscription | null> {
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: 'all',
+    limit: 10,
+  });
+  return subscriptions.data.find(isLinkableSubscription) ?? null;
+}
+
+/**
+ * Claim a pay-first Checkout session onto this user.
+ * Session id is the receipt — email match is not required.
+ */
+export async function linkCheckoutSessionToUser(
+  userId: string,
+  sessionId: string
+): Promise<LinkResult> {
+  if (!isCheckoutSessionId(sessionId)) {
+    return { linked: false, reason: 'invalid_session' };
+  }
+
+  const stripe = getStripeClient();
+
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['subscription', 'customer'],
+    });
+  } catch {
+    return { linked: false, reason: 'not_found' };
+  }
+
+  const paid =
+    session.payment_status === 'paid' ||
+    session.payment_status === 'no_payment_required' ||
+    session.status === 'complete';
+  if (!paid) {
+    return { linked: false, reason: 'invalid_session' };
+  }
+
+  const customerId =
+    typeof session.customer === 'string'
+      ? session.customer
+      : session.customer && !session.customer.deleted
+        ? session.customer.id
+        : null;
+
+  if (!customerId) {
+    return { linked: false, reason: 'no_subscription' };
+  }
+
+  let subscription: Stripe.Subscription | null = null;
+  if (typeof session.subscription === 'string') {
+    try {
+      subscription = await stripe.subscriptions.retrieve(session.subscription);
+    } catch {
+      subscription = null;
+    }
+  } else if (session.subscription && typeof session.subscription === 'object') {
+    subscription = session.subscription as Stripe.Subscription;
+  }
+
+  if (!subscription || !isLinkableSubscription(subscription)) {
+    subscription = await findLinkableSubscription(stripe, customerId);
+  }
+
+  if (!subscription) {
+    return { linked: false, reason: 'no_subscription' };
+  }
+
+  return attachSubscriptionToUser(userId, customerId, subscription);
 }
 
 /** Attach an existing Stripe subscription (matched by checkout email) to a Supabase user. */
-export async function linkStripeCustomerToUser(userId: string, email: string): Promise<boolean> {
+export async function linkStripeCustomerToUser(
+  userId: string,
+  email: string
+): Promise<LinkResult> {
   const stripe = getStripeClient();
   const admin = createAdminSupabaseClient();
   const normalizedEmail = email.trim().toLowerCase();
 
+  if (!normalizedEmail) {
+    return { linked: false, reason: 'no_subscription' };
+  }
+
   const customers = await stripe.customers.list({ email: normalizedEmail, limit: 100 });
+  let sawClaimed = false;
+  let sawCustomer = false;
 
   for (const customer of customers.data) {
     if (customer.deleted) continue;
+    sawCustomer = true;
 
     const { data: existingProfile } = await admin
       .from('profiles')
@@ -36,33 +174,34 @@ export async function linkStripeCustomerToUser(userId: string, email: string): P
       .eq('stripe_customer_id', customer.id)
       .maybeSingle();
 
-    if (existingProfile && existingProfile.id !== userId) continue;
-
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id,
-      status: 'all',
-      limit: 10,
-    });
-
-    const subscription = subscriptions.data.find(isLinkableSubscription);
-    if (!subscription) continue;
-
-    await stripe.customers.update(customer.id, {
-      metadata: { supabase_user_id: userId },
-    });
-
-    await upsertBillingForUser(admin, userId, {
-      stripe_customer_id: customer.id,
-      subscription_status: mapStripeSubscriptionStatus(subscription.status),
-      subscription_ends_at: subscriptionPeriodEnd(subscription),
-    });
-
-    if (await customerHasCoursePurchase(stripe, customer.id)) {
-      await grantCourseAccess(userId);
+    if (existingProfile && existingProfile.id !== userId) {
+      sawClaimed = true;
+      continue;
     }
 
-    return true;
+    const subscription = await findLinkableSubscription(stripe, customer.id);
+    if (!subscription) continue;
+
+    return attachSubscriptionToUser(userId, customer.id, subscription);
   }
 
-  return false;
+  if (sawClaimed) return { linked: false, reason: 'already_claimed' };
+  if (!sawCustomer) return { linked: false, reason: 'not_found' };
+  return { linked: false, reason: 'no_subscription' };
+}
+
+/** Prefer session claim (pay-first receipt), then email match. */
+export async function reconcileBillingForUser(
+  userId: string,
+  email: string,
+  sessionId?: string | null
+): Promise<LinkResult> {
+  if (isCheckoutSessionId(sessionId)) {
+    const bySession = await linkCheckoutSessionToUser(userId, sessionId);
+    if (bySession.linked || bySession.reason === 'already_claimed') {
+      return bySession;
+    }
+  }
+
+  return linkStripeCustomerToUser(userId, email);
 }

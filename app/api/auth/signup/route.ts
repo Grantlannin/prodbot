@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { DEMO_COURSE_COOKIE, DEMO_PAID_COOKIE } from '@/lib/billing/demo';
+import {
+  CHECKOUT_SESSION_COOKIE,
+  isCheckoutSessionId,
+} from '@/lib/billing/checkout-receipt';
 import { grantCourseAccess } from '@/lib/billing/course';
-import { linkStripeCustomerToUser } from '@/lib/billing/link-stripe';
+import { reconcileBillingForUser } from '@/lib/billing/link-stripe';
 import { upsertBillingForUser } from '@/lib/billing/profile';
 import { isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
@@ -35,11 +39,22 @@ async function attachDemoEntitlements(userId: string) {
   }
 }
 
+function resolveSessionId(bodySessionId: string | undefined): string | null {
+  if (isCheckoutSessionId(bodySessionId)) return bodySessionId;
+  const fromCookie = cookies().get(CHECKOUT_SESSION_COOKIE)?.value?.trim() || '';
+  return isCheckoutSessionId(fromCookie) ? fromCookie : null;
+}
+
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { email?: string; password?: string };
+    const body = (await req.json()) as {
+      email?: string;
+      password?: string;
+      session_id?: string;
+    };
     const email = body.email ? normalizeEmail(body.email) : '';
     const password = body.password ?? '';
+    const sessionId = resolveSessionId(body.session_id?.trim());
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
@@ -57,16 +72,17 @@ export async function POST(req: Request) {
     });
 
     if (!error) {
+      let link: { linked: boolean; reason: string } | null = null;
       if (isBillingDemoFlow()) {
         try {
           await attachDemoEntitlements(data.user.id);
+          link = { linked: true, reason: 'linked' };
         } catch (demoError) {
           console.error('[auth/signup] demo billing', demoError);
         }
       } else if (isBillingEnabled()) {
         try {
-          await linkStripeCustomerToUser(data.user.id, email);
-          // Course bought at OTO before account — cookie bridge until webhook/link finds it.
+          link = await reconcileBillingForUser(data.user.id, email, sessionId);
           if (cookies().get(DEMO_COURSE_COOKIE)?.value === '1') {
             await grantCourseAccess(data.user.id);
           }
@@ -74,7 +90,7 @@ export async function POST(req: Request) {
           console.error('[auth/signup] link stripe', linkError);
         }
       }
-      return NextResponse.json({ ok: true, userId: data.user.id });
+      return NextResponse.json({ ok: true, userId: data.user.id, link });
     }
 
     const msg = error.message.toLowerCase();
@@ -96,15 +112,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: updateError.message }, { status: 400 });
       }
 
+      let link: { linked: boolean; reason: string } | null = null;
       if (isBillingDemoFlow()) {
         try {
           await attachDemoEntitlements(existing.id);
+          link = { linked: true, reason: 'linked' };
         } catch (demoError) {
           console.error('[auth/signup] demo billing', demoError);
         }
       } else if (isBillingEnabled()) {
         try {
-          await linkStripeCustomerToUser(existing.id, email);
+          link = await reconcileBillingForUser(existing.id, email, sessionId);
           if (cookies().get(DEMO_COURSE_COOKIE)?.value === '1') {
             await grantCourseAccess(existing.id);
           }
@@ -113,7 +131,7 @@ export async function POST(req: Request) {
         }
       }
 
-      return NextResponse.json({ ok: true, userId: existing.id, updated: true });
+      return NextResponse.json({ ok: true, userId: existing.id, updated: true, link });
     }
 
     return NextResponse.json({ error: error.message }, { status: 400 });

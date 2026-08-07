@@ -1,8 +1,13 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import MarketingShell from '@/components/marketing/MarketingShell';
+import { linkReasonMessage } from '@/lib/billing/checkout-receipt';
+import {
+  clearCheckoutSessionId,
+  resolveCheckoutSessionId,
+} from '@/lib/billing/checkout-receipt-client';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -11,11 +16,71 @@ interface BillingStatus {
   active: boolean;
 }
 
-/** /subscribe is only a thin hop: already-subscribed → app, else → Stripe Checkout. */
+type Phase = 'checking' | 'active' | 'stuck' | 'redirecting' | 'error';
+
+/**
+ * /subscribe: reconcile purchase first (session_id / email), then Checkout only if needed.
+ * Avoids bouncing paid users into a second charge.
+ */
 export default function SubscribeForm() {
-  const [message, setMessage] = useState('Redirecting to checkout…');
+  const [phase, setPhase] = useState<Phase>('checking');
+  const [message, setMessage] = useState('Checking your subscription…');
   const [error, setError] = useState<string | null>(null);
-  const [active, setActive] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const startCheckout = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    setPhase('redirecting');
+    setMessage('Redirecting to checkout…');
+    try {
+      const res = await fetch('/api/stripe/checkout', { method: 'POST' });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? 'Could not start checkout.');
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setPhase('stuck');
+      setError(err instanceof Error ? err.message : 'Could not start checkout.');
+      setMessage('');
+      setBusy(false);
+    }
+  }, []);
+
+  const retryAccess = useCallback(async (): Promise<boolean> => {
+    setBusy(true);
+    setError(null);
+    setMessage('Looking up your purchase…');
+    try {
+      const sessionId = resolveCheckoutSessionId(null) || '';
+      const res = await fetch('/api/billing/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sessionId ? { session_id: sessionId } : {}),
+      });
+      const data = (await res.json()) as { linked?: boolean; reason?: string; error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Could not link subscription.');
+      }
+      if (data.linked) {
+        clearCheckoutSessionId();
+        window.location.href = '/app';
+        return true;
+      }
+      setPhase('stuck');
+      setError(linkReasonMessage(data.reason));
+      setMessage('');
+      setBusy(false);
+      return false;
+    } catch (err) {
+      setPhase('stuck');
+      setError(err instanceof Error ? err.message : 'Could not link subscription.');
+      setMessage('');
+      setBusy(false);
+      return false;
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,25 +93,59 @@ export default function SubscribeForm() {
         if (cancelled) return;
 
         if (status.active) {
-          setActive(true);
+          setPhase('active');
           return;
         }
 
         if (!status.billingEnabled) {
-          setError('Checkout isn\'t available right now. Try again shortly.');
+          setPhase('error');
+          setError("Checkout isn't available right now. Try again shortly.");
           setMessage('');
           return;
         }
 
-        const res = await fetch('/api/stripe/checkout', { method: 'POST' });
-        const data = (await res.json()) as { url?: string; error?: string };
-        if (!res.ok || !data.url) {
-          throw new Error(data.error ?? 'Could not start checkout.');
+        // Paid users first: claim session / email before offering another Checkout.
+        const sessionId = resolveCheckoutSessionId(null) || '';
+        const linkRes = await fetch('/api/billing/link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sessionId ? { session_id: sessionId } : {}),
+        });
+
+        if (linkRes.status === 401) {
+          // Not signed in — send to signup/signin; keep receipt for after auth.
+          setPhase('stuck');
+          setMessage('');
+          setError('Sign in or create your account to unlock access after payment.');
+          return;
         }
-        window.location.href = data.url;
+
+        const linkData = (await linkRes.json()) as {
+          linked?: boolean;
+          reason?: string;
+          error?: string;
+        };
+        if (cancelled) return;
+
+        if (linkData.linked) {
+          clearCheckoutSessionId();
+          window.location.href = '/app';
+          return;
+        }
+
+        // Have a checkout receipt but not linked yet (race / wrong account) — don't rebought.
+        if (sessionId || linkData.reason === 'already_claimed') {
+          setPhase('stuck');
+          setError(linkReasonMessage(linkData.reason));
+          setMessage('');
+          return;
+        }
+
+        await startCheckout();
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Could not start checkout.');
+        setPhase('stuck');
+        setError(err instanceof Error ? err.message : 'Something went wrong.');
         setMessage('');
       }
     };
@@ -55,9 +154,9 @@ export default function SubscribeForm() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [startCheckout]);
 
-  if (active) {
+  if (phase === 'active') {
     return (
       <MarketingShell showSignIn={false}>
         <div style={styles.wrap}>
@@ -80,21 +179,44 @@ export default function SubscribeForm() {
     <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
-          {message ? <p style={styles.lead}>{message}</p> : null}
-          {error ? (
+          {phase === 'checking' || phase === 'redirecting' ? (
+            <p style={styles.lead}>{message || 'One moment…'}</p>
+          ) : null}
+
+          {phase === 'stuck' || phase === 'error' ? (
             <>
-              <p style={styles.error}>{error}</p>
-              <Link href="/" style={styles.backLink}>
-                ← Back to home
-              </Link>
+              <h1 style={styles.title}>Need access?</h1>
+              {error ? <p style={styles.error}>{error}</p> : null}
+              <p style={styles.lead}>
+                If you already paid, retry access before buying again.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void retryAccess()}
+                style={styles.primaryBtn}
+              >
+                {busy ? 'Checking…' : 'I already paid — retry access'}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void startCheckout()}
+                style={styles.secondaryBtn}
+              >
+                Continue to checkout
+              </button>
               <p style={styles.footerNote}>
-                Already paid?{' '}
                 <Link href="/login?mode=signup&next=/app" style={styles.link}>
                   Create account
                 </Link>
                 {' · '}
                 <Link href="/login" style={styles.link}>
                   Sign in
+                </Link>
+                {' · '}
+                <Link href="/" style={styles.link}>
+                  Home
                 </Link>
               </p>
             </>
@@ -149,6 +271,17 @@ const styles: Record<string, CSSProperties> = {
     color: '#fff',
     cursor: 'pointer',
   },
+  secondaryBtn: {
+    border: '1px solid #cbd5e1',
+    borderRadius: 10,
+    padding: '12px 14px',
+    fontSize: 14,
+    fontWeight: 600,
+    fontFamily: font,
+    background: '#fff',
+    color: '#0f172a',
+    cursor: 'pointer',
+  },
   error: {
     margin: 0,
     padding: '10px 12px',
@@ -156,13 +289,7 @@ const styles: Record<string, CSSProperties> = {
     background: '#fef2f2',
     color: '#b91c1c',
     fontSize: 13,
-  },
-  backLink: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#64748b',
-    textDecoration: 'none',
-    fontFamily: font,
+    textAlign: 'left',
   },
   footerNote: {
     margin: 0,

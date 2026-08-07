@@ -7,6 +7,11 @@ import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { clearIntroProgressClient } from '@/lib/intro';
 import { PRODUCTION_SITE_ORIGIN } from '@/lib/site';
+import { linkReasonMessage } from '@/lib/billing/checkout-receipt';
+import {
+  clearCheckoutSessionId,
+  resolveCheckoutSessionId,
+} from '@/lib/billing/checkout-receipt-client';
 import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -24,15 +29,20 @@ export default function LoginForm() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [checkoutSessionId, setCheckoutSessionId] = useState('');
 
   const authError = searchParams.get('error');
   const nextPath = searchParams.get('next') || '/app';
-  const checkoutSessionId = searchParams.get('session_id')?.trim() || '';
   const fromCheckout = checkoutSessionId.startsWith('cs_');
   const initialError = useMemo(() => {
     if (authError === 'auth') return 'Sign-in failed. Try again with email and password.';
     return null;
   }, [authError]);
+
+  useEffect(() => {
+    const resolved = resolveCheckoutSessionId(searchParams.get('session_id')?.trim() || '');
+    if (resolved) setCheckoutSessionId(resolved);
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchParams.get('mode') === 'signup' || fromCheckout) {
@@ -77,7 +87,7 @@ export default function LoginForm() {
     const supabase = createBrowserSupabaseClient();
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange(event => {
       if (event === 'PASSWORD_RECOVERY') {
         setMode('reset');
         setResetReady(true);
@@ -97,18 +107,47 @@ export default function LoginForm() {
     );
   }
 
-  const afterAuth = async (opts?: { isNewAccount?: boolean }) => {
-    try {
-      await fetch('/api/billing/link', { method: 'POST' });
-    } catch {
-      /* subscription link is best-effort */
+  const linkBilling = async (): Promise<{ linked: boolean; reason?: string }> => {
+    const sessionId = resolveCheckoutSessionId(checkoutSessionId) || '';
+    const res = await fetch('/api/billing/link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sessionId ? { session_id: sessionId } : {}),
+    });
+    const data = (await res.json()) as { linked?: boolean; reason?: string; error?: string };
+    if (!res.ok) {
+      return { linked: false, reason: data.reason };
     }
+    if (data.linked) clearCheckoutSessionId();
+    return { linked: Boolean(data.linked), reason: data.reason };
+  };
+
+  const afterAuth = async (opts?: { isNewAccount?: boolean; linkReason?: string }) => {
+    let linked = opts?.linkReason === 'linked';
+    let reason = opts?.linkReason;
+    if (!linked) {
+      try {
+        const result = await linkBilling();
+        linked = result.linked;
+        reason = result.reason;
+      } catch {
+        /* subscription link is best-effort; /subscribe will retry */
+      }
+    } else {
+      clearCheckoutSessionId();
+    }
+
     if (opts?.isNewAccount) {
       clearIntroProgressClient();
-      window.location.href = '/app';
+    }
+
+    const dest = nextPath.startsWith('/') ? nextPath : '/app';
+    if (dest.startsWith('/app') && !linked && reason === 'already_claimed') {
+      setError(linkReasonMessage(reason));
+      setBusy(false);
       return;
     }
-    window.location.href = nextPath.startsWith('/') ? nextPath : '/app';
+    window.location.href = dest;
   };
 
   const resetRedirectTo = () => {
@@ -142,10 +181,9 @@ export default function LoginForm() {
         }
         throw signInError;
       }
-      afterAuth();
+      await afterAuth();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not sign in.');
-    } finally {
       setBusy(false);
     }
   };
@@ -156,12 +194,21 @@ export default function LoginForm() {
     setError(null);
     setMessage(null);
     try {
+      const sessionId = resolveCheckoutSessionId(checkoutSessionId) || '';
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          ...(sessionId ? { session_id: sessionId } : {}),
+        }),
       });
-      const data = (await res.json()) as { error?: string; updated?: boolean };
+      const data = (await res.json()) as {
+        error?: string;
+        updated?: boolean;
+        link?: { linked?: boolean; reason?: string };
+      };
       if (!res.ok) {
         throw new Error(data.error ?? 'Could not create account.');
       }
@@ -173,10 +220,12 @@ export default function LoginForm() {
       });
       if (signInError) throw signInError;
       // Existing email via "create account" only updates password — don't reset intro.
-      afterAuth({ isNewAccount: !data.updated });
+      await afterAuth({
+        isNewAccount: !data.updated,
+        linkReason: data.link?.linked ? 'linked' : data.link?.reason,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create account.');
-    } finally {
       setBusy(false);
     }
   };
@@ -217,10 +266,9 @@ export default function LoginForm() {
       const supabase = createBrowserSupabaseClient();
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) throw updateError;
-      afterAuth();
+      await afterAuth();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not update password.');
-    } finally {
       setBusy(false);
     }
   };

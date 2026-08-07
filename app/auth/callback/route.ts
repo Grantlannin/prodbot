@@ -1,6 +1,10 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { linkStripeCustomerToUser } from '@/lib/billing/link-stripe';
+import {
+  CHECKOUT_SESSION_COOKIE,
+  isCheckoutSessionId,
+} from '@/lib/billing/checkout-receipt';
+import { reconcileBillingForUser } from '@/lib/billing/link-stripe';
 import { isBillingEnabled } from '@/lib/stripe/config';
 import { getAppOrigin } from '@/lib/app-origin';
 import { getSupabaseConfig } from '@/lib/supabase/config';
@@ -49,7 +53,9 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser();
     if (user?.email) {
       try {
-        await linkStripeCustomerToUser(user.id, user.email);
+        const cookieSession = request.cookies.get(CHECKOUT_SESSION_COOKIE)?.value?.trim() || '';
+        const sessionId = isCheckoutSessionId(cookieSession) ? cookieSession : null;
+        await reconcileBillingForUser(user.id, user.email, sessionId);
       } catch (linkError) {
         console.error('[auth/callback] link stripe', linkError);
       }
