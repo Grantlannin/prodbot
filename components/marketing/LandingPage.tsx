@@ -161,7 +161,7 @@ export default function LandingPage() {
         <div className="mx-auto w-full max-w-3xl">
           <div className="mb-0 text-center">
             <h2 className="mb-6 text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:mb-8 sm:text-4xl sm:leading-snug">
-              Block All Distracting Websites.
+              Block Social Media.
               <br />
               Set Up Your #1 Most Important Task Daily.
               <br />
@@ -590,7 +590,6 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center">
           <SectionCta checkout={useCheckout} href={fallbackHref} label="YES. I'M IN." />
-          <p className="mt-2 text-sm text-slate-500">Chrome recommended for focus blocking</p>
         </div>
       </section>
 
