@@ -272,7 +272,7 @@ export default function LandingPage() {
             Block any distracting website you want. During your work session, you will be unable to access the sites you
             choose until your timer hits zero. Soft lock makes you wait 2 minutes for access again (you&apos;ll usually
             just start working more), &amp; hard lock &ldquo;locks you in&rdquo; &amp; blocks the sites entirely until
-            your work block is complete.
+            your work timer hits zero.
           </p>
           <Image
             src="/marketing/step4-lock.jpg"
