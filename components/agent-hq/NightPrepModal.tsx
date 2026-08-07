@@ -339,7 +339,7 @@ export default function NightPrepModal() {
     setTyping(true);
     schedule(() => {
       appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.missedClose });
-      setTyping(false);
+      // Keep typing true so the message input stays hidden until prep starts
       schedule(() => {
         beginNightPrep(WIND_DOWN_FLOW_COPY.prepIntroAfterMissed);
       }, BOT_TYPING_MS + 400);
