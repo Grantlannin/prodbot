@@ -159,13 +159,14 @@ export default function LandingPage() {
         <div className="mx-auto w-full max-w-3xl">
           <div className="mb-0 text-center">
             <h2 className="mb-6 text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:mb-8 sm:text-4xl sm:leading-snug">
-              Block all distracting websites.
+              Block All Distracting Websites.
               <br />
-              Set up your #1 most important task Daily.
+              Set Up Your #1 Most Important Task Daily.
               <br />
               <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
-                Win the day.
-              </span>
+                Win
+              </span>{' '}
+              The Day.
             </h2>
             <Image
               src="/marketing/sessions-flow-steps.png"
