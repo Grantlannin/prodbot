@@ -7,8 +7,8 @@ import MarketingShell from '@/components/marketing/MarketingShell';
 import { pingFocusExtension } from '@/components/agent-hq/focusBlocking';
 import {
   getChromeExtensionStoreUrl,
-  INTRO_VIDEO_PATH,
   markExtensionIntroCompleteClient,
+  markIntroCompleteClient,
   ONBOARDING_STEP_COUNT,
 } from '@/lib/intro';
 
@@ -23,7 +23,8 @@ export default function IntroExtension() {
 
   const handleContinue = () => {
     markExtensionIntroCompleteClient();
-    router.push(INTRO_VIDEO_PATH);
+    markIntroCompleteClient();
+    router.push('/app');
     router.refresh();
   };
 

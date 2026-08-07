@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
-import { clearIntroProgressClient } from '@/lib/intro';
+import { clearIntroProgressClient, INTRO_CHROME_PATH } from '@/lib/intro';
 import { PRODUCTION_SITE_ORIGIN } from '@/lib/site';
 import { linkReasonMessage } from '@/lib/billing/checkout-receipt';
 import {
@@ -137,7 +137,7 @@ export default function LoginForm() {
       clearCheckoutSessionId();
     }
 
-    if (opts?.isNewAccount) {
+    if (opts?.isNewAccount || fromCheckout) {
       clearIntroProgressClient();
     }
 
@@ -145,6 +145,12 @@ export default function LoginForm() {
     if (dest.startsWith('/app') && !linked && reason === 'already_claimed') {
       setError(linkReasonMessage(reason));
       setBusy(false);
+      return;
+    }
+
+    // Post-purchase / new account → Chrome + extension setup before the dashboard.
+    if (opts?.isNewAccount || fromCheckout) {
+      window.location.href = INTRO_CHROME_PATH;
       return;
     }
     window.location.href = dest;

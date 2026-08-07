@@ -2,6 +2,13 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isActiveSubscription } from '@/lib/billing/subscription';
 import { parseBillingRow } from '@/lib/billing/profile';
+import {
+  CHROME_INTRO_COMPLETE_COOKIE,
+  EXTENSION_INTRO_COMPLETE_COOKIE,
+  INTRO_CHROME_PATH,
+  INTRO_EXTENSION_PATH,
+  SETUP_REQUIRED_COOKIE,
+} from '@/lib/intro';
 import { isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { getSupabaseConfig, isAuthRequired } from '@/lib/supabase/config';
 
@@ -17,6 +24,10 @@ function isAppPath(pathname: string): boolean {
 
 function isIntroPath(pathname: string): boolean {
   return pathname === '/intro' || pathname.startsWith('/intro/');
+}
+
+function hasIntroCookie(request: NextRequest, name: string): boolean {
+  return request.cookies.get(name)?.value === '1';
 }
 
 export async function middleware(request: NextRequest) {
@@ -64,18 +75,28 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Old onboarding pages → app (or login). Tutorial video lives in-app now.
+    // Chrome + extension onboarding (post-purchase). Video tutorial is in-app.
     if (isIntroPath(pathname)) {
-      if (user) {
+      if (pathname === '/intro/video' || pathname.startsWith('/intro/video/')) {
         return NextResponse.redirect(new URL('/app', request.url));
       }
-      if (requireAuth) {
+      if (!user && requireAuth) {
         const loginUrl = request.nextUrl.clone();
         loginUrl.pathname = '/login';
-        loginUrl.searchParams.set('next', '/app');
+        loginUrl.searchParams.set('next', pathname);
         return NextResponse.redirect(loginUrl);
       }
-      return NextResponse.redirect(new URL('/app', request.url));
+      if (user && billingEnabled) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('stripe_customer_id, subscription_status, subscription_ends_at')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (!isActiveSubscription(parseBillingRow(profile))) {
+          return NextResponse.redirect(new URL('/subscribe', request.url));
+        }
+      }
+      return supabaseResponse;
     }
 
     if (requireAuth && !user && !isPublicPath(pathname)) {
@@ -113,6 +134,16 @@ export async function middleware(request: NextRequest) {
         subscribeUrl.pathname = '/subscribe';
         subscribeUrl.search = '';
         return NextResponse.redirect(subscribeUrl);
+      }
+
+      // Post-purchase setup only (dw_setup_required) — Chrome → extension, then /app.
+      if (active && isAppPath(pathname) && hasIntroCookie(request, SETUP_REQUIRED_COOKIE)) {
+        if (!hasIntroCookie(request, CHROME_INTRO_COMPLETE_COOKIE)) {
+          return NextResponse.redirect(new URL(INTRO_CHROME_PATH, request.url));
+        }
+        if (!hasIntroCookie(request, EXTENSION_INTRO_COMPLETE_COOKIE)) {
+          return NextResponse.redirect(new URL(INTRO_EXTENSION_PATH, request.url));
+        }
       }
     } else if (requireAuth && user && pathname === '/login') {
       return NextResponse.redirect(new URL('/app', request.url));

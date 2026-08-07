@@ -7,6 +7,9 @@ export const EXTENSION_INTRO_COMPLETE_COOKIE = 'dw_extension_intro_complete';
 export const CHROME_INTRO_COMPLETE_KEY = 'agentHQ_chromeIntroComplete';
 export const CHROME_INTRO_COMPLETE_COOKIE = 'dw_chrome_intro_complete';
 
+/** Set after purchase/signup so middleware can require Chrome → extension before /app. */
+export const SETUP_REQUIRED_COOKIE = 'dw_setup_required';
+
 export const CHROME_DOWNLOAD_URL = 'https://www.google.com/chrome/';
 
 /** Step 1 — use Google Chrome */
@@ -16,7 +19,8 @@ export const INTRO_EXTENSION_PATH = '/intro';
 /** Step 3 — how-to video */
 export const INTRO_VIDEO_PATH = '/intro/video';
 
-export const ONBOARDING_STEP_COUNT = 3;
+/** Chrome → extension (video lives in-app via How to start / full bot tutorial). */
+export const ONBOARDING_STEP_COUNT = 2;
 
 /** Convert a Loom or YouTube share/embed URL to an iframe embed URL. */
 export function getVideoEmbedUrl(url: string | undefined): string | null {
@@ -85,6 +89,7 @@ export function markIntroCompleteClient(): void {
 export function markExtensionIntroCompleteClient(): void {
   localStorage.setItem(EXTENSION_INTRO_COMPLETE_KEY, '1');
   setClientCookie(EXTENSION_INTRO_COMPLETE_COOKIE);
+  clearClientCookie(SETUP_REQUIRED_COOKIE);
 }
 
 /** First-visit “how to start” video on the dashboard (same clip as full bot tutorial). */
@@ -129,5 +134,6 @@ export function clearIntroProgressClient(): void {
   clearClientCookie(CHROME_INTRO_COMPLETE_COOKIE);
   clearClientCookie(EXTENSION_INTRO_COMPLETE_COOKIE);
   clearClientCookie(INTRO_COMPLETE_COOKIE);
+  setClientCookie(SETUP_REQUIRED_COOKIE);
   clearHowToStartDismissedClient();
 }
