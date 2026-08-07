@@ -47,10 +47,21 @@ export function isBillingEnabled(): boolean {
 
 /** Safe diagnostics for /api/billing/health — no secret values. */
 export function getBillingConfigChecks() {
+  const stripeSecret = getStripeSecretKey() ?? '';
+  const stripeKeyMode = stripeSecret.startsWith('sk_live')
+    ? 'live'
+    : stripeSecret.startsWith('sk_test')
+      ? 'test'
+      : stripeSecret
+        ? 'unknown'
+        : 'missing';
+
   return {
     paywallDisabled: isPaywallExplicitlyDisabled(),
     demoFlow: isBillingDemoFlow(),
-    hasStripeSecret: !!getStripeSecretKey(),
+    hasStripeSecret: !!stripeSecret,
+    stripeKeyMode,
+    appUrl: getAppOrigin(''),
     supabaseConfigured: isSupabaseConfigured(),
     billingEnabled: isBillingEnabled(),
   };
