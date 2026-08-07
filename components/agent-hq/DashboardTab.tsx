@@ -227,11 +227,6 @@ export default function DashboardTab({
           </div>
           <div style={styles.divider} />
           <div>
-            <div style={styles.bannerLabel}>Break</div>
-            <div style={{ color: '#b45309', fontSize: 26, fontWeight: 700 }}>{formatDuration(todayStats.totalBreakMs)}</div>
-          </div>
-          <div style={styles.divider} />
-          <div>
             <div style={styles.bannerLabel}>Sessions</div>
             <div style={{ color: '#0f172a', fontSize: 26, fontWeight: 700 }}>{todayStats.sessionCount}</div>
           </div>
