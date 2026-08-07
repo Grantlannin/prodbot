@@ -85,7 +85,7 @@ export default function LandingPage() {
   const ctaHref = paywall || demoFlow
     ? '/subscribe'
     : paywallOff
-      ? '/login?mode=signup&next=/intro/chrome'
+      ? '/login?mode=signup&next=/app'
       : '/app';
 
   return (

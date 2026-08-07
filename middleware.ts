@@ -3,14 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { isActiveSubscription } from '@/lib/billing/subscription';
 import { parseBillingRow } from '@/lib/billing/profile';
 import { isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
-import {
-  CHROME_INTRO_COMPLETE_COOKIE,
-  EXTENSION_INTRO_COMPLETE_COOKIE,
-  INTRO_CHROME_PATH,
-  INTRO_COMPLETE_COOKIE,
-  INTRO_EXTENSION_PATH,
-  INTRO_VIDEO_PATH,
-} from '@/lib/intro';
 import { getSupabaseConfig, isAuthRequired } from '@/lib/supabase/config';
 
 const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/subscribe', '/privacy', '/terms'];
@@ -23,43 +15,8 @@ function isAppPath(pathname: string): boolean {
   return pathname === '/app' || pathname.startsWith('/app/');
 }
 
-function isIntroChromePath(pathname: string): boolean {
-  return pathname === INTRO_CHROME_PATH;
-}
-
-function isIntroVideoPath(pathname: string): boolean {
-  return pathname === INTRO_VIDEO_PATH;
-}
-
-function isIntroExtensionPath(pathname: string): boolean {
-  return pathname === INTRO_EXTENSION_PATH;
-}
-
 function isIntroPath(pathname: string): boolean {
-  return isIntroChromePath(pathname) || isIntroVideoPath(pathname) || isIntroExtensionPath(pathname);
-}
-
-function hasIntroComplete(request: NextRequest): boolean {
-  return request.cookies.get(INTRO_COMPLETE_COOKIE)?.value === '1';
-}
-
-function hasExtensionIntroComplete(request: NextRequest): boolean {
-  return request.cookies.get(EXTENSION_INTRO_COMPLETE_COOKIE)?.value === '1';
-}
-
-function hasChromeIntroComplete(request: NextRequest): boolean {
-  return request.cookies.get(CHROME_INTRO_COMPLETE_COOKIE)?.value === '1';
-}
-
-function postSubscribeDestination(
-  chromeIntroComplete: boolean,
-  extensionIntroComplete: boolean,
-  introComplete: boolean
-): string {
-  if (!chromeIntroComplete) return INTRO_CHROME_PATH;
-  if (!extensionIntroComplete) return INTRO_EXTENSION_PATH;
-  if (!introComplete) return INTRO_VIDEO_PATH;
-  return '/app';
+  return pathname === '/intro' || pathname.startsWith('/intro/');
 }
 
 export async function middleware(request: NextRequest) {
@@ -73,7 +30,7 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const billingEnabled = isBillingEnabled();
   const paywallOff = isPaywallDisabled();
-  // Paywall-off test mode still requires login so onboarding can run.
+  // Paywall-off test mode still requires login.
   const requireAuth = isAuthRequired() || billingEnabled || paywallOff;
 
   try {
@@ -96,10 +53,24 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
+    // Old onboarding pages → app (or login). Tutorial video lives in-app now.
+    if (isIntroPath(pathname)) {
+      if (user) {
+        return NextResponse.redirect(new URL('/app', request.url));
+      }
+      if (requireAuth) {
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = '/login';
+        loginUrl.searchParams.set('next', '/app');
+        return NextResponse.redirect(loginUrl);
+      }
+      return NextResponse.redirect(new URL('/app', request.url));
+    }
+
     if (requireAuth && !user && !isPublicPath(pathname)) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = '/login';
-      if (isAppPath(pathname) || isIntroPath(pathname)) {
+      if (isAppPath(pathname)) {
         loginUrl.searchParams.set('next', pathname);
       }
       return NextResponse.redirect(loginUrl);
@@ -116,56 +87,8 @@ export async function middleware(request: NextRequest) {
         active = isActiveSubscription(parseBillingRow(profile));
       }
 
-      const chromeIntroComplete = hasChromeIntroComplete(request);
-      const extensionIntroComplete = hasExtensionIntroComplete(request);
-      const introComplete = hasIntroComplete(request);
-      const onboarded = chromeIntroComplete && extensionIntroComplete && introComplete;
-
       if (active && (pathname === '/login' || pathname === '/subscribe' || pathname === '/')) {
-        return NextResponse.redirect(
-          new URL(
-            postSubscribeDestination(chromeIntroComplete, extensionIntroComplete, introComplete),
-            request.url
-          )
-        );
-      }
-
-      if (
-        active &&
-        !chromeIntroComplete &&
-        (isAppPath(pathname) || isIntroExtensionPath(pathname) || isIntroVideoPath(pathname))
-      ) {
-        return NextResponse.redirect(new URL(INTRO_CHROME_PATH, request.url));
-      }
-
-      if (
-        active &&
-        chromeIntroComplete &&
-        !extensionIntroComplete &&
-        (isAppPath(pathname) || isIntroVideoPath(pathname) || isIntroChromePath(pathname))
-      ) {
-        return NextResponse.redirect(new URL(INTRO_EXTENSION_PATH, request.url));
-      }
-
-      if (
-        active &&
-        chromeIntroComplete &&
-        extensionIntroComplete &&
-        !introComplete &&
-        (isAppPath(pathname) || isIntroExtensionPath(pathname) || isIntroChromePath(pathname))
-      ) {
-        return NextResponse.redirect(new URL(INTRO_VIDEO_PATH, request.url));
-      }
-
-      if (active && onboarded && isIntroPath(pathname)) {
         return NextResponse.redirect(new URL('/app', request.url));
-      }
-
-      if (!active && isIntroPath(pathname)) {
-        const subscribeUrl = request.nextUrl.clone();
-        subscribeUrl.pathname = '/subscribe';
-        subscribeUrl.search = '';
-        return NextResponse.redirect(subscribeUrl);
       }
 
       if (!active && pathname !== '/subscribe' && !pathname.startsWith('/subscribe/')) {

@@ -37,6 +37,11 @@ export function getChromeExtensionStoreUrl(): string | null {
   return url || null;
 }
 
+export function isChromeBrowserClient(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Chrome/.test(navigator.userAgent) && !/Edg|OPR|Brave/i.test(navigator.userAgent);
+}
+
 function setClientCookie(name: string): void {
   const maxAge = 60 * 60 * 24 * 365 * 10;
   document.cookie = `${name}=1; path=/; max-age=${maxAge}; SameSite=Lax`;
@@ -61,41 +66,7 @@ export function markExtensionIntroCompleteClient(): void {
   setClientCookie(EXTENSION_INTRO_COMPLETE_COOKIE);
 }
 
-/** Wipe browser intro flags so a new account always starts onboarding. */
-export function clearIntroProgressClient(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(CHROME_INTRO_COMPLETE_KEY);
-  localStorage.removeItem(EXTENSION_INTRO_COMPLETE_KEY);
-  localStorage.removeItem(INTRO_COMPLETE_KEY);
-  clearClientCookie(CHROME_INTRO_COMPLETE_COOKIE);
-  clearClientCookie(EXTENSION_INTRO_COMPLETE_COOKIE);
-  clearClientCookie(INTRO_COMPLETE_COOKIE);
-}
-
-export function isChromeBrowserClient(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  return /Chrome/.test(navigator.userAgent) && !/Edg|OPR|Brave/i.test(navigator.userAgent);
-}
-
-export function isIntroCompleteClient(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (localStorage.getItem(INTRO_COMPLETE_KEY) === '1') return true;
-  return document.cookie.split(';').some(part => part.trim() === `${INTRO_COMPLETE_COOKIE}=1`);
-}
-
-export function isExtensionIntroCompleteClient(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (localStorage.getItem(EXTENSION_INTRO_COMPLETE_KEY) === '1') return true;
-  return document.cookie.split(';').some(part => part.trim() === `${EXTENSION_INTRO_COMPLETE_COOKIE}=1`);
-}
-
-export function isChromeIntroCompleteClient(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (localStorage.getItem(CHROME_INTRO_COMPLETE_KEY) === '1') return true;
-  return document.cookie.split(';').some(part => part.trim() === `${CHROME_INTRO_COMPLETE_COOKIE}=1`);
-}
-
-/** First-visit “how to start” video on the dashboard (separate from /intro onboarding). */
+/** First-visit “how to start” video on the dashboard (same clip as full bot tutorial). */
 export const HOW_TO_START_DISMISSED_KEY = 'agentHQ_howToStartDismissed';
 
 export function isHowToStartDismissedClient(): boolean {
@@ -107,10 +78,33 @@ export function markHowToStartDismissedClient(): void {
   localStorage.setItem(HOW_TO_START_DISMISSED_KEY, '1');
 }
 
-export function getHowToStartLoomUrl(): string | null {
+export function clearHowToStartDismissedClient(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(HOW_TO_START_DISMISSED_KEY);
+}
+
+/** Shared Loom URL for first-watch + full bot tutorial. */
+export function getFullBotTutorialLoomUrl(): string | null {
   return (
+    process.env.NEXT_PUBLIC_LOOM_FULL_BOT_TUTORIAL_URL?.trim() ||
     process.env.NEXT_PUBLIC_LOOM_HOW_TO_START_URL?.trim() ||
     process.env.NEXT_PUBLIC_LOOM_INTRO_URL?.trim() ||
     null
   );
+}
+
+export function getHowToStartLoomUrl(): string | null {
+  return getFullBotTutorialLoomUrl();
+}
+
+/** Wipe browser intro flags so a new account always starts fresh. */
+export function clearIntroProgressClient(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(CHROME_INTRO_COMPLETE_KEY);
+  localStorage.removeItem(EXTENSION_INTRO_COMPLETE_KEY);
+  localStorage.removeItem(INTRO_COMPLETE_KEY);
+  clearClientCookie(CHROME_INTRO_COMPLETE_COOKIE);
+  clearClientCookie(EXTENSION_INTRO_COMPLETE_COOKIE);
+  clearClientCookie(INTRO_COMPLETE_COOKIE);
+  clearHowToStartDismissedClient();
 }

@@ -18,7 +18,9 @@ export default function HowToStartBanner() {
   const embedUrl = getLoomEmbedUrl(loomUrl ?? undefined);
 
   useEffect(() => {
-    setVisible(!isHowToStartDismissedClient());
+    const show = !isHowToStartDismissedClient();
+    setVisible(show);
+    if (show) setVideoOpen(true);
   }, []);
 
   if (!visible) return null;
@@ -67,7 +69,8 @@ export default function HowToStartBanner() {
                 </div>
               ) : (
                 <p style={styles.placeholder}>
-                  Add <code style={styles.code}>NEXT_PUBLIC_LOOM_HOW_TO_START_URL</code> in Vercel, then redeploy.
+                  Add <code style={styles.code}>NEXT_PUBLIC_LOOM_FULL_BOT_TUTORIAL_URL</code> in Vercel,
+                  then redeploy.
                 </p>
               )}
               <div style={styles.modalActions}>

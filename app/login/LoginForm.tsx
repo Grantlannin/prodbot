@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
-import { clearIntroProgressClient, INTRO_CHROME_PATH } from '@/lib/intro';
+import { clearIntroProgressClient } from '@/lib/intro';
 import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -69,7 +69,7 @@ export default function LoginForm() {
     }
     if (opts?.isNewAccount) {
       clearIntroProgressClient();
-      window.location.href = INTRO_CHROME_PATH;
+      window.location.href = '/app';
       return;
     }
     window.location.href = nextPath.startsWith('/') ? nextPath : '/app';

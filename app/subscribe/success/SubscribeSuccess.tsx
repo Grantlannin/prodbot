@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import MarketingShell from '@/components/marketing/MarketingShell';
 import { DEMO_CHECKOUT_SESSION_ID } from '@/lib/billing/demo';
 
-const CREATE_ACCOUNT_HREF = '/login?mode=signup&next=/intro/chrome';
+const CREATE_ACCOUNT_HREF = '/login?mode=signup&next=/app';
 
 export default function SubscribeSuccess() {
   const searchParams = useSearchParams();
