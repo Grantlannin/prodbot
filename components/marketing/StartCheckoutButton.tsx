@@ -47,7 +47,7 @@ export default function StartCheckoutButton({
         style={{ cursor: busy ? 'wait' : 'pointer', ...style }}
       >
         {busy ? (
-          <span className="text-sm font-semibold text-white">Redirecting…</span>
+          <span className="text-sm font-semibold text-white">it&apos;s time to win...</span>
         ) : showPrice ? (
           <>
             <span className="text-sm font-semibold text-white">{children}</span>
