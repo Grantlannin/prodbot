@@ -1,16 +1,26 @@
 import type Stripe from 'stripe';
 import { COURSE_PRICE_CENTS, COURSE_PRODUCT_NAME, MONTHLY_PRICE_CENTS } from '@/lib/billing/price';
 
-const PRODUCT_NAME = 'Produc';
+const PRODUCT_NAME = 'Daywinner bot';
+const LEGACY_PRODUCT_NAMES = ['Produc'];
 
 export async function resolveMonthlyPriceId(stripe: Stripe): Promise<string> {
   const products = await stripe.products.list({ active: true, limit: 100 });
-  let product = products.data.find(p => p.name === PRODUCT_NAME);
+  let product =
+    products.data.find(p => p.name === PRODUCT_NAME) ??
+    products.data.find(p => LEGACY_PRODUCT_NAMES.includes(p.name));
+
+  if (product && product.name !== PRODUCT_NAME) {
+    product = await stripe.products.update(product.id, {
+      name: PRODUCT_NAME,
+      description: 'Work timer, projects, and accountability. Billed monthly.',
+    });
+  }
 
   if (!product) {
     product = await stripe.products.create({
       name: PRODUCT_NAME,
-      description: 'Daywinner bot — work timer, projects, and accountability',
+      description: 'Work timer, projects, and accountability. Billed monthly.',
     });
   }
 
