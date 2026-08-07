@@ -30,7 +30,7 @@ import { clearNightPrepDeepLinkParam, readNightPrepDeepLink } from './nightPrepR
 import { fetchProfileDisplayName } from '@/lib/supabase/profile';
 import { isPlaceholderDisplayName } from './userProfile';
 import OnboardingNameModal from './OnboardingNameModal';
-import { openTutorialVideo, TUTORIAL_LOOM_URLS } from './tutorialLinks';
+import TutorialVideoModal from './TutorialVideoModal';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -71,6 +71,7 @@ function AgentHQInner() {
   const { authEnabled, authRequired, loading: authLoading, user } = useAuth();
   const { profile, completeOnboarding } = useUserProfile();
   const [focusNightPrep, setFocusNightPrep] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const [infractions, setInfractions] = useLocalStorage<Infraction[]>(INFRACTIONS_STORAGE_KEY, []);
   const addInfraction = useCallback(
     (categoryKey: string, label: string, source: Infraction['source'] = 'dashboard') => {
@@ -160,7 +161,7 @@ function AgentHQInner() {
               <GetCourseModal variant="nav" />
               <button
                 type="button"
-                onClick={() => openTutorialVideo(TUTORIAL_LOOM_URLS.fullBot)}
+                onClick={() => setTutorialOpen(true)}
                 style={fullBotTutorialLinkStyle}
               >
                 full bot tutorial
@@ -178,6 +179,7 @@ function AgentHQInner() {
             />
           </div>
         </div>
+        <TutorialVideoModal open={tutorialOpen} onClose={() => setTutorialOpen(false)} />
       </StuckHelpProvider>
       </MorningFlowProvider>
       </NightPrepProvider>
