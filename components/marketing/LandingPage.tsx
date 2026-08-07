@@ -126,7 +126,7 @@ export default function LandingPage() {
             7-figure entrepreneurs use to keep you hyper-organized, daily.
           </p>
           <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">
-            (your bot sits as a normal tab on your browser, next to your other ones)
+            (your bot sits as a normal tab on your browser, next to your other ones, while you work)
           </p>
           <div className="mt-5 flex flex-col items-center gap-2">
             {useCheckout ? (
