@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { clearIntroProgressClient } from '@/lib/intro';
+import { PRODUCTION_SITE_ORIGIN } from '@/lib/site';
 import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -72,6 +73,19 @@ export default function LoginForm() {
     });
   }, [searchParams]);
 
+  useEffect(() => {
+    const supabase = createBrowserSupabaseClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('reset');
+        setResetReady(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   if (!isSupabaseConfigured()) {
     return (
       <MarketingShell showSignIn={false}>
@@ -99,10 +113,13 @@ export default function LoginForm() {
 
   const resetRedirectTo = () => {
     const next = encodeURIComponent('/login?reset=1');
-    // Prefer canonical app origin so Supabase allow-list stays simple.
-    const origin =
-      (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')) ||
-      window.location.origin;
+    // Never put localhost in reset emails — Supabase falls back to Site URL if
+    // redirectTo isn't allow-listed, so keep this a production callback URL.
+    const configured = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '');
+    const host = typeof window !== 'undefined' ? window.location.hostname : '';
+    const browserOrigin =
+      host && host !== 'localhost' && host !== '127.0.0.1' ? window.location.origin : '';
+    const origin = configured || browserOrigin || PRODUCTION_SITE_ORIGIN;
     return `${origin}/auth/callback?next=${next}`;
   };
 

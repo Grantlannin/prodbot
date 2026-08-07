@@ -22,12 +22,23 @@ function isIntroPath(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  const pathname = request.nextUrl.pathname;
+  // Supabase Site URL fallbacks often land on /?code=... — finish auth there.
+  const authCode = request.nextUrl.searchParams.get('code');
+  if (authCode && pathname !== '/auth/callback') {
+    const callbackUrl = request.nextUrl.clone();
+    callbackUrl.pathname = '/auth/callback';
+    if (!callbackUrl.searchParams.get('next')) {
+      callbackUrl.searchParams.set('next', '/login?reset=1');
+    }
+    return NextResponse.redirect(callbackUrl);
+  }
+
   const { url, anonKey, configured } = getSupabaseConfig();
   if (!configured || !url || !anonKey) {
     return supabaseResponse;
   }
 
-  const pathname = request.nextUrl.pathname;
   const billingEnabled = isBillingEnabled();
   const paywallOff = isPaywallDisabled();
   // Paywall-off test mode still requires login.
