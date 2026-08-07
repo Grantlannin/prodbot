@@ -32,7 +32,7 @@ Privacy policy (required): https://daywinner.bot/privacy/focus-extension
 
 ## How it works
 
-- Daywinner syncs blocklist + session state to the extension via a content script on **daywinner.bot** (legacy: daywinnerbot.com, produc-xi.vercel.app)
+- Daywinner syncs blocklist + session state to the extension via a content script on **daywinner.bot** / **www.daywinner.bot** (and localhost for dev).
 - While a focus session is active with **soft or hard lock**, matching domains redirect to `blocked.html`
 - Blocking is off during breaks, no-lock sessions, and when no session is active
 - Block hits log infractions in Produc (`Blocked site: …`)

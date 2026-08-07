@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Daywinner bot",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "block distracting sites during daywinner bot usage",
   "permissions": ["declarativeNetRequest", "declarativeNetRequestFeedback", "storage", "alarms"],
   "host_permissions": ["*://*/*"],
@@ -13,9 +13,6 @@
       "matches": [
         "https://daywinner.bot/*",
         "https://www.daywinner.bot/*",
-        "https://daywinnerbot.com/*",
-        "https://www.daywinnerbot.com/*",
-        "https://produc-xi.vercel.app/*",
         "http://localhost:3000/*",
         "http://127.0.0.1:3000/*"
       ],
