@@ -4,25 +4,15 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { MONTHLY_PRICE_LABEL, MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
-import { CHROME_DOWNLOAD_URL } from '@/lib/intro';
 import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-
-interface BillingChecks {
-  paywallDisabled: boolean;
-  demoFlow?: boolean;
-  hasStripeSecret: boolean;
-  supabaseConfigured: boolean;
-  billingEnabled: boolean;
-}
 
 interface BillingStatus {
   billingEnabled: boolean;
   active: boolean;
   status: string;
   endsAt: string | null;
-  checks?: BillingChecks;
 }
 
 export default function SubscribeForm() {
@@ -77,57 +67,34 @@ export default function SubscribeForm() {
     );
   }
 
-  const demoFlow = status.checks?.demoFlow === true;
-  const showCheckout = status.billingEnabled || demoFlow;
-
-  if (!showCheckout) {
-    const checks = status.checks;
-    const paywallOff = checks?.paywallDisabled === true;
-
-    if (paywallOff) {
-      return (
-        <MarketingShell showSignIn={false}>
-          <div style={styles.wrap}>
-            <div style={styles.card}>
-              <h1 style={styles.title}>Paywall off (testing)</h1>
-              <p style={styles.lead}>
-                Subscription is temporarily disabled so you can run the full signup → onboard → app flow without
-                paying.
-              </p>
-              <Link
-                href="/login?mode=signup&next=/app"
-                style={{ ...styles.primaryBtn, display: 'block', textAlign: 'center', textDecoration: 'none' }}
-              >
-                Create account →
-              </Link>
-              <p style={styles.footerNote}>
-                Already have an account?{' '}
-                <Link href="/login" style={styles.legalLink}>
-                  Sign in
-                </Link>
-              </p>
-            </div>
-          </div>
-        </MarketingShell>
-      );
-    }
-
-    const hint = !checks
-      ? 'Stripe env vars are not set on this deployment yet.'
-      : !checks.hasStripeSecret
-        ? 'STRIPE_SECRET_KEY is missing on the prodbot Vercel project — add it under Settings → Environment Variables, then redeploy.'
-        : !checks.supabaseConfigured
-          ? 'Supabase URL or anon key is missing on this deployment.'
-          : 'Billing checks failed after redeploy — open /api/billing/health for details.';
-
+  if (status.active) {
     return (
       <MarketingShell showSignIn={false}>
         <div style={styles.wrap}>
           <div style={styles.card}>
-            <h1 style={styles.title}>Billing not configured</h1>
-            <p style={styles.lead}>{hint}</p>
-            <Link href="/app" style={styles.backLink}>
-              Open app anyway →
+            <h1 style={styles.title}>You&apos;re subscribed</h1>
+            <p style={styles.lead}>Your Daywinner account is active. Jump back into the app.</p>
+            <Link
+              href="/app"
+              style={{ ...styles.primaryBtn, display: 'block', textAlign: 'center', textDecoration: 'none' }}
+            >
+              Open Daywinner →
+            </Link>
+          </div>
+        </div>
+      </MarketingShell>
+    );
+  }
+
+  if (!status.billingEnabled) {
+    return (
+      <MarketingShell showSignIn={false}>
+        <div style={styles.wrap}>
+          <div style={styles.card}>
+            <h1 style={styles.title}>Billing unavailable</h1>
+            <p style={styles.lead}>Checkout isn&apos;t available right now. Try again shortly.</p>
+            <Link href="/" style={styles.backLink}>
+              ← Back to home
             </Link>
           </div>
         </div>
@@ -139,46 +106,34 @@ export default function SubscribeForm() {
     <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
-          <h1 style={styles.title}>{demoFlow ? 'Simulate purchase (demo)' : 'Subscribe to Daywinner'}</h1>
+          <h1 style={styles.title}>Subscribe to Daywinner</h1>
           <p style={styles.lead}>
-            {demoFlow
-              ? 'Fake checkout — no Stripe charge. Runs purchase → course upsell → account → onboard so you can test the full flow.'
-              : `${MONTHLY_PRICE_LABEL}/month. Your projects, timer, and day plan stay in your browser — we only store your account and subscription status.`}
+            {MONTHLY_PRICE_LABEL}/month. Cancel anytime. You&apos;ll create your account after checkout with the same
+            email.
           </p>
 
           {notice ? <p style={styles.notice}>{notice}</p> : null}
           {error ? <p style={styles.error}>{error}</p> : null}
 
-          {!demoFlow ? (
-            <>
-              <ul style={styles.featureList}>
-                <li>Dashboard, timer, and session locks</li>
-                <li>Projects, notes, and EOD reports</li>
-                <li>Chrome extension for site blocking</li>
-              </ul>
-
-              <div style={styles.chromeNote}>
-                <p style={styles.chromeNoteTitle}>Requires Google Chrome (desktop)</p>
-                <p style={styles.chromeNoteText}>
-                  Daywinner and the focus extension run in Chrome — not Safari or Firefox.{' '}
-                  <a href={CHROME_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" style={styles.chromeLink}>
-                    Download Chrome
-                  </a>
-                </p>
-              </div>
-            </>
-          ) : null}
+          <ul style={styles.featureList}>
+            <li>Productivity dashboard + work timer</li>
+            <li>Projects, notes, wind down &amp; EOD</li>
+            <li>Chrome extension for site blocking</li>
+          </ul>
 
           <button type="button" onClick={startCheckout} disabled={busy} style={styles.primaryBtn}>
-            {busy
-              ? 'Redirecting…'
-              : demoFlow
-                ? 'Simulate purchase →'
-                : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
+            {busy ? 'Redirecting…' : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
           </button>
 
           <p style={styles.footerNote}>
-            {demoFlow ? 'Demo mode — nothing is charged.' : "You'll create your account after checkout."}
+            Already paid?{' '}
+            <Link href="/login?mode=signup&next=/app" style={styles.legalLink}>
+              Create account
+            </Link>
+            {' · '}
+            <Link href="/login" style={styles.legalLink}>
+              Sign in
+            </Link>
           </p>
 
           <p style={styles.legal}>
@@ -276,34 +231,11 @@ const styles: Record<string, CSSProperties> = {
     color: '#94a3b8',
     textAlign: 'center',
   },
-  chromeNote: {
-    margin: 0,
-    padding: '12px 14px',
-    borderRadius: 10,
-    background: '#f8fafc',
-    border: '1px solid #e2e8f0',
-  },
-  chromeNoteTitle: {
-    margin: '0 0 4px',
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#334155',
-  },
-  chromeNoteText: {
-    margin: 0,
-    fontSize: 12,
-    lineHeight: 1.5,
-    color: '#64748b',
-  },
-  chromeLink: {
-    color: '#1d4ed8',
-    fontWeight: 600,
-    textDecoration: 'none',
-  },
   legal: {
     margin: '8px 0 0',
     fontSize: 12,
     color: '#94a3b8',
+    textAlign: 'center',
   },
   legalLink: {
     color: '#64748b',
