@@ -24,33 +24,8 @@ import StartWorkModal, { type StartWorkPreset } from './StartWorkModal';
 import HowToStartBanner from './HowToStartBanner';
 import { sessionLabel } from './quickstartTask';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
-import { openTutorialVideo, SHOW_SECTION_HELP_KEY, TUTORIAL_LOOM_URLS } from './tutorialLinks';
-import { useLocalStorage } from './hooks/useLocalStorage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-
-const howToUseLinkStyle: CSSProperties = {
-  border: 'none',
-  background: 'transparent',
-  padding: 0,
-  margin: 0,
-  fontSize: 11,
-  fontWeight: 500,
-  fontFamily: font,
-  color: '#94a3b8',
-  cursor: 'pointer',
-  textDecoration: 'underline',
-  textUnderlineOffset: 2,
-  lineHeight: 1.2,
-};
-
-function HowToUseLink({ url, label = 'how do I use this' }: { url: string; label?: string }) {
-  return (
-    <button type="button" onClick={() => openTutorialVideo(url)} style={howToUseLinkStyle}>
-      {label}
-    </button>
-  );
-}
 
 interface DashboardTabProps {
   infractions: Infraction[];
@@ -89,7 +64,6 @@ export default function DashboardTab({
     currentBreak,
   } = useWorkTrackerContext();
   const { items: doneTodayItems, addItem: addDoneToday } = useDoneToday();
-  const [showSectionHelp] = useLocalStorage<boolean>(SHOW_SECTION_HELP_KEY, true);
   const todayStats = getTodayStats();
   const projectStatsToday = todayStats.projectStats;
 
@@ -307,7 +281,6 @@ export default function DashboardTab({
                 Send EOD
               </button>
             </div>
-            {showSectionHelp ? <HowToUseLink url={TUTORIAL_LOOM_URLS.eod} /> : null}
           </div>
         </div>
       </div>
@@ -325,7 +298,6 @@ export default function DashboardTab({
                 Add project
               </button>
             }
-            howToUseUrl={showSectionHelp ? TUTORIAL_LOOM_URLS.projects : undefined}
             headerRight={
               selectedProjectProgress && selectedProjectProgress.total > 0 ? (
                 <ProjectProgressBar progress={selectedProjectProgress} compact />
@@ -346,7 +318,6 @@ export default function DashboardTab({
           <div ref={nightPrepRef} id="night-prep" style={styles.nightPrepCell}>
             <DashCard
               title="WIND DOWN & NIGHT PREP"
-              howToUseUrl={showSectionHelp ? TUTORIAL_LOOM_URLS.windDown : undefined}
             >
               <NightPrepPanel
                 autoStartWindDown={focusNightPrep}
@@ -363,14 +334,12 @@ export default function DashboardTab({
             <DashCard
               title="Notes"
               noPad
-              howToUseUrl={showSectionHelp ? TUTORIAL_LOOM_URLS.notes : undefined}
             >
               <AppleNotesPanel />
             </DashCard>
           </div>
           <DashCard
             title="open loops / unmade decisions"
-            howToUseUrl={showSectionHelp ? TUTORIAL_LOOM_URLS.openLoops : undefined}
             headerRight={
               <button
                 type="button"
@@ -398,14 +367,12 @@ function DashCard({
   noPad,
   headerRight,
   titleBeside,
-  howToUseUrl,
 }: {
   title: React.ReactNode;
   children: React.ReactNode;
   noPad?: boolean;
   headerRight?: ReactNode;
   titleBeside?: ReactNode;
-  howToUseUrl?: string;
 }) {
   return (
     <div
@@ -423,7 +390,7 @@ function DashCard({
     >
       <div
         style={{
-          padding: howToUseUrl ? '8px 14px 9px' : '10px 14px',
+          padding: '10px 14px',
           borderBottom: '1px solid #e2e8f0',
           display: 'flex',
           alignItems: 'flex-start',
@@ -440,7 +407,6 @@ function DashCard({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-start',
-            gap: howToUseUrl ? 3 : 0,
           }}
         >
           <div
@@ -469,7 +435,6 @@ function DashCard({
               <span style={{ flexShrink: 0, marginLeft: 'auto' }}>{headerRight}</span>
             ) : null}
           </div>
-          {howToUseUrl !== undefined ? <HowToUseLink url={howToUseUrl} /> : null}
         </div>
       </div>
       <div

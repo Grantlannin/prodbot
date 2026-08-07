@@ -10,9 +10,6 @@ export const TUTORIAL_LOOM_URLS = {
 
 export type TutorialKey = keyof typeof TUTORIAL_LOOM_URLS;
 
-/** When false, section "how do I use this" links are hidden. */
-export const SHOW_SECTION_HELP_KEY = 'agentHQ_showSectionHelp';
-
 export function openTutorialVideo(url: string): void {
   const trimmed = url.trim();
   if (!trimmed) {
