@@ -583,7 +583,7 @@ export default function LandingPage() {
           ))}
         </ul>
 
-        <p className="mb-8 max-w-lg text-base leading-relaxed text-slate-600">
+        <p className="mx-auto mb-8 max-w-lg text-center text-base leading-relaxed text-slate-600">
           If you&apos;re already doing the work — building, billing, creating, applying, or grinding on the side —
           Daywinner gives you structure without changing how you move.
         </p>
@@ -593,21 +593,6 @@ export default function LandingPage() {
           <p className="mt-2 text-sm text-slate-500">Chrome recommended for focus blocking</p>
         </div>
       </section>
-
-      {paywall ? (
-        <section className="border-t border-slate-200 pt-12 sm:pt-16">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="mb-1 text-sm font-semibold text-slate-900">Simple pricing</p>
-            <p className="mb-4 text-3xl font-bold text-slate-900">
-              {MONTHLY_PRICE_LABEL}<span className="text-base font-semibold text-slate-500">/month</span>
-            </p>
-            <p className="text-sm leading-relaxed text-slate-600">
-              One plan. Cancel anytime from your account. We only store your login and subscription —
-              not your projects or notes.
-            </p>
-          </div>
-        </section>
-      ) : null}
 
       <footer className="mt-16 flex flex-wrap gap-4 border-t border-slate-200 pt-8 text-sm text-slate-500">
         <Link href="/login" className="font-semibold text-slate-600 no-underline hover:text-slate-900">
