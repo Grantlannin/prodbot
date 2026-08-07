@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
-import { MONTHLY_PRICE_LABEL, MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
 import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -11,69 +9,61 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 interface BillingStatus {
   billingEnabled: boolean;
   active: boolean;
-  status: string;
-  endsAt: string | null;
 }
 
+/** /subscribe is only a thin hop: already-subscribed → app, else → Stripe Checkout. */
 export default function SubscribeForm() {
-  const searchParams = useSearchParams();
-  const [status, setStatus] = useState<BillingStatus | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('Redirecting to checkout…');
   const [error, setError] = useState<string | null>(null);
-
-  const canceled = searchParams.get('canceled') === '1';
-  const notice = useMemo(() => {
-    if (canceled) return 'Checkout canceled. Subscribe whenever you are ready.';
-    return null;
-  }, [canceled]);
+  const [active, setActive] = useState(false);
 
   useEffect(() => {
-    void fetch('/api/billing/status')
-      .then(async res => {
-        const data = (await res.json()) as BillingStatus & { error?: string };
-        if (!res.ok || typeof data.billingEnabled !== 'boolean') {
-          throw new Error(data.error ?? 'Could not load billing status.');
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const statusRes = await fetch('/api/billing/status');
+        const status = (await statusRes.json()) as BillingStatus & { error?: string };
+        if (!statusRes.ok) throw new Error(status.error ?? 'Could not load billing status.');
+        if (cancelled) return;
+
+        if (status.active) {
+          setActive(true);
+          return;
         }
-        setStatus(data);
-      })
-      .catch(() => setError('Could not load billing status.'));
+
+        if (!status.billingEnabled) {
+          setError('Checkout isn\'t available right now. Try again shortly.');
+          setMessage('');
+          return;
+        }
+
+        const res = await fetch('/api/stripe/checkout', { method: 'POST' });
+        const data = (await res.json()) as { url?: string; error?: string };
+        if (!res.ok || !data.url) {
+          throw new Error(data.error ?? 'Could not start checkout.');
+        }
+        window.location.href = data.url;
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : 'Could not start checkout.');
+        setMessage('');
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const startCheckout = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/stripe/checkout', { method: 'POST' });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        throw new Error(data.error ?? 'Could not start checkout.');
-      }
-      window.location.href = data.url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not start checkout.');
-      setBusy(false);
-    }
-  };
-
-  if (!status) {
-    return (
-      <MarketingShell showSignIn={false}>
-        <div style={styles.wrap}>
-          <div style={styles.card}>
-            <p style={styles.lead}>Loading…</p>
-          </div>
-        </div>
-      </MarketingShell>
-    );
-  }
-
-  if (status.active) {
+  if (active) {
     return (
       <MarketingShell showSignIn={false}>
         <div style={styles.wrap}>
           <div style={styles.card}>
             <h1 style={styles.title}>You&apos;re subscribed</h1>
-            <p style={styles.lead}>Your Daywinner account is active. Jump back into the app.</p>
+            <p style={styles.lead}>Your Daywinner account is active.</p>
             <Link
               href="/app"
               style={{ ...styles.primaryBtn, display: 'block', textAlign: 'center', textDecoration: 'none' }}
@@ -86,65 +76,29 @@ export default function SubscribeForm() {
     );
   }
 
-  if (!status.billingEnabled) {
-    return (
-      <MarketingShell showSignIn={false}>
-        <div style={styles.wrap}>
-          <div style={styles.card}>
-            <h1 style={styles.title}>Billing unavailable</h1>
-            <p style={styles.lead}>Checkout isn&apos;t available right now. Try again shortly.</p>
-            <Link href="/" style={styles.backLink}>
-              ← Back to home
-            </Link>
-          </div>
-        </div>
-      </MarketingShell>
-    );
-  }
-
   return (
     <MarketingShell showSignIn={false}>
       <div style={styles.wrap}>
         <div style={styles.card}>
-          <h1 style={styles.title}>Subscribe to Daywinner</h1>
-          <p style={styles.lead}>
-            {MONTHLY_PRICE_LABEL}/month. Cancel anytime. You&apos;ll create your account after checkout with the same
-            email.
-          </p>
-
-          {notice ? <p style={styles.notice}>{notice}</p> : null}
-          {error ? <p style={styles.error}>{error}</p> : null}
-
-          <ul style={styles.featureList}>
-            <li>Productivity dashboard + work timer</li>
-            <li>Projects, notes, wind down &amp; EOD</li>
-            <li>Chrome extension for site blocking</li>
-          </ul>
-
-          <button type="button" onClick={startCheckout} disabled={busy} style={styles.primaryBtn}>
-            {busy ? 'Redirecting…' : `Subscribe — ${MONTHLY_PRICE_SHORT}`}
-          </button>
-
-          <p style={styles.footerNote}>
-            Already paid?{' '}
-            <Link href="/login?mode=signup&next=/app" style={styles.legalLink}>
-              Create account
-            </Link>
-            {' · '}
-            <Link href="/login" style={styles.legalLink}>
-              Sign in
-            </Link>
-          </p>
-
-          <p style={styles.legal}>
-            <Link href="/terms" style={styles.legalLink}>
-              Terms
-            </Link>
-            {' · '}
-            <Link href="/privacy" style={styles.legalLink}>
-              Privacy
-            </Link>
-          </p>
+          {message ? <p style={styles.lead}>{message}</p> : null}
+          {error ? (
+            <>
+              <p style={styles.error}>{error}</p>
+              <Link href="/" style={styles.backLink}>
+                ← Back to home
+              </Link>
+              <p style={styles.footerNote}>
+                Already paid?{' '}
+                <Link href="/login?mode=signup&next=/app" style={styles.link}>
+                  Create account
+                </Link>
+                {' · '}
+                <Link href="/login" style={styles.link}>
+                  Sign in
+                </Link>
+              </p>
+            </>
+          ) : null}
         </div>
       </div>
     </MarketingShell>
@@ -155,13 +109,13 @@ const styles: Record<string, CSSProperties> = {
   wrap: {
     display: 'flex',
     justifyContent: 'center',
-    paddingTop: 24,
+    paddingTop: 48,
     paddingBottom: 48,
     fontFamily: font,
   },
   card: {
     width: '100%',
-    maxWidth: 440,
+    maxWidth: 400,
     background: '#fff',
     borderRadius: 14,
     border: '1px solid #e2e8f0',
@@ -170,25 +124,19 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
+    textAlign: 'center',
   },
   title: {
     margin: 0,
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 700,
     color: '#0f172a',
   },
   lead: {
     margin: 0,
-    fontSize: 14,
-    lineHeight: 1.55,
+    fontSize: 15,
+    lineHeight: 1.5,
     color: '#64748b',
-  },
-  featureList: {
-    margin: '4px 0 8px',
-    paddingLeft: 18,
-    color: '#334155',
-    fontSize: 14,
-    lineHeight: 1.6,
   },
   primaryBtn: {
     border: 'none',
@@ -201,22 +149,6 @@ const styles: Record<string, CSSProperties> = {
     color: '#fff',
     cursor: 'pointer',
   },
-  backLink: {
-    marginTop: 8,
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#64748b',
-    textDecoration: 'none',
-    fontFamily: font,
-  },
-  notice: {
-    margin: 0,
-    padding: '10px 12px',
-    borderRadius: 8,
-    background: '#fffbeb',
-    color: '#92400e',
-    fontSize: 13,
-  },
   error: {
     margin: 0,
     padding: '10px 12px',
@@ -225,19 +157,19 @@ const styles: Record<string, CSSProperties> = {
     color: '#b91c1c',
     fontSize: 13,
   },
+  backLink: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#64748b',
+    textDecoration: 'none',
+    fontFamily: font,
+  },
   footerNote: {
     margin: 0,
     fontSize: 12,
     color: '#94a3b8',
-    textAlign: 'center',
   },
-  legal: {
-    margin: '8px 0 0',
-    fontSize: 12,
-    color: '#94a3b8',
-    textAlign: 'center',
-  },
-  legalLink: {
+  link: {
     color: '#64748b',
     fontWeight: 600,
     textDecoration: 'none',

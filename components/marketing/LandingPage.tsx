@@ -3,18 +3,35 @@ import Image from 'next/image';
 import { isBillingDemoFlow, isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { MONTHLY_PRICE_LABEL, MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
 import MarketingShell from './MarketingShell';
+import StartCheckoutButton from './StartCheckoutButton';
 
-function SectionCta({ href, label, className }: { href: string; label: string; className?: string }) {
+const ctaBtnClass =
+  'inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800 disabled:opacity-70';
+
+function SectionCta({
+  label,
+  className,
+  checkout,
+  href,
+}: {
+  label: string;
+  className?: string;
+  checkout: boolean;
+  href: string;
+}) {
   return (
     <div className={`mb-2 flex justify-center ${className ?? 'mt-6'}`}>
-      <Link
-        href={href}
-        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
-      >
-        <span className="text-sm font-semibold text-white">{label}</span>
-        <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
-        <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
-      </Link>
+      {checkout ? (
+        <StartCheckoutButton showPrice className={ctaBtnClass}>
+          {label}
+        </StartCheckoutButton>
+      ) : (
+        <Link href={href} className={ctaBtnClass}>
+          <span className="text-sm font-semibold text-white">{label}</span>
+          <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
+          <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
+        </Link>
+      )}
     </div>
   );
 }
@@ -82,11 +99,8 @@ export default function LandingPage() {
   const paywall = isBillingEnabled();
   const paywallOff = isPaywallDisabled();
   const demoFlow = isBillingDemoFlow();
-  const ctaHref = paywall || demoFlow
-    ? '/subscribe'
-    : paywallOff
-      ? '/login?mode=signup&next=/app'
-      : '/app';
+  const useCheckout = paywall || demoFlow;
+  const fallbackHref = paywallOff ? '/login?mode=signup&next=/app' : '/app';
 
   return (
     <MarketingShell>
@@ -113,14 +127,17 @@ export default function LandingPage() {
           </p>
           <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">(no download required)</p>
           <div className="mt-5 flex flex-col items-center gap-2">
-            <Link
-              href={ctaHref}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 no-underline shadow-sm transition hover:bg-slate-800"
-            >
-              <span className="text-sm font-semibold text-white">let&apos;s go</span>
-              <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
-              <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
-            </Link>
+            {useCheckout ? (
+              <StartCheckoutButton showPrice className={ctaBtnClass}>
+                let&apos;s go
+              </StartCheckoutButton>
+            ) : (
+              <Link href={fallbackHref} className={ctaBtnClass}>
+                <span className="text-sm font-semibold text-white">let&apos;s go</span>
+                <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
+                <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
+              </Link>
+            )}
             <p className="text-xs text-slate-500 sm:text-sm">
               No commitments. No hidden fees. Cancel anytime. If it doesn&apos;t pay for itself for a year in 30 days,
               send me a massive email cussing me out.
@@ -156,7 +173,7 @@ export default function LandingPage() {
               but also forces you to stay organized. Because if you don&apos;t organize, you can&apos;t start the
               session.
             </p>
-            <SectionCta href={ctaHref} label="I'm ready to transcend" />
+            <SectionCta checkout={useCheckout} href={fallbackHref} label="I'm ready to transcend" />
           </div>
         </div>
       </section>
@@ -273,7 +290,7 @@ export default function LandingPage() {
             className="h-auto w-full"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="I'm ready to WORK" className="mt-10" />
+          <SectionCta checkout={useCheckout} href={fallbackHref} label="I'm ready to WORK" className="mt-10" />
         </div>
       </section>
 
@@ -404,7 +421,7 @@ export default function LandingPage() {
             </span>
             . It&apos;s been won before it even started.
           </p>
-          <SectionCta href={ctaHref} label="I'm ready to dominate" />
+          <SectionCta checkout={useCheckout} href={fallbackHref} label="I'm ready to dominate" />
         </div>
       </section>
 
@@ -489,7 +506,7 @@ export default function LandingPage() {
             className="h-auto w-full border-4 border-red-500"
             unoptimized
           />
-          <SectionCta href={ctaHref} label="Need my bot ASAP" />
+          <SectionCta checkout={useCheckout} href={fallbackHref} label="Need my bot ASAP" />
         </div>
 
         <div className="flex flex-col items-center text-center pt-10">
@@ -516,7 +533,7 @@ export default function LandingPage() {
             Opens Gmail (or your mail app) with today&apos;s report pre-filled: what you got done, insights, work
             time, tomorrow. You review and hit Send — nothing leaves Daywinner automatically.
           </p>
-          <SectionCta href={ctaHref} label="GIVE ME MY BOT" />
+          <SectionCta checkout={useCheckout} href={fallbackHref} label="GIVE ME MY BOT" />
         </div>
       </section>
 
@@ -551,7 +568,7 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col items-center">
-          <SectionCta href={ctaHref} label="YES. I'M IN." />
+          <SectionCta checkout={useCheckout} href={fallbackHref} label="YES. I'M IN." />
           <p className="mt-2 text-sm text-slate-500">Chrome recommended for focus blocking</p>
         </div>
       </section>

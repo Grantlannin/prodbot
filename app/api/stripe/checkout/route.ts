@@ -55,7 +55,7 @@ export async function POST() {
         client_reference_id: user.id,
         line_items: [{ price: priceId, quantity: 1 }],
         success_url: SUCCESS_URL(origin),
-        cancel_url: `${origin}/subscribe?canceled=1`,
+        cancel_url: `${origin}/?canceled=1`,
         allow_promotion_codes: true,
         payment_method_collection: 'always',
       });
@@ -71,7 +71,7 @@ export async function POST() {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: SUCCESS_URL(origin),
-      cancel_url: `${origin}/subscribe?canceled=1`,
+      cancel_url: `${origin}/?canceled=1`,
       allow_promotion_codes: true,
       payment_method_collection: 'always',
     });
