@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import {
   getHowToStartLoomUrl,
-  getLoomEmbedUrl,
+  getVideoEmbedUrl,
   isHowToStartDismissedClient,
   markHowToStartDismissedClient,
 } from '@/lib/intro';
@@ -14,8 +14,8 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 export default function HowToStartBanner() {
   const [visible, setVisible] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
-  const loomUrl = getHowToStartLoomUrl();
-  const embedUrl = getLoomEmbedUrl(loomUrl ?? undefined);
+  const videoUrl = getHowToStartLoomUrl();
+  const embedUrl = getVideoEmbedUrl(videoUrl ?? undefined);
 
   useEffect(() => {
     const show = !isHowToStartDismissedClient();
@@ -36,8 +36,8 @@ export default function HowToStartBanner() {
       setVideoOpen(true);
       return;
     }
-    if (loomUrl) {
-      window.open(loomUrl, '_blank', 'noopener,noreferrer');
+    if (videoUrl) {
+      window.open(videoUrl, '_blank', 'noopener,noreferrer');
       return;
     }
     setVideoOpen(true);
