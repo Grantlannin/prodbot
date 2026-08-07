@@ -19,29 +19,31 @@ import {
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
-function continueLinkUrl(): string {
-  const origin =
+function appOrigin(): string {
+  return (
     (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '')) ||
     (typeof window !== 'undefined' &&
     window.location.hostname !== 'localhost' &&
     window.location.hostname !== '127.0.0.1'
       ? window.location.origin
       : '') ||
-    PRODUCTION_SITE_ORIGIN;
-  return `${origin}${INTRO_CHROME_RESUME_PATH}`;
+    PRODUCTION_SITE_ORIGIN
+  );
 }
 
-function magicLinkRedirectTo(): string {
-  const origin =
-    (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '')) ||
-    (typeof window !== 'undefined' &&
-    window.location.hostname !== 'localhost' &&
-    window.location.hostname !== '127.0.0.1'
-      ? window.location.origin
-      : '') ||
-    PRODUCTION_SITE_ORIGIN;
+/** Password sign-in backup on laptop (no magic link required). */
+function continueLinkUrl(): string {
   const next = encodeURIComponent(INTRO_CHROME_RESUME_PATH);
-  return `${origin}/auth/callback?next=${next}`;
+  return `${appOrigin()}/login?next=${next}`;
+}
+
+/**
+ * Where Supabase should send users after the magic link.
+ * Prefer /auth/confirm + TokenHash in the Magic Link email template (cross-device).
+ */
+function magicLinkRedirectTo(): string {
+  const next = encodeURIComponent(INTRO_CHROME_RESUME_PATH);
+  return `${appOrigin()}/auth/confirm?next=${next}`;
 }
 
 export default function IntroChrome() {
@@ -52,12 +54,20 @@ export default function IntroChrome() {
   const [emailMessage, setEmailMessage] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('resume_setup') !== '1') return;
     armSetupRequiredClient();
     window.history.replaceState({}, '', INTRO_CHROME_PATH);
+  }, []);
+
+  useEffect(() => {
+    const supabase = createBrowserSupabaseClient();
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      setAccountEmail(user?.email?.trim() || null);
+    });
   }, []);
 
   const handleContinue = () => {
@@ -123,9 +133,14 @@ export default function IntroChrome() {
                 Finish setup on your computer next.
               </p>
               <p style={styles.lead}>
-                You can keep this tab open. Email yourself a magic link (or copy the link), open it on your computer,
-                and you&apos;ll land right back here signed in.
+                You can keep this tab open. Email yourself a magic link (or copy the login link), open it on your
+                computer, and continue setup there.
               </p>
+              {accountEmail ? (
+                <p style={styles.supportNote}>
+                  Link will go to <strong>{accountEmail}</strong> — open that inbox on your computer.
+                </p>
+              ) : null}
 
               {emailMessage ? <p style={styles.detected}>{emailMessage}</p> : null}
               {emailError ? <p style={styles.error}>{emailError}</p> : null}
@@ -134,7 +149,7 @@ export default function IntroChrome() {
                 {emailBusy ? 'Sending…' : 'Email me a link to continue on my computer'}
               </button>
               <button type="button" onClick={() => void handleCopyLink()} style={styles.secondaryBtn}>
-                {copied ? 'Copied!' : 'Copy continue link'}
+                {copied ? 'Copied!' : 'Copy login link for my computer'}
               </button>
               <p style={styles.linkHint}>{continueLinkUrl()}</p>
 

@@ -12,7 +12,7 @@ import {
 import { isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { getSupabaseConfig, isAuthRequired } from '@/lib/supabase/config';
 
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/subscribe', '/privacy', '/terms'];
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/auth/confirm', '/subscribe', '/privacy', '/terms'];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(`${path}/`));
@@ -43,6 +43,17 @@ export async function middleware(request: NextRequest) {
       callbackUrl.searchParams.set('next', '/login?reset=1');
     }
     return NextResponse.redirect(callbackUrl);
+  }
+
+  // Cross-device magic links use token_hash (works on laptop; PKCE code does not).
+  const tokenHash = request.nextUrl.searchParams.get('token_hash');
+  if (tokenHash && pathname !== '/auth/confirm') {
+    const confirmUrl = request.nextUrl.clone();
+    confirmUrl.pathname = '/auth/confirm';
+    if (!confirmUrl.searchParams.get('next')) {
+      confirmUrl.searchParams.set('next', '/intro/chrome?resume_setup=1');
+    }
+    return NextResponse.redirect(confirmUrl);
   }
 
   const { url, anonKey, configured } = getSupabaseConfig();

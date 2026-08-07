@@ -31,11 +31,16 @@ export default function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [checkoutSessionId, setCheckoutSessionId] = useState('');
 
-  const authError = searchParams.get('error');
+  const authError = searchParams.get('error') || searchParams.get('error_code');
   const nextPath = searchParams.get('next') || '/app';
   const fromCheckout = checkoutSessionId.startsWith('cs_');
   const initialError = useMemo(() => {
-    if (authError === 'auth') return 'Sign-in failed. Try again with email and password.';
+    if (authError === 'otp_expired') {
+      return 'That email link expired or was already used. Request a new one from your phone, or sign in with your password below.';
+    }
+    if (authError === 'access_denied' || authError === 'auth') {
+      return 'Sign-in failed. Try again with email and password.';
+    }
     return null;
   }, [authError]);
 
