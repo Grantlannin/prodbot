@@ -1,3 +1,4 @@
+import { isResendConfigured, getResendFromEmail } from '@/lib/email/resend';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { getAppOrigin } from '@/lib/app-origin';
 
@@ -64,6 +65,9 @@ export function getBillingConfigChecks() {
     appUrl: getAppOrigin(''),
     supabaseConfigured: isSupabaseConfigured(),
     billingEnabled: isBillingEnabled(),
+    resendConfigured: isResendConfigured(),
+    resendFrom: isResendConfigured() ? getResendFromEmail() : null,
+    cronSecretConfigured: Boolean(process.env.CRON_SECRET?.trim()),
   };
 }
 

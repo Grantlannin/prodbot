@@ -37,15 +37,6 @@ function continueLinkUrl(): string {
   return `${appOrigin()}/login?next=${next}`;
 }
 
-/**
- * Where Supabase should send users after the magic link.
- * Prefer /auth/confirm + TokenHash in the Magic Link email template (cross-device).
- */
-function magicLinkRedirectTo(): string {
-  const next = encodeURIComponent(INTRO_CHROME_RESUME_PATH);
-  return `${appOrigin()}/auth/confirm?next=${next}`;
-}
-
 export default function IntroChrome() {
   const router = useRouter();
   const onChrome = useMemo(() => isChromeBrowserClient(), []);
@@ -92,26 +83,28 @@ export default function IntroChrome() {
     setEmailError(null);
     setEmailMessage(null);
     try {
-      const supabase = createBrowserSupabaseClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      const email = user?.email?.trim();
-      if (!email) {
-        throw new Error('Sign in again, then request the continue link.');
+      const res = await fetch('/api/auth/continue-desktop', { method: 'POST' });
+      const data = (await res.json()) as {
+        error?: string;
+        email?: string;
+        sent?: boolean;
+        queued?: boolean;
+        message?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Could not send email.');
       }
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: magicLinkRedirectTo(),
-        },
-      });
-      if (error) throw error;
-      setEmailMessage(
-        `Link sent to ${email}. Open that email on your computer (not this phone), then continue setup there.`
-      );
+      const to = data.email || accountEmail || 'your email';
+      if (data.queued) {
+        setEmailMessage(
+          data.message ||
+            `Email to ${to} is queued and will arrive shortly. Open it on your computer — or use the copy login link below.`
+        );
+      } else {
+        setEmailMessage(
+          `Link sent to ${to}. Open that email on your computer (not this phone), then continue setup there.`
+        );
+      }
     } catch (err) {
       setEmailError(err instanceof Error ? err.message : 'Could not send email.');
     } finally {
