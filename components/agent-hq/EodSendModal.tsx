@@ -22,13 +22,15 @@ import {
   readNightPrepForEod,
   reportCompleted,
   reportLearnings,
+  reportMissedWhatHappened,
+  reportMissedTomorrowPrep,
 } from './eodReports';
 import { useEodReports } from './hooks/useEodReports';
 import { useAuth } from './hooks/AuthProvider';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import type { DoneTodayItem, Infraction } from './types';
-import { windDownBetterUsePrefill } from './nightPrep/windDownEodNotes';
+import { windDownBetterUsePrefill, windDownMissedPrefill, MISSED_DONE_TODAY_LABEL } from './nightPrep/windDownEodNotes';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -48,6 +50,8 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
   const [sendToSelf, setSendToSelf] = useLocalStorage<boolean>(ACCOUNTABILITY_SEND_TO_SELF_KEY, false);
   const [completed, setCompleted] = useState('');
   const [learnings, setLearnings] = useState('');
+  const [missedWhatHappened, setMissedWhatHappened] = useState('');
+  const [missedTomorrowPrep, setMissedTomorrowPrep] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [bodyTouched, setBodyTouched] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -64,6 +68,8 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
       tomorrow: nightPrep.tomorrow,
       previousDayContext: nightPrep.previousDayContext,
       learnings,
+      missedWhatHappened,
+      missedTomorrowPrep,
       totalWorkMs: stats.totalWorkMs,
       totalBreakMs: stats.totalBreakMs,
       sessionCount: stats.sessionCount,
@@ -74,7 +80,7 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
         ? { project: stats.activeSession.project, elapsedMs: stats.activeSession.workMs }
         : null,
     };
-  }, [completed, learnings, getTodayStats, infractions, doneTodayItems]);
+  }, [completed, learnings, missedWhatHappened, missedTomorrowPrep, getTodayStats, infractions, doneTodayItems]);
 
   const generatedBody = useMemo(
     () => buildEodReportText(buildEodReportPreview(reportParams)),
@@ -90,8 +96,17 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
     initializedRef.current = true;
 
     const existing = getReport(todayKey);
-    setCompleted(existing ? reportCompleted(existing) : prefillCompletedFromDoneToday(doneTodayItems));
+    const missed = windDownMissedPrefill();
+    const existingCompleted = existing ? reportCompleted(existing) : '';
+    const completedLooksMerged = existingCompleted.includes(MISSED_DONE_TODAY_LABEL);
+    setCompleted(
+      existing && !completedLooksMerged
+        ? existingCompleted
+        : prefillCompletedFromDoneToday(doneTodayItems)
+    );
     setLearnings(existing ? reportLearnings(existing) : windDownBetterUsePrefill());
+    setMissedWhatHappened((existing ? reportMissedWhatHappened(existing) : '') || missed.whatHappened);
+    setMissedTomorrowPrep((existing ? reportMissedTomorrowPrep(existing) : '') || missed.tomorrowPrep);
     setBodyTouched(false);
     setEmailError(null);
     setSent(false);
@@ -231,8 +246,42 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
           placeholder="Summarize what you completed…"
         />
 
+        {(missedWhatHappened || missedTomorrowPrep) ? (
+          <>
+            <label style={styles.label} htmlFor="eod-missed-happened">
+              What went wrong / what happened
+            </label>
+            <textarea
+              id="eod-missed-happened"
+              value={missedWhatHappened}
+              onChange={e => {
+                setMissedWhatHappened(e.target.value);
+                setBodyTouched(false);
+              }}
+              rows={3}
+              style={styles.textarea}
+              placeholder="What happened…"
+            />
+
+            <label style={styles.label} htmlFor="eod-missed-prep">
+              What will you do tomorrow
+            </label>
+            <textarea
+              id="eod-missed-prep"
+              value={missedTomorrowPrep}
+              onChange={e => {
+                setMissedTomorrowPrep(e.target.value);
+                setBodyTouched(false);
+              }}
+              rows={2}
+              style={styles.textarea}
+              placeholder="Prep, management, or system change…"
+            />
+          </>
+        ) : null}
+
         <label style={styles.label} htmlFor="eod-learnings">
-          insights / what you learned today (if any)
+          what i learned
         </label>
         <textarea
           id="eod-learnings"

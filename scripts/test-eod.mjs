@@ -34,7 +34,7 @@ function buildEodReportText(report) {
     lines.push('', "PREVIOUS DAY'S CONTEXT", report.previousDayContext);
   }
   lines.push('', 'TOMORROW', report.tomorrow || '—');
-  lines.push('', 'INSIGHTS / LEARNINGS', report.learnings || '—');
+  lines.push('', 'what i learned', report.learnings || '—');
   return lines.join('\n');
 }
 

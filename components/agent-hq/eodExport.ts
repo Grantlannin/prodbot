@@ -5,6 +5,8 @@ import {
   formatReportDateLabel,
   reportCompleted,
   reportLearnings,
+  reportMissedWhatHappened,
+  reportMissedTomorrowPrep,
   reportPreviousDayContext,
   reportTomorrow,
 } from './eodReports';
@@ -146,6 +148,8 @@ function reportToWordSection(report: EodReport): string {
   const tomorrow = escapeHtml(reportTomorrow(report));
   const previousDayContext = escapeHtml(reportPreviousDayContext(report));
   const learnings = escapeHtml(reportLearnings(report));
+  const missedWhatHappened = escapeHtml(reportMissedWhatHappened(report));
+  const missedTomorrowPrep = escapeHtml(reportMissedTomorrowPrep(report));
   const infTotal = totalInfractionCount(report);
   const infLines =
     report.infractions.length > 0
@@ -162,15 +166,6 @@ function reportToWordSection(report: EodReport): string {
           )
           .join('')
       : '';
-  const doneLines =
-    report.doneToday?.length ?
-      report.doneToday
-        .map(
-          item =>
-            `<li>${escapeHtml(item.text)}${item.detail ? ` — ${escapeHtml(item.detail)}` : ''}</li>`
-        )
-        .join('')
-    : '';
 
   return `
     <h2>${escapeHtml(formatReportDateLabel(report.date))}</h2>
@@ -178,10 +173,11 @@ function reportToWordSection(report: EodReport): string {
     ${previousDayContext ? `<h3>Previous day's context (avoid paying clarity tax)</h3><p>${previousDayContext}</p>` : ''}
     <h3>What you got done today</h3>
     <p>${completed || '—'}</p>
-    ${doneLines ? `<ul>${doneLines}</ul>` : ''}
+    ${missedWhatHappened ? `<h3>What went wrong / what happened</h3><p>${missedWhatHappened}</p>` : ''}
+    ${missedTomorrowPrep ? `<h3>What will you do tomorrow</h3><p>${missedTomorrowPrep}</p>` : ''}
     <h3>Tomorrow</h3>
     <p>${tomorrow || '—'}</p>
-    <h3>Insights / learnings</h3>
+    <h3>what i learned</h3>
     <p>${learnings || '—'}</p>
     <h3>Infractions (${infTotal} total)</h3>
     <ul>${infLines}</ul>

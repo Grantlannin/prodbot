@@ -31,7 +31,7 @@ import {
   type NightPrepTomorrowPlan,
   type NightPrepTomorrowTask,
 } from './nightPrep/storage';
-import { saveWindDownBetterUse } from './nightPrep/windDownEodNotes';
+import { saveWindDownBetterUse, saveWindDownMissedPath } from './nightPrep/windDownEodNotes';
 import { parseFlexibleTime } from './stuckHelp/dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -334,11 +334,7 @@ export default function NightPrepModal() {
   };
 
   const finishMissedPath = (why: string, prep: string) => {
-    addDoneToday({
-      text: "Didn't get done what I wanted to",
-      detail: `What happened: ${why}\n\nTomorrow prep/system: ${prep}`,
-      source: 'manual',
-    });
+    saveWindDownMissedPath(why, prep);
     clearTimers();
     setTyping(true);
     schedule(() => {

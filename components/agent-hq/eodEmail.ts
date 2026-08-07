@@ -1,4 +1,5 @@
 import { formatReportDateLabel, localDateKey } from './eodReports';
+import { MISSED_DONE_TODAY_LABEL } from './nightPrep/windDownEodNotes';
 
 export const ACCOUNTABILITY_PARTNER_EMAIL_KEY = 'agentHQ_accountabilityPartnerEmail';
 export const ACCOUNTABILITY_SELF_EMAIL_KEY = 'agentHQ_accountabilitySelfEmail';
@@ -53,6 +54,7 @@ export function openEmailDraft(url: string): void {
 }
 
 export function prefillCompletedFromDoneToday(items: { text: string }[]): string {
-  if (items.length === 0) return '';
-  return items.map(i => i.text).join('; ');
+  const wins = items.filter(i => i.text !== MISSED_DONE_TODAY_LABEL);
+  if (wins.length === 0) return '';
+  return wins.map(i => i.text).join('; ');
 }

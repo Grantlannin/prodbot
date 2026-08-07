@@ -73,6 +73,8 @@ export interface BuildEodReportParams {
   tomorrow: string;
   previousDayContext: string;
   learnings: string;
+  missedWhatHappened?: string;
+  missedTomorrowPrep?: string;
   totalWorkMs: number;
   totalBreakMs: number;
   sessionCount: number;
@@ -109,6 +111,8 @@ export function createEodReport(params: BuildEodReportParams, now = Date.now()):
     tomorrow: params.tomorrow,
     previousDayContext: params.previousDayContext,
     learnings: params.learnings,
+    missedWhatHappened: params.missedWhatHappened?.trim() || undefined,
+    missedTomorrowPrep: params.missedTomorrowPrep?.trim() || undefined,
     sessions: sessionRows,
     doneToday: params.doneToday.map(i => ({ text: i.text, detail: i.detail })),
     infractions: infractionsToday.reduce<{ label: string; count: number }[]>((acc, inf) => {
@@ -145,6 +149,14 @@ export function reportPreviousDayContext(r: EodReport): string {
   return r.previousDayContext?.trim() ?? '';
 }
 
+export function reportMissedWhatHappened(r: EodReport): string {
+  return r.missedWhatHappened?.trim() ?? '';
+}
+
+export function reportMissedTomorrowPrep(r: EodReport): string {
+  return r.missedTomorrowPrep?.trim() ?? '';
+}
+
 export function buildEodReportPreview(params: BuildEodReportParams, now = Date.now()): EodReport {
   return createEodReport(params, now);
 }
@@ -152,6 +164,8 @@ export function buildEodReportPreview(params: BuildEodReportParams, now = Date.n
 export function buildEodReportText(report: EodReport): string {
   const completed = reportCompleted(report);
   const learnings = reportLearnings(report);
+  const missedWhatHappened = reportMissedWhatHappened(report);
+  const missedTomorrowPrep = reportMissedTomorrowPrep(report);
   const infTotal = report.infractions.reduce((sum, inf) => sum + inf.count, 0);
 
   const lines: string[] = [
@@ -166,11 +180,12 @@ export function buildEodReportText(report: EodReport): string {
     completed || '—',
   ];
 
-  if (report.doneToday?.length) {
-    lines.push('', 'Logged wins:');
-    for (const item of report.doneToday) {
-      lines.push(`• ${item.text}${item.detail ? ` — ${item.detail}` : ''}`);
-    }
+  if (missedWhatHappened) {
+    lines.push('', 'WHAT WENT WRONG / WHAT HAPPENED', missedWhatHappened);
+  }
+
+  if (missedTomorrowPrep) {
+    lines.push('', 'WHAT WILL YOU DO TOMORROW', missedTomorrowPrep);
   }
 
   const tomorrow = reportTomorrow(report);
@@ -181,7 +196,7 @@ export function buildEodReportText(report: EodReport): string {
   }
 
   lines.push('', 'TOMORROW', tomorrow || '—');
-  lines.push('', 'INSIGHTS / LEARNINGS', learnings || '—');
+  lines.push('', 'what i learned', learnings || '—');
 
   lines.push('', `INFRACTIONS (${infTotal} total)`);
   if (report.infractions.length > 0) {

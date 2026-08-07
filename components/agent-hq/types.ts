@@ -214,6 +214,10 @@ export interface EodReport {
   sessions: { project: string; durationMs: number }[];
   doneToday?: { text: string; detail?: string }[];
   infractions: { label: string; count: number }[];
+  /** From wind-down "didn't get done" path — what happened */
+  missedWhatHappened?: string;
+  /** From wind-down "didn't get done" path — prep/system for tomorrow */
+  missedTomorrowPrep?: string;
   habits?: EodHabitSnapshot[];
   recurringTasks?: EodRecurringSnapshot[];
   /** @deprecated use completed */
