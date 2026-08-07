@@ -33,7 +33,7 @@ export default function TutorialVideoModal({
         aria-modal="true"
         aria-labelledby="tutorial-video-title"
       >
-        <div style={styles.header}>
+        <div style={styles.topBar}>
           <h3 id="tutorial-video-title" style={styles.modalTitle}>
             {title}
           </h3>
@@ -41,17 +41,16 @@ export default function TutorialVideoModal({
             ✕
           </button>
         </div>
+
         {embedUrl ? (
-          <div style={styles.videoShell}>
-            <div style={styles.videoFrame}>
-              <iframe
-                src={embedUrl}
-                title={title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                style={styles.iframe}
-              />
-            </div>
+          <div style={styles.videoFrame}>
+            <iframe
+              src={embedUrl}
+              title={title}
+              allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={styles.iframe}
+            />
           </div>
         ) : (
           <p style={styles.placeholder}>
@@ -59,13 +58,8 @@ export default function TutorialVideoModal({
             redeploy.
           </p>
         )}
-        <div style={styles.modalActions}>
-          {footer ?? (
-            <button type="button" onClick={onClose} style={styles.closeBtn}>
-              Close
-            </button>
-          )}
-        </div>
+
+        {footer ? <div style={styles.modalActions}>{footer}</div> : null}
       </div>
     </div>,
     document.body
@@ -77,62 +71,59 @@ const styles: Record<string, CSSProperties> = {
     position: 'fixed',
     inset: 0,
     zIndex: 10000,
-    background: 'rgba(2, 6, 23, 0.72)',
+    background: 'rgba(0, 0, 0, 0.82)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 12,
     boxSizing: 'border-box',
   },
   modal: {
-    width: 'min(100%, 920px)',
-    background: '#0b1220',
-    borderRadius: 14,
-    padding: '14px 14px 12px',
-    boxShadow: '0 28px 64px rgba(0, 0, 0, 0.45)',
+    width: 'min(100%, 1100px)',
+    maxHeight: '96vh',
+    background: '#000',
+    borderRadius: 12,
+    padding: 0,
+    overflow: 'hidden',
+    boxShadow: '0 24px 80px rgba(0, 0, 0, 0.55)',
     fontFamily: font,
     display: 'flex',
     flexDirection: 'column',
-    gap: 12,
-    border: '1px solid rgba(148, 163, 184, 0.18)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
   },
-  header: {
+  topBar: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    padding: '2px 4px 0',
+    padding: '10px 12px',
+    background: '#0a0a0a',
+    flexShrink: 0,
   },
   modalTitle: {
     margin: 0,
-    fontSize: 16,
-    fontWeight: 700,
-    color: '#f8fafc',
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#e2e8f0',
   },
   headerClose: {
     border: 'none',
-    background: 'transparent',
-    color: '#94a3b8',
-    fontSize: 16,
+    background: 'rgba(255, 255, 255, 0.08)',
+    color: '#f8fafc',
+    fontSize: 15,
     lineHeight: 1,
     cursor: 'pointer',
-    padding: '4px 6px',
-    borderRadius: 6,
-  },
-  videoShell: {
-    background: '#000',
-    borderRadius: 10,
-    padding: 0,
-    overflow: 'hidden',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
+    padding: '6px 9px',
+    borderRadius: 8,
   },
   videoFrame: {
     position: 'relative',
     width: '100%',
-    // Slightly taller than 16:9 so YouTube’s control bar isn’t clipped against white
-    aspectRatio: '16 / 9.15',
+    // Prefer filling the viewport over a fixed small card
+    height: 'min(78vh, calc(100vw * 9 / 16))',
+    minHeight: 280,
     background: '#000',
-    overflow: 'hidden',
+    flexShrink: 0,
   },
   iframe: {
     position: 'absolute',
@@ -144,10 +135,7 @@ const styles: Record<string, CSSProperties> = {
   },
   placeholder: {
     margin: 0,
-    padding: '20px 14px',
-    borderRadius: 10,
-    background: '#111827',
-    border: '1px dashed #334155',
+    padding: '28px 18px',
     fontSize: 13,
     lineHeight: 1.5,
     color: '#94a3b8',
@@ -161,16 +149,8 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: 'flex-end',
     gap: 8,
     flexWrap: 'wrap',
-  },
-  closeBtn: {
-    border: '1px solid rgba(148, 163, 184, 0.35)',
-    borderRadius: 8,
-    padding: '8px 14px',
-    fontSize: 13,
-    fontWeight: 700,
-    fontFamily: font,
-    background: '#1e293b',
-    color: '#f8fafc',
-    cursor: 'pointer',
+    padding: '10px 12px 12px',
+    background: '#0a0a0a',
+    flexShrink: 0,
   },
 };

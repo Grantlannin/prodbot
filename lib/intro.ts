@@ -33,6 +33,8 @@ export function getVideoEmbedUrl(url: string | undefined): string | null {
       modestbranding: '1',
       playsinline: '1',
       iv_load_policy: '3',
+      controls: '1',
+      fs: '1',
     });
     return `https://www.youtube-nocookie.com/embed/${id}?${params.toString()}`;
   }
