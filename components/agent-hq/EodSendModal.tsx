@@ -264,7 +264,7 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
             />
 
             <label style={styles.label} htmlFor="eod-missed-prep">
-              What will you do tomorrow
+              prep adjustment for tomorrow
             </label>
             <textarea
               id="eod-missed-prep"

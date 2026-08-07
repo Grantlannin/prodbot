@@ -185,7 +185,7 @@ export function buildEodReportText(report: EodReport): string {
   }
 
   if (missedTomorrowPrep) {
-    lines.push('', 'WHAT WILL YOU DO TOMORROW', missedTomorrowPrep);
+    lines.push('', 'prep adjustment for tomorrow', missedTomorrowPrep);
   }
 
   const tomorrow = reportTomorrow(report);

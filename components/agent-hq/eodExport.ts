@@ -174,7 +174,7 @@ function reportToWordSection(report: EodReport): string {
     <h3>What you got done today</h3>
     <p>${completed || '—'}</p>
     ${missedWhatHappened ? `<h3>What went wrong / what happened</h3><p>${missedWhatHappened}</p>` : ''}
-    ${missedTomorrowPrep ? `<h3>What will you do tomorrow</h3><p>${missedTomorrowPrep}</p>` : ''}
+    ${missedTomorrowPrep ? `<h3>prep adjustment for tomorrow</h3><p>${missedTomorrowPrep}</p>` : ''}
     <h3>Tomorrow</h3>
     <p>${tomorrow || '—'}</p>
     <h3>what i learned</h3>
