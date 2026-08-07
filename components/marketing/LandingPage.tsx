@@ -158,6 +158,13 @@ export default function LandingPage() {
       <section className="border-t border-slate-200 pb-2 pt-5 sm:pb-3 sm:pt-6">
         <div className="mx-auto w-full max-w-3xl">
           <div className="mb-0 text-center">
+            <h2 className="mb-6 text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:mb-8 sm:text-4xl sm:leading-snug">
+              Block all distracting websites.
+              <br />
+              Set up your #1 most important task Daily.
+              <br />
+              Win the day.
+            </h2>
             <Image
               src="/marketing/sessions-flow-steps.png"
               alt="Step 1 Choose your task > Step 2 set your work timer > Step 3 Begin working (with social media blocked)"
