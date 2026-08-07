@@ -61,17 +61,6 @@ export default function AccountMenu() {
     setEditing(false);
   };
 
-  const openBillingPortal = async () => {
-    setMenuOpen(false);
-    try {
-      const res = await fetch('/api/stripe/portal', { method: 'POST' });
-      const data = (await res.json()) as { url?: string };
-      if (data.url) window.location.href = data.url;
-    } catch {
-      /* ignore */
-    }
-  };
-
   return (
     <div ref={wrapRef} style={styles.wrap}>
       {editing ? (
@@ -169,9 +158,13 @@ export default function AccountMenu() {
                   )}
                 </div>
               ) : null}
-              <button type="button" style={styles.menuItem} onClick={openBillingPortal}>
+              <Link
+                href="/billing"
+                style={styles.menuItemLink}
+                onClick={() => setMenuOpen(false)}
+              >
                 Manage billing
-              </button>
+              </Link>
               <button type="button" style={styles.menuItem} onClick={() => signOut()}>
                 Sign out
               </button>
@@ -287,6 +280,20 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
     color: '#0f172a',
     cursor: 'pointer',
+  },
+  menuItemLink: {
+    display: 'block',
+    width: '100%',
+    border: 'none',
+    background: 'transparent',
+    textAlign: 'left',
+    padding: '8px 12px',
+    fontSize: 13,
+    fontFamily: font,
+    color: '#0f172a',
+    cursor: 'pointer',
+    textDecoration: 'none',
+    boxSizing: 'border-box',
   },
   menuItemMuted: {
     display: 'block',

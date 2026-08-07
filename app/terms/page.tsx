@@ -37,7 +37,7 @@ export default function TermsPage() {
 
       <h2 style={{ fontSize: 18, marginTop: 28 }}>Accounts and billing</h2>
       <p>
-        Paid access is billed monthly through Stripe. You may cancel anytime via the billing portal. Refunds are handled
+        Paid access is billed monthly through Stripe. You may cancel anytime from Manage billing in your account. Refunds are handled
         at our discretion unless required by law.
       </p>
 
