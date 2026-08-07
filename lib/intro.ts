@@ -26,7 +26,16 @@ export function getVideoEmbedUrl(url: string | undefined): string | null {
   const ytMatch = trimmed.match(
     /(?:youtube\.com\/watch\?(?:[^#]*&)?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
   );
-  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  if (ytMatch) {
+    const id = ytMatch[1];
+    const params = new URLSearchParams({
+      rel: '0',
+      modestbranding: '1',
+      playsinline: '1',
+      iv_load_policy: '3',
+    });
+    return `https://www.youtube-nocookie.com/embed/${id}?${params.toString()}`;
+  }
 
   const shareMatch = trimmed.match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
   if (shareMatch) return `https://www.loom.com/embed/${shareMatch[1]}`;

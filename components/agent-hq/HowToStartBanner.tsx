@@ -118,14 +118,14 @@ const styles: Record<string, CSSProperties> = {
     padding: '2px 6px',
   },
   secondaryBtn: {
-    border: '1px solid #e2e8f0',
+    border: '1px solid rgba(148, 163, 184, 0.35)',
     borderRadius: 8,
     padding: '8px 12px',
     fontSize: 13,
     fontWeight: 600,
     fontFamily: font,
-    background: '#fff',
-    color: '#475569',
+    background: '#1e293b',
+    color: '#e2e8f0',
     cursor: 'pointer',
   },
   primaryBtn: {
@@ -135,8 +135,8 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 13,
     fontWeight: 700,
     fontFamily: font,
-    background: '#0f172a',
-    color: '#fff',
+    background: '#f8fafc',
+    color: '#0f172a',
     cursor: 'pointer',
   },
 };

@@ -33,18 +33,25 @@ export default function TutorialVideoModal({
         aria-modal="true"
         aria-labelledby="tutorial-video-title"
       >
-        <h3 id="tutorial-video-title" style={styles.modalTitle}>
-          {title}
-        </h3>
+        <div style={styles.header}>
+          <h3 id="tutorial-video-title" style={styles.modalTitle}>
+            {title}
+          </h3>
+          <button type="button" onClick={onClose} style={styles.headerClose} aria-label="Close">
+            ✕
+          </button>
+        </div>
         {embedUrl ? (
-          <div style={styles.videoFrame}>
-            <iframe
-              src={embedUrl}
-              title={title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              style={styles.iframe}
-            />
+          <div style={styles.videoShell}>
+            <div style={styles.videoFrame}>
+              <iframe
+                src={embedUrl}
+                title={title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                style={styles.iframe}
+              />
+            </div>
           </div>
         ) : (
           <p style={styles.placeholder}>
@@ -70,37 +77,62 @@ const styles: Record<string, CSSProperties> = {
     position: 'fixed',
     inset: 0,
     zIndex: 10000,
-    background: 'rgba(15, 23, 42, 0.4)',
+    background: 'rgba(2, 6, 23, 0.72)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: 20,
     boxSizing: 'border-box',
   },
   modal: {
-    width: 'min(100%, 640px)',
-    background: '#fff',
-    borderRadius: 12,
-    padding: '18px 18px 16px',
-    boxShadow: '0 24px 48px rgba(15, 23, 42, 0.2)',
+    width: 'min(100%, 920px)',
+    background: '#0b1220',
+    borderRadius: 14,
+    padding: '14px 14px 12px',
+    boxShadow: '0 28px 64px rgba(0, 0, 0, 0.45)',
     fontFamily: font,
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
+    border: '1px solid rgba(148, 163, 184, 0.18)',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    padding: '2px 4px 0',
   },
   modalTitle: {
     margin: 0,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: 700,
-    color: '#0f172a',
+    color: '#f8fafc',
+  },
+  headerClose: {
+    border: 'none',
+    background: 'transparent',
+    color: '#94a3b8',
+    fontSize: 16,
+    lineHeight: 1,
+    cursor: 'pointer',
+    padding: '4px 6px',
+    borderRadius: 6,
+  },
+  videoShell: {
+    background: '#000',
+    borderRadius: 10,
+    padding: 0,
+    overflow: 'hidden',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
   },
   videoFrame: {
     position: 'relative',
     width: '100%',
-    aspectRatio: '16 / 9',
-    borderRadius: 10,
+    // Slightly taller than 16:9 so YouTube’s control bar isn’t clipped against white
+    aspectRatio: '16 / 9.15',
+    background: '#000',
     overflow: 'hidden',
-    background: '#0f172a',
   },
   iframe: {
     position: 'absolute',
@@ -108,20 +140,21 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     height: '100%',
     border: 'none',
+    background: '#000',
   },
   placeholder: {
     margin: 0,
     padding: '20px 14px',
     borderRadius: 10,
-    background: '#f8fafc',
-    border: '1px dashed #cbd5e1',
+    background: '#111827',
+    border: '1px dashed #334155',
     fontSize: 13,
     lineHeight: 1.5,
-    color: '#64748b',
+    color: '#94a3b8',
   },
   code: {
     fontSize: 12,
-    color: '#475569',
+    color: '#cbd5e1',
   },
   modalActions: {
     display: 'flex',
@@ -130,14 +163,14 @@ const styles: Record<string, CSSProperties> = {
     flexWrap: 'wrap',
   },
   closeBtn: {
-    border: 'none',
+    border: '1px solid rgba(148, 163, 184, 0.35)',
     borderRadius: 8,
-    padding: '8px 12px',
+    padding: '8px 14px',
     fontSize: 13,
     fontWeight: 700,
     fontFamily: font,
-    background: '#0f172a',
-    color: '#fff',
+    background: '#1e293b',
+    color: '#f8fafc',
     cursor: 'pointer',
   },
 };
