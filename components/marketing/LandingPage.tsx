@@ -590,6 +590,7 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center">
           <SectionCta checkout={useCheckout} href={fallbackHref} label="YES. I'M IN." />
+          <p className="mt-2 text-sm text-slate-500">Chrome recommended for focus blocking</p>
         </div>
       </section>
 
