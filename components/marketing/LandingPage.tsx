@@ -163,7 +163,9 @@ export default function LandingPage() {
               <br />
               Set up your #1 most important task Daily.
               <br />
-              Win the day.
+              <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
+                Win the day.
+              </span>
             </h2>
             <Image
               src="/marketing/sessions-flow-steps.png"
