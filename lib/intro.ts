@@ -67,6 +67,20 @@ export function isChromeBrowserClient(): boolean {
   return /Chrome/.test(navigator.userAgent) && !/Edg|OPR|Brave/i.test(navigator.userAgent);
 }
 
+/** Phone / tablet — buy on mobile, finish setup on desktop Chrome. */
+export function isMobileBrowserClient(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  if (/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) return true;
+  // iPadOS reports as Mac but has touch
+  if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return true;
+  if (/iPad/i.test(ua)) return true;
+  return false;
+}
+
+/** Path used after magic-link handoff from phone → laptop. */
+export const INTRO_CHROME_RESUME_PATH = `${INTRO_CHROME_PATH}?resume_setup=1`;
+
 function setClientCookie(name: string): void {
   const maxAge = 60 * 60 * 24 * 365 * 10;
   document.cookie = `${name}=1; path=/; max-age=${maxAge}; SameSite=Lax`;
@@ -74,6 +88,16 @@ function setClientCookie(name: string): void {
 
 function clearClientCookie(name: string): void {
   document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
+}
+
+/** Re-arm Chrome → extension setup on a new device (laptop continue link). */
+export function armSetupRequiredClient(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(CHROME_INTRO_COMPLETE_KEY);
+  localStorage.removeItem(EXTENSION_INTRO_COMPLETE_KEY);
+  clearClientCookie(CHROME_INTRO_COMPLETE_COOKIE);
+  clearClientCookie(EXTENSION_INTRO_COMPLETE_COOKIE);
+  setClientCookie(SETUP_REQUIRED_COOKIE);
 }
 
 export function markChromeIntroCompleteClient(): void {

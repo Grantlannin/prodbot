@@ -5,6 +5,11 @@ import {
   isCheckoutSessionId,
 } from '@/lib/billing/checkout-receipt';
 import { reconcileBillingForUser } from '@/lib/billing/link-stripe';
+import {
+  CHROME_INTRO_COMPLETE_COOKIE,
+  EXTENSION_INTRO_COMPLETE_COOKIE,
+  SETUP_REQUIRED_COOKIE,
+} from '@/lib/intro';
 import { isBillingEnabled } from '@/lib/stripe/config';
 import { getAppOrigin } from '@/lib/app-origin';
 import { getSupabaseConfig } from '@/lib/supabase/config';
@@ -16,6 +21,7 @@ export async function GET(request: NextRequest) {
   if (!next.startsWith('/')) next = '/';
 
   const appOrigin = getAppOrigin(request.nextUrl.origin);
+  const resumeSetup = next.includes('resume_setup=1');
 
   if (!code) {
     return NextResponse.redirect(`${appOrigin}/login?error=auth`);
@@ -27,6 +33,14 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(`${appOrigin}${next}`);
+
+  // Phone → laptop magic link: re-arm setup cookies on this device.
+  if (resumeSetup) {
+    const cookieOpts = { path: '/', sameSite: 'lax' as const, maxAge: 60 * 60 * 24 * 365 * 10 };
+    response.cookies.set(SETUP_REQUIRED_COOKIE, '1', cookieOpts);
+    response.cookies.set(CHROME_INTRO_COMPLETE_COOKIE, '', { path: '/', maxAge: 0 });
+    response.cookies.set(EXTENSION_INTRO_COMPLETE_COOKIE, '', { path: '/', maxAge: 0 });
+  }
 
   const supabase = createServerClient(url, anonKey, {
     cookies: {
