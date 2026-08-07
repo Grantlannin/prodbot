@@ -1,21 +1,19 @@
 import type Stripe from 'stripe';
 import { COURSE_PRICE_CENTS, COURSE_PRODUCT_NAME, MONTHLY_PRICE_CENTS } from '@/lib/billing/price';
+import { getStripePriceId } from '@/lib/stripe/config';
 
 const PRODUCT_NAME = 'Daywinner bot';
-const LEGACY_PRODUCT_NAMES = ['Produc'];
 
 export async function resolveMonthlyPriceId(stripe: Stripe): Promise<string> {
-  const products = await stripe.products.list({ active: true, limit: 100 });
-  let product =
-    products.data.find(p => p.name === PRODUCT_NAME) ??
-    products.data.find(p => LEGACY_PRODUCT_NAMES.includes(p.name));
-
-  if (product && product.name !== PRODUCT_NAME) {
-    product = await stripe.products.update(product.id, {
-      name: PRODUCT_NAME,
-      description: 'Work timer, projects, and accountability. Billed monthly.',
-    });
+  // Prefer explicit price from Vercel (points at the real Daywinner bot product).
+  const configured = getStripePriceId();
+  if (configured) {
+    const price = await stripe.prices.retrieve(configured);
+    if (price.active) return price.id;
   }
+
+  const products = await stripe.products.list({ active: true, limit: 100 });
+  let product = products.data.find(p => p.name === PRODUCT_NAME);
 
   if (!product) {
     product = await stripe.products.create({
