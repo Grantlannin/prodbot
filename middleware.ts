@@ -88,7 +88,12 @@ export async function middleware(request: NextRequest) {
       }
 
       // Keep marketing landing public even when logged in.
-      if (active && (pathname === '/login' || pathname === '/subscribe')) {
+      // Allow /login?reset=1 so password-reset links can finish after the email callback.
+      if (active && pathname === '/subscribe') {
+        return NextResponse.redirect(new URL('/app', request.url));
+      }
+
+      if (active && pathname === '/login' && request.nextUrl.searchParams.get('reset') !== '1') {
         return NextResponse.redirect(new URL('/app', request.url));
       }
 

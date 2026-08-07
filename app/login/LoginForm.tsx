@@ -99,7 +99,11 @@ export default function LoginForm() {
 
   const resetRedirectTo = () => {
     const next = encodeURIComponent('/login?reset=1');
-    return `${window.location.origin}/auth/callback?next=${next}`;
+    // Prefer canonical app origin so Supabase allow-list stays simple.
+    const origin =
+      (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')) ||
+      window.location.origin;
+    return `${origin}/auth/callback?next=${next}`;
   };
 
   const handleSignIn = async (e: FormEvent) => {
@@ -457,6 +461,10 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 15,
     fontFamily: font,
     marginBottom: 8,
+  },
+  inputLocked: {
+    background: '#f8fafc',
+    color: '#334155',
   },
   primaryBtn: {
     marginTop: 4,
