@@ -139,8 +139,17 @@ export default function LandingPage() {
               </Link>
             )}
             <p className="text-xs text-slate-500 sm:text-sm">
-              No commitments. No hidden fees. Cancel anytime. If it doesn&apos;t pay for itself for a year in 30 days,
-              send me a massive email cussing me out.
+              No commitments. No hidden fees. Cancel anytime.
+            </p>
+            <p className="text-xs text-slate-500">
+              Already paid?{' '}
+              <Link href="/login?mode=signup&next=/app" className="font-semibold text-slate-700 no-underline">
+                Create account
+              </Link>
+              {' · '}
+              <Link href="/login" className="font-semibold text-slate-700 no-underline">
+                Sign in
+              </Link>
             </p>
           </div>
         </div>
