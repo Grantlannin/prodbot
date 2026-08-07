@@ -25,6 +25,7 @@ export default function AppleNotesEditorModal({
 }: AppleNotesEditorModalProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const syncedValueRef = useRef('');
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -36,12 +37,28 @@ export default function AppleNotesEditorModal({
   }, [open, onClose]);
 
   useEffect(() => {
-    if (!open || !editorRef.current) return;
-    if (syncedValueRef.current === value) return;
-    editorRef.current.innerHTML = noteTextToEditableHtml(value);
+    if (!open) {
+      wasOpenRef.current = false;
+      syncedValueRef.current = '';
+      return;
+    }
+
+    const el = editorRef.current;
+    if (!el) return;
+
+    const justOpened = !wasOpenRef.current;
+    wasOpenRef.current = true;
+
+    // On remount the editor DOM is empty; always repopulate when opening.
+    if (!justOpened && syncedValueRef.current === value) return;
+
+    el.innerHTML = noteTextToEditableHtml(value);
     syncedValueRef.current = value;
-    const timer = window.setTimeout(() => editorRef.current?.focus(), 0);
-    return () => window.clearTimeout(timer);
+
+    if (justOpened) {
+      const timer = window.setTimeout(() => el.focus(), 0);
+      return () => window.clearTimeout(timer);
+    }
   }, [open, value]);
 
   const handleInput = () => {
