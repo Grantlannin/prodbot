@@ -14,9 +14,7 @@ export default function HowToStartBanner() {
   const [videoOpen, setVideoOpen] = useState(false);
 
   useEffect(() => {
-    const show = !isHowToStartDismissedClient();
-    setVisible(show);
-    if (show) setVideoOpen(true);
+    setVisible(!isHowToStartDismissedClient());
   }, []);
 
   if (!visible) return null;
