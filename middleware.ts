@@ -87,17 +87,16 @@ export async function middleware(request: NextRequest) {
         active = isActiveSubscription(parseBillingRow(profile));
       }
 
-      if (active && (pathname === '/login' || pathname === '/subscribe' || pathname === '/')) {
+      // Keep marketing landing public even when logged in.
+      if (active && (pathname === '/login' || pathname === '/subscribe')) {
         return NextResponse.redirect(new URL('/app', request.url));
       }
 
-      if (!active && pathname !== '/subscribe' && !pathname.startsWith('/subscribe/')) {
-        if (pathname === '/' || isAppPath(pathname)) {
-          const subscribeUrl = request.nextUrl.clone();
-          subscribeUrl.pathname = '/subscribe';
-          subscribeUrl.search = '';
-          return NextResponse.redirect(subscribeUrl);
-        }
+      if (!active && isAppPath(pathname)) {
+        const subscribeUrl = request.nextUrl.clone();
+        subscribeUrl.pathname = '/subscribe';
+        subscribeUrl.search = '';
+        return NextResponse.redirect(subscribeUrl);
       }
     } else if (requireAuth && user && pathname === '/login') {
       return NextResponse.redirect(new URL('/app', request.url));
