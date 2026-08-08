@@ -1,7 +1,13 @@
 import { getAppOrigin } from '@/lib/app-origin';
 import { INTRO_CHROME_RESUME_PATH } from '@/lib/intro';
-import { sendEmailWithRetry } from '@/lib/email/resend';
+import { sendBatchWithRetry, sendEmailWithRetry } from '@/lib/email/resend';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
+
+const MAX_SEND_ATTEMPTS_BEFORE_FAIL = 8;
+const BATCH_SIZE = 100;
+/** Rows claimed per cron tick (multiple Resend batch calls). */
+const DEFAULT_FLUSH_LIMIT = 500;
+const STALE_SENDING_MS = 5 * 60 * 1000;
 
 export function buildContinueConfirmUrl(hashedToken: string): string {
   const origin = getAppOrigin('https://www.daywinner.bot');
@@ -45,7 +51,7 @@ export async function enqueueOutboxEmail(input: {
   lastError?: string;
 }): Promise<void> {
   const admin = createAdminSupabaseClient();
-  await admin.from('email_outbox').insert({
+  const { error } = await admin.from('email_outbox').insert({
     to_email: input.to,
     subject: input.subject,
     html: input.html,
@@ -53,6 +59,7 @@ export async function enqueueOutboxEmail(input: {
     attempts: 0,
     last_error: input.lastError ?? null,
   });
+  if (error) throw error;
 }
 
 /** Generate a cross-device magic link and email it via Resend (with outbox fallback). */
@@ -84,7 +91,8 @@ export async function sendContinueDesktopEmail(email: string): Promise<{
   const subject = 'Continue Daywinner on your computer';
   const html = buildContinueDesktopEmailHtml({ confirmUrl, loginFallbackUrl });
 
-  const result = await sendEmailWithRetry({ to: email, subject, html });
+  // Few attempts then queue — under spike, fail fast into outbox/batch drain.
+  const result = await sendEmailWithRetry({ to: email, subject, html }, { maxAttempts: 2 });
   if (result.ok) {
     return { sent: true, queued: false };
   }
@@ -111,9 +119,35 @@ export async function sendContinueDesktopEmail(email: string): Promise<{
   }
 }
 
-export async function flushEmailOutbox(limit = 40): Promise<{ processed: number; sent: number; failed: number }> {
-  const admin = createAdminSupabaseClient();
-  const { data: rows, error } = await admin
+async function requeueStaleSending(
+  admin: ReturnType<typeof createAdminSupabaseClient>
+): Promise<number> {
+  const cutoff = new Date(Date.now() - STALE_SENDING_MS).toISOString();
+  const { data, error } = await admin
+    .from('email_outbox')
+    .update({
+      status: 'pending',
+      last_error: 'requeued after stale sending claim',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('status', 'sending')
+    .lt('updated_at', cutoff)
+    .select('id');
+
+  if (error) {
+    console.error('[email-outbox] requeue stale', error);
+    return 0;
+  }
+  return data?.length ?? 0;
+}
+
+async function claimPendingRows(
+  admin: ReturnType<typeof createAdminSupabaseClient>,
+  limit: number
+): Promise<
+  Array<{ id: string; to_email: string; subject: string; html: string; attempts: number | null }>
+> {
+  const { data: candidates, error } = await admin
     .from('email_outbox')
     .select('id, to_email, subject, html, attempts')
     .eq('status', 'pending')
@@ -121,52 +155,93 @@ export async function flushEmailOutbox(limit = 40): Promise<{ processed: number;
     .limit(limit);
 
   if (error) throw error;
-  if (!rows?.length) return { processed: 0, sent: 0, failed: 0 };
+  if (!candidates?.length) return [];
+
+  const ids = candidates.map(r => r.id);
+  const now = new Date().toISOString();
+  const { data: claimed, error: claimError } = await admin
+    .from('email_outbox')
+    .update({ status: 'sending', updated_at: now })
+    .in('id', ids)
+    .eq('status', 'pending')
+    .select('id, to_email, subject, html, attempts');
+
+  if (claimError) throw claimError;
+  return claimed ?? [];
+}
+
+/** Drain pending outbox via Resend batch API (up to 100 emails per request). */
+export async function flushEmailOutbox(
+  limit = DEFAULT_FLUSH_LIMIT
+): Promise<{ processed: number; sent: number; failed: number; requeuedStale: number }> {
+  const admin = createAdminSupabaseClient();
+  const requeuedStale = await requeueStaleSending(admin);
+  const rows = await claimPendingRows(admin, limit);
+
+  if (!rows.length) {
+    return { processed: 0, sent: 0, failed: 0, requeuedStale };
+  }
 
   let sent = 0;
   let failed = 0;
+  const now = () => new Date().toISOString();
 
-  for (const row of rows) {
-    const result = await sendEmailWithRetry(
-      { to: row.to_email, subject: row.subject, html: row.html },
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    const chunk = rows.slice(i, i + BATCH_SIZE);
+    const batch = await sendBatchWithRetry(
+      chunk.map(row => ({
+        key: row.id,
+        to: row.to_email,
+        subject: row.subject,
+        html: row.html,
+      })),
       { maxAttempts: 3 }
     );
-    const attempts = (row.attempts ?? 0) + 1;
 
-    if (result.ok) {
-      sent += 1;
-      await admin
-        .from('email_outbox')
-        .update({
-          status: 'sent',
-          attempts,
-          sent_at: new Date().toISOString(),
-          last_error: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', row.id);
-    } else if (attempts >= 8) {
-      failed += 1;
-      await admin
-        .from('email_outbox')
-        .update({
-          status: 'failed',
-          attempts,
-          last_error: result.error ?? 'failed',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', row.id);
-    } else {
-      await admin
-        .from('email_outbox')
-        .update({
-          attempts,
-          last_error: result.error ?? 'retry',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', row.id);
+    for (const item of batch.items) {
+      const row = chunk.find(r => r.id === item.key);
+      if (!row) continue;
+      const attempts = (row.attempts ?? 0) + 1;
+
+      if (item.ok) {
+        sent += 1;
+        await admin
+          .from('email_outbox')
+          .update({
+            status: 'sent',
+            attempts,
+            sent_at: now(),
+            last_error: null,
+            updated_at: now(),
+          })
+          .eq('id', row.id);
+        continue;
+      }
+
+      if (attempts >= MAX_SEND_ATTEMPTS_BEFORE_FAIL) {
+        failed += 1;
+        await admin
+          .from('email_outbox')
+          .update({
+            status: 'failed',
+            attempts,
+            last_error: item.error ?? batch.error ?? 'failed',
+            updated_at: now(),
+          })
+          .eq('id', row.id);
+      } else {
+        await admin
+          .from('email_outbox')
+          .update({
+            status: 'pending',
+            attempts,
+            last_error: item.error ?? batch.error ?? 'retry',
+            updated_at: now(),
+          })
+          .eq('id', row.id);
+      }
     }
   }
 
-  return { processed: rows.length, sent, failed };
+  return { processed: rows.length, sent, failed, requeuedStale };
 }

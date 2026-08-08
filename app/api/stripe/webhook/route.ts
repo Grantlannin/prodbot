@@ -7,6 +7,9 @@ import { getStripeWebhookSecret, isBillingEnabled } from '@/lib/stripe/config';
 import { getStripeClient } from '@/lib/stripe/client';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
+
 async function syncSubscription(
   userId: string,
   subscription: Stripe.Subscription | null | undefined
@@ -32,6 +35,10 @@ async function syncSubscription(
   });
 }
 
+/**
+ * Resolve Supabase user for a Stripe event.
+ * Prefer DB lookup by customer id (cheap under webhook flood) before Stripe Customer retrieve.
+ */
 async function resolveUserId(
   stripe: Stripe,
   opts: {
@@ -50,20 +57,23 @@ async function resolveUserId(
 
   if (!customerId) return null;
 
-  const customer = await stripe.customers.retrieve(customerId);
-  if (customer.deleted) return null;
-
-  const fromMetadata = customer.metadata?.supabase_user_id;
-  if (fromMetadata) return fromMetadata;
-
   const admin = createAdminSupabaseClient();
-  const { data } = await admin
+  const { data: byCustomer } = await admin
     .from('profiles')
     .select('id')
     .eq('stripe_customer_id', customerId)
     .maybeSingle();
+  if (byCustomer?.id) return byCustomer.id;
 
-  return data?.id ?? null;
+  // Pay-first checkouts often have no profile yet — avoid hard fail; signup claims session_id.
+  try {
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customer.deleted) return null;
+    return customer.metadata?.supabase_user_id ?? null;
+  } catch (error) {
+    console.error('[stripe/webhook] customer retrieve', customerId, error);
+    return null;
+  }
 }
 
 function isCourseCheckoutSession(session: Stripe.Checkout.Session): boolean {
@@ -120,10 +130,15 @@ export async function POST(req: Request) {
             });
           }
           if (userId) await grantCourseAccess(userId);
+          // No user yet (pay-first): signup / confirm will grant via reconcile.
           break;
         }
 
-        if (!userId) break;
+        // Pay-first: no account yet — ACK 200. Signup claims session_id for access.
+        if (!userId) {
+          console.info('[stripe/webhook] checkout without user (pay-first ok)', event.id);
+          break;
+        }
 
         const admin = createAdminSupabaseClient();
         if (customerId) {
@@ -157,7 +172,11 @@ export async function POST(req: Request) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
         const userId = await resolveUserId(stripe, { subscription });
-        if (!userId) break;
+        if (!userId) {
+          // Not linked yet — do not 500 (Stripe would retry forever). Signup reconciles.
+          console.info('[stripe/webhook] subscription event without user', event.id, event.type);
+          break;
+        }
         await syncSubscription(
           userId,
           event.type === 'customer.subscription.deleted' ? null : subscription
@@ -168,9 +187,9 @@ export async function POST(req: Request) {
         break;
     }
   } catch (error) {
-    console.error('[stripe/webhook]', event.type, error);
+    console.error('[stripe/webhook]', event.id, event.type, error);
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({ received: true, id: event.id });
 }
