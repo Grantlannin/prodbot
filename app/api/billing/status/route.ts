@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 import { hasCourseAccess, isActiveSubscription } from '@/lib/billing/subscription';
 import { fetchBillingForUser } from '@/lib/billing/profile';
-import { getBillingConfigChecks, isBillingEnabled } from '@/lib/stripe/config';
+import { isBillingEnabled } from '@/lib/stripe/config';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const checks = getBillingConfigChecks();
-
   try {
     const supabase = createServerSupabaseClient();
     const {
@@ -27,7 +25,6 @@ export async function GET() {
         courseAccess,
         status: 'none',
         endsAt: null,
-        checks,
       });
     }
 
@@ -38,7 +35,6 @@ export async function GET() {
         courseAccess: false,
         status: 'none',
         endsAt: null,
-        checks,
       });
     }
 
@@ -50,7 +46,6 @@ export async function GET() {
       courseAccess: hasCourseAccess(billing),
       status: billing?.subscription_status ?? 'none',
       endsAt: billing?.subscription_ends_at ?? null,
-      checks,
     });
   } catch (error) {
     console.error('[billing/status]', error);

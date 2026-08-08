@@ -3,6 +3,7 @@ import {
   customerHasCoursePurchase,
   grantCourseAccess,
 } from '@/lib/billing/course';
+import { checkoutSessionEmail } from '@/lib/billing/checkout-email';
 import { isCheckoutSessionId } from '@/lib/billing/checkout-receipt';
 import { upsertBillingForUser } from '@/lib/billing/profile';
 import { mapStripeSubscriptionStatus } from '@/lib/billing/subscription';
@@ -14,7 +15,8 @@ export type LinkReason =
   | 'no_subscription'
   | 'already_claimed'
   | 'not_found'
-  | 'invalid_session';
+  | 'invalid_session'
+  | 'email_mismatch';
 
 export interface LinkResult {
   linked: boolean;
@@ -85,14 +87,20 @@ async function findLinkableSubscription(
 
 /**
  * Claim a pay-first Checkout session onto this user.
- * Session id is the receipt — email match is not required.
+ * Requires the account email to match the Checkout customer email.
  */
 export async function linkCheckoutSessionToUser(
   userId: string,
-  sessionId: string
+  sessionId: string,
+  userEmail: string
 ): Promise<LinkResult> {
   if (!isCheckoutSessionId(sessionId)) {
     return { linked: false, reason: 'invalid_session' };
+  }
+
+  const normalizedUserEmail = userEmail.trim().toLowerCase();
+  if (!normalizedUserEmail) {
+    return { linked: false, reason: 'email_mismatch' };
   }
 
   const stripe = getStripeClient();
@@ -112,6 +120,11 @@ export async function linkCheckoutSessionToUser(
     session.status === 'complete';
   if (!paid) {
     return { linked: false, reason: 'invalid_session' };
+  }
+
+  const sessionEmail = checkoutSessionEmail(session);
+  if (!sessionEmail || sessionEmail !== normalizedUserEmail) {
+    return { linked: false, reason: 'email_mismatch' };
   }
 
   const customerId =
@@ -190,17 +203,26 @@ export async function linkStripeCustomerToUser(
   return { linked: false, reason: 'no_subscription' };
 }
 
-/** Prefer session claim (pay-first receipt), then email match. */
+/**
+ * Prefer session claim (pay-first receipt + email match), then email match
+ * only for confirmed accounts (password / magic-link owners).
+ */
 export async function reconcileBillingForUser(
   userId: string,
   email: string,
-  sessionId?: string | null
+  sessionId?: string | null,
+  opts?: { emailConfirmed?: boolean }
 ): Promise<LinkResult> {
   if (isCheckoutSessionId(sessionId)) {
-    const bySession = await linkCheckoutSessionToUser(userId, sessionId);
-    if (bySession.linked || bySession.reason === 'already_claimed') {
+    const bySession = await linkCheckoutSessionToUser(userId, sessionId, email);
+    if (bySession.linked || bySession.reason === 'already_claimed' || bySession.reason === 'email_mismatch') {
       return bySession;
     }
+  }
+
+  // Unverified signups must not attach someone else's Stripe customer by email alone.
+  if (opts?.emailConfirmed === false) {
+    return { linked: false, reason: 'not_found' };
   }
 
   return linkStripeCustomerToUser(userId, email);

@@ -21,6 +21,8 @@ export function linkReasonMessage(reason: string | null | undefined): string {
       return 'Checkout session not found. Open the link from your payment confirmation, or try again.';
     case 'invalid_session':
       return 'That checkout session is invalid or incomplete.';
+    case 'email_mismatch':
+      return 'Use the same email you paid with at checkout to claim this purchase.';
     default:
       return 'Could not link your purchase yet. Try again in a moment.';
   }

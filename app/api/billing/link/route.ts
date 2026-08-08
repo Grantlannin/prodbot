@@ -36,7 +36,9 @@ export async function POST(req: Request) {
       if (isCheckoutSessionId(fromCookie)) sessionId = fromCookie;
     }
 
-    const result = await reconcileBillingForUser(user.id, user.email, sessionId || null);
+    const result = await reconcileBillingForUser(user.id, user.email, sessionId || null, {
+      emailConfirmed: Boolean(user.email_confirmed_at),
+    });
     return NextResponse.json(result);
   } catch (error) {
     console.error('[billing/link]', error);

@@ -12,6 +12,7 @@ import {
   clearCheckoutSessionId,
   resolveCheckoutSessionId,
 } from '@/lib/billing/checkout-receipt-client';
+import { safeNextPath } from '@/lib/security/safe-path';
 import MarketingShell from '@/components/marketing/MarketingShell';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -21,7 +22,7 @@ type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset';
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
-  const [emailLocked, setEmailLocked] = useState(false);
+  const [emailHint, setEmailHint] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [mode, setMode] = useState<AuthMode>('signin');
@@ -32,7 +33,7 @@ export default function LoginForm() {
   const [checkoutSessionId, setCheckoutSessionId] = useState('');
 
   const authError = searchParams.get('error') || searchParams.get('error_code');
-  const nextPath = searchParams.get('next') || '/app';
+  const nextPath = safeNextPath(searchParams.get('next'), '/app');
   const fromCheckout = checkoutSessionId.startsWith('cs_');
   const initialError = useMemo(() => {
     if (authError === 'otp_expired') {
@@ -60,14 +61,13 @@ export default function LoginForm() {
     let cancelled = false;
     void fetch(`/api/stripe/checkout-email?session_id=${encodeURIComponent(checkoutSessionId)}`)
       .then(async res => {
-        const data = (await res.json()) as { email?: string; error?: string };
-        if (!res.ok || !data.email) return;
+        const data = (await res.json()) as { emailMasked?: string; error?: string };
+        if (!res.ok || !data.emailMasked) return;
         if (cancelled) return;
-        setEmail(data.email);
-        setEmailLocked(true);
+        setEmailHint(data.emailMasked);
       })
       .catch(() => {
-        /* user can still type email */
+        /* user types email */
       });
     return () => {
       cancelled = true;
@@ -146,8 +146,8 @@ export default function LoginForm() {
       clearIntroProgressClient();
     }
 
-    const dest = nextPath.startsWith('/') ? nextPath : '/app';
-    if (dest.startsWith('/app') && !linked && reason === 'already_claimed') {
+    const dest = safeNextPath(nextPath, '/app');
+    if (dest.startsWith('/app') && !linked && (reason === 'already_claimed' || reason === 'email_mismatch')) {
       setError(linkReasonMessage(reason));
       setBusy(false);
       return;
@@ -217,10 +217,13 @@ export default function LoginForm() {
       });
       const data = (await res.json()) as {
         error?: string;
-        updated?: boolean;
         link?: { linked?: boolean; reason?: string };
       };
       if (!res.ok) {
+        if (res.status === 409) {
+          setMode('signin');
+          throw new Error(data.error ?? 'An account with this email already exists. Sign in instead.');
+        }
         throw new Error(data.error ?? 'Could not create account.');
       }
 
@@ -230,9 +233,8 @@ export default function LoginForm() {
         password,
       });
       if (signInError) throw signInError;
-      // Existing email via "create account" only updates password — don't reset intro.
       await afterAuth({
-        isNewAccount: !data.updated,
+        isNewAccount: true,
         linkReason: data.link?.linked ? 'linked' : data.link?.reason,
       });
     } catch (err) {
@@ -400,21 +402,20 @@ export default function LoginForm() {
               <label style={styles.label} htmlFor="email">
                 Email
               </label>
+              {emailHint ? (
+                <p style={styles.emailHint}>
+                  Use the same email as checkout ({emailHint}).
+                </p>
+              ) : null}
               <input
                 id="email"
                 type="email"
                 required
                 autoComplete="email"
                 value={email}
-                onChange={e => {
-                  if (!emailLocked) setEmail(e.target.value);
-                }}
-                readOnly={emailLocked}
+                onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                style={{
-                  ...styles.input,
-                  ...(emailLocked ? styles.inputLocked : null),
-                }}
+                style={styles.input}
               />
               <label style={styles.label} htmlFor="password">
                 Password
@@ -538,9 +539,11 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
     marginBottom: 8,
   },
-  inputLocked: {
-    background: '#f8fafc',
-    color: '#334155',
+  emailHint: {
+    margin: '0 0 6px',
+    fontSize: 12,
+    color: '#64748b',
+    lineHeight: 1.4,
   },
   primaryBtn: {
     marginTop: 4,

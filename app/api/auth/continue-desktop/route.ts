@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { isResendConfigured } from '@/lib/email/resend';
 import { sendContinueDesktopEmail } from '@/lib/email/continue-desktop';
+import { clientIpFromRequest, rateLimitAllow } from '@/lib/security/rate-limit';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 /** Email a laptop continue link (Resend + Supabase generateLink). */
-export async function POST() {
+export async function POST(req: Request) {
   try {
     if (!isResendConfigured()) {
       return NextResponse.json(
@@ -23,9 +24,17 @@ export async function POST() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const email = user?.email?.trim().toLowerCase();
-    if (!email) {
+    if (!user?.email) {
       return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+    }
+    const email = user.email.trim().toLowerCase();
+
+    const ip = clientIpFromRequest(req);
+    if (!rateLimitAllow(`continue-desktop:${user.id}:${ip}`, 5, 60_000)) {
+      return NextResponse.json(
+        { error: 'Too many email requests. Wait a minute, or use the copy login link.' },
+        { status: 429 }
+      );
     }
 
     const result = await sendContinueDesktopEmail(email);

@@ -12,6 +12,7 @@ import {
 } from '@/lib/intro';
 import { isBillingEnabled } from '@/lib/stripe/config';
 import { getAppOrigin } from '@/lib/app-origin';
+import { safeNextPath } from '@/lib/security/safe-path';
 import { getSupabaseConfig } from '@/lib/supabase/config';
 import type { EmailOtpType } from '@supabase/supabase-js';
 
@@ -26,18 +27,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const tokenHash = searchParams.get('token_hash');
   const type = (searchParams.get('type') || 'email') as EmailOtpType;
-  let next = searchParams.get('next') ?? '/intro/chrome?resume_setup=1';
-
-  // RedirectTo from Supabase may be an absolute URL — normalize to a path.
-  if (next.startsWith('http://') || next.startsWith('https://')) {
-    try {
-      const u = new URL(next);
-      next = `${u.pathname}${u.search}` || '/';
-    } catch {
-      next = '/intro/chrome?resume_setup=1';
-    }
-  }
-  if (!next.startsWith('/')) next = '/';
+  const next = safeNextPath(searchParams.get('next'), '/intro/chrome?resume_setup=1');
 
   const appOrigin = getAppOrigin(request.nextUrl.origin);
   const resumeSetup = next.includes('resume_setup=1');
@@ -92,7 +82,9 @@ export async function GET(request: NextRequest) {
       try {
         const cookieSession = request.cookies.get(CHECKOUT_SESSION_COOKIE)?.value?.trim() || '';
         const sessionId = isCheckoutSessionId(cookieSession) ? cookieSession : null;
-        await reconcileBillingForUser(user.id, user.email, sessionId);
+        await reconcileBillingForUser(user.id, user.email, sessionId, {
+          emailConfirmed: Boolean(user.email_confirmed_at) || type === 'magiclink' || type === 'email',
+        });
       } catch (linkError) {
         console.error('[auth/confirm] link stripe', linkError);
       }

@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { COURSE_PRICE_CENTS, COURSE_PRODUCT_NAME } from '@/lib/billing/price';
+import { checkoutSessionEmail } from '@/lib/billing/checkout-email';
 import {
   grantCourseAccess,
   markStripeCustomerCoursePurchased,
 } from '@/lib/billing/course';
 import { DEMO_COURSE_COOKIE, isDemoCheckoutSessionId } from '@/lib/billing/demo';
 import { fetchBillingForUser } from '@/lib/billing/profile';
+import { clientIpFromRequest, rateLimitAllow } from '@/lib/security/rate-limit';
 import { isBillingDemoFlow, isBillingEnabled, getAppOrigin } from '@/lib/stripe/config';
 import { getStripeClient } from '@/lib/stripe/client';
 import { resolveCoursePriceId } from '@/lib/stripe/resolve-price';
@@ -55,6 +57,11 @@ async function grantIfLoggedIn(userId: string | undefined) {
 
 export async function POST(request: Request) {
   try {
+    const ip = clientIpFromRequest(request);
+    if (!rateLimitAllow(`oto-course:${ip}`, 20, 60_000)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     const body = (await request.json().catch(() => ({}))) as { sessionId?: unknown };
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId.trim() : '';
 
@@ -84,12 +91,14 @@ export async function POST(request: Request) {
     let customerId: string | null = null;
     let subscriptionId: string | null = null;
     let idempotencyKey: string;
+    let sessionEmail: string | null = null;
 
     if (sessionId.startsWith('cs_')) {
       const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId);
       if (checkoutSession.status !== 'complete') {
         return NextResponse.json({ error: 'Subscription checkout is not complete' }, { status: 400 });
       }
+      sessionEmail = checkoutSessionEmail(checkoutSession);
       customerId =
         typeof checkoutSession.customer === 'string'
           ? checkoutSession.customer
@@ -99,6 +108,17 @@ export async function POST(request: Request) {
           ? checkoutSession.subscription
           : checkoutSession.subscription?.id ?? null;
       idempotencyKey = `oto-course:${sessionId}`;
+
+      // Logged-in buyer must own this checkout (same email). Never charge A / grant B.
+      if (user?.email) {
+        const userEmail = user.email.trim().toLowerCase();
+        if (!sessionEmail || sessionEmail !== userEmail) {
+          return NextResponse.json(
+            { error: 'Sign in with the same email you used at checkout to buy the course.' },
+            { status: 403 }
+          );
+        }
+      }
     } else if (user) {
       const billing = await fetchBillingForUser(supabase, user.id);
       customerId = billing?.stripe_customer_id ?? null;
@@ -123,7 +143,10 @@ export async function POST(request: Request) {
     );
     if (alreadyPaid) {
       await markStripeCustomerCoursePurchased(stripe, customerId);
-      await grantIfLoggedIn(user?.id);
+      // Only grant DB access to the matching logged-in user; else cookie for later signup.
+      if (user) {
+        await grantIfLoggedIn(user.id);
+      }
       const res = NextResponse.json({ ok: true, alreadyPaid: true, courseAccess: Boolean(user) });
       if (!user) coursePaidCookie(res);
       return res;
@@ -136,7 +159,8 @@ export async function POST(request: Request) {
       ? `${origin}/course`
       : `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}`;
 
-    const pmId = await resolvePaymentMethodId(stripe, customerId, subscriptionId);
+    // Never off-session charge without a logged-in owner — prevents cs_ theft charging a card.
+    const pmId = user ? await resolvePaymentMethodId(stripe, customerId, subscriptionId) : null;
     if (!pmId) {
       const coursePriceId = await resolveCoursePriceId(stripe);
       const fallback = await stripe.checkout.sessions.create({
@@ -175,7 +199,9 @@ export async function POST(request: Request) {
 
       if (paymentIntent.status === 'succeeded') {
         await markStripeCustomerCoursePurchased(stripe, customerId);
-        await grantIfLoggedIn(user?.id);
+        if (user) {
+          await grantIfLoggedIn(user.id);
+        }
         const res = NextResponse.json({ ok: true, courseAccess: Boolean(user) });
         if (!user) coursePaidCookie(res);
         return res;

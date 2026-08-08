@@ -12,13 +12,13 @@ import {
 } from '@/lib/intro';
 import { isBillingEnabled } from '@/lib/stripe/config';
 import { getAppOrigin } from '@/lib/app-origin';
+import { safeNextPath } from '@/lib/security/safe-path';
 import { getSupabaseConfig } from '@/lib/supabase/config';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const code = searchParams.get('code');
-  let next = searchParams.get('next') ?? '/';
-  if (!next.startsWith('/')) next = '/';
+  const next = safeNextPath(searchParams.get('next'), '/');
 
   const appOrigin = getAppOrigin(request.nextUrl.origin);
   const resumeSetup = next.includes('resume_setup=1');
@@ -69,7 +69,9 @@ export async function GET(request: NextRequest) {
       try {
         const cookieSession = request.cookies.get(CHECKOUT_SESSION_COOKIE)?.value?.trim() || '';
         const sessionId = isCheckoutSessionId(cookieSession) ? cookieSession : null;
-        await reconcileBillingForUser(user.id, user.email, sessionId);
+        await reconcileBillingForUser(user.id, user.email, sessionId, {
+          emailConfirmed: Boolean(user.email_confirmed_at),
+        });
       } catch (linkError) {
         console.error('[auth/callback] link stripe', linkError);
       }
