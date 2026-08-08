@@ -25,7 +25,27 @@ export default function AccountMenu() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(profile.displayName);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isOpsAdmin, setIsOpsAdmin] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setIsOpsAdmin(false);
+      return;
+    }
+    let cancelled = false;
+    void fetch('/api/ops/access')
+      .then(r => r.json())
+      .then((data: { admin?: boolean }) => {
+        if (!cancelled) setIsOpsAdmin(Boolean(data.admin));
+      })
+      .catch(() => {
+        if (!cancelled) setIsOpsAdmin(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const lastSavedLabel = (() => {
     if (!lastSyncAt) return null;
@@ -165,6 +185,11 @@ export default function AccountMenu() {
               >
                 Manage billing
               </Link>
+              {isOpsAdmin ? (
+                <Link href="/ops" style={styles.menuItemLink} onClick={() => setMenuOpen(false)}>
+                  Ops pulse
+                </Link>
+              ) : null}
               <button type="button" style={styles.menuItem} onClick={() => signOut()}>
                 Sign out
               </button>

@@ -113,7 +113,7 @@ export async function middleware(request: NextRequest) {
     if (requireAuth && !user && !isPublicPath(pathname)) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = '/login';
-      if (isAppPath(pathname)) {
+      if (isAppPath(pathname) || pathname === '/ops' || pathname.startsWith('/ops/')) {
         loginUrl.searchParams.set('next', pathname);
       }
       return NextResponse.redirect(loginUrl);
