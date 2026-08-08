@@ -18,10 +18,24 @@ export function getStripePublishableKey(): string | undefined {
   return process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() || undefined;
 }
 
+/** True on the live Vercel production deployment (or NODE_ENV production fallback). */
+export function isProductionRuntime(): boolean {
+  if (process.env.VERCEL_ENV === 'production') return true;
+  if (process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'development') return false;
+  return process.env.NODE_ENV === 'production';
+}
+
+function envFlagTrue(...names: string[]): boolean {
+  return names.some(name => process.env[name]?.trim() === 'true');
+}
+
 function isPaywallExplicitlyDisabled(): boolean {
-  return (
-    process.env.DISABLE_PAYWALL === 'true' || process.env.NEXT_PUBLIC_DISABLE_PAYWALL === 'true'
-  );
+  const requested = envFlagTrue('DISABLE_PAYWALL', 'NEXT_PUBLIC_DISABLE_PAYWALL');
+  if (requested && isProductionRuntime()) {
+    console.error('[billing] DISABLE_PAYWALL ignored in production');
+    return false;
+  }
+  return requested;
 }
 
 /** True when paywall is temporarily off for end-to-end testing. */
@@ -32,12 +46,15 @@ export function isPaywallDisabled(): boolean {
 /**
  * Fake purchase flow: subscribe → OTO → account, with no Stripe charges.
  * Enable with BILLING_DEMO_FLOW=true or NEXT_PUBLIC_BILLING_DEMO_FLOW=true.
+ * Never active in production.
  */
 export function isBillingDemoFlow(): boolean {
-  return (
-    process.env.BILLING_DEMO_FLOW === 'true' ||
-    process.env.NEXT_PUBLIC_BILLING_DEMO_FLOW === 'true'
-  );
+  const requested = envFlagTrue('BILLING_DEMO_FLOW', 'NEXT_PUBLIC_BILLING_DEMO_FLOW');
+  if (requested && isProductionRuntime()) {
+    console.error('[billing] BILLING_DEMO_FLOW ignored in production');
+    return false;
+  }
+  return requested;
 }
 
 /** Paywall is on when Stripe + Supabase are configured and not explicitly disabled. */
@@ -57,9 +74,15 @@ export function getBillingConfigChecks() {
         ? 'unknown'
         : 'missing';
 
+  const demoRequested = envFlagTrue('BILLING_DEMO_FLOW', 'NEXT_PUBLIC_BILLING_DEMO_FLOW');
+  const paywallDisableRequested = envFlagTrue('DISABLE_PAYWALL', 'NEXT_PUBLIC_DISABLE_PAYWALL');
+
   return {
-    paywallDisabled: isPaywallExplicitlyDisabled(),
+    productionRuntime: isProductionRuntime(),
+    paywallDisabled: isPaywallDisabled(),
+    paywallDisableRequested,
     demoFlow: isBillingDemoFlow(),
+    demoFlowRequested: demoRequested,
     hasStripeSecret: !!stripeSecret,
     stripeKeyMode,
     appUrl: getAppOrigin(''),
