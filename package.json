@@ -12,7 +12,6 @@
     "setup:billing": "node scripts/setup-billing.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "canvas-confetti": "^1.9.4",

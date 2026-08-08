@@ -12,7 +12,7 @@ const required = [
   'NEXT_PUBLIC_APP_URL',
 ];
 
-const optional = ['STRIPE_PRICE_ID', 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'ANTHROPIC_API_KEY'];
+const optional = ['STRIPE_PRICE_ID', 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY'];
 
 console.log('\nProduc billing env check\n');
 

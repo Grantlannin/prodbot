@@ -1,13 +1,13 @@
 # prodbot
 
-Personal productivity app: Next.js chat (AI Performance Orchestrator), dashboard, work timer, and Supabase-ready wiring.
+Personal productivity app: Next.js dashboard, work timer, focus extension, and Stripe/Supabase billing.
 
 ## Run locally
 
 ```bash
 npm install
 cp .env.example .env.local
-# Add ANTHROPIC_API_KEY and Supabase keys to .env.local
+# Add Supabase + Stripe keys to .env.local
 npm run dev
 ```
 
