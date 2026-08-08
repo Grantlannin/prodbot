@@ -57,14 +57,24 @@ export async function middleware(request: NextRequest) {
   }
 
   const { url, anonKey, configured } = getSupabaseConfig();
-  if (!configured || !url || !anonKey) {
-    return supabaseResponse;
-  }
-
   const billingEnabled = isBillingEnabled();
   const paywallOff = isPaywallDisabled();
   // Paywall-off test mode still requires login.
   const requireAuth = isAuthRequired() || billingEnabled || paywallOff;
+  const gatedPath =
+    isAppPath(pathname) ||
+    isIntroPath(pathname) ||
+    pathname === '/ops' ||
+    pathname.startsWith('/ops/') ||
+    (requireAuth && !isPublicPath(pathname));
+
+  // Fail closed: never expose the app shell when auth isn't configured.
+  if (!configured || !url || !anonKey) {
+    if (gatedPath) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    return supabaseResponse;
+  }
 
   try {
     const supabase = createServerClient(url, anonKey, {
@@ -160,6 +170,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/app', request.url));
     }
   } catch {
+    // Fail closed on auth/billing errors — don't skip the paywall gate.
+    if (gatedPath) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = '/login';
+      return NextResponse.redirect(loginUrl);
+    }
     return NextResponse.next({ request });
   }
 

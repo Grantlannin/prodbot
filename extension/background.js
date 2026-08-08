@@ -48,7 +48,8 @@ async function updateRules(state) {
 }
 
 async function applySync(payload) {
-  if (payload.entitled === false) {
+  // Require explicit entitled === true. Spoofed page messages without entitlement clear blocking.
+  if (payload.entitled !== true) {
     payload = {
       blocking: false,
       domains: [],

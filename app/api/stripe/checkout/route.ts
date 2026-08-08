@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server';
+import {
+  applyCheckoutNonceCookie,
+  generateCheckoutNonce,
+} from '@/lib/billing/checkout-claim';
 import { DEMO_CHECKOUT_SESSION_ID } from '@/lib/billing/demo';
 import { clientIpFromRequest, rateLimitAllow } from '@/lib/security/rate-limit';
 import { getAppOrigin, isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
@@ -11,6 +15,14 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 const SUCCESS_URL = (origin: string) =>
   `${origin}/api/stripe/claim-receipt?session_id={CHECKOUT_SESSION_ID}`;
 
+function jsonWithNonce(body: Record<string, unknown>, sessionId: string, nonce: string) {
+  const res = NextResponse.json(body);
+  if (!applyCheckoutNonceCookie(res, sessionId, nonce)) {
+    console.error('[stripe/checkout] missing claim signing secret for nonce cookie');
+  }
+  return res;
+}
+
 export async function POST(request: Request) {
   const origin = getAppOrigin();
   const ip = clientIpFromRequest(request);
@@ -20,10 +32,15 @@ export async function POST(request: Request) {
 
   // Fake purchase path for ripping through purchase → OTO → onboard.
   if (isBillingDemoFlow()) {
-    return NextResponse.json({
-      url: `${origin}/api/stripe/claim-receipt?session_id=${DEMO_CHECKOUT_SESSION_ID}`,
-      demo: true,
-    });
+    const nonce = generateCheckoutNonce();
+    return jsonWithNonce(
+      {
+        url: `${origin}/api/stripe/claim-receipt?session_id=${DEMO_CHECKOUT_SESSION_ID}`,
+        demo: true,
+      },
+      DEMO_CHECKOUT_SESSION_ID,
+      nonce
+    );
   }
 
   if (!isBillingEnabled()) {
@@ -33,6 +50,7 @@ export async function POST(request: Request) {
   try {
     const stripe = getStripeClient();
     const priceId = await resolveMonthlyPriceId(stripe);
+    const nonce = generateCheckoutNonce();
 
     const supabase = createServerSupabaseClient();
     const {
@@ -63,13 +81,15 @@ export async function POST(request: Request) {
         cancel_url: `${origin}/?canceled=1`,
         allow_promotion_codes: true,
         payment_method_collection: 'always',
+        metadata: { claim_nonce: nonce },
+        subscription_data: { metadata: { claim_nonce: nonce } },
       });
 
-      if (!session.url) {
+      if (!session.url || !session.id) {
         return NextResponse.json({ error: 'Could not create checkout session' }, { status: 500 });
       }
 
-      return NextResponse.json({ url: session.url });
+      return jsonWithNonce({ url: session.url }, session.id, nonce);
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -79,13 +99,15 @@ export async function POST(request: Request) {
       cancel_url: `${origin}/?canceled=1`,
       allow_promotion_codes: true,
       payment_method_collection: 'always',
+      metadata: { claim_nonce: nonce },
+      subscription_data: { metadata: { claim_nonce: nonce } },
     });
 
-    if (!session.url) {
+    if (!session.url || !session.id) {
       return NextResponse.json({ error: 'Could not create checkout session' }, { status: 500 });
     }
 
-    return NextResponse.json({ url: session.url });
+    return jsonWithNonce({ url: session.url }, session.id, nonce);
   } catch (error) {
     console.error('[stripe/checkout]', error);
     return NextResponse.json({ error: 'Could not start checkout' }, { status: 500 });

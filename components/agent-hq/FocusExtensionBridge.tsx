@@ -21,7 +21,7 @@ interface FocusExtensionBridgeProps {
 
 export default function FocusExtensionBridge({ onAddInfraction }: FocusExtensionBridgeProps) {
   const [blocklist] = useLocalStorage<FocusBlocklistStore>(FOCUS_BLOCKLIST_KEY, DEFAULT_FOCUS_BLOCKLIST);
-  const [entitled, setEntitled] = useState(true);
+  const [entitled, setEntitled] = useState(false);
   const {
     status,
     currentSession,
@@ -40,14 +40,20 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
       void fetch('/api/billing/status')
         .then(res => (res.ok ? res.json() : null))
         .then(data => {
-          if (cancelled || !data) return;
+          if (cancelled) return;
+          if (!data) {
+            setEntitled(false);
+            return;
+          }
           if (data.billingEnabled) {
             setEntitled(!!data.active);
           } else {
             setEntitled(true);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (!cancelled) setEntitled(false);
+        });
     };
 
     loadEntitlement();

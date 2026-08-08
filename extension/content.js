@@ -1,3 +1,10 @@
+let lastEntitled = false;
+let lastPayload = null;
+
+function forwardSync(payload) {
+  chrome.runtime.sendMessage({ type: 'SYNC', payload }).catch(() => {});
+}
+
 window.addEventListener('message', event => {
   if (event.source !== window) return;
 
@@ -7,7 +14,11 @@ window.addEventListener('message', event => {
   }
 
   if (event.data?.type !== 'PRODUC_FOCUS_SYNC') return;
-  chrome.runtime.sendMessage({ type: 'SYNC', payload: event.data.payload }).catch(() => {});
+
+  // Never trust page-supplied entitlement — only our billing/status check.
+  const incoming = event.data.payload && typeof event.data.payload === 'object' ? event.data.payload : {};
+  lastPayload = { ...incoming };
+  forwardSync({ ...lastPayload, entitled: lastEntitled });
 });
 
 const CLEAR_PAYLOAD = {
@@ -22,19 +33,31 @@ const CLEAR_PAYLOAD = {
 };
 
 function postClearSync() {
-  window.postMessage({ type: 'PRODUC_FOCUS_SYNC', payload: CLEAR_PAYLOAD }, window.location.origin);
+  lastEntitled = false;
+  lastPayload = { ...CLEAR_PAYLOAD };
+  forwardSync(CLEAR_PAYLOAD);
 }
 
 async function checkSubscriptionEntitlement() {
   try {
     const res = await fetch('/api/billing/status', { credentials: 'same-origin' });
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data.billingEnabled && !data.active) {
+    if (!res.ok) {
       postClearSync();
+      return;
+    }
+    const data = await res.json();
+    const next = data.billingEnabled ? !!data.active : true;
+    const changed = next !== lastEntitled;
+    lastEntitled = next;
+    if (!lastEntitled) {
+      postClearSync();
+      return;
+    }
+    if (changed && lastPayload) {
+      forwardSync({ ...lastPayload, entitled: true });
     }
   } catch {
-    /* ignore */
+    postClearSync();
   }
 }
 
