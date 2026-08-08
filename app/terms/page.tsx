@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PRODUCTION_SITE_HOST } from '@/lib/site';
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Daywinner bot — Terms of Service',
@@ -65,10 +65,10 @@ export default function TermsPage() {
 
       <h2 style={{ fontSize: 18, marginTop: 28 }}>Contact</h2>
       <p>
-        Questions about these terms: contact us through the email listed on{' '}
-        <Link href="/" style={{ color: '#1d4ed8' }}>
-          {PRODUCTION_SITE_HOST}
-        </Link>
+        Questions about these terms:{' '}
+        <a href={SUPPORT_MAILTO} style={{ color: '#1d4ed8' }}>
+          {SUPPORT_EMAIL}
+        </a>
         .
       </p>
 

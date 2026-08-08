@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PRODUCTION_SITE_HOST, PRODUCTION_SITE_ORIGIN } from '@/lib/site';
+import { PRODUCTION_SITE_ORIGIN, SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Daywinner bot — Privacy Policy',
@@ -71,10 +71,10 @@ export default function FocusExtensionPrivacyPage() {
 
       <h2 style={{ fontSize: 18, marginTop: 28 }}>Contact</h2>
       <p>
-        Questions about this policy: contact the Daywinner team through the email listed on{' '}
-        <Link href="/" style={{ color: '#1d4ed8' }}>
-          {PRODUCTION_SITE_HOST}
-        </Link>
+        Questions about this policy:{' '}
+        <a href={SUPPORT_MAILTO} style={{ color: '#1d4ed8' }}>
+          {SUPPORT_EMAIL}
+        </a>
         .
       </p>
 

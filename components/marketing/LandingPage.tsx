@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { isBillingDemoFlow, isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/site';
 import MarketingShell from './MarketingShell';
 import StartCheckoutButton from './StartCheckoutButton';
 
@@ -587,6 +588,9 @@ export default function LandingPage() {
         <Link href="/login" className="font-semibold text-slate-600 no-underline hover:text-slate-900">
           Sign in
         </Link>
+        <a href={SUPPORT_MAILTO} className="font-semibold text-slate-600 no-underline hover:text-slate-900">
+          {SUPPORT_EMAIL}
+        </a>
         <Link href="/terms" className="font-semibold text-slate-600 no-underline hover:text-slate-900">
           Terms
         </Link>
