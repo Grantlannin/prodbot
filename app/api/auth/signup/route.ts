@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { canClaimCheckoutSession } from '@/lib/billing/checkout-claim';
 import { checkoutSessionEmail } from '@/lib/billing/checkout-email';
 import {
   CHECKOUT_SESSION_COOKIE,
@@ -88,11 +89,14 @@ export async function POST(req: Request) {
 
     const admin = createAdminSupabaseClient();
 
-    // Confirm email only when tied to a verified paid checkout for that address.
+    // Auto-confirm + session claim only with Stripe-return claim cookie (or demo).
+    const claimAuthorized =
+      isBillingDemoFlow() || (Boolean(sessionId) && canClaimCheckoutSession(sessionId, false));
+
     const { data, error } = await admin.auth.admin.createUser({
       email,
       password,
-      email_confirm: Boolean(sessionId) || isBillingDemoFlow(),
+      email_confirm: claimAuthorized,
     });
 
     if (error) {
@@ -118,8 +122,9 @@ export async function POST(req: Request) {
       }
     } else if (isBillingEnabled()) {
       try {
-        link = await reconcileBillingForUser(data.user.id, email, sessionId, {
-          emailConfirmed: Boolean(sessionId),
+        const claimSessionId = claimAuthorized ? sessionId : null;
+        link = await reconcileBillingForUser(data.user.id, email, claimSessionId, {
+          emailConfirmed: claimAuthorized,
         });
         // Demo course cookie must never grant access outside demo mode.
       } catch (linkError) {

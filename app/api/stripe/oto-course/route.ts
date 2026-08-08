@@ -143,30 +143,35 @@ export async function POST(request: Request) {
     );
     if (alreadyPaid) {
       await markStripeCustomerCoursePurchased(stripe, customerId);
-      // Only grant DB access to the matching logged-in user; else cookie for later signup.
+      // Only grant DB access to the matching logged-in user.
       if (user) {
         await grantIfLoggedIn(user.id);
       }
       const res = NextResponse.json({ ok: true, alreadyPaid: true, courseAccess: Boolean(user) });
-      if (!user) coursePaidCookie(res);
+      if (!user && isBillingDemoFlow()) coursePaidCookie(res);
       return res;
     }
 
     const successPath = user
       ? `${origin}/course?purchased=1`
-      : `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}&course=1`;
+      : `${origin}/api/stripe/claim-receipt?session_id=${encodeURIComponent(sessionId)}`;
     const cancelPath = user
       ? `${origin}/course`
-      : `${origin}/subscribe/success?session_id=${encodeURIComponent(sessionId)}`;
+      : `${origin}/api/stripe/claim-receipt?session_id=${encodeURIComponent(sessionId)}`;
 
     // Never off-session charge without a logged-in owner — prevents cs_ theft charging a card.
     const pmId = user ? await resolvePaymentMethodId(stripe, customerId, subscriptionId) : null;
     if (!pmId) {
       const coursePriceId = await resolveCoursePriceId(stripe);
+      if (!user && !sessionEmail) {
+        return NextResponse.json({ error: 'Checkout email missing; sign in to buy the course.' }, { status: 400 });
+      }
+      // Logged-out: bind by email only — never attach to victim Stripe customer / saved cards.
       const fallback = await stripe.checkout.sessions.create({
         mode: 'payment',
-        customer: customerId,
-        client_reference_id: user?.id,
+        ...(user
+          ? { customer: customerId, client_reference_id: user.id }
+          : { customer_email: sessionEmail! }),
         line_items: [{ price: coursePriceId, quantity: 1 }],
         success_url: successPath,
         cancel_url: cancelPath,
@@ -203,7 +208,8 @@ export async function POST(request: Request) {
           await grantIfLoggedIn(user.id);
         }
         const res = NextResponse.json({ ok: true, courseAccess: Boolean(user) });
-        if (!user) coursePaidCookie(res);
+        // Course cookie only meaningful in demo signup; never set on live logged-out path.
+        if (!user && isBillingDemoFlow()) coursePaidCookie(res);
         return res;
       }
 

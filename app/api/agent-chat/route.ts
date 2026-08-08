@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextResponse } from 'next/server';
 import { requireActiveSubscription } from '@/lib/billing/require-subscription';
+import { clientIpFromRequest, rateLimitAllow } from '@/lib/security/rate-limit';
 import { ORCHESTRATOR_SYSTEM_PROMPT } from './orchestrator-prompt';
 
 const client = new Anthropic();
@@ -8,6 +9,15 @@ const client = new Anthropic();
 export async function POST(req: Request) {
   const access = await requireActiveSubscription();
   if (access.denied) return access.denied;
+
+  const ip = clientIpFromRequest(req);
+  const userKey = access.user?.id || ip;
+  if (!rateLimitAllow(`agent-chat:${userKey}`, 40, 60_000)) {
+    return NextResponse.json(
+      { content: 'Too many messages. Wait a moment and try again.' },
+      { status: 429 }
+    );
+  }
 
   try {
     const { messages, context } = (await req.json()) as {

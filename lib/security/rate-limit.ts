@@ -15,7 +15,12 @@ export function rateLimitAllow(key: string, limit: number, windowMs: number): bo
 }
 
 export function clientIpFromRequest(req: Request): string {
+  // Prefer platform-set headers over client-spoofable X-Forwarded-For.
+  const vercel = req.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim();
+  if (vercel) return vercel;
+  const real = req.headers.get('x-real-ip')?.trim();
+  if (real) return real;
   const xf = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
   if (xf) return xf;
-  return req.headers.get('x-real-ip')?.trim() || 'unknown';
+  return 'unknown';
 }

@@ -5,14 +5,14 @@ import { fetchBillingForUser } from '@/lib/billing/profile';
 import { isBillingEnabled } from '@/lib/stripe/config';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
+/**
+ * Always requires a signed-in user.
+ * When billing/paywall is enabled, also requires an active subscription.
+ */
 export async function requireActiveSubscription(): Promise<{
   user: User | null;
   denied: NextResponse | null;
 }> {
-  if (!isBillingEnabled()) {
-    return { user: null, denied: null };
-  }
-
   let supabase;
   try {
     supabase = createServerSupabaseClient();
@@ -32,6 +32,10 @@ export async function requireActiveSubscription(): Promise<{
       user: null,
       denied: NextResponse.json({ error: 'Sign in required' }, { status: 401 }),
     };
+  }
+
+  if (!isBillingEnabled()) {
+    return { user, denied: null };
   }
 
   const billing = await fetchBillingForUser(supabase, user.id);

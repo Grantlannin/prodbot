@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DEMO_CHECKOUT_SESSION_ID } from '@/lib/billing/demo';
+import { clientIpFromRequest, rateLimitAllow } from '@/lib/security/rate-limit';
 import { getAppOrigin, isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
 import { getStripeClient } from '@/lib/stripe/client';
 import { resolveMonthlyPriceId } from '@/lib/stripe/resolve-price';
@@ -8,15 +9,19 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 const SUCCESS_URL = (origin: string) =>
-  `${origin}/login?mode=signup&next=/app&session_id={CHECKOUT_SESSION_ID}`;
+  `${origin}/api/stripe/claim-receipt?session_id={CHECKOUT_SESSION_ID}`;
 
-export async function POST() {
+export async function POST(request: Request) {
   const origin = getAppOrigin();
+  const ip = clientIpFromRequest(request);
+  if (!rateLimitAllow(`stripe-checkout:${ip}`, 15, 60_000)) {
+    return NextResponse.json({ error: 'Too many checkout attempts. Try again shortly.' }, { status: 429 });
+  }
 
   // Fake purchase path for ripping through purchase → OTO → onboard.
   if (isBillingDemoFlow()) {
     return NextResponse.json({
-      url: `${origin}/subscribe/success?session_id=${DEMO_CHECKOUT_SESSION_ID}`,
+      url: `${origin}/api/stripe/claim-receipt?session_id=${DEMO_CHECKOUT_SESSION_ID}`,
       demo: true,
     });
   }

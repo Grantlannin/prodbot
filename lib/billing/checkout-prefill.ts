@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { hasValidCheckoutClaim } from '@/lib/billing/checkout-claim';
 import { checkoutSessionEmail } from '@/lib/billing/checkout-email';
 import {
   CHECKOUT_SESSION_COOKIE,
@@ -9,7 +10,7 @@ import { isBillingEnabled } from '@/lib/stripe/config';
 
 /**
  * Server-only: resolve checkout email for signup prefill.
- * Uses Stripe secret — never expose via a public API.
+ * Requires Stripe-return claim cookie so a leaked session_id alone cannot disclose email.
  */
 export async function getCheckoutEmailForPrefill(
   sessionIdFromUrl?: string | null
@@ -21,6 +22,7 @@ export async function getCheckoutEmailForPrefill(
     sessionId = cookies().get(CHECKOUT_SESSION_COOKIE)?.value?.trim() || '';
   }
   if (!isCheckoutSessionId(sessionId)) return null;
+  if (!hasValidCheckoutClaim(sessionId)) return null;
 
   try {
     const session = await getStripeClient().checkout.sessions.retrieve(sessionId);

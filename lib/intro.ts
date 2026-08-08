@@ -57,9 +57,15 @@ export function getLoomEmbedUrl(url: string | undefined): string | null {
   return getVideoEmbedUrl(url);
 }
 
+/** Public Chrome Web Store listing (not a secret). */
+export const CHROME_EXTENSION_STORE_URL =
+  'https://chromewebstore.google.com/detail/daywinner-bot/bienlgaeaililclkgonfgcfdijollihi';
+
 export function getChromeExtensionStoreUrl(): string | null {
-  const url = process.env.NEXT_PUBLIC_CHROME_EXTENSION_STORE_URL?.trim();
-  return url || null;
+  const fromEnv = process.env.NEXT_PUBLIC_CHROME_EXTENSION_STORE_URL?.trim();
+  // Sensitive Vercel envs are unavailable at build time — never treat empty as unset override.
+  if (fromEnv) return fromEnv;
+  return CHROME_EXTENSION_STORE_URL;
 }
 
 export function isChromeBrowserClient(): boolean {

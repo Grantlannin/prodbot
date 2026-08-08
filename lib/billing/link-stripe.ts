@@ -3,6 +3,7 @@ import {
   customerHasCoursePurchase,
   grantCourseAccess,
 } from '@/lib/billing/course';
+import { canClaimCheckoutSession } from '@/lib/billing/checkout-claim';
 import { checkoutSessionEmail } from '@/lib/billing/checkout-email';
 import { isCheckoutSessionId } from '@/lib/billing/checkout-receipt';
 import { upsertBillingForUser } from '@/lib/billing/profile';
@@ -206,6 +207,9 @@ export async function linkStripeCustomerToUser(
 /**
  * Prefer session claim (pay-first receipt + email match), then email match
  * only for confirmed accounts (password / magic-link owners).
+ *
+ * Session claim requires Stripe-return claim cookie or a confirmed email —
+ * a leaked session_id alone is not enough.
  */
 export async function reconcileBillingForUser(
   userId: string,
@@ -213,7 +217,12 @@ export async function reconcileBillingForUser(
   sessionId?: string | null,
   opts?: { emailConfirmed?: boolean }
 ): Promise<LinkResult> {
-  if (isCheckoutSessionId(sessionId)) {
+  const emailConfirmed = Boolean(opts?.emailConfirmed);
+
+  if (
+    isCheckoutSessionId(sessionId) &&
+    canClaimCheckoutSession(sessionId, emailConfirmed)
+  ) {
     const bySession = await linkCheckoutSessionToUser(userId, sessionId, email);
     if (bySession.linked || bySession.reason === 'already_claimed' || bySession.reason === 'email_mismatch') {
       return bySession;
@@ -221,7 +230,7 @@ export async function reconcileBillingForUser(
   }
 
   // Unverified signups must not attach someone else's Stripe customer by email alone.
-  if (opts?.emailConfirmed === false) {
+  if (!emailConfirmed) {
     return { linked: false, reason: 'not_found' };
   }
 
