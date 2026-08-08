@@ -1,7 +1,16 @@
 import { Suspense } from 'react';
+import { getCheckoutEmailForPrefill } from '@/lib/billing/checkout-prefill';
 import LoginForm from './LoginForm';
 
-export default function LoginPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: { session_id?: string };
+}) {
+  const prefillEmail = await getCheckoutEmailForPrefill(searchParams?.session_id);
+
   return (
     <Suspense
       fallback={
@@ -20,7 +29,7 @@ export default function LoginPage() {
         </div>
       }
     >
-      <LoginForm />
+      <LoginForm prefillEmail={prefillEmail} />
     </Suspense>
   );
 }

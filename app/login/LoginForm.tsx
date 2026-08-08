@@ -19,10 +19,10 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 
 type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset';
 
-export default function LoginForm() {
+export default function LoginForm({ prefillEmail = null }: { prefillEmail?: string | null }) {
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState('');
-  const [emailHint, setEmailHint] = useState<string | null>(null);
+  const [email, setEmail] = useState(prefillEmail?.trim().toLowerCase() || '');
+  const [emailLocked, setEmailLocked] = useState(Boolean(prefillEmail?.trim()));
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [mode, setMode] = useState<AuthMode>('signin');
@@ -57,22 +57,11 @@ export default function LoginForm() {
   }, [searchParams, fromCheckout]);
 
   useEffect(() => {
-    if (!fromCheckout) return;
-    let cancelled = false;
-    void fetch(`/api/stripe/checkout-email?session_id=${encodeURIComponent(checkoutSessionId)}`)
-      .then(async res => {
-        const data = (await res.json()) as { emailMasked?: string; error?: string };
-        if (!res.ok || !data.emailMasked) return;
-        if (cancelled) return;
-        setEmailHint(data.emailMasked);
-      })
-      .catch(() => {
-        /* user types email */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [fromCheckout, checkoutSessionId]);
+    const next = prefillEmail?.trim().toLowerCase() || '';
+    if (!next) return;
+    setEmail(next);
+    setEmailLocked(true);
+  }, [prefillEmail]);
 
   useEffect(() => {
     if (searchParams.get('reset') !== '1') return;
@@ -402,10 +391,8 @@ export default function LoginForm() {
               <label style={styles.label} htmlFor="email">
                 Email
               </label>
-              {emailHint ? (
-                <p style={styles.emailHint}>
-                  Use the same email as checkout ({emailHint}).
-                </p>
+              {emailLocked ? (
+                <p style={styles.emailHint}>Locked to the email from your checkout.</p>
               ) : null}
               <input
                 id="email"
@@ -413,9 +400,15 @@ export default function LoginForm() {
                 required
                 autoComplete="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={e => {
+                  if (!emailLocked) setEmail(e.target.value);
+                }}
+                readOnly={emailLocked}
                 placeholder="you@example.com"
-                style={styles.input}
+                style={{
+                  ...styles.input,
+                  ...(emailLocked ? styles.inputLocked : null),
+                }}
               />
               <label style={styles.label} htmlFor="password">
                 Password
@@ -544,6 +537,10 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     color: '#64748b',
     lineHeight: 1.4,
+  },
+  inputLocked: {
+    background: '#f8fafc',
+    color: '#334155',
   },
   primaryBtn: {
     marginTop: 4,
