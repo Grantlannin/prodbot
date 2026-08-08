@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PRODUCTION_SITE_ORIGIN, SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/site';
+import {
+  PRODUCTION_SITE_HOST,
+  PRODUCTION_SITE_ORIGIN,
+  SUPPORT_EMAIL,
+  SUPPORT_MAILTO,
+} from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Daywinner bot — Privacy Policy',
