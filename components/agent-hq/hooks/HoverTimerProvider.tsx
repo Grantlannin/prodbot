@@ -123,6 +123,14 @@ export function HoverTimerProvider({
             onAddInfraction={onAddInfraction}
             onTogglePause={handleTogglePause}
             onEndSession={handleEndSession}
+            onAdjustCountdown={tracker.adjustCountdownByMs}
+            canAdjustCountdown={
+              tracker.status === 'working' &&
+              (tracker.phase === 'pomodoro_working' ||
+                (tracker.currentSession?.type === 'open' &&
+                  tracker.currentSession.countdownTargetMs != null))
+            }
+            canRemoveBonus={(tracker.currentSession?.countdownBonusMs ?? 0) > 0}
             pipWindow={pipWindow}
             timerPaused={tracker.timerPaused}
           />,

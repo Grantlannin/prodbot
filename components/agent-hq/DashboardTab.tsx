@@ -62,6 +62,7 @@ export default function DashboardTab({
     pausedWorkElapsed,
     currentSession,
     currentBreak,
+    adjustCountdownByMs,
   } = useWorkTrackerContext();
   const { items: doneTodayItems, addItem: addDoneToday } = useDoneToday();
   const todayStats = getTodayStats();
@@ -87,6 +88,12 @@ export default function DashboardTab({
   const hasActiveSession = status === 'working' || status === 'on_break';
   const canPauseTimer = hasActiveSession && !timerPaused;
   const canResumeTimer = hasActiveSession && timerPaused;
+  const canAdjustCountdown =
+    status === 'working' &&
+    (phase === 'pomodoro_working' ||
+      (currentSession?.type === 'open' && currentSession.countdownTargetMs != null));
+  const canRemoveBonus = canAdjustCountdown && (currentSession?.countdownBonusMs ?? 0) > 0;
+  const ADJUST_MS = 5 * 60 * 1000;
 
   const handleStartTimer = () => {
     setStartWorkPreset(null);
@@ -218,6 +225,29 @@ export default function DashboardTab({
                       </button>
                     ) : null}
                   </div>
+                  {canAdjustCountdown ? (
+                    <div style={styles.timerAdjustRow}>
+                      <button
+                        type="button"
+                        onClick={() => adjustCountdownByMs(ADJUST_MS)}
+                        style={styles.timerAdjustAdd}
+                        title="Add 5 minutes"
+                      >
+                        + 5min
+                      </button>
+                      {canRemoveBonus ? (
+                        <button
+                          type="button"
+                          onClick={() => adjustCountdownByMs(-ADJUST_MS)}
+                          style={styles.timerAdjustMinus}
+                          title="Remove 5 minutes of added time"
+                          aria-label="Remove 5 minutes of added time"
+                        >
+                          −
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <button type="button" onClick={handleEndWorkSession} style={styles.timerEndBtn}>
                     End session
                   </button>
@@ -546,6 +576,44 @@ const styles: Record<string, CSSProperties> = {
     color: '#64748b',
     cursor: 'pointer',
     textAlign: 'center',
+  },
+  timerAdjustRow: {
+    display: 'flex',
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+    gap: 5,
+    width: '100%',
+  },
+  timerAdjustAdd: {
+    width: '50%',
+    flexShrink: 0,
+    boxSizing: 'border-box',
+    border: 'none',
+    borderRadius: 9,
+    padding: '8px 10px',
+    fontSize: 12,
+    fontWeight: 700,
+    fontFamily: font,
+    letterSpacing: '-0.01em',
+    background: '#0f172a',
+    color: '#ffffff',
+    cursor: 'pointer',
+    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.14)',
+  },
+  timerAdjustMinus: {
+    flexShrink: 0,
+    border: 'none',
+    borderRadius: 9,
+    width: 40,
+    padding: '8px 0',
+    fontSize: 18,
+    fontWeight: 700,
+    fontFamily: font,
+    lineHeight: 1,
+    background: '#e2e8f0',
+    color: '#0f172a',
+    cursor: 'pointer',
+    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
   },
   timeBanner: {
     background: '#fff',

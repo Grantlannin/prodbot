@@ -44,6 +44,10 @@ export function useWorkTracker() {
   const tickRef = useRef<NodeJS.Timeout | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
+  const openCountdownLeftRef = useRef(openCountdownLeft);
+  openCountdownLeftRef.current = openCountdownLeft;
+  const pomodoroLeftRef = useRef(pomodoroLeft);
+  pomodoroLeftRef.current = pomodoroLeft;
 
   useEffect(() => {
     setState(prev => {
@@ -156,6 +160,7 @@ export function useWorkTracker() {
         pomodoroBreakMinutes: data.pomodoroBreakMinutes,
         countdownTargetMs,
         countdownStartTime: countdownTargetMs ? now : null,
+        countdownBonusMs: 0,
         lockMode: data.lockMode,
       };
 
@@ -735,6 +740,74 @@ export function useWorkTracker() {
     [setState]
   );
 
+  /** Add/subtract time on the active countdown. − only removes bonus time from +5min. */
+  const adjustCountdownByMs = useCallback(
+    (deltaMs: number) => {
+      const delta = Math.round(deltaMs);
+      if (!delta) return;
+      const now = Date.now();
+      const s = stateRef.current;
+      if (s.status !== 'working' || !s.currentSession) return;
+
+      if (s.phase === 'pomodoro_working' && s.currentSession.pomodoroMinutes) {
+        const bonus = Math.max(0, s.currentSession.countdownBonusMs ?? 0);
+        const appliedDelta = delta < 0 ? -Math.min(-delta, bonus) : delta;
+        if (!appliedDelta) return;
+        const target = pomodoroTargetMs(s.currentSession);
+        const remaining = s.timerPaused
+          ? Math.max(0, pomodoroLeftRef.current ?? 0)
+          : Math.max(0, target - (now - s.currentSession.startTime));
+        const next = Math.max(0, remaining + appliedDelta);
+        setState(prev => {
+          if (!prev.currentSession) return prev;
+          const session = { ...prev.currentSession };
+          const nextBonus = Math.max(0, (session.countdownBonusMs ?? 0) + appliedDelta);
+          session.countdownBonusMs = nextBonus;
+          if (next > pomodoroTargetMs(session)) {
+            session.pomodoroMinutes = Math.max(1, Math.ceil(next / 60000));
+          }
+          const newTarget = pomodoroTargetMs(session);
+          session.startTime = now - (newTarget - next);
+          return { ...prev, currentSession: session };
+        });
+        setPomodoroLeft(next);
+        return;
+      }
+
+      if (
+        s.currentSession.type === 'open' &&
+        s.currentSession.countdownTargetMs != null &&
+        s.currentSession.countdownStartTime != null
+      ) {
+        const bonus = Math.max(0, s.currentSession.countdownBonusMs ?? 0);
+        const appliedDelta = delta < 0 ? -Math.min(-delta, bonus) : delta;
+        if (!appliedDelta) return;
+        const remaining = s.timerPaused
+          ? Math.max(0, openCountdownLeftRef.current ?? 0)
+          : Math.max(
+              0,
+              s.currentSession.countdownTargetMs - (now - s.currentSession.countdownStartTime)
+            );
+        const next = Math.max(0, remaining + appliedDelta);
+        setState(prev => {
+          if (!prev.currentSession) return prev;
+          const nextBonus = Math.max(0, (prev.currentSession.countdownBonusMs ?? 0) + appliedDelta);
+          return {
+            ...prev,
+            currentSession: {
+              ...prev.currentSession,
+              countdownTargetMs: next,
+              countdownStartTime: now,
+              countdownBonusMs: nextBonus,
+            },
+          };
+        });
+        setOpenCountdownLeft(next);
+      }
+    },
+    [setState]
+  );
+
   const updateCurrentSession = useCallback(
     (patch: Partial<WorkSession>) => {
       setState(prev => {
@@ -887,6 +960,7 @@ export function useWorkTracker() {
     setCountdownTimer,
     setSessionLockMode,
     extendActiveCountdown,
+    adjustCountdownByMs,
     updateCurrentSession,
     setPendingData,
     setPhase,

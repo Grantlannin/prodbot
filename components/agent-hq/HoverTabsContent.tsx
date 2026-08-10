@@ -21,6 +21,9 @@ interface HoverTabsContentProps {
   onAddInfraction?: (categoryKey: string, label: string) => void;
   onTogglePause?: () => void;
   onEndSession?: () => void;
+  onAdjustCountdown?: (deltaMs: number) => void;
+  canAdjustCountdown?: boolean;
+  canRemoveBonus?: boolean;
   pipWindow: Window;
   timerPaused?: boolean;
 }
@@ -30,6 +33,9 @@ export default function HoverTabsContent({
   onAddInfraction,
   onTogglePause,
   onEndSession,
+  onAdjustCountdown,
+  canAdjustCountdown = false,
+  canRemoveBonus = false,
   pipWindow,
   timerPaused = false,
 }: HoverTabsContentProps) {
@@ -151,6 +157,47 @@ export default function HoverTabsContent({
                 Resume
               </span>
             </button>
+            {canAdjustCountdown ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onAdjustCountdown?.(5 * 60 * 1000)}
+                  title="Add 5 minutes"
+                  aria-label="Add 5 minutes"
+                  style={{
+                    ...sleekActionBtn(false, true),
+                    height: 22,
+                    padding: '0 7px',
+                    fontSize: 8,
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                >
+                  + 5min
+                </button>
+                {canRemoveBonus ? (
+                  <button
+                    type="button"
+                    onClick={() => onAdjustCountdown?.(-5 * 60 * 1000)}
+                    title="Remove 5 minutes of added time"
+                    aria-label="Remove 5 minutes of added time"
+                    style={{
+                      ...sleekActionBtn(false, true),
+                      height: 22,
+                      minWidth: 22,
+                      padding: '0 6px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      lineHeight: 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    −
+                  </button>
+                ) : null}
+              </>
+            ) : null}
           </div>
           <button
             type="button"

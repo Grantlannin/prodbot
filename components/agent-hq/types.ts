@@ -23,6 +23,8 @@ export interface WorkSession {
   /** Optional focus countdown (display); work time still tracks elapsed */
   countdownTargetMs?: number | null;
   countdownStartTime?: number | null;
+  /** Extra ms added via +5min; − can only remove this, not core session time */
+  countdownBonusMs?: number;
   /** Soft = 2 min cooldown to end early; hard = hold + type to end early */
   lockMode?: FocusLockMode;
 }
