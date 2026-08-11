@@ -10,11 +10,18 @@ export function toGoogleCalendarDate(d: Date): string {
   );
 }
 
+/** Local date only in Google Calendar URL format (YYYYMMDD) for all-day events. */
+export function toGoogleCalendarDateOnly(d: Date): string {
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+}
+
 export function buildGoogleCalendarUrl(opts: {
   title: string;
   details?: string;
   start: Date;
   durationMinutes?: number;
+  /** All-day event (date-only; ignores durationMinutes). */
+  allDay?: boolean;
   /** Google signed-in account slot in the browser (0 = first account). */
   accountIndex?: number;
   /** Max encoded details length — long URLs fail to open compose reliably. */
@@ -22,22 +29,32 @@ export function buildGoogleCalendarUrl(opts: {
   /** Use render?action=TEMPLATE (needed for recur= on recurring events). */
   templateAction?: boolean;
 }): string {
-  const duration = opts.durationMinutes ?? 30;
-  const end = new Date(opts.start.getTime() + duration * 60_000);
   const maxDetails = opts.maxDetailsLength ?? 600;
   const details = opts.details?.trim();
   const trimmedDetails =
     details && details.length > maxDetails ? `${details.slice(0, maxDetails - 1)}…` : details;
   const accountIndex = Math.max(0, Math.min(4, opts.accountIndex ?? 0));
 
+  let dates: string;
+  if (opts.allDay) {
+    const day = new Date(opts.start.getFullYear(), opts.start.getMonth(), opts.start.getDate());
+    const next = new Date(day);
+    next.setDate(next.getDate() + 1);
+    dates = `${toGoogleCalendarDateOnly(day)}/${toGoogleCalendarDateOnly(next)}`;
+  } else {
+    const duration = opts.durationMinutes ?? 30;
+    const end = new Date(opts.start.getTime() + duration * 60_000);
+    dates = `${toGoogleCalendarDate(opts.start)}/${toGoogleCalendarDate(end)}`;
+  }
+
   const params = new URLSearchParams({
     text: opts.title,
-    dates: `${toGoogleCalendarDate(opts.start)}/${toGoogleCalendarDate(end)}`,
+    dates,
   });
 
   if (trimmedDetails) params.set('details', trimmedDetails);
 
-  if (typeof window !== 'undefined') {
+  if (!opts.allDay && typeof window !== 'undefined') {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (tz) params.set('ctz', tz);
   }
@@ -97,16 +114,30 @@ export function buildOutlookCalendarEventUrl(opts: {
   details?: string;
   start: Date;
   durationMinutes?: number;
+  allDay?: boolean;
 }): string {
-  const duration = opts.durationMinutes ?? 30;
-  const end = new Date(opts.start.getTime() + duration * 60_000);
+  const day = new Date(opts.start.getFullYear(), opts.start.getMonth(), opts.start.getDate());
+  let startdt: string;
+  let enddt: string;
+  if (opts.allDay) {
+    const next = new Date(day);
+    next.setDate(next.getDate() + 1);
+    startdt = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+    enddt = `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`;
+  } else {
+    const duration = opts.durationMinutes ?? 30;
+    const end = new Date(opts.start.getTime() + duration * 60_000);
+    startdt = toOutlookLocalDatetime(opts.start);
+    enddt = toOutlookLocalDatetime(end);
+  }
   const params = new URLSearchParams({
     path: '/calendar/action/compose',
     rru: 'addevent',
     subject: opts.title,
-    startdt: toOutlookLocalDatetime(opts.start),
-    enddt: toOutlookLocalDatetime(end),
+    startdt,
+    enddt,
   });
+  if (opts.allDay) params.set('allday', 'true');
   if (opts.details?.trim()) params.set('body', opts.details.trim());
   return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
 }
@@ -116,13 +147,29 @@ export function buildSingleEventIcs(opts: {
   details?: string;
   start: Date;
   durationMinutes?: number;
+  allDay?: boolean;
   uid?: string;
 }): string {
-  const duration = opts.durationMinutes ?? 30;
-  const end = new Date(opts.start.getTime() + duration * 60_000);
   const uid = opts.uid ?? `produc-open-loop-${Date.now()}@produc`;
   const description = (opts.details ?? '').replace(/\n/g, '\\n').replace(/,/g, '\\,');
   const summary = opts.title.replace(/,/g, '\\,');
+
+  let dtStart: string;
+  let dtEnd: string;
+  if (opts.allDay) {
+    const day = new Date(opts.start.getFullYear(), opts.start.getMonth(), opts.start.getDate());
+    const next = new Date(day);
+    next.setDate(next.getDate() + 1);
+    const ymd = (d: Date) =>
+      `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+    dtStart = `DTSTART;VALUE=DATE:${ymd(day)}`;
+    dtEnd = `DTEND;VALUE=DATE:${ymd(next)}`;
+  } else {
+    const duration = opts.durationMinutes ?? 30;
+    const end = new Date(opts.start.getTime() + duration * 60_000);
+    dtStart = `DTSTART:${toIcsLocalDatetime(opts.start)}`;
+    dtEnd = `DTEND:${toIcsLocalDatetime(end)}`;
+  }
 
   return [
     'BEGIN:VCALENDAR',
@@ -132,8 +179,8 @@ export function buildSingleEventIcs(opts: {
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
     `UID:${uid}`,
-    `DTSTART:${toIcsLocalDatetime(opts.start)}`,
-    `DTEND:${toIcsLocalDatetime(end)}`,
+    dtStart,
+    dtEnd,
     `SUMMARY:${summary}`,
     description ? `DESCRIPTION:${description}` : '',
     'END:VEVENT',

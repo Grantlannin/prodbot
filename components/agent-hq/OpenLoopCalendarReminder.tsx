@@ -19,17 +19,16 @@ const START_TIME_OPTIONS: number[] = (() => {
   return out;
 })();
 
-function defaultStartMinutes(): number {
-  const now = new Date();
-  const minutesNow = now.getHours() * 60 + now.getMinutes();
-  const snapped = Math.round(minutesNow / 60) * 60;
-  return Math.max(4 * 60, Math.min(22 * 60, snapped));
-}
-
 function startDateFromMinutes(startMinutes: number): Date {
   const d = new Date();
   d.setSeconds(0, 0);
   d.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
+  return d;
+}
+
+function todayDateOnly(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
   return d;
 }
 
@@ -54,9 +53,13 @@ function calendarDetails(note: CaptureNote): string {
 }
 
 export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }) {
-  const [startMinutes, setStartMinutes] = useState(defaultStartMinutes);
+  const [startMinutes, setStartMinutes] = useState<number | null>(null);
 
-  const start = useMemo(() => startDateFromMinutes(startMinutes), [startMinutes]);
+  const allDay = startMinutes == null;
+  const start = useMemo(
+    () => (startMinutes == null ? todayDateOnly() : startDateFromMinutes(startMinutes)),
+    [startMinutes]
+  );
 
   const eventOpts = useMemo(
     () => ({
@@ -64,8 +67,9 @@ export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }
       details: calendarDetails(note),
       start,
       durationMinutes: 30,
+      allDay,
     }),
-    [note, start]
+    [note, start, allDay]
   );
 
   const openGoogle = () => {
@@ -87,11 +91,15 @@ export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }
       <div style={styles.timeRow}>
         <span style={styles.label}>set a time (optional)</span>
         <select
-          value={startMinutes}
-          onChange={e => setStartMinutes(Number(e.target.value))}
+          value={startMinutes == null ? '' : String(startMinutes)}
+          onChange={e => {
+            const raw = e.target.value;
+            setStartMinutes(raw === '' ? null : Number(raw));
+          }}
           style={styles.select}
           aria-label="set a time (optional)"
         >
+          <option value="">no time</option>
           {START_TIME_OPTIONS.map(mins => (
             <option key={mins} value={mins}>
               {formatMinutesLabel(mins)}
