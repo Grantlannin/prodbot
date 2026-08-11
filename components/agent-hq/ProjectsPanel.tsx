@@ -11,7 +11,11 @@ import { sessionLabel } from './quickstartTask';
 import StartWorkModal from './StartWorkModal';
 import { useUserProfile } from './hooks/UserProfileProvider';
 import { triggerCelebration } from './celebrationEffects';
-import { FOCUS_PROJECT_KEY } from './stuckHelp/projectMutations';
+import {
+  FOCUS_PROJECT_KEY,
+  moveTaskToProject,
+  requestFocusProject,
+} from './stuckHelp/projectMutations';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const LEGACY_THINGS_KEY = 'agentHQ_things';
@@ -102,6 +106,38 @@ function reorderList<T>(list: T[], fromIndex: number, toIndex: number): T[] {
 const PART_DRAG_TYPE = 'application/x-daywinner-part-index';
 const SUBTASK_DRAG_TYPE = 'application/x-daywinner-subtask';
 const PROJECT_DRAG_TYPE = 'application/x-daywinner-project-index';
+
+function isPartDrag(types: DOMStringList | readonly string[]): boolean {
+  return Array.from(types as ArrayLike<string>).includes(PART_DRAG_TYPE);
+}
+
+type PartDragPayload = {
+  projectId: string;
+  taskId: string;
+  fromIndex: number;
+};
+
+function parsePartDragPayload(raw: string): PartDragPayload | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<PartDragPayload>;
+    if (
+      typeof parsed.projectId === 'string' &&
+      typeof parsed.taskId === 'string' &&
+      typeof parsed.fromIndex === 'number' &&
+      Number.isFinite(parsed.fromIndex)
+    ) {
+      return {
+        projectId: parsed.projectId,
+        taskId: parsed.taskId,
+        fromIndex: parsed.fromIndex,
+      };
+    }
+  } catch {
+    /* legacy index-only payloads ignored for cross-project moves */
+  }
+  return null;
+}
 
 function shouldBlockRowDrag(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -201,6 +237,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   );
   const [projectDropIndex, setProjectDropIndex] = useState<number | null>(null);
   const [draggingProjectIndex, setDraggingProjectIndex] = useState<number | null>(null);
+  const [partDropProjectId, setPartDropProjectId] = useState<string | null>(null);
   const { celebration, getCelebrationMessage } = useUserProfile();
   const nameRef = useRef<HTMLInputElement>(null);
   const taskInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
@@ -759,6 +796,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const clearPartDrag = useCallback(() => {
     setDraggingPartIndex(null);
     setPartDropIndex(null);
+    setPartDropProjectId(null);
   }, []);
 
   const clearSubDrag = useCallback(() => {
@@ -769,6 +807,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const clearProjectDrag = useCallback(() => {
     setDraggingProjectIndex(null);
     setProjectDropIndex(null);
+    setPartDropProjectId(null);
   }, []);
 
   const addSubTaskLink = useCallback(
@@ -966,8 +1005,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                     ...(projectDropIndex === projectIndex && draggingProjectIndex !== projectIndex
                       ? styles.sidebarItemDropTarget
                       : {}),
+                    ...(partDropProjectId === project.id ? styles.sidebarItemDropTarget : {}),
                   }}
-                  title={`${displayName(project)} — drag to reorder`}
+                  title={`${displayName(project)} — drag to reorder; drop a part here to move it`}
                   onDragStart={e => {
                     e.dataTransfer.setData(PROJECT_DRAG_TYPE, String(projectIndex));
                     e.dataTransfer.effectAllowed = 'move';
@@ -975,6 +1015,14 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                   }}
                   onDragEnd={clearProjectDrag}
                   onDragOver={e => {
+                    if (isPartDrag(e.dataTransfer.types) || draggingPartIndex !== null) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (project.id !== selectedId) {
+                        setPartDropProjectId(project.id);
+                      }
+                      return;
+                    }
                     if (draggingProjectIndex === null) return;
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
@@ -983,9 +1031,21 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                   onDragLeave={e => {
                     if (e.currentTarget.contains(e.relatedTarget as Node)) return;
                     setProjectDropIndex(prev => (prev === projectIndex ? null : prev));
+                    setPartDropProjectId(prev => (prev === project.id ? null : prev));
                   }}
                   onDrop={e => {
                     e.preventDefault();
+                    const part = parsePartDragPayload(e.dataTransfer.getData(PART_DRAG_TYPE));
+                    if (part && part.projectId !== project.id) {
+                      setProjects(prev =>
+                        moveTaskToProject(prev, part.projectId, part.taskId, project.id)
+                      );
+                      setSelectedId(project.id);
+                      requestFocusProject(project.id);
+                      clearProjectDrag();
+                      clearPartDrag();
+                      return;
+                    }
                     const fromIndex =
                       draggingProjectIndex ??
                       Number.parseInt(e.dataTransfer.getData(PROJECT_DRAG_TYPE), 10);
@@ -993,6 +1053,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                       reorderProjects(fromIndex, projectIndex);
                     }
                     clearProjectDrag();
+                    clearPartDrag();
                   }}
                 >
                   <span style={styles.sidebarItemName}>{displayName(project)}</span>
@@ -1049,7 +1110,14 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               e.preventDefault();
                               return;
                             }
-                            e.dataTransfer.setData(PART_DRAG_TYPE, String(taskIndex));
+                            e.dataTransfer.setData(
+                              PART_DRAG_TYPE,
+                              JSON.stringify({
+                                projectId: selected.id,
+                                taskId: task.id,
+                                fromIndex: taskIndex,
+                              })
+                            );
                             e.dataTransfer.effectAllowed = 'move';
                             setDraggingPartIndex(taskIndex);
                           }}
@@ -1066,15 +1134,27 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                           }}
                           onDrop={e => {
                             e.preventDefault();
-                            const fromIndex =
-                              draggingPartIndex ??
-                              Number.parseInt(e.dataTransfer.getData(PART_DRAG_TYPE), 10);
-                            if (fromIndex !== null && !Number.isNaN(fromIndex)) {
+                            const part = parsePartDragPayload(e.dataTransfer.getData(PART_DRAG_TYPE));
+                            if (part && part.projectId !== selected.id) {
+                              setProjects(prev =>
+                                moveTaskToProject(
+                                  prev,
+                                  part.projectId,
+                                  part.taskId,
+                                  selected.id,
+                                  taskIndex
+                                )
+                              );
+                              clearPartDrag();
+                              return;
+                            }
+                            const fromIndex = part?.fromIndex ?? draggingPartIndex;
+                            if (fromIndex != null && !Number.isNaN(fromIndex)) {
                               reorderTasks(selected.id, fromIndex, taskIndex);
                             }
                             clearPartDrag();
                           }}
-                          title="Drag to reorder part"
+                          title="Drag to reorder, or onto another project in the sidebar"
                         >
                           <input
                             type="checkbox"

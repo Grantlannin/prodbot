@@ -78,3 +78,39 @@ export function mergeTaskTextOptions(projectTasks: string[], chatTasks: string[]
   }
   return merged;
 }
+
+/** Move a part (and its subtasks) from one project to another. */
+export function moveTaskToProject(
+  projects: ProjectBoard[],
+  fromProjectId: string,
+  taskId: string,
+  toProjectId: string,
+  toIndex?: number
+): ProjectBoard[] {
+  if (!fromProjectId || !toProjectId || !taskId) return projects;
+  if (fromProjectId === toProjectId) return projects;
+
+  let moved: ProjectTask | null = null;
+  const stripped = projects.map(project => {
+    if (project.id !== fromProjectId) return project;
+    const task = project.tasks.find(t => t.id === taskId);
+    if (!task) return project;
+    moved = task;
+    return {
+      ...project,
+      tasks: project.tasks.filter(t => t.id !== taskId),
+      updatedAt: Date.now(),
+    };
+  });
+  if (!moved) return projects;
+
+  return stripped.map(project => {
+    if (project.id !== toProjectId) return project;
+    const tasks = [...project.tasks];
+    const insertAt =
+      toIndex == null || toIndex < 0 || toIndex > tasks.length ? tasks.length : toIndex;
+    tasks.splice(insertAt, 0, moved as ProjectTask);
+    return { ...project, tasks, updatedAt: Date.now() };
+  });
+}
+
