@@ -11,8 +11,8 @@ import {
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import type { AppleNote, ProjectBoard } from '../types';
-import { APPLE_NOTES_KEY } from '../appleNotesUtils';
+import type { SimpleNote, ProjectBoard } from '../types';
+import { SIMPLE_NOTES_KEY } from '../simpleNotesUtils';
 import { PROJECTS_STORAGE_KEY } from '../stuckHelp/projectMutations';
 import { useAuth } from './AuthProvider';
 import { useProjects } from './ProjectsProvider';
@@ -49,7 +49,7 @@ interface CloudSyncContextValue {
 
 const CloudSyncContext = createContext<CloudSyncContextValue | null>(null);
 
-function isLocalDataEmpty(projects: ProjectBoard[], notes: AppleNote[]): boolean {
+function isLocalDataEmpty(projects: ProjectBoard[], notes: SimpleNote[]): boolean {
   return projects.length === 0 && notes.length === 0;
 }
 
@@ -57,7 +57,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { authEnabled, user } = useAuth();
   const { projects, setProjects } = useProjects();
-  const [notes, setNotes] = useLocalStorage<AppleNote[]>(APPLE_NOTES_KEY, []);
+  const [notes, setNotes] = useLocalStorage<SimpleNote[]>(SIMPLE_NOTES_KEY, []);
   const [cloudEnabledLocal, setCloudEnabledLocal] = useLocalStorage<boolean>(CLOUD_SYNC_ENABLED_KEY, false);
 
   const [cloudEnabled, setCloudEnabled] = useState(false);
@@ -336,4 +336,4 @@ export function useCloudSync(): CloudSyncContextValue {
 }
 
 /** Keys synced to cloud (documentation / tests). */
-export const CLOUD_SYNC_STORAGE_KEYS = [PROJECTS_STORAGE_KEY, APPLE_NOTES_KEY] as const;
+export const CLOUD_SYNC_STORAGE_KEYS = [PROJECTS_STORAGE_KEY, SIMPLE_NOTES_KEY] as const;

@@ -170,7 +170,7 @@ export interface Infraction {
   source: 'chat' | 'dashboard' | 'extension';
 }
 
-export interface AppleNote {
+export interface SimpleNote {
   id: string;
   content: string;
   updatedAt: number;

@@ -1,0 +1,781 @@
+diff --git a/app/globals.css b/app/globals.css
+index 1816d23..7c60734 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -16,3 +16,18 @@ body {
+   color: #737373;
+   opacity: 1;
+ }
++
++/* ProjectsPanel drag cursors — kept global to avoid <style> hydration mismatches */
++[data-drag-row] {
++  cursor: grab;
++}
++[data-drag-row] input[type='text'] {
++  cursor: grab;
++}
++[data-drag-row] input[type='text']:focus {
++  cursor: text;
++}
++[data-drag-row][data-active-drag='true'],
++[data-drag-row][data-active-drag='true'] * {
++  cursor: grabbing !important;
++}
+diff --git a/components/agent-hq/DashboardTab.tsx b/components/agent-hq/DashboardTab.tsx
+index dbe97ee..ac0de31 100644
+--- a/components/agent-hq/DashboardTab.tsx
++++ b/components/agent-hq/DashboardTab.tsx
+@@ -9,7 +9,7 @@ import type { Infraction } from './types';
+ import { infractionCategoriesInOrder, startOfLocalDayMs } from './infractions';
+ import { formatDuration } from './chatLogic';
+ import { getTimerDisplay, formatTimerDisplay } from './timerDisplay';
+-import AppleNotesPanel from './AppleNotesPanel';
++import SimpleNotesPanel from './SimpleNotesPanel';
+ import ProjectsPanel, { addProjectBtnStyle, type ProjectsPanelHandle } from './ProjectsPanel';
+ import ProjectProgressBar from './ProjectProgressBar';
+ import type { ProjectProgress } from './projectProgress';
+@@ -23,6 +23,7 @@ import EodSendModal from './EodSendModal';
+ import StartWorkModal, { type StartWorkPreset } from './StartWorkModal';
+ import HowToStartBanner from './HowToStartBanner';
+ import { sessionLabel } from './quickstartTask';
++import type { TodayTaskLine } from './todayTaskList/storage';
+ import type { NightPrepTomorrowTask } from './nightPrep/storage';
+ 
+ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+@@ -101,10 +102,23 @@ export default function DashboardTab({
+   };
+ 
+   const handleStartPlanTask = (task: NightPrepTomorrowTask) => {
+-    setStartWorkPreset({
+-      label: sessionLabel(task.projectName, task.taskText),
+-      taskRef: { projectId: task.projectId, taskId: task.taskId },
+-    });
++    const text = task.taskText.trim();
++    if (!text) return;
++    if (task.homeless || !task.projectId?.trim() || !task.taskId?.trim()) {
++      setStartWorkPreset({ label: text });
++    } else {
++      setStartWorkPreset({
++        label: sessionLabel(task.projectName, text),
++        taskRef: { projectId: task.projectId, taskId: task.taskId },
++      });
++    }
++    setStartWorkOpen(true);
++  };
++
++  const handleStartTodayLine = (line: TodayTaskLine) => {
++    const text = line.text.trim();
++    if (!text) return;
++    setStartWorkPreset({ label: text });
+     setStartWorkOpen(true);
+   };
+ 
+@@ -348,6 +362,7 @@ export default function DashboardTab({
+                 autoStartWindDown={focusNightPrep}
+                 onAutoStartHandled={onNightPrepFocused}
+                 onStartTask={handleStartPlanTask}
++                onStartTodayLine={handleStartTodayLine}
+                 sessionBusy={hasActiveSession}
+               />
+             </DashCard>
+@@ -357,10 +372,10 @@ export default function DashboardTab({
+         <div style={styles.lowerHalf}>
+           <div style={styles.lowerLeft}>
+             <DashCard
+-              title="Notes"
++              title="Simple Notes"
+               noPad
+             >
+-              <AppleNotesPanel />
++              <SimpleNotesPanel />
+             </DashCard>
+           </div>
+           <DashCard
+@@ -585,13 +600,13 @@ const styles: Record<string, CSSProperties> = {
+     width: '100%',
+   },
+   timerAdjustAdd: {
+-    width: '50%',
++    width: '42%',
+     flexShrink: 0,
+     boxSizing: 'border-box',
+     border: 'none',
+-    borderRadius: 9,
+-    padding: '8px 10px',
+-    fontSize: 12,
++    borderRadius: 8,
++    padding: '5px 8px',
++    fontSize: 11,
+     fontWeight: 700,
+     fontFamily: font,
+     letterSpacing: '-0.01em',
+@@ -603,10 +618,10 @@ const styles: Record<string, CSSProperties> = {
+   timerAdjustMinus: {
+     flexShrink: 0,
+     border: 'none',
+-    borderRadius: 9,
+-    width: 40,
+-    padding: '8px 0',
+-    fontSize: 18,
++    borderRadius: 8,
++    width: 34,
++    padding: '5px 0',
++    fontSize: 16,
+     fontWeight: 700,
+     fontFamily: font,
+     lineHeight: 1,
+diff --git a/components/agent-hq/NightPrepModal.tsx b/components/agent-hq/NightPrepModal.tsx
+index ea74555..cb863d7 100644
+--- a/components/agent-hq/NightPrepModal.tsx
++++ b/components/agent-hq/NightPrepModal.tsx
+@@ -27,10 +27,17 @@ import {
+ } from './nightPrep/utils';
+ import {
+   buildNightPrepPlan,
++  makeHomelessPlanTask,
+   NIGHT_PREP_PLAN_KEY,
+   type NightPrepTomorrowPlan,
+   type NightPrepTomorrowTask,
+ } from './nightPrep/storage';
++import {
++  emptyTodayTaskList,
++  normalizeTodayTaskList,
++  TODAY_TASK_LIST_KEY,
++  type TodayTaskListStore,
++} from './todayTaskList/storage';
+ import { saveWindDownBetterUse, saveWindDownMissedPath } from './nightPrep/windDownEodNotes';
+ import { parseFlexibleTime } from './stuckHelp/dailyStructureUtils';
+ 
+@@ -75,6 +82,8 @@ export default function NightPrepModal() {
+   const { addItem: addDoneToday } = useDoneToday();
+   const { getTodayStats } = useWorkTrackerContext();
+   const { projects, setProjects } = useProjects();
++  const [todayTaskStore] = useLocalStorage<TodayTaskListStore>(TODAY_TASK_LIST_KEY, emptyTodayTaskList());
++  const todayListLines = normalizeTodayTaskList(todayTaskStore).lines.filter(l => l.text.trim());
+   const [, setNightPrepPlan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
+ 
+   const [typing, setTyping] = useState(false);
+@@ -107,7 +116,7 @@ export default function NightPrepModal() {
+   const windDownItemsRef = useRef(windDownItems);
+   windDownItemsRef.current = windDownItems;
+ 
+-  const buildCurrentWindDownItems = () => buildWindDownItems(getTodayStats().projectStats);
++  const buildCurrentWindDownItems = () => buildWindDownItems(getTodayStats().projectStats, projects);
+ 
+   /** Lock context prompts to live timer stats only (never typed Done Today / reflections). */
+   const lockTrackedContextItems = () => {
+@@ -522,7 +531,13 @@ export default function NightPrepModal() {
+ 
+   const appendTomorrowTask = (task: NightPrepTomorrowTask) => {
+     const current = flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+-    if (current.some(t => t.projectId === task.projectId && t.taskId === task.taskId)) {
++    const already = current.some(t => {
++      if (task.homeless || t.homeless) {
++        return t.taskText.trim().toLowerCase() === task.taskText.trim().toLowerCase();
++      }
++      return t.projectId === task.projectId && t.taskId === task.taskId;
++    });
++    if (already) {
+       setNightPrepPhase('prep_task_list');
+       return;
+     }
+@@ -624,6 +639,19 @@ export default function NightPrepModal() {
+     requestAnimationFrame(() => inputRef.current?.focus());
+   };
+ 
++  const beginAddFromTodayList = () => {
++    if (typing) return;
++    setChooseProjectError(false);
++    setNightPrepPhase('prep_today_list_pick');
++  };
++
++  const selectTodayListLine = (text: string) => {
++    if (typing) return;
++    const homeless = makeHomelessPlanTask(text);
++    if (!homeless) return;
++    appendTomorrowTask(homeless);
++  };
++
+   const handleHaveIt = () => {
+     if (typing) return;
+     appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.haveIt });
+@@ -927,6 +955,9 @@ export default function NightPrepModal() {
+                 <button type="button" onClick={beginInputProject} style={styles.chip}>
+                   {WIND_DOWN_FLOW_COPY.inputProject}
+                 </button>
++                <button type="button" onClick={beginAddFromTodayList} style={styles.chip}>
++                  {WIND_DOWN_FLOW_COPY.addFromTodayList}
++                </button>
+                 {hasTomorrowTasks ? (
+                   <button type="button" onClick={finishTaskList} style={{ ...styles.chip, ...styles.chipFinish }}>
+                     {WIND_DOWN_FLOW_COPY.taskListFinished}
+@@ -935,6 +966,56 @@ export default function NightPrepModal() {
+               </div>
+             ) : null}
+ 
++            {phase === 'prep_today_list_pick' && !typing ? (
++              <div style={styles.chipWrap}>
++                <div style={styles.chipSectionLabel}>{WIND_DOWN_FLOW_COPY.chooseTodayTaskLabel}</div>
++                {(() => {
++                  const already = new Set(
++                    tomorrowTasks.map(t => t.taskText.trim().toLowerCase()).filter(Boolean)
++                  );
++                  const available = todayListLines.filter(
++                    line => !already.has(line.text.trim().toLowerCase())
++                  );
++                  if (todayListLines.length === 0) {
++                    return <div style={styles.chipSectionEmpty}>{WIND_DOWN_FLOW_COPY.todayListEmpty}</div>;
++                  }
++                  if (available.length === 0) {
++                    return (
++                      <div style={styles.chipSectionEmpty}>
++                        All of today&apos;s tasks are already on your tomorrow list.
++                      </div>
++                    );
++                  }
++                  return (
++                    <div style={styles.chipTaskGroup}>
++                      {available.map(line => (
++                        <button
++                          key={line.id}
++                          type="button"
++                          onClick={() => selectTodayListLine(line.text)}
++                          style={styles.chip}
++                        >
++                          {line.text.trim()}
++                        </button>
++                      ))}
++                    </div>
++                  );
++                })()}
++                {hasTomorrowTasks ? (
++                  <button type="button" onClick={finishTaskList} style={{ ...styles.chip, ...styles.chipFinish }}>
++                    {WIND_DOWN_FLOW_COPY.taskListFinished}
++                  </button>
++                ) : null}
++                <button
++                  type="button"
++                  onClick={() => setNightPrepPhase('prep_project_mode')}
++                  style={styles.chip}
++                >
++                  back
++                </button>
++              </div>
++            ) : null}
++
+             {phase === 'prep_project_pick' && !typing && projectOptions.length > 0 ? (
+               <div style={styles.chipWrap}>
+                 {projectOptions.map(project => (
+diff --git a/components/agent-hq/ProjectsPanel.tsx b/components/agent-hq/ProjectsPanel.tsx
+index 2202736..4e96d45 100644
+--- a/components/agent-hq/ProjectsPanel.tsx
++++ b/components/agent-hq/ProjectsPanel.tsx
+@@ -4,14 +4,25 @@ import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHand
+ import type { ProjectBoard, ProjectSubTask, ProjectTask, TaskContextLink } from './types';
+ import { useProjects } from './hooks/ProjectsProvider';
+ import TaskContextLinksBox from './TaskContextLinksBox';
+-import AppleNotesEditorModal from './AppleNotesEditorModal';
++import SimpleNotesEditorModal from './SimpleNotesEditorModal';
+ import ProjectCompletionOverlay from './ProjectCompletionOverlay';
+ import { getProjectProgress, type ProjectProgress } from './projectProgress';
+ import { sessionLabel } from './quickstartTask';
+ import StartWorkModal from './StartWorkModal';
+ import { useUserProfile } from './hooks/UserProfileProvider';
+ import { triggerCelebration } from './celebrationEffects';
+-import { FOCUS_PROJECT_KEY } from './stuckHelp/projectMutations';
++import {
++  FOCUS_PROJECT_KEY,
++  addProjectTask,
++  moveTaskToProject,
++  requestFocusProject,
++} from './stuckHelp/projectMutations';
++import {
++  TODAY_LINE_DRAG_TYPE,
++  PROJECT_TASK_DRAG_TYPE,
++  dispatchTodayLineFiled,
++  parseTodayLineDragPayload,
++} from './todayTaskList/storage';
+ 
+ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+ const LEGACY_THINGS_KEY = 'agentHQ_things';
+@@ -103,6 +114,42 @@ const PART_DRAG_TYPE = 'application/x-daywinner-part-index';
+ const SUBTASK_DRAG_TYPE = 'application/x-daywinner-subtask';
+ const PROJECT_DRAG_TYPE = 'application/x-daywinner-project-index';
+ 
++function isTodayLineDrag(types: DOMStringList | readonly string[]): boolean {
++  return Array.from(types as ArrayLike<string>).includes(TODAY_LINE_DRAG_TYPE);
++}
++
++function isPartDrag(types: DOMStringList | readonly string[]): boolean {
++  return Array.from(types as ArrayLike<string>).includes(PART_DRAG_TYPE);
++}
++
++type PartDragPayload = {
++  projectId: string;
++  taskId: string;
++  fromIndex: number;
++};
++
++function parsePartDragPayload(raw: string): PartDragPayload | null {
++  if (!raw) return null;
++  try {
++    const parsed = JSON.parse(raw) as Partial<PartDragPayload>;
++    if (
++      typeof parsed.projectId === 'string' &&
++      typeof parsed.taskId === 'string' &&
++      typeof parsed.fromIndex === 'number' &&
++      Number.isFinite(parsed.fromIndex)
++    ) {
++      return {
++        projectId: parsed.projectId,
++        taskId: parsed.taskId,
++        fromIndex: parsed.fromIndex,
++      };
++    }
++  } catch {
++    /* legacy index-only payloads ignored for cross-project moves */
++  }
++  return null;
++}
++
+ function shouldBlockRowDrag(target: EventTarget | null): boolean {
+   if (!(target instanceof HTMLElement)) return false;
+   return Boolean(target.closest('input, button, textarea, select, a, [role="button"]'));
+@@ -201,6 +248,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
+   );
+   const [projectDropIndex, setProjectDropIndex] = useState<number | null>(null);
+   const [draggingProjectIndex, setDraggingProjectIndex] = useState<number | null>(null);
++  const [todayLineDropProjectId, setTodayLineDropProjectId] = useState<string | null>(null);
+   const { celebration, getCelebrationMessage } = useUserProfile();
+   const nameRef = useRef<HTMLInputElement>(null);
+   const taskInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+@@ -769,6 +817,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
+   const clearProjectDrag = useCallback(() => {
+     setDraggingProjectIndex(null);
+     setProjectDropIndex(null);
++    setTodayLineDropProjectId(null);
+   }, []);
+ 
+   const addSubTaskLink = useCallback(
+@@ -919,21 +968,12 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
+ 
+   return (
+     <div style={styles.root}>
+-      <style>{`
+-        [data-drag-row] { cursor: grab; }
+-        [data-drag-row] input[type='text'] { cursor: grab; }
+-        [data-drag-row] input[type='text']:focus { cursor: text; }
+-        [data-drag-row][data-active-drag='true'],
+-        [data-drag-row][data-active-drag='true'] * {
+-          cursor: grabbing !important;
+-        }
+-      `}</style>
+       <ProjectCompletionOverlay
+         open={showCelebration}
+         onClose={() => setShowCelebration(false)}
+         message={getCelebrationMessage()}
+       />
+-      <AppleNotesEditorModal
++      <SimpleNotesEditorModal
+         open={notesEditor !== null}
+         title={notesEditorTitle}
+         value={notesEditorValue}
+@@ -966,8 +1006,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
+                     ...(projectDropIndex === projectIndex && draggingProjectIndex !== projectIndex
+                       ? styles.sidebarItemDropTarget
+                       : {}),
++                    ...(todayLineDropProjectId === project.id ? styles.sidebarItemDropTarget : {}),
+                   }}
+-                  title={`${displayName(project)} — drag to reorder`}
++                  title={`${displayName(project)} — drag to reorder; drop a part here to move it`}
+                   onDragStart={e => {
+                     e.dataTransfer.setData(PROJECT_DRAG_TYPE, String(projectIndex));
+                     e.dataTransfer.effectAllowed = 'move';
+@@ -975,6 +1016,20 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
+                   }}
+                   onDragEnd={clearProjectDrag}
+                   onDragOver={e => {
++                    if (isTodayLineDrag(e.dataTransfer.types)) {
++                      e.preventDefault();
++                      e.dataTransfer.dropEffect = 'move';
++                      setTodayLineDropProjectId(project.id);
++                      return;
++                    }
++                    if (isPartDrag(e.dataTransfer.types) || draggingPartIndex !== null) {
++                      e.preventDefault();
++                      e.dataTransfer.dropEffect = 'move';
++                      if (project.id !== selectedId) {
++                        setTodayLineDropProjectId(project.id);
++                      }
++                      return;
++                    }
+                     if (draggingProjectIndex === null) return;
+                     e.preventDefault();
+                     e.dataTransfer.dropEffect = 'move';
+@@ -983,16 +1038,44 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
+                   onDragLeave={e => {
+                     if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                     setProjectDropIndex(prev => (prev === projectIndex ? null : prev));
++                    setTodayLineDropProjectId(prev => (prev === project.id ? null : prev));
+                   }}
+                   onDrop={e => {
+                     e.preventDefault();
++                    const todayPayload = parseTodayLineDragPayload(
++                      e.dataTransfer.getData(TODAY_LINE_DRAG_TYPE)
++                    );
++                    if (todayPayload) {
++                      setProjects(prev => addProjectTask(prev, project.id, todayPayload.text));
++                      setSelectedId(project.id);
++                      requestFocusProject(project.id);
++                      dispatchTodayLineFiled(todayPayload.id);
++                      setTodayLineDropProjectId(null);
++                      clearProjectDrag();
++                      clearPartDrag();
++                      return;
++                    }
++                    const part = parsePartDragPayload(e.dataTransfer.getData(PART_DRAG_TYPE));
++                    if (part && part.projectId !== project.id) {
++                      setProjects(prev =>
++                        moveTaskToProject(prev, part.projectId, part.taskId, project.id)
++                      );
++                      setSelectedId(project.id);
++                      requestFocusProject(project.id);
++                      setTodayLineDropProjectId(null);
++                      clearProjectDrag();
++                      clearPartDrag();
++                      return;
++                    }
+                     const fromIndex =
+                       draggingProjectIndex ??
+                       Number.parseInt(e.dataTransfer.getData(PROJECT_DRAG_TYPE), 10);
+                     if (fromIndex !== null && !Number.isNaN(fromIndex)) {
+                       reorderProjects(fromIndex, projectIndex);
+                     }
++                    setTodayLineDropProjectId(null);
+                     clearProjectDrag();
++                    clearPartDrag();
+                   }}
+                 >
+                   <span style={styles.sidebarItemName}>{displayName(project)}</span>
+@@ -1049,8 +1132,25 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
+                               e.preventDefault();
+                               return;
+                             }
+-                            e.dataTransfer.setData(PART_DRAG_TYPE, String(taskIndex));
+-                            e.dataTransfer.effectAllowed = 'move';
++                            e.dataTransfer.setData(
++                              PART_DRAG_TYPE,
++                              JSON.stringify({
++                                projectId: selected.id,
++                                taskId: task.id,
++                                fromIndex: taskIndex,
++                              })
++                            );
++                            if (taskText) {
++                              e.dataTransfer.setData(
++                                PROJECT_TASK_DRAG_TYPE,
++                                JSON.stringify({
++                                  text: taskText,
++                                  projectId: selected.id,
++                                  taskId: task.id,
++                                })
++                              );
++                            }
++                            e.dataTransfer.effectAllowed = 'copyMove';
+                             setDraggingPartIndex(taskIndex);
+                           }}
+                           onDragEnd={clearPartDrag}
+@@ -1066,15 +1166,27 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
+                           }}
+                           onDrop={e => {
+                             e.preventDefault();
+-                            const fromIndex =
+-                              draggingPartIndex ??
+-                              Number.parseInt(e.dataTransfer.getData(PART_DRAG_TYPE), 10);
+-                            if (fromIndex !== null && !Number.isNaN(fromIndex)) {
++                            const part = parsePartDragPayload(e.dataTransfer.getData(PART_DRAG_TYPE));
++                            if (part && part.projectId !== selected.id) {
++                              setProjects(prev =>
++                                moveTaskToProject(
++                                  prev,
++                                  part.projectId,
++                                  part.taskId,
++                                  selected.id,
++                                  taskIndex
++                                )
++                              );
++                              clearPartDrag();
++                              return;
++                            }
++                            const fromIndex = part?.fromIndex ?? draggingPartIndex;
++                            if (fromIndex !== null && fromIndex !== undefined && !Number.isNaN(fromIndex)) {
+                               reorderTasks(selected.id, fromIndex, taskIndex);
+                             }
+                             clearPartDrag();
+                           }}
+-                          title="Drag to reorder part"
++                          title="Drag to reorder, or drop onto another project in the sidebar"
+                         >
+                           <input
+                             type="checkbox"
+@@ -1227,7 +1339,18 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
+                                 SUBTASK_DRAG_TYPE,
+                                 JSON.stringify({ taskId: task.id, fromIndex: subIndex })
+                               );
+-                              e.dataTransfer.effectAllowed = 'move';
++                              if (subText) {
++                                e.dataTransfer.setData(
++                                  PROJECT_TASK_DRAG_TYPE,
++                                  JSON.stringify({
++                                    text: subText,
++                                    projectId: selected.id,
++                                    taskId: task.id,
++                                    subTaskId: sub.id,
++                                  })
++                                );
++                              }
++                              e.dataTransfer.effectAllowed = 'copyMove';
+                               setDraggingSub({ taskId: task.id, subId: sub.id, fromIndex: subIndex });
+                             }}
+                             onDragEnd={clearSubDrag}
+diff --git a/components/agent-hq/nightPrep/flows.ts b/components/agent-hq/nightPrep/flows.ts
+index 256afd4..18b387f 100644
+--- a/components/agent-hq/nightPrep/flows.ts
++++ b/components/agent-hq/nightPrep/flows.ts
+@@ -68,6 +68,9 @@ export const WIND_DOWN_FLOW_COPY = {
+     `you already have this named ${name}, please choose another name`,
+   chooseProject: 'choose project',
+   inputProject: 'create project',
++  addFromTodayList: "add from today's task list",
++  chooseTodayTaskLabel: "choose from today's list",
++  todayListEmpty: "No tasks on today's list yet.",
+   addNewTask: 'add new task into this project',
+   addAnotherTask: 'add task from another project to task list',
+   taskListFinished: 'task list finished',
+@@ -100,6 +103,7 @@ export type NightPrepFlowPhase =
+   | 'prep_leverage_fork'
+   | 'prep_project_mode'
+   | 'prep_project_pick'
++  | 'prep_today_list_pick'
+   | 'prep_project_name'
+   | 'prep_task_pick'
+   | 'prep_task_name'
+diff --git a/components/agent-hq/nightPrep/storage.ts b/components/agent-hq/nightPrep/storage.ts
+index e52847e..fa6d8de 100644
+--- a/components/agent-hq/nightPrep/storage.ts
++++ b/components/agent-hq/nightPrep/storage.ts
+@@ -1,5 +1,11 @@
+ import { tomorrowDateKey } from './utils';
+ import { localDateKey, parseLocalDateKey } from '../eodReports';
++import {
++  emptyTodayTaskList,
++  makeTodayLineId,
++  normalizeTodayTaskList,
++  type TodayTaskListStore,
++} from '../todayTaskList/storage';
+ 
+ export const NIGHT_PREP_PLAN_KEY = 'agentHQ_nightPrepPlan';
+ 
+@@ -8,6 +14,8 @@ export interface NightPrepTomorrowTask {
+   projectName: string;
+   taskId: string;
+   taskText: string;
++  /** From today's freeform list — not tied to a project */
++  homeless?: boolean;
+ }
+ 
+ export interface NightPrepTomorrowPlan {
+@@ -18,6 +26,8 @@ export interface NightPrepTomorrowPlan {
+   workLocation: string;
+   tasks: NightPrepTomorrowTask[];
+   updatedAt: number;
++  /** Date key when plan tasks were copied into today's list */
++  promotedToTodayDateKey?: string;
+   /** @deprecated legacy test promotion flag */
+   testMode?: boolean;
+   /** @deprecated migrated to tasks[] */
+@@ -121,3 +131,82 @@ export function getActiveNightPrepPlan(
+ 
+   return null;
+ }
++
++export function isHomelessPlanTask(task: NightPrepTomorrowTask): boolean {
++  return Boolean(task.homeless) || !task.projectId?.trim() || !task.taskId?.trim();
++}
++
++export function makeHomelessPlanTask(text: string): NightPrepTomorrowTask | null {
++  const taskText = text.trim();
++  if (!taskText) return null;
++  const id =
++    typeof crypto !== 'undefined' && 'randomUUID' in crypto
++      ? crypto.randomUUID()
++      : Date.now().toString(36) + Math.random().toString(36).slice(2);
++  return {
++    projectId: '',
++    projectName: '',
++    taskId: `homeless-${id}`,
++    taskText,
++    homeless: true,
++  };
++}
++
++export function planIsForTomorrow(
++  plan: NightPrepTomorrowPlan | null,
++  now = Date.now()
++): boolean {
++  const normalized = normalizeNightPrepPlan(plan);
++  if (!normalized) return false;
++  return normalized.targetDateKey === tomorrowDateKey(now);
++}
++
++/**
++ * When the plan's target day is today, copy tasks into today's list once.
++ * Tomorrow column stays empty for a fresh wind-down; plan tasks remain for morning flow.
++ */
++export function promoteNightPrepPlanToToday(
++  plan: NightPrepTomorrowPlan | null,
++  todayStore: TodayTaskListStore,
++  now = Date.now()
++): { plan: NightPrepTomorrowPlan | null; today: TodayTaskListStore; didPromote: boolean } {
++  const normalized = normalizeNightPrepPlan(plan);
++  const today = normalizeTodayTaskList(todayStore, now);
++  if (!normalized?.tasks?.length) {
++    return { plan: normalized, today, didPromote: false };
++  }
++
++  const todayKey = localDateKey(now);
++  if (normalized.targetDateKey !== todayKey) {
++    return { plan: normalized, today, didPromote: false };
++  }
++  if (normalized.promotedToTodayDateKey === todayKey) {
++    return { plan: normalized, today, didPromote: false };
++  }
++
++  const existing = new Set(today.lines.map(l => l.text.trim().toLowerCase()).filter(Boolean));
++  const additions = normalized.tasks
++    .map(t => t.taskText.trim())
++    .filter(Boolean)
++    .filter(text => !existing.has(text.toLowerCase()))
++    .map(text => ({
++      id: makeTodayLineId(),
++      text,
++      createdAt: now,
++    }));
++
++  const nextToday: TodayTaskListStore = {
++    ...today,
++    dateKey: todayKey,
++    lines: [...today.lines, ...additions],
++    updatedAt: now,
++  };
++
++  const nextPlan: NightPrepTomorrowPlan = {
++    ...normalized,
++    promotedToTodayDateKey: todayKey,
++    updatedAt: now,
++  };
++
++  return { plan: nextPlan, today: nextToday, didPromote: true };
++}
+diff --git a/components/agent-hq/nightPrep/utils.ts b/components/agent-hq/nightPrep/utils.ts
+index 7a3862a..fdf5482 100644
+--- a/components/agent-hq/nightPrep/utils.ts
++++ b/components/agent-hq/nightPrep/utils.ts
+@@ -40,7 +40,7 @@ function applyNoteToTaskTargets(
+   });
+ }
+ 
+-function resolveTrackerTaskTargets(
++export function resolveTrackerTaskTargets(
+   projects: ProjectBoard[],
+   trackerLabel: string
+ ): { projectId: string; taskId: string }[] {
+@@ -102,3 +102,10 @@ export function tomorrowDateKey(now = Date.now()): string {
+   d.setDate(d.getDate() + 1);
+   return localDateKey(d.getTime());
+ }
++
++export function trackerLabelMatchesProjectTask(
++  projects: ProjectBoard[],
++  trackerLabel: string
++): boolean {
++  return resolveTrackerTaskTargets(projects, trackerLabel).length > 0;
++}
+diff --git a/components/agent-hq/nightPrep/windDownItems.ts b/components/agent-hq/nightPrep/windDownItems.ts
+index fe6c5a5..9c169b2 100644
+--- a/components/agent-hq/nightPrep/windDownItems.ts
++++ b/components/agent-hq/nightPrep/windDownItems.ts
+@@ -1,4 +1,6 @@
++import type { ProjectBoard } from '../types';
+ import { formatDuration } from '../chatLogic';
++import { trackerLabelMatchesProjectTask } from './utils';
+ 
+ export interface WindDownItem {
+   id: string;
+@@ -14,14 +16,21 @@ export interface ProjectWorkStat {
+   count: number;
+ }
+ 
+-/** Wind-down context prompts only for timer-tracked work — not typed Done Today entries. */
+-export function buildWindDownItems(projectStats: ProjectWorkStat[]): WindDownItem[] {
++/**
++ * Wind-down context prompts only for timer-tracked work that maps to a project task.
++ * Homeless today-list sessions (no project task) are skipped — user can file them manually.
++ */
++export function buildWindDownItems(
++  projectStats: ProjectWorkStat[],
++  projects: ProjectBoard[] = []
++): WindDownItem[] {
+   const items: WindDownItem[] = [];
+   const seen = new Set<string>();
+ 
+   for (const stat of projectStats) {
+     const name = stat.name.trim();
+     if (!name || stat.totalMs <= 0) continue;
++    if (!trackerLabelMatchesProjectTask(projects, name)) continue;
+     const key = name.toLowerCase();
+     if (seen.has(key)) continue;
+     seen.add(key);
+diff --git a/components/agent-hq/stuckHelp/projectMutations.ts b/components/agent-hq/stuckHelp/projectMutations.ts
+index d4e4e5c..6655ccf 100644
+--- a/components/agent-hq/stuckHelp/projectMutations.ts
++++ b/components/agent-hq/stuckHelp/projectMutations.ts
+@@ -78,3 +78,38 @@ export function mergeTaskTextOptions(projectTasks: string[], chatTasks: string[]
+   }
+   return merged;
+ }
++
++/** Move a part (and its subtasks) from one project to another. */
++export function moveTaskToProject(
++  projects: ProjectBoard[],
++  fromProjectId: string,
++  taskId: string,
++  toProjectId: string,
++  toIndex?: number
++): ProjectBoard[] {
++  if (!fromProjectId || !toProjectId || !taskId) return projects;
++  if (fromProjectId === toProjectId) return projects;
++
++  let moved: ProjectTask | null = null;
++  const stripped = projects.map(project => {
++    if (project.id !== fromProjectId) return project;
++    const task = project.tasks.find(t => t.id === taskId);
++    if (!task) return project;
++    moved = task;
++    return {
++      ...project,
++      tasks: project.tasks.filter(t => t.id !== taskId),
++      updatedAt: Date.now(),
++    };
++  });
++  if (!moved) return projects;
++
++  return stripped.map(project => {
++    if (project.id !== toProjectId) return project;
++    const tasks = [...project.tasks];
++    const insertAt =
++      toIndex == null || toIndex < 0 || toIndex > tasks.length ? tasks.length : toIndex;
++    tasks.splice(insertAt, 0, moved as ProjectTask);
++    return { ...project, tasks, updatedAt: Date.now() };
++  });
++}

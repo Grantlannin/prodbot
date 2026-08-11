@@ -8,7 +8,7 @@ import { editableHtmlToNoteText, noteTextToEditableHtml } from './noteFormatUtil
 const font =
   '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
-interface AppleNotesEditorModalProps {
+interface SimpleNotesEditorModalProps {
   open: boolean;
   title: string;
   value: string;
@@ -16,13 +16,13 @@ interface AppleNotesEditorModalProps {
   onClose: () => void;
 }
 
-export default function AppleNotesEditorModal({
+export default function SimpleNotesEditorModal({
   open,
   title,
   value,
   onChange,
   onClose,
-}: AppleNotesEditorModalProps) {
+}: SimpleNotesEditorModalProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const syncedValueRef = useRef('');
   const wasOpenRef = useRef(false);

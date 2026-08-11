@@ -1,0 +1,1537 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import type { CSSProperties, KeyboardEvent } from 'react';
+import { useNightPrep } from './hooks/NightPrepProvider';
+import { useProjects } from './hooks/ProjectsProvider';
+import { useDoneToday } from './hooks/useDoneToday';
+import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import type { ProjectBoard } from './types';
+import {
+  WIND_DOWN_FLOW_COPY,
+  UNSURE_MVP_TASK_LIMIT,
+  windDownItemLabel,
+  type NightPrepFlowPhase,
+} from './nightPrep/flows';
+import { buildWindDownItems } from './nightPrep/windDownItems';
+import {
+  addProjectTask,
+  createProjectBoard,
+  requestFocusProject,
+} from './stuckHelp/projectMutations';
+import {
+  appendWindDownContextToProjects,
+  parseTomorrowTimeLabel,
+} from './nightPrep/utils';
+import {
+  buildNightPrepPlan,
+  makeHomelessPlanTask,
+  NIGHT_PREP_PLAN_KEY,
+  type NightPrepTomorrowPlan,
+  type NightPrepTomorrowTask,
+} from './nightPrep/storage';
+import {
+  emptyTodayTaskList,
+  normalizeTodayTaskList,
+  TODAY_TASK_LIST_KEY,
+  type TodayTaskListStore,
+} from './todayTaskList/storage';
+import { saveWindDownBetterUse, saveWindDownMissedPath } from './nightPrep/windDownEodNotes';
+import { parseFlexibleTime } from './stuckHelp/dailyStructureUtils';
+
+const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+const BOT_TYPING_MS = 1300;
+
+const COMPOSE_PHASES: NightPrepFlowPhase[] = [
+  'wind_down_reflect',
+  'wind_down_missed_why',
+  'wind_down_missed_prep',
+  'wind_down_better_use',
+  'wind_down_item',
+  'prep_time',
+  'prep_location',
+  'prep_project_name',
+  'prep_unsure_mvp',
+  'prep_unsure_break_down',
+];
+
+function TypingBubble() {
+  return (
+    <div style={{ ...styles.msgRow, ...styles.msgRowBot }}>
+      <div style={{ ...styles.bubble, ...styles.botBubble, ...styles.typingBubble }}>
+        <span className="night-prep-typing-dot" style={{ animationDelay: '0ms' }} />
+        <span className="night-prep-typing-dot" style={{ animationDelay: '150ms' }} />
+        <span className="night-prep-typing-dot" style={{ animationDelay: '300ms' }} />
+      </div>
+    </div>
+  );
+}
+
+export default function NightPrepModal() {
+  const {
+    open,
+    flow,
+    closeNightPrepChat,
+    resetNightPrepChat,
+    setNightPrepPhase,
+    setNightPrepFields,
+    appendNightPrepMessages,
+  } = useNightPrep();
+  const { addItem: addDoneToday } = useDoneToday();
+  const { getTodayStats } = useWorkTrackerContext();
+  const { projects, setProjects } = useProjects();
+  const [todayTaskStore] = useLocalStorage<TodayTaskListStore>(TODAY_TASK_LIST_KEY, emptyTodayTaskList());
+  const todayListLines = normalizeTodayTaskList(todayTaskStore).lines.filter(l => l.text.trim());
+  const [, setNightPrepPlan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
+
+  const [typing, setTyping] = useState(false);
+  const [chooseProjectError, setChooseProjectError] = useState(false);
+  const [draft, setDraft] = useState('');
+  const draftRef = useRef('');
+  const threadRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const openedRef = useRef(false);
+  const fieldsRef = useRef({
+    firstWorkBlockTime: '',
+    workLocation: '',
+    projectMode: null as 'choose' | 'input' | null,
+    leveragePath: null as 'have_it' | 'need_add' | 'unsure' | null,
+    projectId: '',
+    projectName: '',
+    taskId: '',
+    taskText: '',
+    windDownIndex: 0,
+    tomorrowTasks: [] as NightPrepTomorrowTask[],
+    unsureMvpTasks: [] as string[],
+  });
+
+  const phase = flow?.phase;
+  const messages = flow?.messages ?? [];
+  const windDownItems = flow?.windDownItems ?? [];
+  const windDownIndex = flow?.windDownIndex ?? 0;
+  const currentWindDownItem = windDownItems[windDownIndex];
+  const windDownItemsRef = useRef(windDownItems);
+  windDownItemsRef.current = windDownItems;
+
+  const buildCurrentWindDownItems = () => buildWindDownItems(getTodayStats().projectStats, projects);
+
+  /** Lock context prompts to live timer stats only (never typed Done Today / reflections). */
+  const lockTrackedContextItems = () => {
+    const items = buildCurrentWindDownItems().filter(item => (item.trackerMs ?? 0) > 0);
+    fieldsRef.current.windDownIndex = 0;
+    windDownItemsRef.current = items;
+    setNightPrepFields({ windDownIndex: 0, windDownItems: items });
+    return items;
+  };
+
+  const clearTimers = () => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  };
+
+  const schedule = (fn: () => void, ms: number) => {
+    const id = setTimeout(fn, ms);
+    timersRef.current.push(id);
+  };
+
+  const syncComposeHeight = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  };
+
+  useEffect(() => () => clearTimers(), []);
+
+  useEffect(() => {
+    if (!open) {
+      clearTimers();
+      setTyping(false);
+      setDraft('');
+      draftRef.current = '';
+      setChooseProjectError(false);
+      openedRef.current = false;
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !draft) {
+      if (inputRef.current) inputRef.current.style.height = '';
+      return;
+    }
+    syncComposeHeight();
+  }, [open, draft, phase]);
+
+  useEffect(() => {
+    if (!open || !flow || openedRef.current) return;
+    openedRef.current = true;
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.reflectIntro });
+      setNightPrepPhase('wind_down_reflect');
+      setTyping(false);
+    }, BOT_TYPING_MS);
+  }, [open, flow, appendNightPrepMessages, setNightPrepPhase]);
+
+  useEffect(() => {
+    if (!open || !phase || typing) return;
+    if (phase === 'prep_task_name') {
+      inputRef.current?.focus();
+      return;
+    }
+    if (!COMPOSE_PHASES.includes(phase)) return;
+    inputRef.current?.focus();
+  }, [open, phase, messages.length, typing]);
+
+  useEffect(() => {
+    if (!open) return;
+    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, phase, open, typing, draft]);
+
+  if (!open || !flow || typeof document === 'undefined') return null;
+
+  const sendBotReply = (text: string, typingMs = BOT_TYPING_MS) => {
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text });
+      setTyping(false);
+    }, typingMs);
+  };
+
+  const beginUnsureMvp = () => {
+    fieldsRef.current.unsureMvpTasks = [];
+    setNightPrepFields({ unsureMvpTasks: [] });
+    sendBotReply(WIND_DOWN_FLOW_COPY.unsureMvp);
+    setNightPrepPhase('prep_unsure_mvp');
+  };
+
+  const placeTasksOnTomorrowList = (texts: string[]): NightPrepTomorrowTask[] => {
+    const projectId = flow.projectId || fieldsRef.current.projectId;
+    const projectName = (flow.projectName || fieldsRef.current.projectName).trim();
+    if (!projectId || texts.length === 0) return flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+
+    const created: NightPrepTomorrowTask[] = [];
+    setProjects(prev => {
+      let next = prev;
+      for (const text of texts) {
+        const trimmed = text.trim();
+        if (!trimmed) continue;
+        next = addProjectTask(next, projectId, trimmed);
+        const project = next.find(p => p.id === projectId);
+        const task = project?.tasks[project.tasks.length - 1];
+        if (task) {
+          created.push({
+            projectId,
+            projectName,
+            taskId: task.id,
+            taskText: trimmed,
+          });
+        }
+      }
+      return next;
+    });
+    requestFocusProject(projectId);
+
+    const current = flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+    const merged = [...current];
+    for (const task of created) {
+      if (!merged.some(t => t.projectId === task.projectId && t.taskId === task.taskId)) {
+        merged.push(task);
+      }
+    }
+    fieldsRef.current.tomorrowTasks = merged;
+    setNightPrepFields({ tomorrowTasks: merged });
+    return merged;
+  };
+
+  const beginNightPrep = (intro: string = WIND_DOWN_FLOW_COPY.prepIntro) => {
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text: intro });
+      schedule(() => {
+        appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.qFirstBlockTime });
+        setNightPrepPhase('prep_time');
+        setTyping(false);
+      }, BOT_TYPING_MS);
+    }, BOT_TYPING_MS);
+  };
+
+  const startContextPhase = (intro: string) => {
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text: intro });
+      schedule(() => {
+        const items = lockTrackedContextItems();
+        if (items.length === 0) {
+          appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.emptyLogged });
+          setNightPrepPhase('empty_logged_prompt');
+        } else {
+          appendNightPrepMessages({
+            role: 'bot',
+            text: WIND_DOWN_FLOW_COPY.taskPrompt(windDownItemLabel(items[0])),
+          });
+          setNightPrepPhase('wind_down_item');
+        }
+        setTyping(false);
+      }, BOT_TYPING_MS);
+    }, BOT_TYPING_MS);
+  };
+
+  const advanceWindDown = (skipContext = false) => {
+    const items = windDownItemsRef.current;
+    const nextIndex = (fieldsRef.current.windDownIndex ?? windDownIndex) + 1;
+    fieldsRef.current.windDownIndex = nextIndex;
+    setNightPrepFields({ windDownIndex: nextIndex });
+
+    if (nextIndex >= items.length) {
+      beginNightPrep();
+      return;
+    }
+
+    const nextItem = items[nextIndex];
+    if (!skipContext) {
+      sendBotReply(WIND_DOWN_FLOW_COPY.taskPrompt(windDownItemLabel(nextItem)));
+    } else {
+      setTyping(true);
+      schedule(() => {
+        appendNightPrepMessages({
+          role: 'bot',
+          text: WIND_DOWN_FLOW_COPY.taskPrompt(windDownItemLabel(nextItem)),
+        });
+        setTyping(false);
+      }, BOT_TYPING_MS);
+    }
+    setNightPrepPhase('wind_down_item');
+  };
+
+  const saveWindDownContext = (context: string) => {
+    const item = currentWindDownItem;
+    if (!item) return;
+    setProjects(prev => appendWindDownContextToProjects(prev, item, context));
+  };
+
+  const skipWindDownContext = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.noContextNext });
+    advanceWindDown(true);
+  };
+
+  const handleDidntGetDone = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.didntGetDone });
+    sendBotReply(WIND_DOWN_FLOW_COPY.missedWhy);
+    setNightPrepPhase('wind_down_missed_why');
+  };
+
+  const handleBestUseYes = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.yes });
+    startContextPhase(WIND_DOWN_FLOW_COPY.contextIntro);
+  };
+
+  const handleBestUseNo = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.no });
+    sendBotReply(WIND_DOWN_FLOW_COPY.betterUse);
+    setNightPrepPhase('wind_down_better_use');
+  };
+
+  const finishMissedPath = (why: string, prep: string) => {
+    saveWindDownMissedPath(why, prep);
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.missedClose });
+      // Keep typing true so the message input stays hidden until prep starts
+      schedule(() => {
+        beginNightPrep(WIND_DOWN_FLOW_COPY.prepIntroAfterMissed);
+      }, BOT_TYPING_MS + 400);
+    }, BOT_TYPING_MS);
+  };
+
+  const sendDraft = () => {
+    const text = draft.trim();
+    if (!text || typing || !phase) return;
+
+    if (phase === 'wind_down_reflect') {
+      appendNightPrepMessages({ role: 'user', text });
+      setNightPrepFields({ doneReflection: text });
+      addDoneToday({ text, source: 'manual' });
+      setDraft('');
+      draftRef.current = '';
+      sendBotReply(WIND_DOWN_FLOW_COPY.confirmBestUse);
+      setNightPrepPhase('wind_down_best_use_confirm');
+      return;
+    }
+
+    if (phase === 'wind_down_missed_why') {
+      appendNightPrepMessages({ role: 'user', text });
+      setNightPrepFields({ missedWhy: text });
+      setDraft('');
+      draftRef.current = '';
+      sendBotReply(WIND_DOWN_FLOW_COPY.missedPrep);
+      setNightPrepPhase('wind_down_missed_prep');
+      return;
+    }
+
+    if (phase === 'wind_down_missed_prep') {
+      const why = (flow.missedWhy || '').trim();
+      appendNightPrepMessages({ role: 'user', text });
+      setNightPrepFields({ missedPrep: text });
+      setDraft('');
+      draftRef.current = '';
+      finishMissedPath(why, text);
+      return;
+    }
+
+    if (phase === 'wind_down_better_use') {
+      appendNightPrepMessages({ role: 'user', text });
+      setNightPrepFields({ betterUseOfTime: text });
+      saveWindDownBetterUse(text);
+      setDraft('');
+      draftRef.current = '';
+      startContextPhase(WIND_DOWN_FLOW_COPY.betterUseNoted);
+      return;
+    }
+
+    if (phase === 'wind_down_item') {
+      appendNightPrepMessages({ role: 'user', text });
+      saveWindDownContext(text);
+      setDraft('');
+      draftRef.current = '';
+      advanceWindDown();
+      return;
+    }
+
+    if (phase === 'prep_time') {
+      fieldsRef.current.firstWorkBlockTime = parseTomorrowTimeLabel(text);
+      setNightPrepFields({ firstWorkBlockTime: parseTomorrowTimeLabel(text) });
+      appendNightPrepMessages({ role: 'user', text });
+      sendBotReply(WIND_DOWN_FLOW_COPY.qWorkLocation);
+      setNightPrepPhase('prep_location');
+      setDraft('');
+      draftRef.current = '';
+      return;
+    }
+
+    if (phase === 'prep_location') {
+      fieldsRef.current.workLocation = text;
+      setNightPrepFields({ workLocation: text });
+      appendNightPrepMessages({ role: 'user', text });
+      sendBotReply(WIND_DOWN_FLOW_COPY.qHighestLeverage);
+      setNightPrepPhase('prep_leverage_fork');
+      setDraft('');
+      draftRef.current = '';
+      return;
+    }
+
+    if (phase === 'prep_project_name') {
+      const trimmedName = text.trim();
+      const existing = projects.find(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase());
+      if (existing) {
+        appendNightPrepMessages({ role: 'user', text: trimmedName });
+        sendBotReply(WIND_DOWN_FLOW_COPY.projectNameTaken(existing.name.trim() || trimmedName));
+        setDraft('');
+        draftRef.current = '';
+        return;
+      }
+
+      const project = createProjectBoard(trimmedName);
+      setProjects(prev => [project, ...prev]);
+      fieldsRef.current.projectMode = 'input';
+      fieldsRef.current.projectId = project.id;
+      fieldsRef.current.projectName = project.name.trim();
+      fieldsRef.current.taskId = '';
+      fieldsRef.current.taskText = '';
+      setNightPrepFields({
+        projectMode: 'input',
+        projectId: project.id,
+        projectName: project.name.trim(),
+        taskId: '',
+        taskText: '',
+      });
+      appendNightPrepMessages({ role: 'user', text: project.name.trim() });
+      requestFocusProject(project.id);
+      const leverage = flow.leveragePath || fieldsRef.current.leveragePath;
+      if (leverage === 'unsure') {
+        beginUnsureMvp();
+        setDraft('');
+        draftRef.current = '';
+        return;
+      }
+      if (leverage === 'need_add') {
+        sendBotReply(WIND_DOWN_FLOW_COPY.projectCreatedAddTask);
+      }
+      setNightPrepPhase('prep_task_name');
+      setDraft('');
+      draftRef.current = '';
+      requestAnimationFrame(() => inputRef.current?.focus());
+      return;
+    }
+
+    if (phase === 'prep_unsure_mvp') {
+      const current = [...(flow.unsureMvpTasks ?? fieldsRef.current.unsureMvpTasks)];
+      if (current.length >= UNSURE_MVP_TASK_LIMIT) return;
+      current.push(text);
+      fieldsRef.current.unsureMvpTasks = current;
+      setNightPrepFields({ unsureMvpTasks: current });
+      appendNightPrepMessages({ role: 'user', text });
+      setDraft('');
+      draftRef.current = '';
+      if (current.length < UNSURE_MVP_TASK_LIMIT) {
+        sendBotReply(WIND_DOWN_FLOW_COPY.unsureMvpSecond);
+        return;
+      }
+      sendBotReply(WIND_DOWN_FLOW_COPY.unsurePlaceOrBreak);
+      setNightPrepPhase('prep_unsure_place_or_break');
+      return;
+    }
+
+    if (phase === 'prep_unsure_break_down') {
+      appendNightPrepMessages({ role: 'user', text });
+      placeTasksOnTomorrowList([text]);
+      setDraft('');
+      draftRef.current = '';
+      sendBotReply(WIND_DOWN_FLOW_COPY.unsureTomorrowList(text));
+      setNightPrepPhase('prep_unsure_add_more');
+      return;
+    }
+
+    if (phase === 'prep_task_name') {
+      const projectId = flow.projectId || fieldsRef.current.projectId;
+      if (!projectId) return;
+      let createdTaskId = '';
+      setProjects(prev => {
+        const next = addProjectTask(prev, projectId, text);
+        const project = next.find(p => p.id === projectId);
+        const task = project?.tasks[project.tasks.length - 1];
+        if (task) createdTaskId = task.id;
+        return next;
+      });
+      fieldsRef.current.taskId = createdTaskId;
+      fieldsRef.current.taskText = text;
+      setNightPrepFields({ taskId: createdTaskId, taskText: text });
+      requestFocusProject(projectId);
+      appendTomorrowTask({
+        projectId,
+        projectName: (flow.projectName || fieldsRef.current.projectName).trim(),
+        taskId: createdTaskId,
+        taskText: text,
+      });
+      setDraft('');
+      draftRef.current = '';
+    }
+  };
+
+  const appendTomorrowTask = (task: NightPrepTomorrowTask) => {
+    const current = flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+    const already = current.some(t => {
+      if (task.homeless || t.homeless) {
+        return t.taskText.trim().toLowerCase() === task.taskText.trim().toLowerCase();
+      }
+      return t.projectId === task.projectId && t.taskId === task.taskId;
+    });
+    if (already) {
+      setNightPrepPhase('prep_task_list');
+      return;
+    }
+
+    const next = [...current, task];
+    fieldsRef.current.tomorrowTasks = next;
+    setNightPrepFields({ tomorrowTasks: next });
+    appendNightPrepMessages({ role: 'user', text: task.taskText });
+    setNightPrepPhase('prep_task_list');
+  };
+
+  const removeTomorrowTask = (projectId: string, taskId: string) => {
+    if (typing) return;
+    const current = flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+    const next = current.filter(t => !(t.projectId === projectId && t.taskId === taskId));
+    fieldsRef.current.tomorrowTasks = next;
+    setNightPrepFields({ tomorrowTasks: next });
+  };
+
+  const finishNightPrep = (tasksOverride?: NightPrepTomorrowTask[]) => {
+    const tasks = tasksOverride ?? flow.tomorrowTasks ?? fieldsRef.current.tomorrowTasks;
+    if (!tasks.length) return;
+    const time = flow.firstWorkBlockTime || fieldsRef.current.firstWorkBlockTime;
+    const plan = buildNightPrepPlan({
+      firstWorkBlockTime: time,
+      firstWorkBlockMinutes: parseFlexibleTime(time),
+      workLocation: flow.workLocation || fieldsRef.current.workLocation,
+      tasks,
+    });
+    setNightPrepPlan(plan);
+    sendBotReply(WIND_DOWN_FLOW_COPY.teeUpPrep);
+    setNightPrepPhase('prep_tee_up');
+  };
+
+  const completeAfterTeeUp = () => {
+    if (typing) return;
+    const time = flow.firstWorkBlockTime || fieldsRef.current.firstWorkBlockTime;
+    sendBotReply(WIND_DOWN_FLOW_COPY.doneSeeTomorrow(time));
+    setNightPrepPhase('complete');
+  };
+
+  const finishTaskList = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.taskListFinished });
+    finishNightPrep();
+  };
+
+  const handleReadyForTomorrow = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.readyForTomorrow });
+    completeAfterTeeUp();
+  };
+
+  const beginAddAnotherTask = () => {
+    if (typing) return;
+    setDraft('');
+    draftRef.current = '';
+    setChooseProjectError(false);
+    fieldsRef.current.projectMode = null;
+    fieldsRef.current.projectId = '';
+    fieldsRef.current.projectName = '';
+    fieldsRef.current.taskId = '';
+    fieldsRef.current.taskText = '';
+    setNightPrepFields({
+      projectMode: null,
+      projectId: '',
+      projectName: '',
+      taskId: '',
+      taskText: '',
+    });
+    const options = projects.filter(p => p.name.trim());
+    if (options.length > 0) {
+      setNightPrepPhase('prep_project_pick');
+      return;
+    }
+    setChooseProjectError(true);
+    setNightPrepPhase('prep_project_mode');
+  };
+
+  const beginChooseProject = () => {
+    if (typing) return;
+    const options = projects.filter(p => p.name.trim());
+    if (options.length === 0) {
+      setChooseProjectError(true);
+      return;
+    }
+    setChooseProjectError(false);
+    fieldsRef.current.projectMode = 'choose';
+    setNightPrepFields({ projectMode: 'choose' });
+    setNightPrepPhase('prep_project_pick');
+  };
+
+  const beginInputProject = () => {
+    if (typing) return;
+    setChooseProjectError(false);
+    fieldsRef.current.projectMode = 'input';
+    setNightPrepFields({ projectMode: 'input' });
+    setNightPrepPhase('prep_project_name');
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const beginAddFromTodayList = () => {
+    if (typing) return;
+    setChooseProjectError(false);
+    setNightPrepPhase('prep_today_list_pick');
+  };
+
+  const selectTodayListLine = (text: string) => {
+    if (typing) return;
+    const homeless = makeHomelessPlanTask(text);
+    if (!homeless) return;
+    appendTomorrowTask(homeless);
+  };
+
+  const handleHaveIt = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.haveIt });
+    fieldsRef.current.leveragePath = 'have_it';
+    setNightPrepFields({ leveragePath: 'have_it' });
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.haveItPrompt });
+      setNightPrepPhase('prep_project_mode');
+      setTyping(false);
+    }, BOT_TYPING_MS);
+  };
+
+  const handleNeedToAddIt = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.needToAddIt });
+    fieldsRef.current.leveragePath = 'need_add';
+    fieldsRef.current.projectMode = 'input';
+    setNightPrepFields({ leveragePath: 'need_add', projectMode: 'input' });
+    setNightPrepPhase('prep_project_name');
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const handleNotSureYet = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.notSureYet });
+    fieldsRef.current.leveragePath = 'unsure';
+    fieldsRef.current.unsureMvpTasks = [];
+    setNightPrepFields({ leveragePath: 'unsure', unsureMvpTasks: [] });
+    clearTimers();
+    setTyping(true);
+    schedule(() => {
+      appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.unsureIntro });
+      schedule(() => {
+        appendNightPrepMessages({ role: 'bot', text: WIND_DOWN_FLOW_COPY.unsureQProject });
+        setNightPrepPhase('prep_project_mode');
+        setTyping(false);
+      }, BOT_TYPING_MS);
+    }, BOT_TYPING_MS);
+  };
+
+  const handlePlaceOnTaskList = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.placeOnTaskList });
+    const texts = flow.unsureMvpTasks ?? fieldsRef.current.unsureMvpTasks;
+    const merged = placeTasksOnTomorrowList(texts);
+    finishNightPrep(merged);
+  };
+
+  const handleBreakDownFarther = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.breakDownFarther });
+    sendBotReply(WIND_DOWN_FLOW_COPY.unsureBreakDown);
+    setNightPrepPhase('prep_unsure_break_down');
+  };
+
+  const handleUnsureAddMoreYes = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.unsureAddMoreYes });
+    // Leave the unsure MVP loop — add more like the normal have-it task list flow.
+    fieldsRef.current.leveragePath = 'have_it';
+    setNightPrepFields({ leveragePath: 'have_it' });
+    const projectId = flow.projectId || fieldsRef.current.projectId;
+    if (projectId) {
+      setNightPrepPhase('prep_task_list');
+      return;
+    }
+    setNightPrepPhase('prep_project_mode');
+  };
+
+  const handleUnsureAddMoreNo = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.unsureAddMoreNo });
+    finishNightPrep();
+  };
+
+  const selectProject = (project: ProjectBoard) => {
+    if (typing) return;
+    const name = project.name.trim() || 'Unnamed project';
+    fieldsRef.current.projectMode = 'choose';
+    fieldsRef.current.projectId = project.id;
+    fieldsRef.current.projectName = name;
+    setNightPrepFields({
+      projectMode: 'choose',
+      projectId: project.id,
+      projectName: name,
+      taskId: '',
+      taskText: '',
+    });
+    appendNightPrepMessages({ role: 'user', text: name });
+    requestFocusProject(project.id);
+    const leverage = flow.leveragePath || fieldsRef.current.leveragePath;
+    if (leverage === 'unsure') {
+      beginUnsureMvp();
+      return;
+    }
+    if (leverage === 'need_add') {
+      sendBotReply(WIND_DOWN_FLOW_COPY.needAddTaskPrompt);
+      setNightPrepPhase('prep_task_name');
+      requestAnimationFrame(() => inputRef.current?.focus());
+      return;
+    }
+    setNightPrepPhase('prep_task_pick');
+  };
+
+  const selectTask = (taskText: string, taskId: string) => {
+    if (typing) return;
+    const projectId = flow.projectId || fieldsRef.current.projectId;
+    const projectName = flow.projectName || fieldsRef.current.projectName;
+    fieldsRef.current.taskId = taskId;
+    fieldsRef.current.taskText = taskText;
+    setNightPrepFields({ taskId, taskText });
+    appendTomorrowTask({
+      projectId,
+      projectName,
+      taskId,
+      taskText,
+    });
+  };
+
+  const beginAddTask = () => {
+    if (typing) return;
+    setNightPrepPhase('prep_task_name');
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const handleEmptyYes = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.emptyYes });
+    beginNightPrep();
+  };
+
+  const handleEmptyNo = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.emptyNo });
+    closeNightPrepChat();
+  };
+
+  const clearChat = () => {
+    clearTimers();
+    setTyping(false);
+    setDraft('');
+    draftRef.current = '';
+    fieldsRef.current = {
+      firstWorkBlockTime: '',
+      workLocation: '',
+      projectMode: null,
+      leveragePath: null,
+      projectId: '',
+      projectName: '',
+      taskId: '',
+      taskText: '',
+      windDownIndex: 0,
+      tomorrowTasks: [],
+      unsureMvpTasks: [],
+    };
+    setChooseProjectError(false);
+    openedRef.current = false;
+    resetNightPrepChat(buildCurrentWindDownItems());
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendDraft();
+    }
+  };
+
+  const showCompose = phase ? COMPOSE_PHASES.includes(phase) && !typing : false;
+  const projectOptions = projects.filter(p => p.name.trim());
+  const selectedProject = projects.find(p => p.id === (flow.projectId || fieldsRef.current.projectId));
+  const openTasks = selectedProject
+    ? selectedProject.tasks.filter(t => !t.done && t.text.trim())
+    : [];
+  const tomorrowTasks = flow.tomorrowTasks ?? [];
+  const selectedProjectId = flow.projectId || fieldsRef.current.projectId;
+  const selectedTaskIds = new Set(
+    tomorrowTasks.filter(t => t.projectId === selectedProjectId).map(t => t.taskId)
+  );
+  const hasTomorrowTasks = tomorrowTasks.length > 0;
+  const inProjectTaskPick = phase === 'prep_task_pick' || phase === 'prep_task_name';
+  const showTaskList = phase === 'prep_task_list' && !typing;
+  const availableOpenTasks = openTasks.filter(task => !selectedTaskIds.has(task.id));
+
+  return createPortal(
+    <>
+      <style>{`
+        @keyframes nightPrepTypingBounce {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+          30% { transform: translateY(-5px); opacity: 1; }
+        }
+        .night-prep-typing-dot {
+          display: inline-block;
+          width: 7px;
+          height: 7px;
+          margin: 0 2px;
+          border-radius: 50%;
+          background: #8e8e93;
+          animation: nightPrepTypingBounce 1.2s infinite ease-in-out;
+        }
+      `}</style>
+      <div style={styles.backdrop} onClick={e => e.target === e.currentTarget && closeNightPrepChat()}>
+        <div style={styles.shell} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+          <header style={styles.header}>
+            <button type="button" onClick={closeNightPrepChat} style={styles.headerBack}>
+              ✕
+            </button>
+            <div style={styles.headerCenter}>
+              <div style={styles.avatar}>b</div>
+              <span style={styles.headerTitle}>wind down</span>
+            </div>
+            <button type="button" onClick={clearChat} style={styles.headerClear}>
+              {WIND_DOWN_FLOW_COPY.clearChat}
+            </button>
+          </header>
+
+          <div ref={threadRef} style={styles.thread}>
+            {messages.map(msg => (
+              <div
+                key={msg.id}
+                style={{
+                  ...styles.msgRow,
+                  ...(msg.role === 'user' ? styles.msgRowUser : styles.msgRowBot),
+                }}
+              >
+                <div
+                  style={{
+                    ...styles.bubble,
+                    ...(msg.role === 'user' ? styles.userBubble : styles.botBubble),
+                  }}
+                >
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+            {typing ? <TypingBubble /> : null}
+          </div>
+
+          <footer style={styles.footer}>
+            {phase === 'wind_down_reflect' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={handleDidntGetDone} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.didntGetDone}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'wind_down_best_use_confirm' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={handleBestUseYes} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.yes}
+                </button>
+                <button type="button" onClick={handleBestUseNo} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.no}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'wind_down_item' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={skipWindDownContext} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.noContextNext}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'empty_logged_prompt' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={handleEmptyYes} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.emptyYes}
+                </button>
+                <button type="button" onClick={handleEmptyNo} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.emptyNo}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_leverage_fork' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={handleHaveIt} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.haveIt}
+                </button>
+                <button type="button" onClick={handleNeedToAddIt} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.needToAddIt}
+                </button>
+                <button type="button" onClick={handleNotSureYet} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.notSureYet}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_project_mode' && !typing ? (
+              <div style={styles.chipWrap}>
+                {chooseProjectError ? (
+                  <p style={styles.errorText}>No saved projects yet — create a project instead.</p>
+                ) : null}
+                <button type="button" onClick={beginChooseProject} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.chooseProject}
+                </button>
+                <button type="button" onClick={beginInputProject} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.inputProject}
+                </button>
+                <button type="button" onClick={beginAddFromTodayList} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.addFromTodayList}
+                </button>
+                {hasTomorrowTasks ? (
+                  <button type="button" onClick={finishTaskList} style={{ ...styles.chip, ...styles.chipFinish }}>
+                    {WIND_DOWN_FLOW_COPY.taskListFinished}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+
+            {phase === 'prep_today_list_pick' && !typing ? (
+              <div style={styles.chipWrap}>
+                <div style={styles.chipSectionLabel}>{WIND_DOWN_FLOW_COPY.chooseTodayTaskLabel}</div>
+                {(() => {
+                  const already = new Set(
+                    tomorrowTasks.map(t => t.taskText.trim().toLowerCase()).filter(Boolean)
+                  );
+                  const available = todayListLines.filter(
+                    line => !already.has(line.text.trim().toLowerCase())
+                  );
+                  if (todayListLines.length === 0) {
+                    return <div style={styles.chipSectionEmpty}>{WIND_DOWN_FLOW_COPY.todayListEmpty}</div>;
+                  }
+                  if (available.length === 0) {
+                    return (
+                      <div style={styles.chipSectionEmpty}>
+                        All of today&apos;s tasks are already on your tomorrow list.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div style={styles.chipTaskGroup}>
+                      {available.map(line => (
+                        <button
+                          key={line.id}
+                          type="button"
+                          onClick={() => selectTodayListLine(line.text)}
+                          style={styles.chip}
+                        >
+                          {line.text.trim()}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+                {hasTomorrowTasks ? (
+                  <button type="button" onClick={finishTaskList} style={{ ...styles.chip, ...styles.chipFinish }}>
+                    {WIND_DOWN_FLOW_COPY.taskListFinished}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setNightPrepPhase('prep_project_mode')}
+                  style={styles.chip}
+                >
+                  back
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_project_pick' && !typing && projectOptions.length > 0 ? (
+              <div style={styles.chipWrap}>
+                {projectOptions.map(project => (
+                  <button
+                    key={project.id}
+                    type="button"
+                    onClick={() => selectProject(project)}
+                    style={styles.chip}
+                  >
+                    {project.name.trim()}
+                  </button>
+                ))}
+                {hasTomorrowTasks ? (
+                  <button type="button" onClick={finishTaskList} style={{ ...styles.chip, ...styles.chipFinish }}>
+                    {WIND_DOWN_FLOW_COPY.taskListFinished}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+
+            {inProjectTaskPick && !typing ? (
+              <div style={styles.chipWrap}>
+                <div style={styles.chipSectionLabel}>{WIND_DOWN_FLOW_COPY.chooseTaskLabel}</div>
+                {availableOpenTasks.length > 0 ? (
+                  <div style={styles.chipTaskGroup}>
+                    {availableOpenTasks.map(task => (
+                      <button
+                        key={task.id}
+                        type="button"
+                        onClick={() => selectTask(task.text.trim(), task.id)}
+                        style={styles.chip}
+                      >
+                        {task.text.trim()}
+                      </button>
+                    ))}
+                  </div>
+                ) : openTasks.length > 0 ? (
+                  <div style={styles.chipSectionEmpty}>
+                    All open tasks from this project are already on your list.
+                  </div>
+                ) : (
+                  <div style={styles.chipSectionEmpty}>No open tasks in this project yet.</div>
+                )}
+                <div style={styles.chipActionGroup}>
+                  <button type="button" onClick={beginAddTask} style={{ ...styles.chip, ...styles.chipAddNew }}>
+                    {WIND_DOWN_FLOW_COPY.addNewTask}
+                  </button>
+                  {hasTomorrowTasks ? (
+                    <button
+                      type="button"
+                      onClick={() => setNightPrepPhase('prep_task_list')}
+                      style={styles.chip}
+                    >
+                      {WIND_DOWN_FLOW_COPY.taskListLabel}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={!hasTomorrowTasks}
+                    onClick={finishTaskList}
+                    style={{
+                      ...styles.chip,
+                      ...styles.chipFinish,
+                      ...(!hasTomorrowTasks ? styles.chipDisabled : {}),
+                    }}
+                  >
+                    {WIND_DOWN_FLOW_COPY.taskListFinished}
+                  </button>
+                </div>
+                {phase === 'prep_task_name' ? (
+                  <div style={styles.compose}>
+                    <textarea
+                      ref={inputRef}
+                      value={draft}
+                      onChange={e => {
+                        setDraft(e.target.value);
+                        draftRef.current = e.target.value;
+                        requestAnimationFrame(syncComposeHeight);
+                      }}
+                      onKeyDown={handleKeyDown}
+                      rows={1}
+                      placeholder={WIND_DOWN_FLOW_COPY.taskNamePlaceholder}
+                      style={styles.input}
+                    />
+                    <button
+                      type="button"
+                      disabled={!draft.trim()}
+                      onClick={sendDraft}
+                      style={{
+                        ...styles.sendBtn,
+                        ...(!draft.trim() ? styles.sendBtnDisabled : {}),
+                      }}
+                      aria-label="Send"
+                    >
+                      ↑
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {showTaskList ? (
+              <div style={styles.chipWrap}>
+                <div style={styles.chipSectionLabel}>{WIND_DOWN_FLOW_COPY.taskListLabel}</div>
+                {tomorrowTasks.length > 0 ? (
+                  <div style={styles.chipTaskGroup}>
+                    {tomorrowTasks.map(task => (
+                      <div key={`${task.projectId}-${task.taskId}`} style={styles.taskListRow}>
+                        <span style={styles.taskListText}>{task.taskText.trim()}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeTomorrowTask(task.projectId, task.taskId)}
+                          style={styles.taskListRemove}
+                          aria-label={`Remove ${task.taskText.trim()}`}
+                          title="Remove from task list"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={styles.chipSectionEmpty}>{WIND_DOWN_FLOW_COPY.taskListEmpty}</div>
+                )}
+                <div style={styles.chipActionGroup}>
+                  {selectedProjectId ? (
+                    <button type="button" onClick={beginAddTask} style={{ ...styles.chip, ...styles.chipAddNew }}>
+                      {WIND_DOWN_FLOW_COPY.addNewTask}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={beginAddAnotherTask}
+                    style={{ ...styles.chip, ...styles.chipAddOther }}
+                  >
+                    {WIND_DOWN_FLOW_COPY.addAnotherTask}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!hasTomorrowTasks}
+                    onClick={finishTaskList}
+                    style={{
+                      ...styles.chip,
+                      ...styles.chipFinish,
+                      ...(!hasTomorrowTasks ? styles.chipDisabled : {}),
+                    }}
+                  >
+                    {WIND_DOWN_FLOW_COPY.taskListFinished}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {showCompose ? (
+              <div style={styles.compose}>
+                <textarea
+                  ref={inputRef}
+                  value={draft}
+                  onChange={e => {
+                    setDraft(e.target.value);
+                    draftRef.current = e.target.value;
+                    requestAnimationFrame(syncComposeHeight);
+                  }}
+                  onKeyDown={handleKeyDown}
+                  rows={1}
+                  placeholder={
+                    phase === 'prep_project_name'
+                      ? WIND_DOWN_FLOW_COPY.projectNamePlaceholder
+                      : phase === 'prep_task_name'
+                        ? WIND_DOWN_FLOW_COPY.taskNamePlaceholder
+                        : phase === 'prep_unsure_mvp' || phase === 'prep_unsure_break_down'
+                          ? WIND_DOWN_FLOW_COPY.addTaskPlaceholder
+                          : phase === 'prep_time'
+                            ? '2pm'
+                            : 'Message'
+                  }
+                  style={styles.input}
+                />
+                <button
+                  type="button"
+                  disabled={!draft.trim()}
+                  onClick={sendDraft}
+                  style={{
+                    ...styles.sendBtn,
+                    ...(!draft.trim() ? styles.sendBtnDisabled : {}),
+                  }}
+                  aria-label="Send"
+                >
+                  ↑
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_unsure_place_or_break' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={handlePlaceOnTaskList} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.placeOnTaskList}
+                </button>
+                <button type="button" onClick={handleBreakDownFarther} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.breakDownFarther}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_unsure_add_more' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button type="button" onClick={handleUnsureAddMoreYes} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.unsureAddMoreYes}
+                </button>
+                <button type="button" onClick={handleUnsureAddMoreNo} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.unsureAddMoreNo}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'prep_tee_up' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button
+                  type="button"
+                  onClick={handleReadyForTomorrow}
+                  style={{ ...styles.chip, ...styles.chipFinish }}
+                >
+                  {WIND_DOWN_FLOW_COPY.readyForTomorrow}
+                </button>
+              </div>
+            ) : null}
+
+            {phase === 'complete' && !typing ? (
+              <div style={styles.chipWrap}>
+                <button
+                  type="button"
+                  onClick={closeNightPrepChat}
+                  style={{ ...styles.chip, ...styles.chipFinish }}
+                >
+                  {WIND_DOWN_FLOW_COPY.closeChat}
+                </button>
+              </div>
+            ) : null}
+          </footer>
+        </div>
+      </div>
+    </>,
+    document.body
+  );
+}
+
+const styles: Record<string, CSSProperties> = {
+  backdrop: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(15, 23, 42, 0.45)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    zIndex: 100000,
+    fontFamily: font,
+  },
+  shell: {
+    width: '100%',
+    maxWidth: 420,
+    height: 'min(640px, 85vh)',
+    background: '#f2f2f7',
+    borderRadius: 20,
+    border: '1px solid #d1d5db',
+    boxShadow: '0 20px 50px rgba(15, 23, 42, 0.2)',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '10px 12px',
+    background: '#fff',
+    borderBottom: '1px solid #e5e7eb',
+    flexShrink: 0,
+  },
+  headerBack: {
+    border: 'none',
+    background: 'transparent',
+    color: '#64748b',
+    fontSize: 16,
+    fontWeight: 700,
+    fontFamily: font,
+    cursor: 'pointer',
+    width: 32,
+    padding: 0,
+  },
+  headerCenter: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  avatar: {
+    width: 28,
+    height: 28,
+    borderRadius: '50%',
+    background: '#0f172a',
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 800,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textTransform: 'lowercase',
+  },
+  headerTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: '#0f172a',
+    textTransform: 'lowercase',
+  },
+  headerClear: {
+    border: 'none',
+    background: 'transparent',
+    color: '#64748b',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: font,
+    cursor: 'pointer',
+    padding: '4px 0',
+    whiteSpace: 'nowrap',
+    textTransform: 'lowercase',
+  },
+  thread: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '14px 12px 8px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  msgRow: { display: 'flex', width: '100%' },
+  msgRowBot: { justifyContent: 'flex-start' },
+  msgRowUser: { justifyContent: 'flex-end' },
+  bubble: {
+    maxWidth: '82%',
+    padding: '9px 13px',
+    fontSize: 15,
+    lineHeight: 1.45,
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+  },
+  botBubble: {
+    background: '#e9e9eb',
+    color: '#0f172a',
+    borderRadius: '18px 18px 18px 4px',
+  },
+  userBubble: {
+    background: '#007aff',
+    color: '#fff',
+    borderRadius: '18px 18px 4px 18px',
+  },
+  typingBubble: {
+    display: 'flex',
+    alignItems: 'center',
+    minWidth: 52,
+    minHeight: 20,
+    padding: '12px 14px',
+  },
+  footer: {
+    background: '#fff',
+    borderTop: '1px solid #e5e7eb',
+    padding: '14px 12px 28px',
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+  },
+  chipWrap: { display: 'flex', flexDirection: 'column', gap: 8 },
+  chipSectionLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: '0.08em',
+    textTransform: 'lowercase',
+    color: '#64748b',
+    padding: '2px 4px 0',
+  },
+  chipSectionEmpty: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontStyle: 'italic',
+    padding: '2px 4px 4px',
+    lineHeight: 1.4,
+  },
+  chipTaskGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  taskListRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    border: '1px solid #cbd5e1',
+    borderRadius: 18,
+    padding: '8px 10px 8px 13px',
+    background: '#fff',
+  },
+  taskListText: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#0f172a',
+    lineHeight: 1.4,
+    wordBreak: 'break-word',
+  },
+  taskListRemove: {
+    flexShrink: 0,
+    width: 28,
+    height: 28,
+    border: 'none',
+    borderRadius: '50%',
+    background: 'transparent',
+    color: '#94a3b8',
+    fontSize: 22,
+    fontWeight: 500,
+    fontFamily: font,
+    lineHeight: 1,
+    cursor: 'pointer',
+    padding: 0,
+  },
+  chipActionGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    marginTop: 4,
+    paddingTop: 8,
+    borderTop: '1px solid #e5e7eb',
+  },
+  chip: {
+    textAlign: 'center',
+    border: '1px solid #007aff',
+    borderRadius: 18,
+    padding: '9px 13px',
+    fontSize: 14,
+    fontWeight: 600,
+    fontFamily: font,
+    background: '#fff',
+    color: '#007aff',
+    cursor: 'pointer',
+    lineHeight: 1.4,
+  },
+  chipSelected: {
+    background: '#e0f2fe',
+    borderColor: '#0284c7',
+    color: '#0369a1',
+  },
+  chipAddNew: {
+    background: '#fffbeb',
+    borderColor: '#f59e0b',
+    color: '#b45309',
+  },
+  chipAddOther: {
+    background: '#f5f3ff',
+    borderColor: '#8b5cf6',
+    color: '#6d28d9',
+  },
+  chipFinish: {
+    background: '#059669',
+    borderColor: '#059669',
+    color: '#fff',
+  },
+  chipDisabled: {
+    opacity: 0.4,
+    cursor: 'not-allowed',
+  },
+  errorText: {
+    margin: 0,
+    fontSize: 12,
+    color: '#dc2626',
+    textAlign: 'center',
+    lineHeight: 1.45,
+  },
+  compose: {
+    display: 'flex',
+    alignItems: 'flex-end',
+    gap: 8,
+    background: '#f2f2f7',
+    borderRadius: 22,
+    padding: '10px 8px 10px 14px',
+    border: '1px solid #e5e7eb',
+  },
+  input: {
+    flex: 1,
+    border: 'none',
+    background: 'transparent',
+    fontSize: 16,
+    fontFamily: font,
+    lineHeight: 1.4,
+    resize: 'none',
+    outline: 'none',
+    maxHeight: 140,
+    minHeight: 28,
+    padding: '6px 0',
+    color: '#0f172a',
+  },
+  sendBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: '50%',
+    border: 'none',
+    background: '#007aff',
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 800,
+    fontFamily: font,
+    cursor: 'pointer',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    lineHeight: 1,
+  },
+  sendBtnDisabled: { opacity: 0.35, cursor: 'not-allowed' },
+};

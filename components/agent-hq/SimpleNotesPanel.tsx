@@ -1,22 +1,22 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef, type CSSProperties } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import type { AppleNote } from './types';
+import type { SimpleNote } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useHoverNotes } from './hooks/HoverNotesProvider';
 import { useProjects } from './hooks/ProjectsProvider';
 import { useNoteClipBubble } from './NoteSelectionClipBubble';
 import {
-  APPLE_NOTES_KEY,
-  APPLE_NOTES_SELECTED_KEY,
-  createAppleNote,
+  SIMPLE_NOTES_KEY,
+  SIMPLE_NOTES_SELECTED_KEY,
+  createSimpleNote,
   firstNoteLine,
   formatNoteTime,
-  migrateLegacyAppleNotes,
+  migrateLegacySimpleNotes,
   noteBodyPreview,
   sortNotesByUpdated,
-} from './appleNotesUtils';
+} from './simpleNotesUtils';
 
 const font =
   '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -25,16 +25,16 @@ const DAY = 86400000;
 
 type GroupKey = 'today' | 'prev30' | 'older';
 
-function groupNotes(notes: AppleNote[]): { key: GroupKey; label: string; items: AppleNote[] }[] {
+function groupNotes(notes: SimpleNote[]): { key: GroupKey; label: string; items: SimpleNote[] }[] {
   const startToday = new Date();
   startToday.setHours(0, 0, 0, 0);
   const t0 = startToday.getTime();
   const t30 = t0 - 30 * DAY;
 
   const sorted = sortNotesByUpdated(notes);
-  const today: AppleNote[] = [];
-  const prev30: AppleNote[] = [];
-  const older: AppleNote[] = [];
+  const today: SimpleNote[] = [];
+  const prev30: SimpleNote[] = [];
+  const older: SimpleNote[] = [];
 
   for (const n of sorted) {
     if (n.updatedAt >= t0) today.push(n);
@@ -42,20 +42,20 @@ function groupNotes(notes: AppleNote[]): { key: GroupKey; label: string; items: 
     else older.push(n);
   }
 
-  const out: { key: GroupKey; label: string; items: AppleNote[] }[] = [];
+  const out: { key: GroupKey; label: string; items: SimpleNote[] }[] = [];
   if (today.length) out.push({ key: 'today', label: 'Today', items: today });
   if (prev30.length) out.push({ key: 'prev30', label: 'Previous 30 Days', items: prev30 });
   if (older.length) out.push({ key: 'older', label: 'Older', items: older });
   return out;
 }
 
-export default function AppleNotesPanel() {
-  const [notes, setNotes] = useLocalStorage<AppleNote[]>(APPLE_NOTES_KEY, []);
-  const [selectedId, setSelectedId] = useLocalStorage<string | null>(APPLE_NOTES_SELECTED_KEY, null);
-  const [view, setView] = useState<'list' | 'gallery'>('list');
+export default function SimpleNotesPanel() {
+  const [notes, setNotes] = useLocalStorage<SimpleNote[]>(SIMPLE_NOTES_KEY, []);
+  const [selectedId, setSelectedId] = useLocalStorage<string | null>(SIMPLE_NOTES_SELECTED_KEY, null);
   const [migrated, setMigrated] = useState(false);
   const [deleteMenuOpen, setDeleteMenuOpen] = useState(false);
   const [deleteIds, setDeleteIds] = useState<Set<string>>(new Set());
+  const [lastDeleted, setLastDeleted] = useState<SimpleNote | null>(null);
   const { open: openHoverNotes, toggle: toggleHoverNotes, isOpen: hoverNotesOpen, supported: hoverNotesSupported } =
     useHoverNotes();
   const { projects, setProjects } = useProjects();
@@ -64,8 +64,8 @@ export default function AppleNotesPanel() {
   useEffect(() => {
     if (migrated) return;
     setMigrated(true);
-    migrateLegacyAppleNotes(notes, setNotes);
-  }, [migrated, notes, setNotes]);
+    migrateLegacySimpleNotes(notes, setNotes, selectedId, setSelectedId);
+  }, [migrated, notes, setNotes, selectedId, setSelectedId]);
 
   useEffect(() => {
     if (notes.length === 0) {
@@ -98,10 +98,40 @@ export default function AppleNotesPanel() {
   );
 
   const addNote = useCallback(() => {
-    const n = createAppleNote();
+    const n = createSimpleNote();
     setNotes(prev => [n, ...prev]);
     setSelectedId(n.id);
   }, [setNotes, setSelectedId]);
+
+  const deleteNote = useCallback(
+    (id: string) => {
+      if (!window.confirm('Do you want to delete?')) return;
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+      const remaining = notes.filter(n => n.id !== id);
+      setNotes(remaining);
+      setLastDeleted(note);
+      if (selectedId === id) {
+        setSelectedId(sortNotesByUpdated(remaining)[0]?.id ?? null);
+      }
+    },
+    [notes, selectedId, setNotes, setSelectedId]
+  );
+
+  const undoLastDelete = useCallback(() => {
+    if (!lastDeleted) return;
+    const restored = lastDeleted;
+    setLastDeleted(null);
+    setNotes(prev => {
+      if (prev.some(n => n.id === restored.id)) return prev;
+      return [restored, ...prev];
+    });
+    setSelectedId(restored.id);
+  }, [lastDeleted, setNotes, setSelectedId]);
+
+  const dismissUndo = useCallback(() => {
+    setLastDeleted(null);
+  }, []);
 
   const openDeleteMenu = useCallback(() => {
     const initial = new Set<string>();
@@ -134,7 +164,7 @@ export default function AppleNotesPanel() {
   const handlePopOut = useCallback(() => {
     if (!hoverNotesSupported) return;
     if (notes.length === 0) {
-      const n = createAppleNote();
+      const n = createSimpleNote();
       setNotes([n]);
       setSelectedId(n.id);
     } else if (!selectedId) {
@@ -155,6 +185,7 @@ export default function AppleNotesPanel() {
   return (
     <div
       style={{
+        position: 'relative',
         display: 'flex',
         minHeight: 400,
         borderRadius: '0 0 10px 10px',
@@ -185,21 +216,23 @@ export default function AppleNotesPanel() {
           }}
         >
           <ToolbarBtn
-            label="List"
-            active={view === 'list'}
-            onClick={() => setView('list')}
-            icon="☰"
+            label="Delete"
+            onClick={openDeleteMenu}
+            icon={
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7h12z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            }
+            disabled={notes.length === 0}
             theme="light"
           />
-          <ToolbarBtn
-            label="Gallery"
-            active={view === 'gallery'}
-            onClick={() => setView('gallery')}
-            icon="▦"
-            theme="light"
-          />
-          <div style={{ width: 1, height: 20, background: borderSub, margin: '0 4px' }} />
-          <ToolbarBtn label="Delete" onClick={openDeleteMenu} icon="⌫" disabled={notes.length === 0} theme="light" />
           <div style={{ flex: 1 }} />
           <ToolbarBtn
             label={
@@ -221,7 +254,7 @@ export default function AppleNotesPanel() {
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {notes.length === 0 ? (
             <div style={{ padding: 20, color: textSecondary, fontSize: 13 }}>No notes yet. Click ✎ to create one.</div>
-          ) : view === 'list' ? (
+          ) : (
             groups.map(g => (
               <div key={g.key}>
                 <div
@@ -241,6 +274,7 @@ export default function AppleNotesPanel() {
                     note={note}
                     selected={note.id === selectedId}
                     onSelect={() => setSelectedId(note.id)}
+                    onDelete={() => deleteNote(note.id)}
                     accentSelect={accentSelect}
                     accentBorder={accentBorder}
                     textPrimary={textPrimary}
@@ -249,31 +283,6 @@ export default function AppleNotesPanel() {
                 ))}
               </div>
             ))
-          ) : (
-            <div style={{ padding: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {sortNotesByUpdated(notes).map(note => (
-                <button
-                  key={note.id}
-                  type="button"
-                  onClick={() => setSelectedId(note.id)}
-                  style={{
-                    textAlign: 'left',
-                    padding: 10,
-                    borderRadius: 8,
-                    border: `1px solid ${note.id === selectedId ? accentBorder : borderSub}`,
-                    background: note.id === selectedId ? accentSelect : '#f8fafc',
-                    color: textPrimary,
-                    cursor: 'pointer',
-                    fontFamily: font,
-                  }}
-                >
-                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{firstNoteLine(note.content)}</div>
-                  <div style={{ fontSize: 11, color: textSecondary }}>
-                    {formatNoteTime(note.updatedAt)} · {noteBodyPreview(note.content)}
-                  </div>
-                </button>
-              ))}
-            </div>
           )}
         </div>
       </div>
@@ -343,6 +352,18 @@ export default function AppleNotesPanel() {
         )}
       </div>
 
+      {lastDeleted ? (
+        <div style={styles.undoBar} role="status">
+          <span style={styles.undoText}>Note deleted</span>
+          <button type="button" onClick={undoLastDelete} style={styles.undoBtn}>
+            Undo
+          </button>
+          <button type="button" onClick={dismissUndo} style={styles.undoDismiss} aria-label="Dismiss">
+            ×
+          </button>
+        </div>
+      ) : null}
+
       {deleteMenuOpen && typeof document !== 'undefined'
         ? createPortal(
             <div
@@ -400,6 +421,47 @@ export default function AppleNotesPanel() {
 }
 
 const styles: Record<string, CSSProperties> = {
+  undoBar: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 12,
+    zIndex: 5,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '10px 12px',
+    borderRadius: 10,
+    background: '#0f172a',
+    color: '#fff',
+    boxShadow: '0 10px 28px rgba(15, 23, 42, 0.28)',
+    fontFamily: font,
+  },
+  undoText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: 500,
+  },
+  undoBtn: {
+    border: 'none',
+    borderRadius: 6,
+    padding: '6px 12px',
+    fontSize: 12,
+    fontWeight: 700,
+    fontFamily: font,
+    background: '#fff',
+    color: '#0f172a',
+    cursor: 'pointer',
+  },
+  undoDismiss: {
+    border: 'none',
+    background: 'transparent',
+    color: '#94a3b8',
+    fontSize: 18,
+    lineHeight: 1,
+    cursor: 'pointer',
+    padding: '0 2px',
+  },
   popOutLink: {
     border: 'none',
     background: 'transparent',
@@ -527,7 +589,7 @@ function ToolbarBtn({
   theme = 'dark',
   onClick,
 }: {
-  icon: string;
+  icon: ReactNode;
   label: string;
   active?: boolean;
   disabled?: boolean;
@@ -578,14 +640,16 @@ function NoteRow({
   note,
   selected,
   onSelect,
+  onDelete,
   accentSelect,
   accentBorder,
   textPrimary,
   textSecondary,
 }: {
-  note: AppleNote;
+  note: SimpleNote;
   selected: boolean;
   onSelect: () => void;
+  onDelete: () => void;
   accentSelect: string;
   accentBorder: string;
   textPrimary: string;
@@ -596,10 +660,18 @@ function NoteRow({
   const time = formatNoteTime(note.updatedAt);
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       style={{
+        position: 'relative',
         width: '100%',
         textAlign: 'left',
         padding: '10px 14px 12px',
@@ -609,8 +681,8 @@ function NoteRow({
         cursor: 'pointer',
         background: selected ? accentSelect : 'transparent',
         boxShadow: selected ? `inset 0 0 0 1px ${accentBorder}` : 'none',
-        display: 'block',
         fontFamily: font,
+        boxSizing: 'border-box',
       }}
     >
       <div
@@ -620,6 +692,7 @@ function NoteRow({
           color: textPrimary,
           marginBottom: 4,
           lineHeight: 1.25,
+          paddingRight: 22,
         }}
       >
         {title}
@@ -631,8 +704,49 @@ function NoteRow({
         <span style={{ opacity: 0.85 }} aria-hidden>
           📁
         </span>
-        <span>Notes</span>
+        <span>Simple Notes</span>
       </div>
-    </button>
+      <button
+        type="button"
+        onClick={e => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        title="Delete note"
+        aria-label="Delete note"
+        style={{
+          position: 'absolute',
+          right: 6,
+          bottom: 6,
+          width: 20,
+          height: 20,
+          border: 'none',
+          borderRadius: 4,
+          background: 'transparent',
+          color: '#64748b',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 0,
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7h12z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M10 11v6M14 11v6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+    </div>
   );
 }

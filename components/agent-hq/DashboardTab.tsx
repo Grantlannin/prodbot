@@ -9,7 +9,7 @@ import type { Infraction } from './types';
 import { infractionCategoriesInOrder, startOfLocalDayMs } from './infractions';
 import { formatDuration } from './chatLogic';
 import { getTimerDisplay, formatTimerDisplay } from './timerDisplay';
-import AppleNotesPanel from './AppleNotesPanel';
+import SimpleNotesPanel from './SimpleNotesPanel';
 import ProjectsPanel, { addProjectBtnStyle, type ProjectsPanelHandle } from './ProjectsPanel';
 import ProjectProgressBar from './ProjectProgressBar';
 import type { ProjectProgress } from './projectProgress';
@@ -357,10 +357,10 @@ export default function DashboardTab({
         <div style={styles.lowerHalf}>
           <div style={styles.lowerLeft}>
             <DashCard
-              title="Notes"
+              title="Simple Notes"
               noPad
             >
-              <AppleNotesPanel />
+              <SimpleNotesPanel />
             </DashCard>
           </div>
           <DashCard
@@ -585,13 +585,13 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
   },
   timerAdjustAdd: {
-    width: '50%',
+    width: '42%',
     flexShrink: 0,
     boxSizing: 'border-box',
     border: 'none',
-    borderRadius: 9,
-    padding: '8px 10px',
-    fontSize: 12,
+    borderRadius: 8,
+    padding: '5px 8px',
+    fontSize: 11,
     fontWeight: 700,
     fontFamily: font,
     letterSpacing: '-0.01em',
@@ -603,10 +603,10 @@ const styles: Record<string, CSSProperties> = {
   timerAdjustMinus: {
     flexShrink: 0,
     border: 'none',
-    borderRadius: 9,
-    width: 40,
-    padding: '8px 0',
-    fontSize: 18,
+    borderRadius: 8,
+    width: 34,
+    padding: '5px 0',
+    fontSize: 16,
     fontWeight: 700,
     fontFamily: font,
     lineHeight: 1,

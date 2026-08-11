@@ -16,3 +16,18 @@ body {
   color: #737373;
   opacity: 1;
 }
+
+/* ProjectsPanel drag cursors — kept global to avoid <style> hydration mismatches */
+[data-drag-row] {
+  cursor: grab;
+}
+[data-drag-row] input[type='text'] {
+  cursor: grab;
+}
+[data-drag-row] input[type='text']:focus {
+  cursor: text;
+}
+[data-drag-row][data-active-drag='true'],
+[data-drag-row][data-active-drag='true'] * {
+  cursor: grabbing !important;
+}

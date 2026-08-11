@@ -3,19 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import {
-  APPLE_NOTES_KEY,
-  APPLE_NOTES_SELECTED_KEY,
-  createAppleNote,
+  SIMPLE_NOTES_KEY,
+  SIMPLE_NOTES_SELECTED_KEY,
+  createSimpleNote,
   DEFAULT_HOVER_NOTES_SIZE,
   firstNoteLine,
   HOVER_NOTES_SIZE_KEY,
   sortNotesByUpdated,
-} from './appleNotesUtils';
+} from './simpleNotesUtils';
 import { CornerResizeHandles, useCornerResize } from './hooks/useCornerResize';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useProjects } from './hooks/ProjectsProvider';
 import { useNoteClipBubble } from './NoteSelectionClipBubble';
-import type { AppleNote } from './types';
+import type { SimpleNote } from './types';
 
 const font =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -26,8 +26,8 @@ interface HoverNotesContentProps {
 
 export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps) {
   const { projects, setProjects } = useProjects();
-  const [notes, setNotes] = useLocalStorage<AppleNote[]>(APPLE_NOTES_KEY, []);
-  const [selectedId, setSelectedId] = useLocalStorage<string | null>(APPLE_NOTES_SELECTED_KEY, null);
+  const [notes, setNotes] = useLocalStorage<SimpleNote[]>(SIMPLE_NOTES_KEY, []);
+  const [selectedId, setSelectedId] = useLocalStorage<string | null>(SIMPLE_NOTES_SELECTED_KEY, null);
   const [size, setSize] = useLocalStorage(HOVER_NOTES_SIZE_KEY, DEFAULT_HOVER_NOTES_SIZE);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -104,7 +104,7 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
   );
 
   const addNote = useCallback(() => {
-    const n = createAppleNote();
+    const n = createSimpleNote();
     setNotes(prev => [n, ...prev]);
     setSelectedId(n.id);
   }, [setNotes, setSelectedId]);
@@ -113,7 +113,7 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
     <div style={styles.shell}>
       <header style={styles.header}>
         <div style={styles.headerLeft}>
-          <span style={styles.headerTitle}>Notes</span>
+          <span style={styles.headerTitle}>Simple Notes</span>
           {selected ? (
             <span style={styles.headerSubtitle}>{firstNoteLine(selected.content)}</span>
           ) : null}

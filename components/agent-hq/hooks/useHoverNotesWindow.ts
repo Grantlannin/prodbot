@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { DEFAULT_HOVER_NOTES_SIZE } from '../appleNotesUtils';
+import { DEFAULT_HOVER_NOTES_SIZE } from '../simpleNotesUtils';
 
 type DocPip = {
   requestWindow: (options?: {

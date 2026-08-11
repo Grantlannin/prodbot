@@ -101,7 +101,7 @@ create table if not exists public.user_project_boards (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.user_apple_notes (
+create table if not exists public.user_simple_notes (
   user_id uuid primary key references auth.users (id) on delete cascade,
   notes jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now()
@@ -109,7 +109,7 @@ create table if not exists public.user_apple_notes (
 
 alter table public.user_sync_settings enable row level security;
 alter table public.user_project_boards enable row level security;
-alter table public.user_apple_notes enable row level security;
+alter table public.user_simple_notes enable row level security;
 
 drop policy if exists "sync_settings_own" on public.user_sync_settings;
 create policy "sync_settings_own"
@@ -123,8 +123,8 @@ create policy "project_boards_own"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
-drop policy if exists "apple_notes_own" on public.user_apple_notes;
-create policy "apple_notes_own"
-  on public.user_apple_notes for all
+drop policy if exists "simple_notes_own" on public.user_simple_notes;
+create policy "simple_notes_own"
+  on public.user_simple_notes for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);

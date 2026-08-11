@@ -1,4 +1,4 @@
-import type { AppleNote, ProjectBoard, ProjectSubTask, ProjectTask, TaskContextLink } from '@/components/agent-hq/types';
+import type { SimpleNote, ProjectBoard, ProjectSubTask, ProjectTask, TaskContextLink } from '@/components/agent-hq/types';
 
 function sanitizeLinks(links: TaskContextLink[] | undefined): TaskContextLink[] {
   return (links ?? []).map(link => ({
@@ -43,7 +43,7 @@ export function sanitizeProjectsForCloud(projects: ProjectBoard[]): ProjectBoard
   }));
 }
 
-export function sanitizeNotesForCloud(notes: AppleNote[]): AppleNote[] {
+export function sanitizeNotesForCloud(notes: SimpleNote[]): SimpleNote[] {
   return notes.map(note => ({
     id: note.id,
     content: note.content,

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { AppleNote, ProjectBoard } from '@/components/agent-hq/types';
+import type { SimpleNote, ProjectBoard } from '@/components/agent-hq/types';
 import { MAX_SYNC_PAYLOAD_BYTES } from './constants';
 import { estimateJsonBytes, sanitizeNotesForCloud, sanitizeProjectsForCloud } from './sanitize';
 
@@ -14,7 +14,7 @@ export interface SyncSettingsRow {
 
 export interface CloudSnapshot {
   projects: ProjectBoard[];
-  notes: AppleNote[];
+  notes: SimpleNote[];
   projectsUpdatedAt: string | null;
   notesUpdatedAt: string | null;
 }
@@ -23,8 +23,8 @@ function parseProjects(raw: unknown): ProjectBoard[] {
   return Array.isArray(raw) ? (raw as ProjectBoard[]) : [];
 }
 
-function parseNotes(raw: unknown): AppleNote[] {
-  return Array.isArray(raw) ? (raw as AppleNote[]) : [];
+function parseNotes(raw: unknown): SimpleNote[] {
+  return Array.isArray(raw) ? (raw as SimpleNote[]) : [];
 }
 
 export async function fetchSyncSettings(
@@ -44,7 +44,7 @@ export async function fetchSyncSettings(
 export async function fetchCloudSnapshot(supabase: SupabaseClient, userId: string): Promise<CloudSnapshot> {
   const [projectsRes, notesRes] = await Promise.all([
     supabase.from('user_project_boards').select('projects, updated_at').eq('user_id', userId).maybeSingle(),
-    supabase.from('user_apple_notes').select('notes, updated_at').eq('user_id', userId).maybeSingle(),
+    supabase.from('user_simple_notes').select('notes, updated_at').eq('user_id', userId).maybeSingle(),
   ]);
 
   if (projectsRes.error) throw projectsRes.error;
@@ -62,7 +62,7 @@ export async function pushCloudSnapshot(
   supabase: SupabaseClient,
   userId: string,
   projects: ProjectBoard[],
-  notes: AppleNote[]
+  notes: SimpleNote[]
 ): Promise<{ lastSyncAt: string }> {
   const cleanProjects = sanitizeProjectsForCloud(projects);
   const cleanNotes = sanitizeNotesForCloud(notes);
@@ -81,7 +81,7 @@ export async function pushCloudSnapshot(
       projects: cleanProjects,
       updated_at: now,
     }),
-    supabase.from('user_apple_notes').upsert({
+    supabase.from('user_simple_notes').upsert({
       user_id: userId,
       notes: cleanNotes,
       updated_at: now,
@@ -110,7 +110,7 @@ export async function enableCloudBackup(
   supabase: SupabaseClient,
   userId: string,
   projects: ProjectBoard[],
-  notes: AppleNote[]
+  notes: SimpleNote[]
 ): Promise<{ lastSyncAt: string }> {
   return pushCloudSnapshot(supabase, userId, projects, notes);
 }
@@ -125,7 +125,7 @@ export async function disableCloudBackup(
   if (deleteCloudCopy) {
     await Promise.all([
       supabase.from('user_project_boards').delete().eq('user_id', userId),
-      supabase.from('user_apple_notes').delete().eq('user_id', userId),
+      supabase.from('user_simple_notes').delete().eq('user_id', userId),
     ]);
   }
 

@@ -1,0 +1,212 @@
+import { tomorrowDateKey } from './utils';
+import { localDateKey, parseLocalDateKey } from '../eodReports';
+import {
+  emptyTodayTaskList,
+  makeTodayLineId,
+  normalizeTodayTaskList,
+  type TodayTaskListStore,
+} from '../todayTaskList/storage';
+
+export const NIGHT_PREP_PLAN_KEY = 'agentHQ_nightPrepPlan';
+
+export interface NightPrepTomorrowTask {
+  projectId: string;
+  projectName: string;
+  taskId: string;
+  taskText: string;
+  /** From today's freeform list — not tied to a project */
+  homeless?: boolean;
+}
+
+export interface NightPrepTomorrowPlan {
+  prepDateKey: string;
+  targetDateKey: string;
+  firstWorkBlockTime: string;
+  firstWorkBlockMinutes: number | null;
+  workLocation: string;
+  tasks: NightPrepTomorrowTask[];
+  updatedAt: number;
+  /** Date key when plan tasks were copied into today's list */
+  promotedToTodayDateKey?: string;
+  /** @deprecated legacy test promotion flag */
+  testMode?: boolean;
+  /** @deprecated migrated to tasks[] */
+  projectId?: string;
+  projectName?: string;
+  taskId?: string;
+  taskText?: string;
+}
+
+export function normalizeNightPrepPlan(
+  plan: NightPrepTomorrowPlan | null
+): NightPrepTomorrowPlan | null {
+  if (!plan) return null;
+  if (plan.tasks?.length) return plan;
+  if (plan.taskText?.trim() && plan.projectId && plan.taskId) {
+    return {
+      ...plan,
+      tasks: [
+        {
+          projectId: plan.projectId,
+          projectName: plan.projectName?.trim() || '',
+          taskId: plan.taskId,
+          taskText: plan.taskText.trim(),
+        },
+      ],
+    };
+  }
+  return { ...plan, tasks: [] };
+}
+
+export function buildNightPrepPlan(fields: {
+  firstWorkBlockTime: string;
+  firstWorkBlockMinutes: number | null;
+  workLocation: string;
+  tasks: NightPrepTomorrowTask[];
+}): NightPrepTomorrowPlan {
+  const now = Date.now();
+  const tasks = fields.tasks.filter(t => t.taskText.trim());
+  const primary = tasks[0];
+  return {
+    prepDateKey: localDateKey(now),
+    targetDateKey: tomorrowDateKey(now),
+    firstWorkBlockTime: fields.firstWorkBlockTime.trim(),
+    firstWorkBlockMinutes: fields.firstWorkBlockMinutes,
+    workLocation: fields.workLocation.trim(),
+    tasks,
+    updatedAt: now,
+    projectId: primary?.projectId,
+    projectName: primary?.projectName,
+    taskId: primary?.taskId,
+    taskText: primary?.taskText,
+  };
+}
+
+export function readNightPrepPlan(): NightPrepTomorrowPlan | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(NIGHT_PREP_PLAN_KEY);
+    if (!raw) return null;
+    return normalizeNightPrepPlan(JSON.parse(raw) as NightPrepTomorrowPlan);
+  } catch {
+    return null;
+  }
+}
+
+export function formatNightPrepPlanSummary(plan: NightPrepTomorrowPlan): string {
+  const normalized = normalizeNightPrepPlan(plan);
+  if (!normalized) return '';
+  const taskPart = normalized.tasks.map(t => t.taskText.trim()).filter(Boolean).join(' · ');
+  const parts = [taskPart];
+  if (normalized.workLocation.trim()) parts.push(`@ ${normalized.workLocation.trim()}`);
+  if (normalized.firstWorkBlockTime.trim()) parts.push(`(${normalized.firstWorkBlockTime.trim()})`);
+  return parts.filter(Boolean).join(' ');
+}
+
+export function isNightPrepPlanActiveToday(
+  plan: NightPrepTomorrowPlan | null,
+  now = Date.now()
+): boolean {
+  return getActiveNightPrepPlan(plan, now) !== null;
+}
+
+function daysBetweenDateKeys(earlierKey: string, laterKey: string): number {
+  const ms = parseLocalDateKey(laterKey).getTime() - parseLocalDateKey(earlierKey).getTime();
+  return Math.round(ms / 86_400_000);
+}
+
+/** Night prep plan for today, or yesterday's plan still available the next morning. */
+export function getActiveNightPrepPlan(
+  plan: NightPrepTomorrowPlan | null,
+  now = Date.now()
+): NightPrepTomorrowPlan | null {
+  const normalized = normalizeNightPrepPlan(plan);
+  if (!normalized?.tasks?.length) return null;
+
+  const today = localDateKey(now);
+  if (normalized.targetDateKey === today) return normalized;
+
+  const daysBehind = daysBetweenDateKeys(normalized.targetDateKey, today);
+  if (daysBehind === 1) return normalized;
+
+  return null;
+}
+
+export function isHomelessPlanTask(task: NightPrepTomorrowTask): boolean {
+  return Boolean(task.homeless) || !task.projectId?.trim() || !task.taskId?.trim();
+}
+
+export function makeHomelessPlanTask(text: string): NightPrepTomorrowTask | null {
+  const taskText = text.trim();
+  if (!taskText) return null;
+  const id =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : Date.now().toString(36) + Math.random().toString(36).slice(2);
+  return {
+    projectId: '',
+    projectName: '',
+    taskId: `homeless-${id}`,
+    taskText,
+    homeless: true,
+  };
+}
+
+export function planIsForTomorrow(
+  plan: NightPrepTomorrowPlan | null,
+  now = Date.now()
+): boolean {
+  const normalized = normalizeNightPrepPlan(plan);
+  if (!normalized) return false;
+  return normalized.targetDateKey === tomorrowDateKey(now);
+}
+
+/**
+ * When the plan's target day is today, copy tasks into today's list once.
+ * Tomorrow column stays empty for a fresh wind-down; plan tasks remain for morning flow.
+ */
+export function promoteNightPrepPlanToToday(
+  plan: NightPrepTomorrowPlan | null,
+  todayStore: TodayTaskListStore,
+  now = Date.now()
+): { plan: NightPrepTomorrowPlan | null; today: TodayTaskListStore; didPromote: boolean } {
+  const normalized = normalizeNightPrepPlan(plan);
+  const today = normalizeTodayTaskList(todayStore, now);
+  if (!normalized?.tasks?.length) {
+    return { plan: normalized, today, didPromote: false };
+  }
+
+  const todayKey = localDateKey(now);
+  if (normalized.targetDateKey !== todayKey) {
+    return { plan: normalized, today, didPromote: false };
+  }
+  if (normalized.promotedToTodayDateKey === todayKey) {
+    return { plan: normalized, today, didPromote: false };
+  }
+
+  const existing = new Set(today.lines.map(l => l.text.trim().toLowerCase()).filter(Boolean));
+  const additions = normalized.tasks
+    .map(t => t.taskText.trim())
+    .filter(Boolean)
+    .filter(text => !existing.has(text.toLowerCase()))
+    .map(text => ({
+      id: makeTodayLineId(),
+      text,
+      createdAt: now,
+    }));
+
+  const nextToday: TodayTaskListStore = {
+    ...today,
+    dateKey: todayKey,
+    lines: [...today.lines, ...additions],
+    updatedAt: now,
+  };
+
+  const nextPlan: NightPrepTomorrowPlan = {
+    ...normalized,
+    promotedToTodayDateKey: todayKey,
+    updatedAt: now,
+  };
+
+  return { plan: nextPlan, today: nextToday, didPromote: true };
+}

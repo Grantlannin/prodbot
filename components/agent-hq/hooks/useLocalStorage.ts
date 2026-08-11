@@ -36,24 +36,38 @@ function getBroadcastChannel(): BroadcastChannel | null {
 }
 
 /**
- * Persists state to localStorage. SSR-safe for Next.js.
- * Uses lazy initializer so localStorage is read once on mount.
+ * Persists state to localStorage. SSR-safe for Next.js:
+ * first render always uses `initialValue` (matches server HTML), then hydrates from
+ * localStorage after mount so we don't trip React hydration mismatches.
  * Same-tab subscribers + BroadcastChannel keep all hooks/windows in sync immediately.
  */
 export function useLocalStorage<T>(key: string, initialValue: T) {
-  const [value, setValue] = useState<T>(() => {
-    if (typeof window === 'undefined') return initialValue;
-    try {
-      const stored = localStorage.getItem(key);
-      return stored !== null ? (JSON.parse(stored) as T) : initialValue;
-    } catch {
-      return initialValue;
-    }
-  });
+  const [value, setValue] = useState<T>(initialValue);
+  const [ready, setReady] = useState(false);
   const skipBroadcastRef = useRef(false);
   const lastSerializedRef = useRef<string | null>(null);
+  const initialValueRef = useRef(initialValue);
+  initialValueRef.current = initialValue;
+
+  // Load from localStorage only after mount (client), so SSR + first client paint match.
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored !== null) {
+        lastSerializedRef.current = stored;
+        skipBroadcastRef.current = true;
+        setValue(JSON.parse(stored) as T);
+      } else {
+        lastSerializedRef.current = JSON.stringify(initialValueRef.current);
+      }
+    } catch {
+      lastSerializedRef.current = JSON.stringify(initialValueRef.current);
+    }
+    setReady(true);
+  }, [key]);
 
   useEffect(() => {
+    if (!ready) return;
     try {
       const serialized = JSON.stringify(value);
       if (lastSerializedRef.current === serialized) {
@@ -72,7 +86,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     } catch (e) {
       console.error(`[useLocalStorage] Failed to write "${key}":`, e);
     }
-  }, [key, value]);
+  }, [key, value, ready]);
 
   useEffect(() => {
     const applySerialized = (serialized: string) => {
@@ -114,7 +128,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         const next =
           typeof updater === 'function' ? (updater as (p: T) => T)(prev) : updater;
 
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && ready) {
           try {
             const serialized = JSON.stringify(next);
             if (lastSerializedRef.current !== serialized) {
@@ -134,7 +148,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         return next;
       });
     },
-    [key]
+    [key, ready]
   );
 
   return [value, setValueSafe] as const;

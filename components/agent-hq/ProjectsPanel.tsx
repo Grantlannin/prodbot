@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHand
 import type { ProjectBoard, ProjectSubTask, ProjectTask, TaskContextLink } from './types';
 import { useProjects } from './hooks/ProjectsProvider';
 import TaskContextLinksBox from './TaskContextLinksBox';
-import AppleNotesEditorModal from './AppleNotesEditorModal';
+import SimpleNotesEditorModal from './SimpleNotesEditorModal';
 import ProjectCompletionOverlay from './ProjectCompletionOverlay';
 import { getProjectProgress, type ProjectProgress } from './projectProgress';
 import { sessionLabel } from './quickstartTask';
@@ -933,7 +933,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
         onClose={() => setShowCelebration(false)}
         message={getCelebrationMessage()}
       />
-      <AppleNotesEditorModal
+      <SimpleNotesEditorModal
         open={notesEditor !== null}
         title={notesEditorTitle}
         value={notesEditorValue}

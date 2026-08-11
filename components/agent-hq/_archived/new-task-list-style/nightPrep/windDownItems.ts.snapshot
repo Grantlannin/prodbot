@@ -1,0 +1,54 @@
+import type { ProjectBoard } from '../types';
+import { formatDuration } from '../chatLogic';
+import { trackerLabelMatchesProjectTask } from './utils';
+
+export interface WindDownItem {
+  id: string;
+  label: string;
+  source: 'tracker';
+  trackerMs?: number;
+  trackerSessions?: number;
+}
+
+export interface ProjectWorkStat {
+  name: string;
+  totalMs: number;
+  count: number;
+}
+
+/**
+ * Wind-down context prompts only for timer-tracked work that maps to a project task.
+ * Homeless today-list sessions (no project task) are skipped — user can file them manually.
+ */
+export function buildWindDownItems(
+  projectStats: ProjectWorkStat[],
+  projects: ProjectBoard[] = []
+): WindDownItem[] {
+  const items: WindDownItem[] = [];
+  const seen = new Set<string>();
+
+  for (const stat of projectStats) {
+    const name = stat.name.trim();
+    if (!name || stat.totalMs <= 0) continue;
+    if (!trackerLabelMatchesProjectTask(projects, name)) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    items.push({
+      id: `tracker-${key}`,
+      label: name,
+      source: 'tracker',
+      trackerMs: stat.totalMs,
+      trackerSessions: stat.count,
+    });
+  }
+
+  return items;
+}
+
+export function windDownItemLabel(item: WindDownItem): string {
+  if (item.trackerMs) {
+    return `${item.label} (${formatDuration(item.trackerMs)} tracked)`;
+  }
+  return item.label;
+}
