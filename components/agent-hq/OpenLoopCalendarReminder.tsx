@@ -13,6 +13,8 @@ import { formatMinutesLabel } from './stuckHelp/dailyStructureUtils';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+export const OPEN_LOOP_CALENDAR_MINIMIZED_KEY = 'agentHQ_openLoopCalendarMinimized';
+
 const START_TIME_OPTIONS: number[] = (() => {
   const out: number[] = [];
   for (let m = 4 * 60; m < 24 * 60; m += 60) out.push(m);
@@ -52,7 +54,28 @@ function calendarDetails(note: CaptureNote): string {
   return text.length > 480 ? `${text.slice(0, 477)}…` : text;
 }
 
-export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }) {
+/** Icon-only control shown left of Delete when the calendar block is minimized. */
+export function OpenLoopCalendarMinimizedTab({ onExpand }: { onExpand: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onExpand}
+      style={styles.minimizedTab}
+      title="Show calendar reminder"
+      aria-label="Expand calendar reminder"
+    >
+      −
+    </button>
+  );
+}
+
+export default function OpenLoopCalendarReminder({
+  note,
+  onMinimize,
+}: {
+  note: CaptureNote;
+  onMinimize: () => void;
+}) {
   const [startMinutes, setStartMinutes] = useState<number | null>(null);
 
   const allDay = startMinutes == null;
@@ -88,8 +111,19 @@ export default function OpenLoopCalendarReminder({ note }: { note: CaptureNote }
 
   return (
     <div style={styles.wrap}>
-      <div style={styles.timeRow}>
+      <div style={styles.headerRow}>
         <span style={styles.label}>set a time (optional)</span>
+        <button
+          type="button"
+          onClick={onMinimize}
+          style={styles.minimizeBtn}
+          title="Minimize calendar reminder"
+          aria-label="Minimize calendar reminder"
+        >
+          −
+        </button>
+      </div>
+      <div style={styles.timeRow}>
         <select
           value={startMinutes == null ? '' : String(startMinutes)}
           onChange={e => {
@@ -131,6 +165,13 @@ const styles: Record<string, CSSProperties> = {
     padding: '10px 14px',
     borderTop: '1px solid #f1f5f9',
     fontFamily: font,
+    flexShrink: 0,
+  },
+  headerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   timeRow: {
     display: 'flex',
@@ -141,6 +182,41 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 11,
     fontWeight: 500,
     color: '#64748b',
+  },
+  minimizeBtn: {
+    border: '1px solid #e2e8f0',
+    borderRadius: 5,
+    background: '#fff',
+    color: '#64748b',
+    fontSize: 14,
+    fontWeight: 700,
+    lineHeight: 1,
+    width: 22,
+    height: 20,
+    padding: 0,
+    cursor: 'pointer',
+    fontFamily: font,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  minimizedTab: {
+    border: '1px solid #e2e8f0',
+    borderRadius: 5,
+    background: '#fff',
+    color: '#64748b',
+    fontSize: 14,
+    fontWeight: 700,
+    lineHeight: 1,
+    width: 22,
+    height: 20,
+    padding: 0,
+    cursor: 'pointer',
+    fontFamily: font,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   select: {
     width: '100%',

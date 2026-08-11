@@ -97,6 +97,8 @@ export interface CaptureNotesPanelProps {
   groupedTabsByKind?: boolean;
   enableDragReorder?: boolean;
   renderEditorExtra?: (note: CaptureNote) => ReactNode;
+  /** Rendered in the editor footer, to the left of Delete. */
+  renderEditorFooterStart?: (note: CaptureNote) => ReactNode;
 }
 
 function ToolbarIconButton({
@@ -143,6 +145,7 @@ export default function CaptureNotesPanel({
   groupedTabsByKind = false,
   enableDragReorder = false,
   renderEditorExtra,
+  renderEditorFooterStart,
 }: CaptureNotesPanelProps) {
   const [notes, setNotes] = useLocalStorage<CaptureNote[]>(storageKey, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -436,6 +439,7 @@ export default function CaptureNotesPanel({
               />
               {renderEditorExtra?.(selected)}
               <div style={styles.editorFooter}>
+                {renderEditorFooterStart?.(selected)}
                 <button type="button" onClick={() => deleteNote(selected.id)} style={styles.deleteBtn}>
                   Delete
                 </button>
@@ -620,7 +624,8 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 10,
     overflow: 'hidden',
     background: '#fff',
-    minHeight: 260,
+    height: 380,
+    minHeight: 380,
   },
   sidebar: {
     width: 212,
@@ -632,6 +637,7 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
+    height: '100%',
   },
   sidebarEmpty: {
     padding: 14,
@@ -643,8 +649,7 @@ const styles: Record<string, CSSProperties> = {
   sidebarList: {
     flex: 1,
     overflowY: 'auto',
-    minHeight: 52,
-    maxHeight: 'min(320px, 42vh)',
+    minHeight: 0,
     padding: 8,
     display: 'flex',
     flexDirection: 'column',
@@ -803,10 +808,12 @@ const styles: Record<string, CSSProperties> = {
     minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
-    minHeight: 260,
+    minHeight: 0,
+    height: '100%',
   },
   titleBlock: {
     padding: '4px 14px 0',
+    flexShrink: 0,
   },
   titleLabel: {
     display: 'block',
@@ -834,16 +841,18 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 500,
     color: '#64748b',
     lineHeight: 1.45,
+    flexShrink: 0,
   },
   bodyInput: {
     flex: 1,
     width: '100%',
-    minHeight: 120,
+    minHeight: 0,
     padding: '8px 14px 12px',
     border: 'none',
     borderTop: '1px solid #f1f5f9',
     outline: 'none',
-    resize: 'vertical',
+    resize: 'none',
+    overflowY: 'auto',
     background: 'transparent',
     fontFamily: font,
     fontSize: 14,
@@ -856,7 +865,10 @@ const styles: Record<string, CSSProperties> = {
     padding: '6px 14px 10px',
     borderTop: '1px solid #f1f5f9',
     display: 'flex',
+    alignItems: 'center',
     justifyContent: 'flex-end',
+    gap: 8,
+    flexShrink: 0,
   },
   deleteBtn: {
     background: 'transparent',

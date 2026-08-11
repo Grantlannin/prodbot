@@ -3,8 +3,12 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import CaptureNotesPanel, { QuestionsModal } from './CaptureNotesPanel';
-import OpenLoopCalendarReminder from './OpenLoopCalendarReminder';
-import { DECISION_ICON, OPEN_LOOP_ICON } from './openLoopsUi';
+import OpenLoopCalendarReminder, {
+  OPEN_LOOP_CALENDAR_MINIMIZED_KEY,
+  OpenLoopCalendarMinimizedTab,
+} from './OpenLoopCalendarReminder';
+import { DECISION_ICON, OPEN_LOOP_ICON, isDecisionNote } from './openLoopsUi';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -187,6 +191,19 @@ export function OpenLoopExplainModal({ onClose }: { onClose: () => void }) {
 
 export default function OpenLoopsPanel() {
   const [showQuestions, setShowQuestions] = useState(false);
+  const [calendarMinimizedByNote, setCalendarMinimizedByNote] = useLocalStorage<Record<string, boolean>>(
+    OPEN_LOOP_CALENDAR_MINIMIZED_KEY,
+    {}
+  );
+
+  const setCalendarMinimized = (noteId: string, minimized: boolean) => {
+    setCalendarMinimizedByNote(prev => {
+      if (minimized) return { ...prev, [noteId]: true };
+      const next = { ...prev };
+      delete next[noteId];
+      return next;
+    });
+  };
 
   return (
     <>
@@ -212,7 +229,22 @@ export default function OpenLoopsPanel() {
             prompt questions to de-load brain-weight
           </button>
         }
-        renderEditorExtra={note => <OpenLoopCalendarReminder key={note.id} note={note} />}
+        renderEditorExtra={note => {
+          if (isDecisionNote(note) || calendarMinimizedByNote[note.id]) return null;
+          return (
+            <OpenLoopCalendarReminder
+              key={note.id}
+              note={note}
+              onMinimize={() => setCalendarMinimized(note.id, true)}
+            />
+          );
+        }}
+        renderEditorFooterStart={note => {
+          if (isDecisionNote(note) || !calendarMinimizedByNote[note.id]) return null;
+          return (
+            <OpenLoopCalendarMinimizedTab onExpand={() => setCalendarMinimized(note.id, false)} />
+          );
+        }}
       />
       {showQuestions && (
         <QuestionsModal
