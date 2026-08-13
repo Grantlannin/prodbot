@@ -134,10 +134,9 @@ export default function LandingPage() {
             <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
               hit your $$ goals
             </span>{' '}
-            by blocking out social media &amp; helping you prioritize/prep your #1 most important task like 7-figure
-            entrepreneurs do, so you *actually* get your most important work done. While other people
-            waste time on busywork/scrolling, <span className="font-semibold text-slate-900">YOU</span> get ahead.
-            It&apos;s time to get sh*t done.
+            by blocking social media access on your desktop + helps you prioritize/prep your #1 most important task
+            daily (just like 7-figure entrepreneurs do). While other people waste time on busywork/scrolling,{' '}
+            <span className="font-semibold text-slate-900">YOU</span> get ahead. It&apos;s time to get sh*t done.
           </p>
           <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">
             (your bot exists just as a normal tab on your browser while you work)
