@@ -279,10 +279,9 @@ export default function LandingPage() {
             lock&rdquo;
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Protect the money hours by blocking any distracting website you want. During your work session, you will be
-            unable to access the sites you choose until your timer hits zero. Soft lock makes you wait 2 minutes for
-            access again (you&apos;ll usually just start working more), &amp; hard lock &ldquo;locks you in&rdquo; &amp;
-            fully blocks the sites until your work timer hits zero.
+            During your work session, your bot blocks the social media sites you choose until your timer hits zero. Soft
+            lock makes you wait 2 minutes to re-gain access (you&apos;ll usually just start working more), &amp; hard
+            lock &ldquo;locks you in&rdquo; &amp; fully blocks the sites until your work timer hits zero.
           </p>
           <Image
             src="/marketing/step4-lock.jpg"
