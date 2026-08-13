@@ -139,7 +139,7 @@ export default function LandingPage() {
             <span className="font-semibold text-slate-900">YOU</span> get ahead. It&apos;s time to get sh*t done.
           </p>
           <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">
-            (your bot exists just as a normal tab on your browser while you work)
+            (your bot exists as a regular tab on your browser while you work)
           </p>
           <div className="mt-5 flex flex-col items-center gap-2">
             {useCheckout ? (
@@ -166,7 +166,7 @@ export default function LandingPage() {
             <h2 className="mb-6 text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:mb-8 sm:text-4xl sm:leading-snug">
               Block Social Media.
               <br />
-              Set Up Your #1 Most Important Task.
+              Set Up Your #1 Cash Task.
               <br />
               <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
                 LOCK IN.
