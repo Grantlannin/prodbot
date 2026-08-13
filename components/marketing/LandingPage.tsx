@@ -130,11 +130,11 @@ export default function LandingPage() {
             priority
           />
           <p className="max-w-xl text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
-            Daywinner bot is your personal &ldquo;lock in&rdquo; dashboard + robot that helps you{' '}
+            Daywinner bot is your personal &ldquo;lock in&rdquo; dashboard + robot specifically designed to help you{' '}
             <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
               hit your $$ goals
             </span>{' '}
-            by blocking social media access on your desktop + helps you prioritize/prep your #1 most important task
+            by blocking social media access on your desktop + helping you prioritize/prep your #1 most important task
             daily (just like 7-figure entrepreneurs do). While other people waste time on busywork/scrolling,{' '}
             <span className="font-semibold text-slate-900">YOU</span> get ahead. It&apos;s time to get sh*t done.
           </p>
