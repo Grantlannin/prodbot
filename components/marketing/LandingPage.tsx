@@ -130,16 +130,17 @@ export default function LandingPage() {
             priority
           />
           <p className="max-w-xl text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
-            Daywinner bot is your personal make-money dashboard + robot that helps you{' '}
+            Daywinner bot is your personal &ldquo;lock in&rdquo; dashboard + robot that helps you{' '}
             <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
               hit your $$ goals
             </span>{' '}
-            by blocking social media and helping you set up your #1 most important task every single day (just like
-            7-figure operators do). This allows you to actually complete the work that will make you $$. Daywinner bot is
-            NOT a life to-do list. It&apos;s specifically designed for your ball-moving, money-tasks only.
+            by blocking out social media &amp; helping you prioritize/prep your #1 most important task like 7-figure
+            entrepreneurs do, so you *actually* get your most important work done. While other people
+            waste time on busywork/scrolling, <span className="font-semibold text-slate-900">YOU</span> get ahead.
+            It&apos;s time to get sh*t done.
           </p>
           <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">
-            (your bot sits as a normal tab on your browser, next to your other ones, while you work)
+            (your bot exists just as a normal tab on your browser while you work)
           </p>
           <div className="mt-5 flex flex-col items-center gap-2">
             {useCheckout ? (
@@ -166,7 +167,7 @@ export default function LandingPage() {
             <h2 className="mb-6 text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:mb-8 sm:text-4xl sm:leading-snug">
               Block Social Media.
               <br />
-              Set Up Your #1 Most Important Money-Task.
+              Set Up Your #1 Most Important Task.
               <br />
               <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
                 LOCK IN.
@@ -209,7 +210,7 @@ export default function LandingPage() {
           </p>
           <h2 className="mb-8 max-w-3xl text-center text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Social media, distractions &amp; busywork are taking your best money-making hours from you. And the work that
-            *actually* moves your bag forward gets eaten away at, 10 minute chunk by 10 minute chunk...
+            *actually* moves your bag forward gets eaten away at, 10 minute chunk by 10 minute chunk... until now.
           </h2>
           <div className="mb-8 w-full max-w-2xl space-y-5 text-left text-base leading-relaxed text-slate-600 sm:text-lg">
             <p>

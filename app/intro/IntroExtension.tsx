@@ -43,7 +43,8 @@ export default function IntroExtension() {
             <p style={styles.detected}>Extension connected — you&apos;re good to go.</p>
           ) : (
             <p style={styles.pending}>
-              Come back here after installing — we&apos;ll show &quot;Extension connected&quot; when it&apos;s working.
+              After installing, come back here and refresh this page — we&apos;ll show &quot;Extension
+              connected&quot; when it&apos;s working.
             </p>
           )}
 
@@ -62,6 +63,19 @@ export default function IntroExtension() {
             </>
           )}
 
+          <p style={styles.note}>
+            Note: When you download the extension, Chrome will pop up a message that says the extension can
+            &quot;read and change all your data on all websites&quot;. A sketchy sounding phrase that made me go
+            &quot;wtf?&quot; when i saw it as someone who doesn&apos;t want to give any data to anyone. I am still
+            to this day unsure why Chrome used that specific ambiguous wording. In normal language: what this
+            sentence means is that you&apos;re giving the extension permission to block specific pages of your
+            choosing (like any normal blocker), and because you can block any site you want, Chrome calls this
+            &quot;can change data on all sites&quot;. When you hit a blocked site, Daywinner logs that as an
+            &quot;infraction&quot; and keeps score for you on your dashboard. The extension does not care about any
+            history — it just blocks the sites you choose &amp; counts up the infractions (if there are any) in
+            your dashboard.
+          </p>
+
           <ol style={styles.steps}>
             {storeUrl ? (
               <>
@@ -69,7 +83,10 @@ export default function IntroExtension() {
                   Click <strong>Add to Chrome</strong> above and confirm install.
                 </li>
                 <li>Reload the extension if you had an older copy installed.</li>
-                <li>Come back here — we&apos;ll show &quot;Extension connected&quot; when it&apos;s working.</li>
+                <li>
+                  Come back here and refresh this page — we&apos;ll show &quot;Extension connected&quot; when
+                  it&apos;s working.
+                </li>
               </>
             ) : (
               <>
@@ -77,7 +94,10 @@ export default function IntroExtension() {
                   Unzip the download → <code style={styles.code}>chrome://extensions</code> → Developer mode → Load
                   unpacked.
                 </li>
-                <li>Come back here — we&apos;ll show &quot;Extension connected&quot; when it&apos;s working.</li>
+                <li>
+                  Come back here and refresh this page — we&apos;ll show &quot;Extension connected&quot; when
+                  it&apos;s working.
+                </li>
               </>
             )}
           </ol>
