@@ -278,9 +278,9 @@ export default function LandingPage() {
             Step 4: Choose the strength of your distraction blocker. Soft lock, or hard lock?
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Your Daywinner bot blocks the distracting sites you choose until your timer hits zero. Soft lock = 2-minute
-            annoying wait if you bail early (you&apos;ll usually go back to work). Hard lock = locked in until the
-            session ends. Sometimes you gotta force yourself to finish.
+            Your Daywinner bot blocks distracting sites until your timer hits zero. Soft lock = 2-minute annoying wait
+            if you bail early (you&apos;ll usually just go back to work). Hard lock = locked in until the full session
+            ends. For those times you gotta force yourself to finish.
           </p>
           <Image
             src="/marketing/step4-lock.jpg"
