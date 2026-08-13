@@ -138,9 +138,6 @@ export default function LandingPage() {
             daily (exactly like 7-figure entrepreneurs do). THEY waste time on busywork/scrolling,{' '}
             <span className="font-semibold text-slate-900">YOU</span> get ahead. It&apos;s time to get sh*t done.
           </p>
-          <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">
-            (your bot exists as a regular tab on your browser while you work)
-          </p>
           <div className="mt-5 flex flex-col items-center gap-2">
             {useCheckout ? (
               <StartCheckoutButton showPrice className={ctaBtnClass}>
