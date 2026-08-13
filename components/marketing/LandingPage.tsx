@@ -256,8 +256,8 @@ export default function LandingPage() {
             Step 3: Pick a focus session length
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            (25 mins for pomodoro, 45 mins for the ambitious, 60+ mins for the ruthless - your money task is linked to
-            your timer)
+            25 mins for Pomodoro. 45 mins if you&apos;re a psycho. 60+ mins if you want to print ASAP. And yes, your bot
+            automatically links your timed worked session to the specific task you&apos;re doing.
           </p>
           <Image
             src="/marketing/step3-timer.jpg"
