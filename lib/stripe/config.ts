@@ -14,6 +14,11 @@ export function getStripePriceId(): string | undefined {
   return process.env.STRIPE_PRICE_ID?.trim() || undefined;
 }
 
+/** One-time $1 quickstart fee charged at checkout before the monthly trial ends. */
+export function getStripeStarterPriceId(): string | undefined {
+  return process.env.STRIPE_STARTER_PRICE_ID?.trim() || undefined;
+}
+
 export function getStripePublishableKey(): string | undefined {
   return process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() || undefined;
 }
@@ -85,6 +90,8 @@ export function getBillingConfigChecks() {
     demoFlowRequested: demoRequested,
     hasStripeSecret: !!stripeSecret,
     stripeKeyMode,
+    hasMonthlyPriceId: !!getStripePriceId(),
+    hasStarterPriceId: !!getStripeStarterPriceId(),
     appUrl: getAppOrigin(''),
     supabaseConfigured: isSupabaseConfigured(),
     billingEnabled: isBillingEnabled(),

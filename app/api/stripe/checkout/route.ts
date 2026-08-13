@@ -4,13 +4,15 @@ import {
   generateCheckoutNonce,
 } from '@/lib/billing/checkout-claim';
 import { DEMO_CHECKOUT_SESSION_ID } from '@/lib/billing/demo';
+import { STARTER_TRIAL_DAYS } from '@/lib/billing/price';
 import { clientIpFromRequest, rateLimitAllow } from '@/lib/security/rate-limit';
-import { getAppOrigin, isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
+import { getAppOrigin, getStripeStarterPriceId, isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
 import { getStripeClient } from '@/lib/stripe/client';
 import { resolveMonthlyPriceId } from '@/lib/stripe/resolve-price';
 import { fetchBillingForUser, upsertBillingForUser } from '@/lib/billing/profile';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import type Stripe from 'stripe';
 
 const SUCCESS_URL = (origin: string) =>
   `${origin}/api/stripe/claim-receipt?session_id={CHECKOUT_SESSION_ID}`;
@@ -21,6 +23,38 @@ function jsonWithNonce(body: Record<string, unknown>, sessionId: string, nonce: 
     console.error('[stripe/checkout] missing claim signing secret for nonce cookie');
   }
   return res;
+}
+
+function buildSubscriptionCheckoutParams(args: {
+  priceId: string;
+  starterPriceId: string | undefined;
+  nonce: string;
+  customerId?: string;
+  clientReferenceId?: string;
+  origin: string;
+}): Stripe.Checkout.SessionCreateParams {
+  const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+    { price: args.priceId, quantity: 1 },
+  ];
+  if (args.starterPriceId) {
+    line_items.push({ price: args.starterPriceId, quantity: 1 });
+  }
+
+  return {
+    mode: 'subscription',
+    ...(args.customerId ? { customer: args.customerId } : {}),
+    ...(args.clientReferenceId ? { client_reference_id: args.clientReferenceId } : {}),
+    line_items,
+    success_url: SUCCESS_URL(args.origin),
+    cancel_url: `${args.origin}/?canceled=1`,
+    allow_promotion_codes: true,
+    payment_method_collection: 'always',
+    metadata: { claim_nonce: args.nonce },
+    subscription_data: {
+      metadata: { claim_nonce: args.nonce },
+      ...(args.starterPriceId ? { trial_period_days: STARTER_TRIAL_DAYS } : {}),
+    },
+  };
 }
 
 export async function POST(request: Request) {
@@ -50,6 +84,7 @@ export async function POST(request: Request) {
   try {
     const stripe = getStripeClient();
     const priceId = await resolveMonthlyPriceId(stripe);
+    const starterPriceId = getStripeStarterPriceId();
     const nonce = generateCheckoutNonce();
 
     const supabase = createServerSupabaseClient();
@@ -72,18 +107,16 @@ export async function POST(request: Request) {
         });
       }
 
-      const session = await stripe.checkout.sessions.create({
-        mode: 'subscription',
-        customer: customerId,
-        client_reference_id: user.id,
-        line_items: [{ price: priceId, quantity: 1 }],
-        success_url: SUCCESS_URL(origin),
-        cancel_url: `${origin}/?canceled=1`,
-        allow_promotion_codes: true,
-        payment_method_collection: 'always',
-        metadata: { claim_nonce: nonce },
-        subscription_data: { metadata: { claim_nonce: nonce } },
-      });
+      const session = await stripe.checkout.sessions.create(
+        buildSubscriptionCheckoutParams({
+          priceId,
+          starterPriceId,
+          nonce,
+          customerId,
+          clientReferenceId: user.id,
+          origin,
+        })
+      );
 
       if (!session.url || !session.id) {
         return NextResponse.json({ error: 'Could not create checkout session' }, { status: 500 });
@@ -92,16 +125,14 @@ export async function POST(request: Request) {
       return jsonWithNonce({ url: session.url }, session.id, nonce);
     }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: SUCCESS_URL(origin),
-      cancel_url: `${origin}/?canceled=1`,
-      allow_promotion_codes: true,
-      payment_method_collection: 'always',
-      metadata: { claim_nonce: nonce },
-      subscription_data: { metadata: { claim_nonce: nonce } },
-    });
+    const session = await stripe.checkout.sessions.create(
+      buildSubscriptionCheckoutParams({
+        priceId,
+        starterPriceId,
+        nonce,
+        origin,
+      })
+    );
 
     if (!session.url || !session.id) {
       return NextResponse.json({ error: 'Could not create checkout session' }, { status: 500 });

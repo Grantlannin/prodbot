@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { isBillingDemoFlow, isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
-import { MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
+import { MONTHLY_PRICE_SHORT, STARTER_PRICE_LABEL } from '@/lib/billing/price';
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/site';
 import MarketingShell from './MarketingShell';
 import StartCheckoutButton from './StartCheckoutButton';
@@ -29,8 +29,8 @@ function SectionCta({
       ) : (
         <Link href={href} className={ctaBtnClass}>
           <span className="text-sm font-semibold text-white">{label}</span>
-          <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
-          <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
+          <span className="text-sm font-medium text-slate-500 line-through">{MONTHLY_PRICE_SHORT}</span>
+          <span className="text-sm font-semibold text-white">{STARTER_PRICE_LABEL}</span>
         </Link>
       )}
     </div>
@@ -146,12 +146,12 @@ export default function LandingPage() {
             ) : (
               <Link href={fallbackHref} className={ctaBtnClass}>
                 <span className="text-sm font-semibold text-white">i&apos;m ready to f****** print</span>
-                <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
-                <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
+                <span className="text-sm font-medium text-slate-500 line-through">{MONTHLY_PRICE_SHORT}</span>
+                <span className="text-sm font-semibold text-white">{STARTER_PRICE_LABEL}</span>
               </Link>
             )}
             <p className="text-xs text-slate-500 sm:text-sm">
-              No commitments. No hidden fees. Cancel anytime.
+              {STARTER_PRICE_LABEL} today. Then {MONTHLY_PRICE_SHORT} after 7 days. Cancel anytime.
             </p>
           </div>
         </div>
