@@ -190,9 +190,9 @@ export default function LandingPage() {
               aria-label="Daywinner dashboard with sessions tracked by money task"
             />
             <p className="mx-auto max-w-2xl text-base leading-relaxed text-slate-600">
-              Every money task is linked to your tracker &amp; timer, which not only shows you exactly what you worked
-              on &amp; for how long — but also forces you to stay organized. Because if you don&apos;t organize, you
-              can&apos;t start the session.
+              Every money task is linked to your tracker &amp; timer. This shows you exactly what you worked on &amp; for
+              how long, so you can&apos;t lie to yourself. It also FORCES you to stay organized - because if you
+              don&apos;t organize, you can&apos;t start the session.
             </p>
             <SectionCta checkout={useCheckout} href={fallbackHref} label="i'm ready to LITERALLY lock in" />
           </div>
