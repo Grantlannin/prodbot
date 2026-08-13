@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { grantCourseAccess } from '@/lib/billing/course';
+import { checkoutSessionEmail } from '@/lib/billing/checkout-email';
 import { mapStripeSubscriptionStatus } from '@/lib/billing/subscription';
 import { upsertBillingForUser } from '@/lib/billing/profile';
+import { syncBuyerToActiveCampaign } from '@/lib/email/activecampaign';
 import { getStripeWebhookSecret, isBillingEnabled } from '@/lib/stripe/config';
 import { getStripeClient } from '@/lib/stripe/client';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
@@ -122,6 +124,17 @@ export async function POST(req: Request) {
           userId: session.client_reference_id,
           customerId,
         });
+
+        const buyerEmail = checkoutSessionEmail(session);
+        if (buyerEmail) {
+          const tags = isCourseCheckoutSession(session)
+            ? ['daywinner-buyer', 'daywinner-course']
+            : ['daywinner-buyer'];
+          const ac = await syncBuyerToActiveCampaign({ email: buyerEmail, tags });
+          if (!ac.ok && ac.error !== 'ActiveCampaign is not configured') {
+            console.error('[stripe/webhook] ActiveCampaign sync failed', event.id, ac.error);
+          }
+        }
 
         if (isCourseCheckoutSession(session)) {
           if (customerId) {
