@@ -278,9 +278,9 @@ export default function LandingPage() {
             Step 4: Choose the strength of your distraction blocker. Soft lock, or hard lock?
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Your bot blocks the social media sites you choose until your work timer hits zero. Soft lock makes you wait
-            2 minutes to get access back (you&apos;ll usually just start working more), &amp; hard lock &ldquo;locks you
-            in&rdquo; &amp; fully blocks the sites until your work timer hits zero.
+            Your bot blocks the social distracting websites you choose to block until your work timer hits zero. Soft
+            lock makes you wait 2 minutes to get access back (you&apos;ll usually just start working more), &amp; hard
+            lock &ldquo;locks you in&rdquo; &amp; fully blocks the sites until your work timer hits zero.
           </p>
           <Image
             src="/marketing/step4-lock.jpg"
