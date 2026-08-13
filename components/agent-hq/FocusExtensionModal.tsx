@@ -12,9 +12,7 @@ import {
   resolveBlocklist,
   type FocusBlocklistStore,
 } from './focusBlocking';
-import { getAppOrigin } from '@/lib/app-origin';
 import { getChromeExtensionStoreUrl } from '@/lib/intro';
-import { PRODUCTION_SITE_HOST, PRODUCTION_SITE_ORIGIN } from '@/lib/site';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -30,13 +28,6 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
 
   const activeCount = useMemo(() => resolveBlocklist(store).length, [store]);
   const storeUrl = getChromeExtensionStoreUrl();
-  const siteHost = useMemo(() => {
-    try {
-      return new URL(getAppOrigin(PRODUCTION_SITE_ORIGIN)).hostname;
-    } catch {
-      return PRODUCTION_SITE_HOST;
-    }
-  }, []);
 
   const toggleBundle = () => {
     setStore(prev => ({ ...prev, socialBundleEnabled: !prev.socialBundleEnabled }));
@@ -96,11 +87,6 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
               </div>
 
               <div style={styles.section}>
-                <div style={styles.sectionLabel}>Setup</div>
-                <p style={styles.body}>
-                  Blocks sites during focus sessions with soft or hard lock (not on breaks or no-lock sessions). Works on{' '}
-                  <strong>{siteHost}</strong> — keep this app tab open while you work.
-                </p>
                 <div style={styles.sectionLabel}>If you don&apos;t have the extension</div>
                 {storeUrl ? (
                   <a href={storeUrl} target="_blank" rel="noopener noreferrer" style={styles.downloadLink}>
@@ -111,29 +97,21 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
                     Download extension
                   </a>
                 )}
-                <ol style={styles.steps}>
-                  {storeUrl ? (
-                    <>
-                      <li>
-                        Click <strong>Add to Chrome</strong> above and confirm install.
-                      </li>
-                      <li>
-                        If you already installed an older copy, open <code>chrome://extensions</code> and click{' '}
-                        <strong>Update</strong> or reinstall from the store so {siteHost} is included.
-                      </li>
-                    </>
-                  ) : (
-                    <>
-                      <li>
-                        Unzip → chrome://extensions → Developer mode → Load unpacked → select the extension folder.
-                      </li>
-                      <li>
-                        If you already installed an older copy, click <strong>Reload</strong> on the extension card (or
-                        remove and load unpacked again) so {siteHost} is included.
-                      </li>
-                    </>
-                  )}
-                </ol>
+                <div style={styles.stepsBlock}>
+                  <p style={styles.stepLine}>
+                    <strong>Step 1</strong> — Click the link &amp; download the above extension
+                  </p>
+                  <img
+                    src="/marketing/chrome-extension-installed.png"
+                    alt="Chrome Extensions menu showing Daywinner bot installed"
+                    style={styles.installScreenshot}
+                  />
+                  <p style={styles.stepLine}>
+                    <strong>Step 2</strong> — Once you see the extension downloaded, it should be automatically
+                    connected. The easiest way to test it is to start a work session like normal with soft lock, then go
+                    to one of the sites you have blocked. If it blocks it, it&apos;s working.
+                  </p>
+                </div>
               </div>
 
               <div style={styles.section}>
@@ -261,7 +239,7 @@ const styles: Record<string, CSSProperties> = {
   },
   panel: {
     width: 'min(100%, 420px)',
-    maxHeight: 'min(85vh, 560px)',
+    maxHeight: 'min(90vh, 720px)',
     overflowY: 'auto',
     background: '#fff',
     borderRadius: 12,
@@ -305,12 +283,6 @@ const styles: Record<string, CSSProperties> = {
     marginBottom: 8,
     marginTop: 4,
   },
-  body: {
-    margin: '0 0 12px',
-    fontSize: 13,
-    color: '#64748b',
-    lineHeight: 1.45,
-  },
   downloadLink: {
     display: 'inline-block',
     fontSize: 12,
@@ -319,12 +291,25 @@ const styles: Record<string, CSSProperties> = {
     textDecoration: 'none',
     marginBottom: 10,
   },
-  steps: {
+  stepsBlock: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+    marginTop: 4,
+  },
+  stepLine: {
     margin: 0,
-    paddingLeft: 18,
     fontSize: 12,
     color: '#475569',
     lineHeight: 1.5,
+  },
+  installScreenshot: {
+    display: 'block',
+    width: '100%',
+    height: 'auto',
+    marginTop: 0,
+    borderRadius: 8,
+    border: '1px solid #e2e8f0',
   },
   packRow: {
     display: 'flex',

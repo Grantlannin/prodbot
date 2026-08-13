@@ -39,60 +39,71 @@ function SectionCta({
 
 const whoItsFor = [
   {
+    title: 'You’re ready to start making money online',
+    body: 'No side hustle yet — that’s fine. You bought the bot to stop spinning and actually start. Pick the money work, lock in, and go.',
+  },
+  {
     title: 'You’re building something on your own',
-    body: 'Indie app, micro-SaaS, newsletter, solo project. You wear every hat. Daywinner keeps projects, timer, and blocklist in one spot so ship day doesn’t turn into scroll day.',
+    body: 'Indie app, micro-SaaS, newsletter, offer, solo product. You wear every hat. Daywinner keeps money work, timer, and blocklist in one spot so ship day doesn’t turn into scroll day.',
   },
   {
     title: 'You freelance for multiple clients',
-    body: 'Designer, dev, writer, VA — juggling 2–5 clients. One place per client. Timed blocks. Notes on the task so switching doesn’t wreck your brain.',
+    body: 'Designer, dev, writer, VA — juggling 2–5 clients. One place per client. Timed blocks. Notes on the paid work so switching doesn’t wreck your brain.',
   },
   {
-    title: 'You make content and run the business',
-    body: 'YouTube, TikTok, podcast, courses. Creating is half of it; DMs, sponsors, and admin are the rest. Separate deep work from the boring stuff that actually pays.',
-  },
-  {
-    title: 'You work from home at a real job',
-    body: 'Analyst, PM, marketer, ops. Your calendar fills up fast. Protect 90 minutes before Slack and email take the whole day.',
-  },
-  {
-    title: 'You’re in school but treating it seriously',
-    body: 'Grad school, bootcamp, teaching yourself design or code. Same laptop for everything. Clock in, lock distractions, work like it matters.',
+    title: 'You make content that leads to sales',
+    body: 'YouTube, TikTok, podcast, courses. Creating is half of it; offers, sponsors, and funnel work are the rest. Separate deep money work from busywork that doesn’t pay.',
   },
   {
     title: 'You have a day job and a side thing',
-    body: 'Full-time plus Etsy, consulting, content, or whatever you’re building at night. An hour after work is gold — make it count.',
-  },
-  {
-    title: 'You work in sprints but hate starting',
-    body: 'You get stuff done — once you’re in. Starting and staying off your phone is the hard part. Simple setup: projects, timer, site lock. No 100-feature todo app.',
+    body: 'Full-time plus consulting, content, Etsy, or whatever you’re building at night to make money online. An hour after work is gold — make it count on $ work only.',
   },
   {
     title: 'Your job is calls, emails, and outreach',
-    body: 'Sales, recruiting, real estate, agency new business. Prospecting always gets pushed to “later.” Block morning time and work from a list that’s actually yours.',
-  },
-  {
-    title: 'You run a small team but still do the work',
-    body: 'A few employees, lots of client fires. This isn’t the team’s project board — it’s for your tasks when nobody’s telling you what to do next.',
+    body: 'Sales, recruiting, real estate, agency new business. Prospecting always gets pushed to “later.” Block morning time and work from a money list that’s actually yours.',
   },
   {
     title: 'You’re a consultant or coach',
-    body: 'Strategy, career, fitness, business. Your calendar is full of calls; prep and follow-up get skipped. Block time for the work between meetings.',
+    body: 'Strategy, career, fitness, business. Your calendar is full of calls; prep and follow-up (the work that gets you paid) get skipped. Block time for the money work between meetings.',
   },
   {
-    title: 'You’re writing a thesis or doing deep research',
-    body: 'PhD, postdoc, or serious self-directed learning. Long days, easy detours. Blocks for reading and writing, with fewer “just five minutes on my phone” moments.',
+    title: 'You’re building an offer or product online',
+    body: 'Landing page, course, SaaS, digital product. Endless “almost working on it.” One money task, timer on, sites locked — until the thing that makes you money actually ships.',
   },
   {
-    title: 'You work with your hands, laptop at night',
-    body: 'Electrician, photographer, trainer — job site by day, invoices and bookings after dinner. Short evening blocks so admin actually gets done.',
+    title: 'You work in sprints but hate starting',
+    body: 'You get paid work done — once you’re in. Starting and staying off your phone is the hard part. Simple setup: money projects, timer, site lock. No life to-do list.',
   },
   {
-    title: 'You’re job hunting for real',
-    body: 'Not just browsing listings — applying, networking, prepping interviews. Treat the search like a job: timed blocks, one target at a time.',
+    title: 'You’re turning a skill into online income',
+    body: 'Design, code, writing, editing — building clients, products, or content that pays. Protect the hours that move the bag, not the hours that feel busy.',
+  },
+];
+
+const whoItsNotFor = [
+  {
+    title: 'Life admin & chores',
+    body: 'Groceries, laundry, cleaning, errands, and “random life stuff.” Those don’t fall into the category of money-making work — and Daywinner isn’t built for them.',
   },
   {
-    title: 'You work from home with kids in the mix',
-    body: 'Nap time, early morning, whatever window you get. You can’t waste twenty minutes. One task, timer on, phone away.',
+    title: 'Catch-all to-do lists / life planning',
+    body: 'If you want one app for everything in your day, this isn’t it. Daywinner is only for the work that makes you money online — including getting that work started.',
+  },
+  {
+    title: 'Busywork that feels like progress',
+    body: 'Reorganizing folders, tweaking logos for the 40th time, scrolling “research.” If it doesn’t move revenue or your $ goal, it doesn’t belong in Daywinner — on purpose.',
+  },
+  {
+    title: 'Another planner to bookmark and ignore',
+    body: 'Daywinner isn’t a shelf app you collect and forget. It’s a lock-in bot for money tasks you actually run — whether you’re starting or already grinding.',
+  },
+  {
+    title: 'Hobby / personal projects (unless they pay)',
+    body: 'Hobbies, random to-do’s and personal stuff stay out — unless it’s clearly tied to online income or a real $ goal.',
+  },
+  {
+    title: 'Team / company project management',
+    body: 'Not Asana for your company. Daywinner is a personal bot for money-making work when you’re the one who has to do it.',
   },
 ];
 
@@ -111,7 +122,7 @@ export default function LandingPage() {
           <h1 className="mb-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Daywinner bot</h1>
           <Image
             src="/marketing/daywinner-bot-hero.png"
-            alt="Daywinner bot presenting the productivity dashboard"
+            alt="Daywinner bot presenting the money-work dashboard"
             width={1400}
             height={934}
             className="mb-5 h-auto w-full max-w-[400px] sm:max-w-[520px]"
@@ -119,12 +130,13 @@ export default function LandingPage() {
             priority
           />
           <p className="max-w-xl text-base leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
-            Daywinner bot is your personal productivity dashboard + robot that helps you{' '}
+            Daywinner bot is your personal make-money dashboard + robot that helps you{' '}
             <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
-              win the day
+              hit your $$ goals
             </span>{' '}
-            by blocking your most important distractions &amp; walks you through the same organizational flows that
-            7-figure entrepreneurs use to keep you hyper-organized, daily.
+            by blocking social media and helping you set up your #1 most important task every single day (just like
+            7-figure operators do). This allows you to actually complete the work that will make you $$. Daywinner bot is
+            NOT a life to-do list. It&apos;s specifically designed for your ball-moving, money-tasks only.
           </p>
           <p className="mt-2 text-sm text-slate-500 sm:text-[15px]">
             (your bot sits as a normal tab on your browser, next to your other ones, while you work)
@@ -132,11 +144,11 @@ export default function LandingPage() {
           <div className="mt-5 flex flex-col items-center gap-2">
             {useCheckout ? (
               <StartCheckoutButton showPrice className={ctaBtnClass}>
-                let&apos;s go
+                i&apos;m ready to f****** print
               </StartCheckoutButton>
             ) : (
               <Link href={fallbackHref} className={ctaBtnClass}>
-                <span className="text-sm font-semibold text-white">let&apos;s go</span>
+                <span className="text-sm font-semibold text-white">i&apos;m ready to f****** print</span>
                 <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
                 <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
               </Link>
@@ -154,16 +166,16 @@ export default function LandingPage() {
             <h2 className="mb-6 text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:mb-8 sm:text-4xl sm:leading-snug">
               Block Social Media.
               <br />
-              Set Up Your #1 Most Important Task Daily.
+              Set Up Your #1 Most Important Money-Task.
               <br />
               <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
-                Win
+                LOCK IN.
               </span>{' '}
-              The Day.
+              (literally)
             </h2>
             <Image
               src="/marketing/sessions-flow-steps.png"
-              alt="Step 1 Choose your task > Step 2 set your work timer > Step 3 Begin working (with social media blocked)"
+              alt="Step 1 Choose the task that makes you money > Step 2 set your work timer > Step 3 Begin working (with social media blocked)"
               width={2560}
               height={436}
               className="mx-auto mb-6 h-auto w-full"
@@ -178,15 +190,66 @@ export default function LandingPage() {
               loop
               playsInline
               controls={false}
-              aria-label="Daywinner dashboard with sessions tracked by task"
+              aria-label="Daywinner dashboard with sessions tracked by money task"
             />
             <p className="mx-auto max-w-2xl text-base leading-relaxed text-slate-600">
-              Every task is linked to your tracker &amp; timer, which not only shows you exactly what you worked on
-              &amp; for how long — but also forces you to stay organized. Because if you don&apos;t organize, you
+              Every money task is linked to your tracker &amp; timer, which not only shows you exactly what you worked
+              on &amp; for how long — but also forces you to stay organized. Because if you don&apos;t organize, you
               can&apos;t start the session.
             </p>
-            <SectionCta checkout={useCheckout} href={fallbackHref} label="I'm ready to transcend" />
+            <SectionCta checkout={useCheckout} href={fallbackHref} label="i'm ready to LITERALLY lock in" />
           </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 py-12 sm:py-16">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
+          <p className="mb-4 text-center text-2xl font-bold tracking-tight text-red-500 sm:text-4xl">
+            here&apos;s the problem:
+          </p>
+          <h2 className="mb-8 max-w-3xl text-center text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Social media, distractions &amp; busywork are taking your best money-making hours from you. And the work that
+            *actually* moves your bag forward gets eaten away at, 10 minute chunk by 10 minute chunk...
+          </h2>
+          <div className="mb-8 w-full max-w-2xl space-y-5 text-left text-base leading-relaxed text-slate-600 sm:text-lg">
+            <p>
+              Here&apos;s the problem: you want to make way more money, but your attention is getting destroyed by social
+              media &amp; a bunch of other random websites that aren&apos;t the task you&apos;re supposed to be doing.
+              This causes your progress to feel slow af, and it makes your self worth drop because you know you could be
+              a beast if you figured out how to actually lock in, but for some reason, the output isn&apos;t matching
+              what you know you can do. I&apos;ve been there, because I was you.
+            </p>
+            <p className="font-semibold text-slate-900">The issue is 2-fold:</p>
+            <div className="space-y-3">
+              <p>
+                <span className="font-bold text-slate-900">#1</span> - your sh*t is probably laying everywhere. Some work
+                stuff in your notes tab, some in your docs, some in your phone. It&apos;s probably random as hell.
+                Daywinner allows you to put everything that&apos;s relevant to the most important work that will actually
+                make you money into 1 specific place - and then allows you to track all of it while you do that same
+                *actually* important work. Nothing else goes into it. It has 1 function - to help you WIN THE DAY by
+                completing your #1 most important task daily, every single day.
+              </p>
+              <p>
+                <span className="font-bold text-slate-900">#2</span> - little social media checks are destroying your
+                productivity/workflow. This was happening to me. 1 little phone check, 10 minutes gone. Another one, 30
+                minutes gone. Another one, now I don&apos;t feel like working. Then 3 weeks passes by, i&apos;ve done
+                literally f****** nothing. &ldquo;Wow, i&apos;m better than this. this is disgusting&rdquo;. That
+                embarrassment for my lack of focus is what drove me to create daywinner bot. I wanted all my stuff in 1
+                place, and i wanted to be able to block every social media site &amp; give me a simple work timer that I
+                could see in a browser tab that then showed me exactly what I worked on so I had *actual proof* of what I
+                did that day so I couldn&apos;t lie to myself. And that&apos;s exactly what daywinner bot is. Since using
+                it, I&apos;ve legitimately been 20x+ more productive and i&apos;m not even joking. I use it every day, and
+                i make progress EVERY single day. I quite literally haven&apos;t &ldquo;missed&rdquo; a work day yet with
+                it in my possession. Once you get familiar with it &amp; *actually* use it, your work &ldquo;hit
+                rate&rdquo; goes to 100%.
+                You simply stop missing. Then at that point, the only variable left is &ldquo;are you doing the right
+                task or not&rdquo;, and there&apos;s a course paired with the bot that helps you make sure that you are.
+                A TOTAL no-brainer for the price. If $4.99 isn&apos;t worth re-claiming like 100+ hours per month of
+                deep focused work for you, i don&apos;t know what to tell you lol. Just try it out &amp; see for yourself.
+              </p>
+            </div>
+          </div>
+          <SectionCta checkout={useCheckout} href={fallbackHref} label="I'm ready to use my hours on ME" />
         </div>
       </section>
 
@@ -204,11 +267,11 @@ export default function LandingPage() {
       <section className="space-y-6 border-t border-slate-200 pt-4 sm:pt-5">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 1: Organize your most important tasks into 1 place (which links them to your tracker)
+            Step 1: Organize your most important money-making tasks into 1 place (which links them all to your tracker)
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            You can now store links and notes in tasks/projects specifically, instead of losing them all over your
-            computer.
+            With Daywinner bot, you can now store your relevant links + notes in SPECIFIC tasks, instead of losing them
+            all over your computer &amp; destroying your flow.
           </p>
           <Image
             src="/marketing/projects.jpg"
@@ -226,11 +289,11 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 2: Choose the most important task that will <em>actually</em> move the ball forward for you
+            Step 2: Choose the most important &ldquo;money task&rdquo; that will actually move the ball forward for you
           </h2>
           <Image
             src="/marketing/choose-task.jpg"
-            alt="What are you working on — choose a task"
+            alt="What are you working on — choose a money task"
             width={1024}
             height={672}
             className="h-auto w-full"
@@ -247,8 +310,8 @@ export default function LandingPage() {
             Step 3: Pick a focus session length
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            (25 mins for pomodoro, 45 mins for the ambitious, 2+ hours for the ruthless - your task is linked to your
-            timer, and your chosen sites are blocked for the duration of your work session)
+            (25 mins for pomodoro, 45 mins for the ambitious, 60+ mins for the ruthless - your money task is linked to
+            your timer)
           </p>
           <Image
             src="/marketing/step3-timer.jpg"
@@ -270,10 +333,10 @@ export default function LandingPage() {
             lock&rdquo;
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Block any distracting website you want. During your work session, you will be unable to access the sites you
-            choose until your timer hits zero. Soft lock makes you wait 2 minutes for access again (you&apos;ll usually
-            just start working more), &amp; hard lock &ldquo;locks you in&rdquo; &amp; blocks the sites entirely until
-            your work timer hits zero.
+            Protect the money hours by blocking any distracting website you want. During your work session, you will be
+            unable to access the sites you choose until your timer hits zero. Soft lock makes you wait 2 minutes for
+            access again (you&apos;ll usually just start working more), &amp; hard lock &ldquo;locks you in&rdquo; &amp;
+            fully blocks the sites until your work timer hits zero.
           </p>
           <Image
             src="/marketing/step4-lock.jpg"
@@ -292,7 +355,7 @@ export default function LandingPage() {
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Step 5: Put in an AMAZING tracked work session (while all social media sites are blocked, so it&apos;s just
-            you &amp; the work)
+            you &amp; the work) &amp; get used to your new powers
           </h2>
           <Image
             src="/marketing/task-tracking.jpg"
@@ -309,8 +372,8 @@ export default function LandingPage() {
       <section className="space-y-6 pt-12 sm:pt-16">
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-6 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Congrats. You just had a more productive 4 hours than you&apos;ve had in the past 4 years. But now, it&apos;s
-            time for the real magic...
+            Congrats. You just had a more productive 4 hours than you&apos;ve had in the past 4 years. But now,
+            it&apos;s time for the real magic...
           </h2>
           <Image
             src="/marketing/daywinner-bot-salt-ws.png"
@@ -357,15 +420,16 @@ export default function LandingPage() {
           </h2>
           <Image
             src="/marketing/wind-down.jpg"
-            alt="Wind down bot asking what you got done today"
+            alt="Wind down bot asking what money work you got done today"
             width={942}
             height={1024}
             className="mb-6 h-auto w-full max-w-md sm:max-w-lg"
             unoptimized
           />
           <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600">
-            There is nowhere to hide. Your bot will ask you what you got done, and you are able to see if it was the
-            most important thing, or if you just &ldquo;productively procrastinated&rdquo;
+            There is nowhere to hide. Your bot will ask you what you got done, and you are able to see if it was
+            *actually* the highest-leverage $ task you had available, or if you just &ldquo;productively
+            procrastinated&rdquo;.
           </p>
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Your bot then puts you through a wind-down flow that forces you to stay organized &amp; prioritize the 1
@@ -373,7 +437,7 @@ export default function LandingPage() {
           </h2>
           <Image
             src="/marketing/wind-down-context.jpg"
-            alt="Wind down flow adding context and organizing for tomorrow"
+            alt="Wind down flow adding context and organizing tomorrow's money task"
             width={1024}
             height={955}
             className="mb-10 h-auto w-full max-w-2xl"
@@ -384,7 +448,7 @@ export default function LandingPage() {
             tomorrow?
           </h2>
           <p className="mb-6 max-w-2xl text-2xl font-extrabold leading-[1.55] tracking-tight text-green-600 sm:text-4xl">
-            The single most important task you need to do, already ready to go.
+            The single most important task you need to do next, already ready to go.
           </p>
           <div className="relative mx-auto mb-8 w-full max-w-[22rem] sm:max-w-md">
             <div className="relative mx-auto aspect-square w-full max-w-[360px]">
@@ -415,7 +479,7 @@ export default function LandingPage() {
               <div className="absolute inset-0 z-0 flex items-center justify-center">
                 <Image
                   src="/marketing/tomorrow-task-list.png"
-                  alt="Tomorrow's task list — finish onboarding"
+                  alt="Tomorrow's money task — already teed up"
                   width={460}
                   height={200}
                   className="h-auto w-[58%] max-w-[200px] rounded-lg bg-white"
@@ -425,15 +489,15 @@ export default function LandingPage() {
             </div>
           </div>
           <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            Boom - you&apos;ve just organized your dashboard &amp; &ldquo;tee&apos;d up&rdquo; tomorrow&apos;s
-            most important task like a 7-figure entrepreneur. Pair that with your social media blocker &amp; timer,
-            and you&apos;re about to{' '}
+            Boom - you&apos;ve just organized your dashboard &amp; &ldquo;tee&apos;d up&rdquo; tomorrow&apos;s most
+            important task like a 7-figure entrepreneur. Pair that with your social media blocker &amp; timer, and
+            you&apos;re about to{' '}
             <span className="whitespace-nowrap rounded-md bg-slate-900 px-2 py-0.5 font-semibold text-white">
               WIN THE DAY
-            </span>
-            . It&apos;s been won before it even started.
+            </span>{' '}
+            &amp; make some f****** money. It&apos;s been won before it even started.
           </p>
-          <SectionCta checkout={useCheckout} href={fallbackHref} label="I'm ready to dominate" />
+          <SectionCta checkout={useCheckout} href={fallbackHref} label="Let's run this. I'm THIRSTY for my cash daddy" />
         </div>
       </section>
 
@@ -487,11 +551,11 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center text-center pt-10">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            trouble organizing your task list? The bot has a flow for that
+            trouble picking what actually moves the bag? The bot has a flow for that
           </h2>
           <Image
             src="/marketing/organize-start.jpg"
-            alt="Stuck help options — trouble organizing task list"
+            alt="Stuck help options — trouble organizing money task list"
             width={1024}
             height={599}
             className="h-auto w-full border-4 border-red-500"
@@ -512,7 +576,7 @@ export default function LandingPage() {
           </p>
           <Image
             src="/marketing/organize-flow.jpg"
-            alt="Bot teeing up the most important task"
+            alt="Bot teeing up the most important money task"
             width={1024}
             height={898}
             className="h-auto w-full border-4 border-red-500"
@@ -520,15 +584,78 @@ export default function LandingPage() {
           />
           <SectionCta checkout={useCheckout} href={fallbackHref} label="Need my bot ASAP" />
         </div>
+      </section>
 
-        <div className="flex flex-col items-center text-center pt-10">
+      <section className="border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="mb-10 flex flex-col items-center text-center">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Who this is for</p>
+          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Daywinner bot is for people who are either trying to make $$$ online or are already making it (and want to
+            make more).
+          </h2>
+          <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            Daywinner isn&apos;t a life planner. It&apos;s a homebase for the work that gets you printing. If you&apos;re
+            doing (or need to do) work that makes you internet cash, Daywinner can help you run laps around your old self.
+            Just prioritize your #1 most important task. Lock in. Block everything that isn&apos;t the task. And Go.
+          </p>
+        </div>
+
+        <ul className="mb-14 grid gap-4 sm:grid-cols-2">
+          {whoItsFor.map(item => (
+            <li
+              key={item.title}
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              <h3 className="mb-2 text-sm font-bold leading-snug text-slate-900">{item.title}</h3>
+              <p className="text-sm leading-relaxed text-slate-600">{item.body}</p>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mb-10 flex flex-col items-center text-center">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-red-500">
+            Daywinner is not for
+          </p>
+          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            If the task ain&apos;t talking cashflow, Daywinner bot say NO NO.
+          </h2>
+          <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            Daywinner is specifically designed for pushing your most baller money-making tasks forward — not worrying
+            about your grocery list. This is very honestly what Daywinner is not for:
+          </p>
+        </div>
+
+        <ul className="mb-10 grid gap-4 sm:grid-cols-2">
+          {whoItsNotFor.map(item => (
+            <li
+              key={item.title}
+              className="rounded-2xl border border-red-200 bg-red-50/40 p-5 shadow-sm"
+            >
+              <h3 className="mb-2 text-sm font-bold leading-snug text-slate-900">{item.title}</h3>
+              <p className="text-sm leading-relaxed text-slate-600">{item.body}</p>
+            </li>
+          ))}
+        </ul>
+
+        <p className="mx-auto mb-8 max-w-lg text-center text-base leading-relaxed text-slate-600">
+          Whether you&apos;re already making money online or you&apos;re choosing the bot to finally start —
+          Daywinner gives you structure to do the work that pays, without turning into a life to-do list.
+        </p>
+
+        <div className="flex flex-col items-center">
+          <SectionCta checkout={useCheckout} href={fallbackHref} label="THOSE SOUND BORING ANYWAY. IT'S PRINT TIME." />
+        </div>
+      </section>
+
+      <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
+        <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Need additional accountability?
           </h2>
           <p className="mb-6 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            You can turn every task you worked on into an EOD report &amp; send it to an accountability buddy (or
-            yourself) easily via email with 1 click so they can see the{' '}
-            <span className="underline decoration-[2px] underline-offset-2">truth</span> of your productivity.
+            You can turn every money task you worked on into an EOD report &amp; send it to an accountability buddy
+            (or yourself) easily via email with 1 click so they can see the{' '}
+            <span className="underline decoration-[2px] underline-offset-2">truth</span> of your money hours.
           </p>
           <Image
             src="/marketing/eod-send.jpg"
@@ -542,45 +669,10 @@ export default function LandingPage() {
             Send EOD to your partner — or yourself.
           </h3>
           <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            Opens Gmail (or your mail app) with today&apos;s report pre-filled: what you got done, insights, work
-            time, tomorrow. You review and hit Send — nothing leaves Daywinner automatically.
+            Opens Gmail (or your mail app) with today&apos;s report pre-filled: what money work you got done,
+            insights, work time, tomorrow. You review and hit Send — nothing leaves Daywinner automatically.
           </p>
           <SectionCta checkout={useCheckout} href={fallbackHref} label="GIVE ME MY BOT" />
-        </div>
-      </section>
-
-      <section className="pt-12 sm:pt-16">
-        <div className="mb-10 flex flex-col items-center text-center">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Who it&apos;s for</p>
-          <h2 className="mb-4 max-w-xl text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">
-            Already working? Daywinner is your homebase.
-          </h2>
-          <p className="max-w-lg text-base leading-relaxed text-slate-600">
-            Daywinner isn&apos;t for &ldquo;someday I&apos;ll get organized.&rdquo; It&apos;s for people who are already
-            building, shipping, selling, studying, or grinding — and need one calm place to focus, track projects, and
-            block distractions. Same workflow. Less chaos.
-          </p>
-        </div>
-
-        <ul className="mb-10 grid gap-4 sm:grid-cols-2">
-          {whoItsFor.map(item => (
-            <li
-              key={item.title}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <h3 className="mb-2 text-sm font-bold leading-snug text-slate-900">{item.title}</h3>
-              <p className="text-sm leading-relaxed text-slate-600">{item.body}</p>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mx-auto mb-8 max-w-lg text-center text-base leading-relaxed text-slate-600">
-          If you&apos;re already doing the work — building, billing, creating, applying, or grinding on the side —
-          Daywinner gives you structure without changing how you move.
-        </p>
-
-        <div className="flex flex-col items-center">
-          <SectionCta checkout={useCheckout} href={fallbackHref} label="YES. I'M IN." />
         </div>
       </section>
 
