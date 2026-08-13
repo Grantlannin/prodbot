@@ -199,57 +199,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-t border-slate-200 py-12 sm:py-16">
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
-          <p className="mb-4 text-center text-2xl font-bold tracking-tight text-red-500 sm:text-4xl">
-            here&apos;s the problem:
-          </p>
-          <h2 className="mb-8 max-w-3xl text-center text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Social media, distractions &amp; busywork are taking your best money-making hours from you. And the work that
-            *actually* moves your bag forward gets eaten away at, 10 minute chunk by 10 minute chunk... until now.
-          </h2>
-          <div className="mb-8 w-full max-w-2xl space-y-5 text-left text-base leading-relaxed text-slate-600 sm:text-lg">
-            <p>
-              Here&apos;s the problem: you want to make way more money, but your attention is getting destroyed by social
-              media &amp; a bunch of other random websites that aren&apos;t the task you&apos;re supposed to be doing.
-              This causes your progress to feel slow af, and it makes your self worth drop because you know you could be
-              a beast if you figured out how to actually lock in, but for some reason, the output isn&apos;t matching
-              what you know you can do. I&apos;ve been there, because I was you.
-            </p>
-            <p className="font-semibold text-slate-900">The issue is 2-fold:</p>
-            <div className="space-y-3">
-              <p>
-                <span className="font-bold text-slate-900">#1</span> - your sh*t is probably laying everywhere. Some work
-                stuff in your notes tab, some in your docs, some in your phone. It&apos;s probably random as hell.
-                Daywinner allows you to put everything that&apos;s relevant to the most important work that will actually
-                make you money into 1 specific place - and then allows you to track all of it while you do that same
-                *actually* important work. Nothing else goes into it. It has 1 function - to help you WIN THE DAY by
-                completing your #1 most important task daily, every single day.
-              </p>
-              <p>
-                <span className="font-bold text-slate-900">#2</span> - little social media checks are destroying your
-                productivity/workflow. This was happening to me. 1 little phone check, 10 minutes gone. Another one, 30
-                minutes gone. Another one, now I don&apos;t feel like working. Then 3 weeks passes by, i&apos;ve done
-                literally f****** nothing. &ldquo;Wow, i&apos;m better than this. this is disgusting&rdquo;. That
-                embarrassment for my lack of focus is what drove me to create daywinner bot. I wanted all my stuff in 1
-                place, and i wanted to be able to block every social media site &amp; give me a simple work timer that I
-                could see in a browser tab that then showed me exactly what I worked on so I had *actual proof* of what I
-                did that day so I couldn&apos;t lie to myself. And that&apos;s exactly what daywinner bot is. Since using
-                it, I&apos;ve legitimately been 20x+ more productive and i&apos;m not even joking. I use it every day, and
-                i make progress EVERY single day. I quite literally haven&apos;t &ldquo;missed&rdquo; a work day yet with
-                it in my possession. Once you get familiar with it &amp; *actually* use it, your work &ldquo;hit
-                rate&rdquo; goes to 100%.
-                You simply stop missing. Then at that point, the only variable left is &ldquo;are you doing the right
-                task or not&rdquo;, and there&apos;s a course paired with the bot that helps you make sure that you are.
-                A TOTAL no-brainer for the price. If $4.99 isn&apos;t worth re-claiming like 100+ hours per month of
-                deep focused work for you, i don&apos;t know what to tell you lol. Just try it out &amp; see for yourself.
-              </p>
-            </div>
-          </div>
-          <SectionCta checkout={useCheckout} href={fallbackHref} label="I'm ready to use my hours on ME" />
-        </div>
-      </section>
-
       <section className="border-t border-slate-200 py-3 sm:py-4">
         <div className="flex flex-col items-center text-center">
           <h2 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
@@ -268,7 +217,7 @@ export default function LandingPage() {
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
             With Daywinner bot, you can now store your relevant links + notes in SPECIFIC tasks, instead of losing them
-            all over your computer &amp; destroying your flow.
+            all over your computer, destroying your flow, and staying poor.
           </p>
           <Image
             src="/marketing/projects.jpg"
@@ -286,7 +235,7 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 2: Choose the most important &ldquo;money task&rdquo; that will actually move the ball forward for you
+            Step 2: Choose the most important &ldquo;money task&rdquo; that will actually lead to you making more $$.
           </h2>
           <Image
             src="/marketing/choose-task.jpg"
@@ -580,6 +529,57 @@ export default function LandingPage() {
             unoptimized
           />
           <SectionCta checkout={useCheckout} href={fallbackHref} label="Need my bot ASAP" />
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 py-12 sm:py-16">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
+          <p className="mb-4 text-center text-2xl font-bold tracking-tight text-red-500 sm:text-4xl">
+            here&apos;s the problem:
+          </p>
+          <h2 className="mb-8 max-w-3xl text-center text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+            Social media, distractions &amp; busywork are taking your best money-making hours from you. And the work that
+            *actually* moves your bag forward gets eaten away at, 10 minute chunk by 10 minute chunk... until now.
+          </h2>
+          <div className="mb-8 w-full max-w-2xl space-y-5 text-left text-base leading-relaxed text-slate-600 sm:text-lg">
+            <p>
+              Here&apos;s the problem: you want to make way more money, but your attention is getting destroyed by social
+              media &amp; a bunch of other random websites that aren&apos;t the task you&apos;re supposed to be doing.
+              This causes your progress to feel slow af, and it makes your self worth drop because you know you could be
+              a beast if you figured out how to actually lock in, but for some reason, the output isn&apos;t matching
+              what you know you can do. I&apos;ve been there, because I was you.
+            </p>
+            <p className="font-semibold text-slate-900">The issue is 2-fold:</p>
+            <div className="space-y-3">
+              <p>
+                <span className="font-bold text-slate-900">#1</span> - your sh*t is probably laying everywhere. Some work
+                stuff in your notes tab, some in your docs, some in your phone. It&apos;s probably random as hell.
+                Daywinner allows you to put everything that&apos;s relevant to the most important work that will actually
+                make you money into 1 specific place - and then allows you to track all of it while you do that same
+                *actually* important work. Nothing else goes into it. It has 1 function - to help you WIN THE DAY by
+                completing your #1 most important task daily, every single day.
+              </p>
+              <p>
+                <span className="font-bold text-slate-900">#2</span> - little social media checks are destroying your
+                productivity/workflow. This was happening to me. 1 little phone check, 10 minutes gone. Another one, 30
+                minutes gone. Another one, now I don&apos;t feel like working. Then 3 weeks passes by, i&apos;ve done
+                literally f****** nothing. &ldquo;Wow, i&apos;m better than this. this is disgusting&rdquo;. That
+                embarrassment for my lack of focus is what drove me to create daywinner bot. I wanted all my stuff in 1
+                place, and i wanted to be able to block every social media site &amp; give me a simple work timer that I
+                could see in a browser tab that then showed me exactly what I worked on so I had *actual proof* of what I
+                did that day so I couldn&apos;t lie to myself. And that&apos;s exactly what daywinner bot is. Since using
+                it, I&apos;ve legitimately been 20x+ more productive and i&apos;m not even joking. I use it every day, and
+                i make progress EVERY single day. I quite literally haven&apos;t &ldquo;missed&rdquo; a work day yet with
+                it in my possession. Once you get familiar with it &amp; *actually* use it, your work &ldquo;hit
+                rate&rdquo; goes to 100%. You simply stop missing. Then at that point, the only variable left is
+                &ldquo;are you doing the right task or not&rdquo;, and there&apos;s a course paired with the bot that
+                helps you make sure that you are. A TOTAL no-brainer for the price. If $4.99 isn&apos;t worth
+                re-claiming like 100+ hours per month of deep focused work for you, i don&apos;t know what to tell you
+                lol. Just try it out &amp; see for yourself.
+              </p>
+            </div>
+          </div>
+          <SectionCta checkout={useCheckout} href={fallbackHref} label="I'm ready to use my hours on ME" />
         </div>
       </section>
 
