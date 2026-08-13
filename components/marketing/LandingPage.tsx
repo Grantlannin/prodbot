@@ -298,8 +298,7 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 5: Put in an AMAZING tracked work session (while all social media sites are blocked, so it&apos;s just
-            you &amp; the work) &amp; get used to your new powers
+            Step 5: Put in an AMAZING tracked work session &amp; get used to your new powers
           </h2>
           <Image
             src="/marketing/task-tracking.jpg"
@@ -533,19 +532,19 @@ export default function LandingPage() {
       <section className="border-t border-slate-200 py-12 sm:py-16">
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
           <p className="mb-4 text-center text-2xl font-bold tracking-tight text-red-500 sm:text-4xl">
-            here&apos;s the problem:
+            Look, here&apos;s the problem. Can I just vent for a sec?
           </p>
           <h2 className="mb-8 max-w-3xl text-center text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
             Social media, distractions &amp; busywork are taking your best money-making hours from you. And the work that
-            *actually* moves your bag forward gets eaten away at, 10 minute chunk by 10 minute chunk... until now.
+            *actually* moves your bag forward is getting eaten away at, 10 minute chunk by 10 minute chunk...
           </h2>
           <div className="mb-8 w-full max-w-2xl space-y-5 text-left text-base leading-relaxed text-slate-600 sm:text-lg">
             <p>
-              Here&apos;s the problem: you want to make way more money, but your attention is getting destroyed by social
-              media &amp; a bunch of other random websites that aren&apos;t the task you&apos;re supposed to be doing.
-              This causes your progress to feel slow af, and it makes your self worth drop because you know you could be
-              a beast if you figured out how to actually lock in, but for some reason, the output isn&apos;t matching
-              what you know you can do. I&apos;ve been there, because I was you.
+              I mean seriously. You want to make way more money, but your attention is getting destroyed by social media
+              &amp; a bunch of other random websites that aren&apos;t the task you&apos;re supposed to be doing. This
+              causes your progress to feel slow af, and it makes your self worth drop because you know you could be a
+              beast if you figured out how to actually lock in, but for some reason, the output isn&apos;t matching what
+              you know you can do. I&apos;ve been there, because I was you.
             </p>
             <p className="font-semibold text-slate-900">The issue is 2-fold:</p>
             <div className="space-y-3">
