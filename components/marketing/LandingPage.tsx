@@ -280,8 +280,7 @@ export default function LandingPage() {
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
             Your bot blocks the social media sites you choose until your work timer hits zero. Soft lock makes you wait
             2 minutes to get access back (you&apos;ll usually just start working more), &amp; hard lock &ldquo;locks you
-            in&rdquo; &amp; fully blocks the sites until your work timer hits zero. Sometimes you have to give yourself
-            to no option but to succeed.
+            in&rdquo; &amp; fully blocks the sites until your work timer hits zero.
           </p>
           <Image
             src="/marketing/step4-lock.jpg"
