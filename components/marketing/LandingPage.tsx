@@ -216,8 +216,8 @@ export default function LandingPage() {
             Step 1: Organize your most important money-making tasks into 1 place (which links them all to your tracker)
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            With Daywinner bot, you can now store your relevant links + notes in SPECIFIC tasks, instead of losing them
-            all over your computer, destroying your flow, and staying poor.
+            With Daywinner bot, you can now store relevant links + notes in SPECIFIC tasks, instead of losing them all
+            over your computer &amp; destroying your flow.
           </p>
           <Image
             src="/marketing/projects.jpg"
