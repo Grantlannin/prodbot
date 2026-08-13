@@ -278,9 +278,9 @@ export default function LandingPage() {
             Step 4: Choose the strength of your distraction blocker. Soft lock, or hard lock?
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            Your bot blocks your most distracting sites until your timer hits zero. Soft lock creates a 2-minute annoying
-            wait if you bail early (you&apos;ll usually just go back to work). Hard lock = locked in until the full
-            session ends, for those times you gotta force yourself to finish.
+            Your bot blocks your most distracting sites until your work timer hits zero. Soft lock creates a 2-minute
+            annoying wait if you bail early (you&apos;ll usually just go back to work). Hard lock = locked in until the
+            full session ends, for those times you gotta force yourself to finish.
           </p>
           <Image
             src="/marketing/step4-lock.jpg"
@@ -298,7 +298,8 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 5: Put in an AMAZING tracked work session &amp; get used to your new powers
+            Step 5: Put in an AMAZING tracked work session (on your most important task) &amp; get used to your new
+            powers
           </h2>
           <Image
             src="/marketing/task-tracking.jpg"
