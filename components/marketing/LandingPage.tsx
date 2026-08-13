@@ -275,13 +275,13 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center text-center">
           <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            Step 4: Choose the strength of your distraction blocker — &ldquo;soft lock&rdquo; or &ldquo;hard
-            lock&rdquo;
+            Step 4: Choose the strength of your distraction blocker. Soft lock, or hard lock?
           </h2>
           <p className="mb-5 max-w-2xl text-base leading-relaxed text-slate-600">
-            During your work session, your bot blocks the social media sites you choose until your timer hits zero. Soft
-            lock makes you wait 2 minutes to re-gain access (you&apos;ll usually just start working more), &amp; hard
-            lock &ldquo;locks you in&rdquo; &amp; fully blocks the sites until your work timer hits zero.
+            Your bot blocks the social media sites you choose until your work timer hits zero. Soft lock makes you wait
+            2 minutes to get access back (you&apos;ll usually just start working more), &amp; hard lock &ldquo;locks you
+            in&rdquo; &amp; fully blocks the sites until your work timer hits zero. Sometimes you have to give yourself
+            to no option but to succeed.
           </p>
           <Image
             src="/marketing/step4-lock.jpg"
