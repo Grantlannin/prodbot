@@ -28,6 +28,12 @@ const PROJECT_SIDEBAR_VISIBLE = 5;
 const PROJECT_SIDEBAR_ITEM_HEIGHT_PX = 48;
 const PROJECT_SIDEBAR_GAP_PX = 4;
 const PROJECT_SIDEBAR_LIST_PADDING_PX = 6;
+
+function autosizeTaskTextarea(el: HTMLTextAreaElement | null) {
+  if (!el) return;
+  el.style.height = '0px';
+  el.style.height = `${Math.max(el.scrollHeight, 20)}px`;
+}
 const PROJECT_SIDEBAR_SCROLL_HEIGHT =
   PROJECT_SIDEBAR_VISIBLE * PROJECT_SIDEBAR_ITEM_HEIGHT_PX +
   (PROJECT_SIDEBAR_VISIBLE - 1) * PROJECT_SIDEBAR_GAP_PX +
@@ -240,8 +246,8 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const [partDropProjectId, setPartDropProjectId] = useState<string | null>(null);
   const { celebration, getCelebrationMessage } = useUserProfile();
   const nameRef = useRef<HTMLInputElement>(null);
-  const taskInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
-  const subTaskInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+  const taskInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
+  const subTaskInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
   const [migrated, setMigrated] = useState(false);
   const linksMigratedRef = useRef(false);
 
@@ -1163,16 +1169,21 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             style={styles.taskCheck}
                             aria-label="Mark part done"
                           />
-                          <input
+                          <textarea
                             ref={el => {
-                              if (el) taskInputRefs.current.set(task.id, el);
-                              else taskInputRefs.current.delete(task.id);
+                              if (el) {
+                                taskInputRefs.current.set(task.id, el);
+                                autosizeTaskTextarea(el);
+                              } else taskInputRefs.current.delete(task.id);
                             }}
-                            type="text"
+                            rows={1}
                             value={task.text}
-                            onChange={e => updateTask(selected.id, task.id, { text: e.target.value })}
+                            onChange={e => {
+                              updateTask(selected.id, task.id, { text: e.target.value });
+                              autosizeTaskTextarea(e.currentTarget);
+                            }}
                             onKeyDown={e => {
-                              if (e.key === 'Enter') {
+                              if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
                                 const input = e.currentTarget;
                                 const cursor = input.selectionStart ?? input.value.length;
@@ -1350,19 +1361,22 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               style={styles.taskCheck}
                               aria-label="Mark task done"
                             />
-                            <input
+                            <textarea
                               ref={el => {
                                 const key = subTaskKey(task.id, sub.id);
-                                if (el) subTaskInputRefs.current.set(key, el);
-                                else subTaskInputRefs.current.delete(key);
+                                if (el) {
+                                  subTaskInputRefs.current.set(key, el);
+                                  autosizeTaskTextarea(el);
+                                } else subTaskInputRefs.current.delete(key);
                               }}
-                              type="text"
+                              rows={1}
                               value={sub.text}
-                              onChange={e =>
-                                updateSubTask(selected.id, task.id, sub.id, { text: e.target.value })
-                              }
+                              onChange={e => {
+                                updateSubTask(selected.id, task.id, sub.id, { text: e.target.value });
+                                autosizeTaskTextarea(e.currentTarget);
+                              }}
                               onKeyDown={e => {
-                                if (e.key === 'Enter') {
+                                if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
                                   const input = e.currentTarget;
                                   const cursor = input.selectionStart ?? input.value.length;
@@ -1650,7 +1664,7 @@ const styles: Record<string, CSSProperties> = {
   },
   taskRow: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 6,
     position: 'relative',
     borderRadius: 4,
@@ -1662,7 +1676,7 @@ const styles: Record<string, CSSProperties> = {
   taskRowDropTarget: {
     boxShadow: 'inset 0 1px 0 rgba(148, 163, 184, 0.55)',
   },
-  taskCheck: { flexShrink: 0, cursor: 'pointer' },
+  taskCheck: { flexShrink: 0, cursor: 'pointer', marginTop: 6 },
   taskInput: {
     flex: 1,
     minWidth: 0,
@@ -1672,8 +1686,14 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
     fontSize: 14,
     fontWeight: 700,
+    lineHeight: 1.35,
     color: '#0f172a',
     padding: '4px 0',
+    resize: 'none',
+    overflow: 'hidden',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+    fieldSizing: 'content',
     WebkitUserDrag: 'none',
   } as CSSProperties,
   taskInputDone: {
@@ -1686,6 +1706,7 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 4,
     height: 22,
+    marginTop: 4,
     border: 'none',
     borderRadius: 6,
     background: '#f1f5f9',
@@ -1706,7 +1727,7 @@ const styles: Record<string, CSSProperties> = {
   },
   subTaskRow: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 6,
     paddingLeft: 22,
     borderRadius: 4,
@@ -1727,14 +1748,21 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
     fontSize: 12,
     fontWeight: 400,
+    lineHeight: 1.35,
     color: '#64748b',
-    padding: '2px 0',
+    padding: '4px 0',
+    resize: 'none',
+    overflow: 'hidden',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+    fieldSizing: 'content',
     WebkitUserDrag: 'none',
   } as CSSProperties,
   subTaskActionBtn: {
     flexShrink: 0,
     width: 22,
     height: 22,
+    marginTop: 2,
     border: 'none',
     borderRadius: 4,
     background: 'transparent',
@@ -1756,6 +1784,7 @@ const styles: Record<string, CSSProperties> = {
     flexShrink: 0,
     width: 20,
     height: 20,
+    marginTop: 3,
     border: 'none',
     borderRadius: 4,
     background: 'transparent',
@@ -1769,6 +1798,7 @@ const styles: Record<string, CSSProperties> = {
     flexShrink: 0,
     width: 24,
     height: 24,
+    marginTop: 2,
     border: 'none',
     borderRadius: 4,
     background: 'transparent',
