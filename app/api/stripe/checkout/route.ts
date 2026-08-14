@@ -17,6 +17,12 @@ import type Stripe from 'stripe';
 const SUCCESS_URL = (origin: string) =>
   `${origin}/api/stripe/claim-receipt?session_id={CHECKOUT_SESSION_ID}`;
 
+/** $1 quickstart + 7-day trial — off unless explicitly enabled. */
+function resolveStarterPriceId(): string | undefined {
+  if (process.env.STRIPE_STARTER_OFFER?.trim() !== 'true') return undefined;
+  return getStripeStarterPriceId();
+}
+
 function jsonWithNonce(body: Record<string, unknown>, sessionId: string, nonce: string) {
   const res = NextResponse.json(body);
   if (!applyCheckoutNonceCookie(res, sessionId, nonce)) {
@@ -84,7 +90,7 @@ export async function POST(request: Request) {
   try {
     const stripe = getStripeClient();
     const priceId = await resolveMonthlyPriceId(stripe);
-    const starterPriceId = getStripeStarterPriceId();
+    const starterPriceId = resolveStarterPriceId();
     const nonce = generateCheckoutNonce();
 
     const supabase = createServerSupabaseClient();

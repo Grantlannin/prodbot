@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import { MONTHLY_PRICE_SHORT, STARTER_PRICE_LABEL } from '@/lib/billing/price';
+import { MONTHLY_PRICE_SHORT } from '@/lib/billing/price';
 
 interface StartCheckoutButtonProps {
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
-  /** Show struck monthly + $1 quickstart like landing CTAs */
+  /** Show struck $12.99 + current monthly price like landing CTAs */
   showPrice?: boolean;
 }
 
@@ -51,8 +51,8 @@ export default function StartCheckoutButton({
         ) : showPrice ? (
           <>
             <span className="text-sm font-semibold text-white">{children}</span>
-            <span className="text-sm font-medium text-slate-500 line-through">{MONTHLY_PRICE_SHORT}</span>
-            <span className="text-sm font-semibold text-white">{STARTER_PRICE_LABEL}</span>
+            <span className="text-sm font-medium text-slate-500 line-through">$12.99/mo</span>
+            <span className="text-sm font-semibold text-white">{MONTHLY_PRICE_SHORT}</span>
           </>
         ) : (
           children
