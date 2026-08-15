@@ -101,6 +101,8 @@ export default function MiscTasksPanel({
     return today.lines;
   }, [today.lines]);
 
+  const hasAnyTask = today.lines.some(line => line.text.trim().length > 0);
+
   const commitLines = (lines: TodayTaskLine[]) => {
     setTodayStore(prev => {
       const normalized = normalizeTodayTaskList(prev);
@@ -303,10 +305,7 @@ export default function MiscTasksPanel({
         }
       `}</style>
       <div style={styles.header}>
-        <div style={styles.headerText}>
-          <div style={styles.title}>Misc tasks</div>
-          <p style={styles.hint}>Homeless tasks — tracked, but skipped in wind-down notes.</p>
-        </div>
+        <div style={styles.title}>Misc tasks</div>
         <div style={styles.headerActions}>
           {undoStack.length > 0 ? (
             <button
@@ -431,6 +430,9 @@ export default function MiscTasksPanel({
           );
         })}
       </div>
+      {!hasAnyTask ? (
+        <p style={styles.hint}>Homeless tasks — tracked, but skipped in wind-down notes.</p>
+      ) : null}
     </div>
   );
 }
@@ -448,17 +450,11 @@ const styles: Record<string, CSSProperties> = {
   },
   header: {
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
+    minHeight: 24,
     flexShrink: 0,
-  },
-  headerText: {
-    minWidth: 0,
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 2,
   },
   title: {
     fontSize: 13,
@@ -472,7 +468,6 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 4,
     flexShrink: 0,
-    marginTop: 1,
   },
   iconBtn: {
     width: 22,
@@ -489,12 +484,6 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: 'center',
     padding: 0,
   },
-  hint: {
-    margin: 0,
-    fontSize: 10,
-    color: '#94a3b8',
-    lineHeight: 1.35,
-  },
   todayLines: {
     display: 'flex',
     flexDirection: 'column',
@@ -506,6 +495,14 @@ const styles: Record<string, CSSProperties> = {
     flex: 1,
     overscrollBehavior: 'contain',
     overflowAnchor: 'none',
+  },
+  hint: {
+    margin: 0,
+    marginTop: 4,
+    fontSize: 10,
+    color: '#94a3b8',
+    lineHeight: 1.35,
+    flexShrink: 0,
   },
   todayRow: {
     position: 'relative',
