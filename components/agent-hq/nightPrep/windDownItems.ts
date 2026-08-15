@@ -12,14 +12,17 @@ export interface ProjectWorkStat {
   name: string;
   totalMs: number;
   count: number;
+  /** Homeless misc-list sessions — still show in Work today, skipped in wind-down prompts */
+  source?: 'misc';
 }
 
-/** Wind-down context prompts only for timer-tracked work — not typed Done Today entries. */
+/** Wind-down context prompts only for timer-tracked project work — not misc / homeless sessions. */
 export function buildWindDownItems(projectStats: ProjectWorkStat[]): WindDownItem[] {
   const items: WindDownItem[] = [];
   const seen = new Set<string>();
 
   for (const stat of projectStats) {
+    if (stat.source === 'misc') continue;
     const name = stat.name.trim();
     if (!name || stat.totalMs <= 0) continue;
     const key = name.toLowerCase();

@@ -164,7 +164,7 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
       >
         <div style={styles.header}>
           <h3 id="eod-send-title" style={styles.title}>
-            Send EOD to partner
+            send EOD to partner or yourself
           </h3>
           <button type="button" onClick={onClose} style={styles.closeBtn} aria-label="Close">
             ×

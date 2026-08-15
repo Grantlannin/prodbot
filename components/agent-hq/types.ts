@@ -27,6 +27,8 @@ export interface WorkSession {
   countdownBonusMs?: number;
   /** Soft = 2 min cooldown to end early; hard = hold + type to end early */
   lockMode?: FocusLockMode;
+  /** Homeless / misc list work — tracked, but skipped in wind-down note prompts */
+  source?: 'misc';
 }
 
 export interface BreakSession {

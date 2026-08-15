@@ -162,6 +162,7 @@ export function useWorkTracker() {
         countdownStartTime: countdownTargetMs ? now : null,
         countdownBonusMs: 0,
         lockMode: data.lockMode,
+        ...(data.source === 'misc' ? { source: 'misc' as const } : {}),
       };
 
       setState(prev => ({
@@ -851,17 +852,18 @@ export function useWorkTracker() {
 
     const cs = state.currentSession;
     const csInArray = cs ? sessions.some(s => s.id === cs.id) : false;
-    let activeSession: { project: string; workMs: number } | null = null;
+    let activeSession: { project: string; workMs: number; source?: 'misc' } | null = null;
 
     if (cs && !csInArray && isSameLocalDay(cs.startTime)) {
       const isPrep = isStuckPrepSessionNotes(cs.sessionNotes);
       const isInitialStuckChunk =
         isStuckWorkSessionNotes(cs.sessionNotes) && cs.countdownTargetMs === KICKSTART_DURATION_MS;
       const freezeLiveBar = isPrep || isInitialStuckChunk;
+      const miscMeta = cs.source === 'misc' ? ({ source: 'misc' as const } as const) : {};
 
       if (!cs.endTime && (state.status === 'working' || state.status === 'on_break')) {
         if (freezeLiveBar) {
-          activeSession = { project: cs.project, workMs: 0 };
+          activeSession = { project: cs.project, workMs: 0, ...miscMeta };
         } else {
           const workMs = computeActiveWorkMs({
             session: cs,
@@ -873,7 +875,7 @@ export function useWorkTracker() {
             pausedWorkElapsed: state.pausedWorkElapsed ?? null,
           });
           totalWorkMs += workMs;
-          activeSession = { project: cs.project, workMs };
+          activeSession = { project: cs.project, workMs, ...miscMeta };
         }
       } else if (cs.endTime) {
         totalWorkMs += sessionWorkMs(cs);
@@ -889,17 +891,31 @@ export function useWorkTracker() {
       ...(cs && !csInArray && isSameLocalDay(cs.startTime) && cs.endTime ? [cs] : []),
     ];
 
-    const projects: Record<string, { totalMs: number; count: number }> = {};
+    const projects: Record<string, { totalMs: number; count: number; source?: 'misc' }> = {};
     for (const s of allTodaySessions) {
-      if (!projects[s.project]) projects[s.project] = { totalMs: 0, count: 0 };
+      if (!projects[s.project]) {
+        projects[s.project] = {
+          totalMs: 0,
+          count: 0,
+          ...(s.source === 'misc' ? { source: 'misc' as const } : {}),
+        };
+      }
       projects[s.project].totalMs += sessionWorkMs(s);
       projects[s.project].count += 1;
+      if (s.source !== 'misc') delete projects[s.project].source;
     }
     if (activeSession) {
-      if (!projects[activeSession.project]) projects[activeSession.project] = { totalMs: 0, count: 0 };
+      if (!projects[activeSession.project]) {
+        projects[activeSession.project] = {
+          totalMs: 0,
+          count: 0,
+          ...(activeSession.source === 'misc' ? { source: 'misc' as const } : {}),
+        };
+      }
       if (activeSession.workMs > 0) {
         projects[activeSession.project].totalMs += activeSession.workMs;
       }
+      if (activeSession.source !== 'misc') delete projects[activeSession.project].source;
     }
 
     const projectStats = Object.entries(projects)

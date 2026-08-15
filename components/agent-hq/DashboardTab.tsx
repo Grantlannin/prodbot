@@ -108,6 +108,16 @@ export default function DashboardTab({
     setStartWorkOpen(true);
   };
 
+  const handleStartMiscLine = (line: { text: string }) => {
+    const text = line.text.trim();
+    if (!text) return;
+    setStartWorkPreset({
+      label: text,
+      source: 'misc',
+    });
+    setStartWorkOpen(true);
+  };
+
   const handlePauseResumeTimer = () => {
     if (canResumeTimer) {
       resumeTimer();
@@ -284,7 +294,9 @@ export default function DashboardTab({
                   return (
                     <div key={p.name} style={styles.projectItem}>
                       <div style={styles.projectItemHeader}>
-                        <span style={styles.projectName}>{p.name}</span>
+                        <span style={styles.projectName}>
+                          {p.source === 'misc' ? `Misc · ${p.name}` : p.name}
+                        </span>
                         <span style={styles.projectDuration}>{formatDuration(p.totalMs)}</span>
                       </div>
                       <div style={styles.projectBarTrack}>
@@ -348,6 +360,7 @@ export default function DashboardTab({
                 autoStartWindDown={focusNightPrep}
                 onAutoStartHandled={onNightPrepFocused}
                 onStartTask={handleStartPlanTask}
+                onStartMiscLine={handleStartMiscLine}
                 sessionBusy={hasActiveSession}
               />
             </DashCard>

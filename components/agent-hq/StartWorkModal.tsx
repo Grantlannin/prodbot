@@ -29,6 +29,8 @@ type StartWorkModalMode = 'start' | 'set-timer';
 interface PendingSession {
   label: string;
   taskRef?: { projectId: string; taskId: string; subTaskId?: string };
+  /** Homeless misc-list work — tracked but skipped in wind-down note prompts */
+  source?: 'misc';
 }
 
 export type StartWorkPreset = PendingSession;
@@ -97,7 +99,8 @@ export default function StartWorkModal({
     label: string,
     taskRef?: { projectId: string; taskId: string; subTaskId?: string },
     countdownMinutes?: number,
-    sessionLockMode: FocusLockMode = 'none'
+    sessionLockMode: FocusLockMode = 'none',
+    source?: 'misc'
   ) => {
     if (busy) return;
     const minutes = countdownMinutes && countdownMinutes > 0 ? countdownMinutes : durationMinutes;
@@ -107,6 +110,7 @@ export default function StartWorkModal({
       type: 'open',
       countdownTargetMs: minutes * 60 * 1000,
       lockMode: sessionLockMode,
+      ...(source === 'misc' ? { source: 'misc' as const } : {}),
     });
     requestOpen();
     if (taskRef) {
@@ -180,7 +184,13 @@ export default function StartWorkModal({
 
   const handleStartCountdown = () => {
     if (!pendingSession || resolvedCustomMinutes === null) return;
-    beginSession(pendingSession.label, pendingSession.taskRef, resolvedCustomMinutes, lockMode);
+    beginSession(
+      pendingSession.label,
+      pendingSession.taskRef,
+      resolvedCustomMinutes,
+      lockMode,
+      pendingSession.source
+    );
   };
 
   const selectTaskTitle = isSetTimer ? 'Set timer — pick a task' : 'What are you working on?';

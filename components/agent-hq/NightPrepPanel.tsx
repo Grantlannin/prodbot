@@ -13,6 +13,8 @@ import {
   type NightPrepTomorrowPlan,
   type NightPrepTomorrowTask,
 } from './nightPrep/storage';
+import MiscTasksPanel from './MiscTasksPanel';
+import type { TodayTaskLine } from './todayTaskList/storage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -35,6 +37,7 @@ interface NightPrepPanelProps {
   autoStartWindDown?: boolean;
   onAutoStartHandled?: () => void;
   onStartTask?: (task: NightPrepTomorrowTask) => void;
+  onStartMiscLine?: (line: TodayTaskLine) => void;
   sessionBusy?: boolean;
 }
 
@@ -42,12 +45,38 @@ export default function NightPrepPanel({
   autoStartWindDown = false,
   onAutoStartHandled,
   onStartTask,
+  onStartMiscLine,
   sessionBusy = false,
 }: NightPrepPanelProps) {
   const { getTodayStats } = useWorkTrackerContext();
   const { openNightPrepChat } = useNightPrep();
-  const [plan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
+  const [plan, setPlan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
   const [windDownHovered, setWindDownHovered] = useState(false);
+  const [miscOpen, setMiscOpen] = useState(false);
+
+  const removePlanTask = useCallback(
+    (task: NightPrepTomorrowTask) => {
+      setPlan(prev => {
+        const normalized = normalizeNightPrepPlan(prev);
+        if (!normalized) return prev;
+        const nextTasks = (normalized.tasks ?? []).filter(
+          t => !(t.projectId === task.projectId && t.taskId === task.taskId)
+        );
+        if (nextTasks.length === 0) return null;
+        const primary = nextTasks[0];
+        return {
+          ...normalized,
+          tasks: nextTasks,
+          updatedAt: Date.now(),
+          projectId: primary.projectId,
+          projectName: primary.projectName,
+          taskId: primary.taskId,
+          taskText: primary.taskText,
+        };
+      });
+    },
+    [setPlan]
+  );
 
   const startWindDown = useCallback(() => {
     const items = buildWindDownItems(getTodayStats().projectStats);
@@ -63,6 +92,86 @@ export default function NightPrepPanel({
   const normalizedPlan = plan ? normalizeNightPrepPlan(plan) : null;
   const planTasks = normalizedPlan?.tasks.filter(t => t.taskText.trim()) ?? [];
   const planTime = normalizedPlan?.firstWorkBlockTime.trim() ?? '';
+  const listTitle = isNightPrepPlanActiveToday(plan) ? "Today's task list" : "Tomorrow's task list";
+
+  const planCard = (
+    <div style={styles.planCard}>
+      <style>{`
+        [data-plan-row] [data-plan-remove] {
+          opacity: 0;
+          pointer-events: none;
+        }
+        [data-plan-row]:hover [data-plan-remove],
+        [data-plan-row]:focus-within [data-plan-remove] {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      `}</style>
+      <div style={styles.planHeader}>
+        <div style={styles.planTitle}>{listTitle}</div>
+        {!miscOpen ? (
+          <button
+            type="button"
+            onClick={() => setMiscOpen(true)}
+            style={styles.addBtn}
+            aria-label="Open misc tasks"
+            title="Misc tasks"
+          >
+            +
+          </button>
+        ) : null}
+      </div>
+      {planTasks.length > 0 ? (
+        <>
+          <div style={styles.planTasks}>
+            {planTasks.map(task => {
+              const taskKey = `${task.projectId}-${task.taskId}`;
+              return (
+                <div key={taskKey} data-plan-row="" style={styles.planTaskRow}>
+                  <span style={styles.planTaskText}>- {task.taskText.trim()}</span>
+                  <span style={styles.planTaskActions}>
+                    {onStartTask ? (
+                      <button
+                        type="button"
+                        onClick={() => onStartTask(task)}
+                        disabled={sessionBusy}
+                        style={{
+                          ...styles.planTaskStart,
+                          ...(sessionBusy ? styles.planTaskStartDisabled : {}),
+                        }}
+                        aria-label={`Start ${task.taskText.trim()}`}
+                        title={sessionBusy ? 'Stop your current session first' : `Start ${task.taskText.trim()}`}
+                      >
+                        (start)
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      data-plan-remove=""
+                      onClick={() => removePlanTask(task)}
+                      style={styles.planTaskRemove}
+                      aria-label={`Remove ${task.taskText.trim()} from list`}
+                      title="Remove from list"
+                      tabIndex={-1}
+                    >
+                      ×
+                    </button>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {planTime ? <div style={styles.planTime}>{planTime}</div> : null}
+        </>
+      ) : (
+        <div style={styles.emptyPlan}>
+          {miscOpen
+            ? 'Wind down builds this list.'
+            : 'Wind down builds this list. Use + for misc / homeless tasks.'}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div style={styles.root}>
@@ -85,36 +194,22 @@ export default function NightPrepPanel({
         </span>
       </button>
 
-      {normalizedPlan && planTasks.length > 0 ? (
-        <div style={styles.planCard}>
-          <div style={styles.planTitle}>
-            {isNightPrepPlanActiveToday(plan) ? "Today's task list" : "Tomorrow's task list"}
+      {miscOpen ? (
+        <div style={styles.splitRow}>
+          <div style={styles.splitPane}>{planCard}</div>
+          <div style={styles.splitPane}>
+            <div style={styles.miscCard}>
+              <MiscTasksPanel
+                onStartLine={onStartMiscLine}
+                sessionBusy={sessionBusy}
+                onClose={() => setMiscOpen(false)}
+              />
+            </div>
           </div>
-          <div style={styles.planTasks}>
-            {planTasks.map(task => (
-              <div key={`${task.projectId}-${task.taskId}`} style={styles.planTaskRow}>
-                <span style={styles.planTaskText}>- {task.taskText.trim()}</span>
-                {onStartTask ? (
-                  <button
-                    type="button"
-                    onClick={() => onStartTask(task)}
-                    disabled={sessionBusy}
-                    style={{
-                      ...styles.planTaskStart,
-                      ...(sessionBusy ? styles.planTaskStartDisabled : {}),
-                    }}
-                    aria-label={`Start ${task.taskText.trim()}`}
-                    title={sessionBusy ? 'Stop your current session first' : `Start ${task.taskText.trim()}`}
-                  >
-                    (start)
-                  </button>
-                ) : null}
-              </div>
-            ))}
-          </div>
-          {planTime ? <div style={styles.planTime}>{planTime}</div> : null}
         </div>
-      ) : null}
+      ) : (
+        planCard
+      )}
     </div>
   );
 }
@@ -170,23 +265,84 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'right',
     flexShrink: 0,
   },
+  splitRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 10,
+    alignItems: 'start',
+    minWidth: 0,
+  },
+  splitPane: {
+    minWidth: 0,
+    maxHeight: 260,
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+  },
   planCard: {
     padding: '10px 12px',
     borderRadius: 8,
     background: '#fff',
     border: '1px solid #e2e8f0',
+    boxSizing: 'border-box',
+    maxHeight: 260,
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+  },
+  miscCard: {
+    padding: '10px 12px',
+    borderRadius: 8,
+    background: '#fff',
+    border: '1px solid #e2e8f0',
+    boxSizing: 'border-box',
+    maxHeight: 260,
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+  },
+  planHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 8,
+    flexShrink: 0,
   },
   planTitle: {
     fontSize: 13,
     fontWeight: 700,
     color: '#0f172a',
     lineHeight: 1.35,
-    marginBottom: 8,
+    minWidth: 0,
+  },
+  addBtn: {
+    flexShrink: 0,
+    width: 24,
+    height: 24,
+    border: '1px solid #e2e8f0',
+    borderRadius: 6,
+    background: '#f8fafc',
+    color: '#475569',
+    fontSize: 18,
+    fontWeight: 600,
+    lineHeight: 1,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+    fontFamily: font,
   },
   planTasks: {
     display: 'flex',
     flexDirection: 'column',
     gap: 4,
+    overflowY: 'auto',
+    minHeight: 0,
+    flex: 1,
   },
   planTaskRow: {
     display: 'flex',
@@ -199,6 +355,13 @@ const styles: Record<string, CSSProperties> = {
   },
   planTaskText: {
     minWidth: 0,
+    flex: 1,
+  },
+  planTaskActions: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 0,
   },
   planTaskStart: {
     flexShrink: 0,
@@ -216,10 +379,31 @@ const styles: Record<string, CSSProperties> = {
     color: '#94a3b8',
     cursor: 'not-allowed',
   },
+  planTaskRemove: {
+    width: 18,
+    height: 18,
+    border: 'none',
+    borderRadius: 4,
+    background: 'transparent',
+    color: '#94a3b8',
+    fontSize: 14,
+    lineHeight: 1,
+    cursor: 'pointer',
+    padding: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: font,
+  },
   planTime: {
     marginTop: 10,
     fontSize: 12,
     color: '#64748b',
     lineHeight: 1.35,
+  },
+  emptyPlan: {
+    fontSize: 12,
+    color: '#94a3b8',
+    lineHeight: 1.45,
   },
 };
