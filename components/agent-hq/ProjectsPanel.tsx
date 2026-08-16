@@ -145,9 +145,17 @@ function parsePartDragPayload(raw: string): PartDragPayload | null {
   return null;
 }
 
-function shouldBlockRowDrag(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  return Boolean(target.closest('input, button, textarea, select, a, [role="button"]'));
+function DragHandleIcon() {
+  return (
+    <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden style={{ display: 'block' }}>
+      <circle cx="3" cy="2.5" r="1.1" />
+      <circle cx="7" cy="2.5" r="1.1" />
+      <circle cx="3" cy="7" r="1.1" />
+      <circle cx="7" cy="7" r="1.1" />
+      <circle cx="3" cy="11.5" r="1.1" />
+      <circle cx="7" cy="11.5" r="1.1" />
+    </svg>
+  );
 }
 
 type NotesEditorTarget =
@@ -965,9 +973,14 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   return (
     <div style={styles.root}>
       <style>{`
+        [data-drag-handle] { cursor: grab; }
+        [data-drag-handle]:active { cursor: grabbing; }
+        [data-active-drag='true'] [data-drag-handle],
+        [data-active-drag='true'] {
+          cursor: grabbing !important;
+        }
+        /* Sidebar still uses whole-item drag */
         [data-drag-row] { cursor: grab; }
-        [data-drag-row] input[type='text'] { cursor: grab; }
-        [data-drag-row] input[type='text']:focus { cursor: text; }
         [data-drag-row][data-active-drag='true'],
         [data-drag-row][data-active-drag='true'] * {
           cursor: grabbing !important;
@@ -1046,8 +1059,6 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                       setProjects(prev =>
                         moveTaskToProject(prev, part.projectId, part.taskId, project.id)
                       );
-                      setSelectedId(project.id);
-                      requestFocusProject(project.id);
                       clearProjectDrag();
                       clearPartDrag();
                       return;
@@ -1101,8 +1112,6 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                     return (
                       <div key={task.id} style={styles.pieceBlock}>
                         <div
-                          draggable
-                          data-drag-row=""
                           data-active-drag={draggingPartIndex === taskIndex ? 'true' : undefined}
                           style={{
                             ...styles.taskRow,
@@ -1111,23 +1120,6 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               ? styles.taskRowDropTarget
                               : {}),
                           }}
-                          onDragStart={e => {
-                            if (shouldBlockRowDrag(e.target)) {
-                              e.preventDefault();
-                              return;
-                            }
-                            e.dataTransfer.setData(
-                              PART_DRAG_TYPE,
-                              JSON.stringify({
-                                projectId: selected.id,
-                                taskId: task.id,
-                                fromIndex: taskIndex,
-                              })
-                            );
-                            e.dataTransfer.effectAllowed = 'move';
-                            setDraggingPartIndex(taskIndex);
-                          }}
-                          onDragEnd={clearPartDrag}
                           onDragOver={e => {
                             if (draggingPartIndex === null) return;
                             e.preventDefault();
@@ -1160,7 +1152,6 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             }
                             clearPartDrag();
                           }}
-                          title="Drag to reorder, or onto another project in the sidebar"
                         >
                           <input
                             type="checkbox"
@@ -1169,6 +1160,29 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             style={styles.taskCheck}
                             aria-label="Mark part done"
                           />
+                          <span
+                            draggable
+                            data-drag-handle=""
+                            onDragStart={e => {
+                              e.dataTransfer.setData(
+                                PART_DRAG_TYPE,
+                                JSON.stringify({
+                                  projectId: selected.id,
+                                  taskId: task.id,
+                                  fromIndex: taskIndex,
+                                })
+                              );
+                              e.dataTransfer.effectAllowed = 'move';
+                              setDraggingPartIndex(taskIndex);
+                            }}
+                            onDragEnd={clearPartDrag}
+                            style={styles.taskDragHandle}
+                            title="Drag to reorder, or onto another project in the sidebar"
+                            aria-label="Drag to reorder part"
+                            role="button"
+                          >
+                            <DragHandleIcon />
+                          </span>
                           <textarea
                             ref={el => {
                               if (el) {
@@ -1291,8 +1305,6 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                           return (
                           <div
                             key={sub.id}
-                            draggable
-                            data-drag-row=""
                             data-active-drag={
                               draggingSub?.subId === sub.id && draggingSub.taskId === task.id
                                 ? 'true'
@@ -1309,19 +1321,6 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                                 ? styles.subTaskRowDropTarget
                                 : {}),
                             }}
-                            onDragStart={e => {
-                              if (shouldBlockRowDrag(e.target)) {
-                                e.preventDefault();
-                                return;
-                              }
-                              e.dataTransfer.setData(
-                                SUBTASK_DRAG_TYPE,
-                                JSON.stringify({ taskId: task.id, fromIndex: subIndex })
-                              );
-                              e.dataTransfer.effectAllowed = 'move';
-                              setDraggingSub({ taskId: task.id, subId: sub.id, fromIndex: subIndex });
-                            }}
-                            onDragEnd={clearSubDrag}
                             onDragOver={e => {
                               if (!draggingSub || draggingSub.taskId !== task.id) return;
                               e.preventDefault();
@@ -1350,7 +1349,6 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               }
                               clearSubDrag();
                             }}
-                            title="Drag to reorder task"
                           >
                             <input
                               type="checkbox"
@@ -1361,6 +1359,25 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               style={styles.taskCheck}
                               aria-label="Mark task done"
                             />
+                            <span
+                              draggable
+                              data-drag-handle=""
+                              onDragStart={e => {
+                                e.dataTransfer.setData(
+                                  SUBTASK_DRAG_TYPE,
+                                  JSON.stringify({ taskId: task.id, fromIndex: subIndex })
+                                );
+                                e.dataTransfer.effectAllowed = 'move';
+                                setDraggingSub({ taskId: task.id, subId: sub.id, fromIndex: subIndex });
+                              }}
+                              onDragEnd={clearSubDrag}
+                              style={styles.taskDragHandle}
+                              title="Drag to reorder task"
+                              aria-label="Drag to reorder task"
+                              role="button"
+                            >
+                              <DragHandleIcon />
+                            </span>
                             <textarea
                               ref={el => {
                                 const key = subTaskKey(task.id, sub.id);
@@ -1677,6 +1694,19 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: 'inset 0 1px 0 rgba(148, 163, 184, 0.55)',
   },
   taskCheck: { flexShrink: 0, cursor: 'pointer', marginTop: 6 },
+  taskDragHandle: {
+    flexShrink: 0,
+    width: 14,
+    height: 18,
+    marginTop: 5,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#94a3b8',
+    cursor: 'grab',
+    userSelect: 'none',
+    touchAction: 'none',
+  },
   taskInput: {
     flex: 1,
     minWidth: 0,
