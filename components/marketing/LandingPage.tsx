@@ -80,32 +80,13 @@ const whoItsFor = [
   },
 ];
 
-const whoItsNotFor = [
-  {
-    title: 'Life admin & chores',
-    body: 'Groceries, laundry, cleaning, errands, and “random life stuff.” Those don’t fall into the category of money-making work — and Daywinner isn’t built for them.',
-  },
-  {
-    title: 'Catch-all to-do lists / life planning',
-    body: 'If you want one app for everything in your day, this isn’t it. Daywinner is only for the work that makes you money online — including getting that work started.',
-  },
-  {
-    title: 'Busywork that feels like progress',
-    body: 'Reorganizing folders, tweaking logos for the 40th time, scrolling “research.” If it doesn’t move revenue or your $ goal, it doesn’t belong in Daywinner — on purpose.',
-  },
-  {
-    title: 'Another planner to bookmark and ignore',
-    body: 'Daywinner isn’t a shelf app you collect and forget. It’s a lock-in bot for money tasks you actually run — whether you’re starting or already grinding.',
-  },
-  {
-    title: 'Hobby / personal projects (unless they pay)',
-    body: 'Hobbies, random to-do’s and personal stuff stay out — unless it’s clearly tied to online income or a real $ goal.',
-  },
-  {
-    title: 'Team / company project management',
-    body: 'Not Asana for your company. Daywinner is a personal bot for money-making work when you’re the one who has to do it.',
-  },
-];
+/* Saved for later — “Daywinner is not for”
+Headline: If the task ain't talking cashflow, Daywinner bot say NO NO.
+Lead: Daywinner is specifically designed for pushing your most baller money-making tasks forward — not worrying about your grocery list. Stuff like:
+chores, life to-do lists, groceries, laundry, errands, “random life stuff”, calendar everything, meal prep, gym / personal habits, family admin, emails that aren’t money, inbox zero, reorganizing folders, tweaking the logo again, scrolling “research”, hobbies that don’t pay, journaling / morning pages, team Asana, company project management, another planner you’ll forget
+Closer: Whether you're already making money online or you're choosing the bot to finally start — Daywinner is designed to help you move the work that you need to do forward.
+CTA: THOSE SOUND BORING ANYWAY. IT'S PRINT TIME.
+*/
 
 export default function LandingPage() {
   const paywall = isBillingEnabled();
@@ -591,11 +572,11 @@ export default function LandingPage() {
           <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             Daywinner isn&apos;t a life planner. It&apos;s a homebase for the work that gets you printing. If you&apos;re
             doing (or need to do) work that makes you internet cash, Daywinner can help you run laps around your old self.
-            Just prioritize your #1 most important task. Lock in. Block everything that isn&apos;t the task. And Go.
+            Just prioritize your #1 most important task, set your timer, and Go.
           </p>
         </div>
 
-        <ul className="mb-14 grid gap-4 sm:grid-cols-2">
+        <ul className="grid gap-4 sm:grid-cols-2">
           {whoItsFor.map(item => (
             <li
               key={item.title}
@@ -606,40 +587,6 @@ export default function LandingPage() {
             </li>
           ))}
         </ul>
-
-        <div className="mb-10 flex flex-col items-center text-center">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-red-500">
-            Daywinner is not for
-          </p>
-          <h2 className="mb-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            If the task ain&apos;t talking cashflow, Daywinner bot say NO NO.
-          </h2>
-          <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            Daywinner is specifically designed for pushing your most baller money-making tasks forward — not worrying
-            about your grocery list. This is very honestly what Daywinner is not for:
-          </p>
-        </div>
-
-        <ul className="mb-10 grid gap-4 sm:grid-cols-2">
-          {whoItsNotFor.map(item => (
-            <li
-              key={item.title}
-              className="rounded-2xl border border-red-200 bg-red-50/40 p-5 shadow-sm"
-            >
-              <h3 className="mb-2 text-sm font-bold leading-snug text-slate-900">{item.title}</h3>
-              <p className="text-sm leading-relaxed text-slate-600">{item.body}</p>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mx-auto mb-8 max-w-lg text-center text-base leading-relaxed text-slate-600">
-          Whether you&apos;re already making money online or you&apos;re choosing the bot to finally start —
-          Daywinner gives you structure to do the work that pays, without turning into a life to-do list.
-        </p>
-
-        <div className="flex flex-col items-center">
-          <SectionCta checkout={useCheckout} href={fallbackHref} label="THOSE SOUND BORING ANYWAY. IT'S PRINT TIME." />
-        </div>
       </section>
 
       <section className="space-y-6 border-t border-slate-200 pt-12 sm:pt-16">
@@ -664,10 +611,39 @@ export default function LandingPage() {
             Send EOD to your partner — or yourself.
           </h3>
           <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            Opens Gmail (or your mail app) with today&apos;s report pre-filled: what money work you got done,
-            insights, work time, tomorrow. You review and hit Send — nothing leaves Daywinner automatically.
+            Opens Gmail (or your mail app) with today&apos;s report pre-prepared, and then add in what you want to send.
+            What work you got done, any new insights, total work time, what you could have done better, Etc. You then
+            review and hit Send. Nothing leaves Daywinner automatically.
           </p>
           <SectionCta checkout={useCheckout} href={fallbackHref} label="GIVE ME MY BOT" />
+          <h2 className="mt-10 max-w-3xl text-3xl font-bold leading-snug tracking-tight text-slate-900 sm:text-5xl">
+            You&apos;re probably about 50-100 work sessions away from a{' '}
+            <span className="relative inline-block whitespace-nowrap pb-[0.42em]">
+              version of your dream
+              <svg
+                className="pointer-events-none absolute -left-[0.06em] -right-[0.1em] top-[0.98em] h-[0.42em] w-[calc(100%+0.16em)] text-teal-500"
+                viewBox="0 0 360 28"
+                preserveAspectRatio="none"
+                aria-hidden
+              >
+                <path
+                  fill="currentColor"
+                  opacity="0.4"
+                  d="M6 22 C48 24 96 18 150 16 C210 14 270 10 332 8 C348 7 356 8 358 10 C354 16 328 20 286 22 C228 25 168 26 110 26 C62 26 24 25 8 24 C3 23.5 3 22.5 6 22 Z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M3 20 C28 21 70 16 118 14 C176 11 236 8 300 6.5 C328 5.8 346 6.2 354 8 C357 9.2 356 12.5 348 14 C320 18 286 17 250 18.5 C196 21 140 24 86 25 C48 26 18 25 8 23.5 C3 22.8 1 21 3 20 Z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M308 7 C328 4.5 344 4 356 5.5 C359 6.4 358 9.5 350 10.8 C334 13 318 12 308 7 Z"
+                />
+              </svg>
+            </span>{' '}
+            that you&apos;d love.
+            <span className="mt-5 block">...We starting now?</span>
+          </h2>
         </div>
       </section>
 
