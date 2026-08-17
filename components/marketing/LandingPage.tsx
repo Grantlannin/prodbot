@@ -543,7 +543,10 @@ export default function LandingPage() {
                 productivity/workflow. This was happening to me. 1 little phone check, 10 minutes gone. Another one, 30
                 minutes gone. Another one, now I don&apos;t feel like working. Then 3 weeks passes by, i&apos;ve done
                 literally f****** nothing. &ldquo;Wow, i&apos;m better than this. this is disgusting&rdquo;. That
-                embarrassment for my lack of focus is what drove me to create daywinner bot. I wanted all my stuff in 1
+                embarrassment for my lack of focus is what drove me to create daywinner bot. I thought i was better than
+                social media until i used the bot to track my infractions and i tried to visit a social media site 28
+                times in 1 hour (your bot tracks your focus infractions) &amp; i was like oh, sh*t. I wanted all my stuff
+                in 1
                 place, and i wanted to be able to block every social media site &amp; give me a simple work timer that I
                 could see in a browser tab that then showed me exactly what I worked on so I had *actual proof* of what I
                 did that day so I couldn&apos;t lie to myself. And that&apos;s exactly what daywinner bot is. Since using
