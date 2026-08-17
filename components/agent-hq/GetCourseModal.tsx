@@ -42,9 +42,12 @@ export default function GetCourseModal({ variant = 'default' }: GetCourseModalPr
               </div>
 
               <p style={styles.body}>
-                This bot was built on a specific system. The course covers energy, environment, work prep, and
-                execution — so you stop guessing and actually win the day. Pair it with the bot and you&apos;ll
-                run the same loops that keep high performers organized.
+                This bot was created based on a very specific workflow/system, meaning it is 1 piece of a larger
+                &apos;productivity&apos; puzzle. If you&apos;re using the bot, you will 100% want to snag it (39
+                modules). It will show you how to generate/manage your own energy (so you stop being too tired to do
+                anything), set up your environment in a way that protects your focus, and shows you how to preps your
+                tasks/work so you can actually get stuff done. That system + bot &amp; you will have the tools/mental
+                models to be more productive than 99% of the human population.
               </p>
 
               <a href={COURSE_URL} target="_blank" rel="noopener noreferrer" style={styles.cta}>
