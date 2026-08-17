@@ -34,7 +34,7 @@ export default function GetCourseModal({ variant = 'default' }: GetCourseModalPr
             >
               <div style={styles.panelHeader}>
                 <h3 id="get-course-title" style={styles.panelTitle}>
-                  The Simple Productivity System
+                  The Simple Productivity System - $27
                 </h3>
                 <button type="button" onClick={() => setOpen(false)} style={styles.closeBtn} aria-label="Close">
                   ×
@@ -42,16 +42,28 @@ export default function GetCourseModal({ variant = 'default' }: GetCourseModalPr
               </div>
 
               <p style={styles.body}>
-                This bot was created based on a very specific workflow/system, meaning it is 1 piece of a larger
-                &apos;productivity&apos; puzzle. If you&apos;re using the bot, you will 100% want to snag it (39
-                modules). It will show you how to generate/manage your own energy (so you stop being too tired to do
-                anything), set up your environment in a way that protects your focus, and shows you how to preps your
-                tasks/work so you can actually get stuff done. That system + bot &amp; you will have the tools/mental
-                models to be more productive than 99% of the human population.
+                This bot was created to support a very specific workflow/system - meaning, it is 1 piece of a larger
+                &apos;productivity&apos; puzzle. If you&apos;re using the bot, you will 100% want to snag the full
+                system (39 modules). It will show you how:
+              </p>
+              <ul style={styles.list}>
+                <li style={styles.listItem}>
+                  Generate/manage your own energy so you stop being too tired to do anything
+                </li>
+                <li style={styles.listItem}>
+                  Set up your environment in a way that protects your focus &amp; allows you to consistently win
+                </li>
+                <li style={styles.listItem}>
+                  Shows you how to preps your tasks/work so you can actually get stuff done.
+                </li>
+              </ul>
+              <p style={styles.body}>
+                Full system + bot = beast combo. You will have the simple tools/mental models to be more productive
+                than 99% of the human population.
               </p>
 
               <a href={COURSE_URL} target="_blank" rel="noopener noreferrer" style={styles.cta}>
-                Get the course →
+                Get the full course →
               </a>
             </div>
           </div>,
@@ -67,7 +79,7 @@ export default function GetCourseModal({ variant = 'default' }: GetCourseModalPr
           onClick={() => setOpen(true)}
           style={variant === 'nav' ? styles.navTriggerBtn : styles.triggerBtn}
         >
-          get the course
+          get the full course
         </button>
         <button type="button" onClick={() => setHidden(true)} style={styles.hideBtn}>
           hide button
@@ -168,10 +180,24 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
   },
   body: {
-    margin: '0 0 16px',
+    margin: '0 0 10px',
     fontSize: 14,
     lineHeight: 1.55,
     color: '#334155',
+  },
+  list: {
+    margin: '0 0 12px',
+    paddingLeft: 22,
+    fontSize: 14,
+    lineHeight: 1.5,
+    color: '#334155',
+    listStyleType: 'disc',
+    listStylePosition: 'outside',
+  },
+  listItem: {
+    marginBottom: 8,
+    paddingLeft: 2,
+    display: 'list-item',
   },
   cta: {
     display: 'block',
