@@ -1,10 +1,35 @@
 import type { Metadata } from 'next';
+import { PRODUCTION_SITE_ORIGIN } from '@/lib/site';
 import './globals.css';
 
+const SEO_TITLE = 'Daywinner bot';
+const SEO_DESCRIPTION = 'Prioritize your #1 task. Set your timer. Go';
+const OG_IMAGE = {
+  url: '/og.png',
+  width: 1536,
+  height: 1024,
+  alt: SEO_TITLE,
+};
+
 export const metadata: Metadata = {
-  title: 'Daywinner',
-  description:
-    'Daywinner bot is a productivity dashboard that functions as your "work homebase" — a tab in your browser that helps you organize & finish the tasks you need to do to hit your first six figures (or make your first $1 online), finally build & launch the project you\'ve been sitting on, pass any exam, or land the remote job you actually want. Here\'s the key: You don\'t have a discipline problem — you just have no structure. Until now. Daywinner bot helps you build your tasks and work sessions the way 7-figure entrepreneurs run theirs while blocking your most distracting websites, so you get sh*t done and make more progress in 30 days than you have in the last 5 years.',
+  metadataBase: new URL(PRODUCTION_SITE_ORIGIN),
+  title: SEO_TITLE,
+  description: SEO_DESCRIPTION,
+  openGraph: {
+    title: SEO_TITLE,
+    description: SEO_DESCRIPTION,
+    url: PRODUCTION_SITE_ORIGIN,
+    siteName: SEO_TITLE,
+    type: 'website',
+    locale: 'en_US',
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SEO_TITLE,
+    description: SEO_DESCRIPTION,
+    images: [OG_IMAGE],
+  },
 };
 
 export default function RootLayout({
