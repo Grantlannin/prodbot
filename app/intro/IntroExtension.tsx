@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties } from 'react';
 import MarketingShell from '@/components/marketing/MarketingShell';
+import ExtensionInstallInstructions from '@/components/agent-hq/ExtensionInstallInstructions';
 import { pingFocusExtension } from '@/components/agent-hq/focusBlocking';
 import {
   getChromeExtensionStoreUrl,
@@ -36,7 +37,8 @@ export default function IntroExtension() {
           <h1 style={styles.title}>Install the focus extension</h1>
           <p style={styles.lead}>
             The focus extension blocks distracting sites during your work sessions &amp; communicates vital information
-            with your dashboard. Once downloaded, refresh this page.
+            with your dashboard. Once downloaded, refresh this page &amp; we&apos;ll show &quot;Extension
+            connected&quot; when it&apos;s working.
           </p>
 
           {detected ? (
@@ -63,31 +65,7 @@ export default function IntroExtension() {
             </>
           )}
 
-          <ol style={styles.steps}>
-            {storeUrl ? (
-              <>
-                <li>
-                  Click <strong>Add to Chrome</strong> above and confirm install.
-                </li>
-                <li>Reload the extension if you had an older copy installed.</li>
-                <li>
-                  Come back here and refresh this page — we&apos;ll show &quot;Extension connected&quot; when
-                  it&apos;s working.
-                </li>
-              </>
-            ) : (
-              <>
-                <li>
-                  Unzip the download → <code style={styles.code}>chrome://extensions</code> → Developer mode → Load
-                  unpacked.
-                </li>
-                <li>
-                  Come back here and refresh this page — we&apos;ll show &quot;Extension connected&quot; when
-                  it&apos;s working.
-                </li>
-              </>
-            )}
-          </ol>
+          <ExtensionInstallInstructions />
 
           {detected ? (
             <button type="button" onClick={handleContinue} style={styles.btn}>
@@ -167,10 +145,6 @@ const styles: Record<string, CSSProperties> = {
     color: '#94a3b8',
     lineHeight: 1.5,
   },
-  code: {
-    fontSize: 11,
-    color: '#475569',
-  },
   primaryLink: {
     display: 'block',
     textAlign: 'center',
@@ -195,13 +169,6 @@ const styles: Record<string, CSSProperties> = {
     background: '#fff',
     color: '#475569',
     textDecoration: 'none',
-  },
-  steps: {
-    margin: '4px 0 0',
-    paddingLeft: 18,
-    color: '#475569',
-    fontSize: 13,
-    lineHeight: 1.55,
   },
   btn: {
     marginTop: 4,

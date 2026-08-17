@@ -13,6 +13,7 @@ import {
   type FocusBlocklistStore,
 } from './focusBlocking';
 import { getChromeExtensionStoreUrl } from '@/lib/intro';
+import ExtensionInstallInstructions from './ExtensionInstallInstructions';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -97,33 +98,7 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
                     Download extension
                   </a>
                 )}
-                <div style={styles.stepsBlock}>
-                  <p style={styles.stepLine}>
-                    <strong>Step 1</strong> — Click the link &amp; download the above extension
-                  </p>
-                  <p style={styles.permissionNote}>
-                    Note: When you download the extension, Chrome will pop up a message that says the extension can
-                    &quot;read and change all your data on all websites&quot;. A sketchy sounding phrase that made me
-                    go &quot;wtf?&quot; when i saw it as someone who doesn&apos;t want to give any data to anyone. I am
-                    still to this day unsure why Chrome used that specific ambiguous wording. In normal language: what
-                    this sentence means is that you&apos;re giving the extension permission to block specific pages of
-                    your choosing (like any normal blocker), and because you can block any site you want, Chrome calls
-                    this &quot;can change data on all sites&quot;. When you hit a blocked site, Daywinner logs that as
-                    an &quot;infraction&quot; and keeps score for you on your dashboard. The extension does not care
-                    about any history — it just blocks the sites you choose &amp; counts up the infractions (if there
-                    are any) in your dashboard.
-                  </p>
-                  <img
-                    src="/marketing/chrome-extension-installed.png"
-                    alt="Chrome Extensions menu showing Daywinner bot installed"
-                    style={styles.installScreenshot}
-                  />
-                  <p style={styles.stepLine}>
-                    <strong>Step 2</strong> — Once you see the extension downloaded, refresh this Daywinner tab so it
-                    can connect. Then start a work session with soft lock and open a blocked site — if it blocks, it&apos;s
-                    working.
-                  </p>
-                </div>
+                <ExtensionInstallInstructions />
               </div>
 
               <div style={styles.section}>
