@@ -3,11 +3,11 @@ import { PRODUCTION_SITE_ORIGIN } from '@/lib/site';
 import './globals.css';
 
 const SEO_TITLE = 'Daywinner bot';
-const SEO_DESCRIPTION = 'Prioritize your #1 task. Set your timer. Go';
+const SEO_DESCRIPTION = 'Prioritize your #1 task. Set your timer. Go.';
 const OG_IMAGE = {
   url: '/og.png',
-  width: 1536,
-  height: 1024,
+  width: 512,
+  height: 512,
   alt: SEO_TITLE,
 };
 
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     images: [OG_IMAGE],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: SEO_TITLE,
     description: SEO_DESCRIPTION,
     images: [OG_IMAGE],
