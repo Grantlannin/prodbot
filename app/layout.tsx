@@ -5,9 +5,9 @@ import './globals.css';
 const SEO_TITLE = 'Daywinner bot';
 const SEO_DESCRIPTION = 'Prioritize your #1 task. Set your timer. Go.';
 const OG_IMAGE = {
-  url: '/og.png',
-  width: 512,
-  height: 512,
+  url: '/daywinner-bot.png',
+  width: 1024,
+  height: 1024,
   alt: SEO_TITLE,
 };
 
