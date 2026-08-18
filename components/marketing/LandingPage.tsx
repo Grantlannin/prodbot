@@ -99,8 +99,11 @@ export default function LandingPage() {
     <MarketingShell>
       <section className="flex min-h-[calc(100svh-4.5rem)] flex-col items-center justify-center py-6">
         <div className="flex w-full max-w-2xl flex-col items-center text-center">
+          <h1 className="mb-4 max-w-3xl text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-6xl">
+            re-claim 50-100 productive hours per month
+          </h1>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Introducing</p>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Daywinner bot</h1>
+          <h2 className="mb-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Daywinner bot</h2>
           <Image
             src="/marketing/daywinner-bot-hero.png"
             alt="Daywinner bot presenting the money-work dashboard"
@@ -544,12 +547,12 @@ export default function LandingPage() {
                 minutes gone. Another one, now I don&apos;t feel like working. Then 3 weeks passes by, i&apos;ve done
                 literally f****** nothing. &ldquo;Wow, i&apos;m better than this. this is disgusting&rdquo;. That
                 embarrassment for my lack of focus is what drove me to create daywinner bot. I thought i was better than
-                social media until i used the bot to track my infractions and i tried to visit a social media site 28
-                times in 1 hour (your bot tracks your focus infractions) &amp; i was like oh, sh*t. I wanted all my stuff
-                in 1
-                place, and i wanted to be able to block every social media site &amp; give me a simple work timer that I
-                could see in a browser tab that then showed me exactly what I worked on so I had *actual proof* of what I
-                did that day so I couldn&apos;t lie to myself. And that&apos;s exactly what daywinner bot is. Since using
+                &apos;blocking social media&apos; until i used the bot to track my *actual* infractions (your bot tracks
+                your focus infractions) and i tried to visit a social media site 28 times in 1 hour. I was like oh,
+                sh*t. i&apos;m not better than it. So I wanted a tool that could block every social media site, let me
+                keep all my work stuff in 1 place, &amp; give me a simple work timer that I could see in a browser tab
+                that then showed me exactly what I worked on so I had *actual proof* of what I did that day so I
+                couldn&apos;t lie to myself. And that&apos;s exactly what daywinner bot is. Since using
                 it, I&apos;ve legitimately been 20x+ more productive and i&apos;m not even joking. I use it every day, and
                 i make progress EVERY single day. I quite literally haven&apos;t &ldquo;missed&rdquo; a work day yet with
                 it in my possession. Once you get familiar with it &amp; *actually* use it, your work &ldquo;hit
