@@ -99,11 +99,8 @@ export default function LandingPage() {
     <MarketingShell>
       <section className="flex min-h-[calc(100svh-4.5rem)] flex-col items-center justify-center py-6">
         <div className="flex w-full max-w-2xl flex-col items-center text-center">
-          <h1 className="mb-4 max-w-3xl text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-6xl">
-            re-claim 50-100 productive hours per month
-          </h1>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Introducing</p>
-          <h2 className="mb-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Daywinner bot</h2>
+          <h1 className="mb-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Daywinner bot</h1>
           <Image
             src="/marketing/daywinner-bot-hero.png"
             alt="Daywinner bot presenting the money-work dashboard"
