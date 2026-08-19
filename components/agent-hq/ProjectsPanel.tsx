@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, type CSSProperties } from 'react';
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, memo, type CSSProperties } from 'react';
 import type { ProjectBoard, ProjectSubTask, ProjectTask, TaskContextLink } from './types';
 import { useProjects } from './hooks/ProjectsProvider';
 import TaskContextLinksBox from './TaskContextLinksBox';
@@ -256,6 +256,30 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const nameRef = useRef<HTMLInputElement>(null);
   const taskInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
   const subTaskInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
+  const taskInputRefCallbacks = useRef(new Map<string, (el: HTMLTextAreaElement | null) => void>());
+  const subTaskInputRefCallbacks = useRef(new Map<string, (el: HTMLTextAreaElement | null) => void>());
+  const getTaskInputRef = useCallback((taskId: string) => {
+    let cb = taskInputRefCallbacks.current.get(taskId);
+    if (!cb) {
+      cb = (el: HTMLTextAreaElement | null) => {
+        if (el) taskInputRefs.current.set(taskId, el);
+        else taskInputRefs.current.delete(taskId);
+      };
+      taskInputRefCallbacks.current.set(taskId, cb);
+    }
+    return cb;
+  }, []);
+  const getSubTaskInputRef = useCallback((key: string) => {
+    let cb = subTaskInputRefCallbacks.current.get(key);
+    if (!cb) {
+      cb = (el: HTMLTextAreaElement | null) => {
+        if (el) subTaskInputRefs.current.set(key, el);
+        else subTaskInputRefs.current.delete(key);
+      };
+      subTaskInputRefCallbacks.current.set(key, cb);
+    }
+    return cb;
+  }, []);
   const [migrated, setMigrated] = useState(false);
   const linksMigratedRef = useRef(false);
 
@@ -1184,12 +1208,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             <DragHandleIcon />
                           </span>
                           <textarea
-                            ref={el => {
-                              if (el) {
-                                taskInputRefs.current.set(task.id, el);
-                                autosizeTaskTextarea(el);
-                              } else taskInputRefs.current.delete(task.id);
-                            }}
+                            ref={getTaskInputRef(task.id)}
                             rows={1}
                             value={task.text}
                             onChange={e => {
@@ -1379,13 +1398,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               <DragHandleIcon />
                             </span>
                             <textarea
-                              ref={el => {
-                                const key = subTaskKey(task.id, sub.id);
-                                if (el) {
-                                  subTaskInputRefs.current.set(key, el);
-                                  autosizeTaskTextarea(el);
-                                } else subTaskInputRefs.current.delete(key);
-                              }}
+                              ref={getSubTaskInputRef(subTaskKey(task.id, sub.id))}
                               rows={1}
                               value={sub.text}
                               onChange={e => {
@@ -1538,7 +1551,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   );
 });
 
-export default ProjectsPanel;
+export default memo(ProjectsPanel);
 
 const styles: Record<string, CSSProperties> = {
   root: { fontFamily: font, minHeight: 0 },
