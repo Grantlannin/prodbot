@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useLayoutEffect, useCallback, useRef, forwardRef, useImperativeHandle, memo, type CSSProperties } from 'react';
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, memo, type CSSProperties, type RefObject } from 'react';
 import type { ProjectBoard, ProjectSubTask, ProjectTask, TaskContextLink } from './types';
 import { useProjects } from './hooks/ProjectsProvider';
 import TaskContextLinksBox from './TaskContextLinksBox';
@@ -29,15 +29,154 @@ const PROJECT_SIDEBAR_ITEM_HEIGHT_PX = 48;
 const PROJECT_SIDEBAR_GAP_PX = 4;
 const PROJECT_SIDEBAR_LIST_PADDING_PX = 6;
 
-function autosizeTaskTextarea(el: HTMLTextAreaElement | null) {
-  if (!el) return;
-  el.style.height = '0px';
-  el.style.height = `${Math.max(el.scrollHeight, 20)}px`;
-}
 const PROJECT_SIDEBAR_SCROLL_HEIGHT =
   PROJECT_SIDEBAR_VISIBLE * PROJECT_SIDEBAR_ITEM_HEIGHT_PX +
   (PROJECT_SIDEBAR_VISIBLE - 1) * PROJECT_SIDEBAR_GAP_PX +
   PROJECT_SIDEBAR_LIST_PADDING_PX * 2;
+
+const TEXT_COMMIT_DEBOUNCE_MS = 250;
+
+function useDebouncedTextCommit(value: string, onCommit: (text: string) => void) {
+  const [draft, setDraft] = useState(value);
+  const focusedRef = useRef(false);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onCommitRef = useRef(onCommit);
+  onCommitRef.current = onCommit;
+
+  useEffect(() => {
+    if (!focusedRef.current) setDraft(value);
+  }, [value]);
+
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    []
+  );
+
+  const flush = useCallback(
+    (text: string) => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      if (text !== value) onCommitRef.current(text);
+    },
+    [value]
+  );
+
+  const onDraftChange = useCallback(
+    (text: string) => {
+      setDraft(text);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        if (text !== value) onCommitRef.current(text);
+      }, TEXT_COMMIT_DEBOUNCE_MS);
+    },
+    [value]
+  );
+
+  const onFocus = useCallback(() => {
+    focusedRef.current = true;
+  }, []);
+
+  const onBlur = useCallback(() => {
+    focusedRef.current = false;
+    flush(draftRef.current);
+  }, [flush]);
+
+  return {
+    draft,
+    focusedRef,
+    flush,
+    onDraftChange,
+    onFocus,
+    onBlur,
+  };
+}
+
+const ProjectDebouncedTextarea = memo(function ProjectDebouncedTextarea({
+  value,
+  onCommit,
+  inputRef,
+  style,
+  onEnterSplit,
+  onEmptyDelete,
+}: {
+  value: string;
+  onCommit: (text: string) => void;
+  inputRef?: (el: HTMLTextAreaElement | null) => void;
+  style: CSSProperties;
+  onEnterSplit?: (before: string, after: string) => void;
+  onEmptyDelete?: () => void;
+}) {
+  const { draft, flush, onDraftChange, onFocus, onBlur } = useDebouncedTextCommit(value, onCommit);
+
+  return (
+    <textarea
+      ref={inputRef}
+      rows={1}
+      value={draft}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onChange={e => onDraftChange(e.target.value)}
+      onKeyDown={e => {
+        if (e.key === 'Enter' && !e.shiftKey && onEnterSplit) {
+          e.preventDefault();
+          const cursor = e.currentTarget.selectionStart ?? draft.length;
+          flush(draft.slice(0, cursor));
+          onEnterSplit(draft.slice(0, cursor), draft.slice(cursor));
+          return;
+        }
+        if ((e.key === 'Backspace' || e.key === 'Delete') && !draft.trim() && onEmptyDelete) {
+          e.preventDefault();
+          flush('');
+          onEmptyDelete();
+        }
+      }}
+      placeholder=""
+      style={style}
+    />
+  );
+});
+
+const ProjectDebouncedInput = memo(function ProjectDebouncedInput({
+  value,
+  onCommit,
+  inputRef,
+  style,
+  placeholder,
+  id,
+  'aria-label': ariaLabel,
+}: {
+  value: string;
+  onCommit: (text: string) => void;
+  inputRef?: RefObject<HTMLInputElement>;
+  style: CSSProperties;
+  placeholder?: string;
+  id?: string;
+  'aria-label'?: string;
+}) {
+  const { draft, onDraftChange, onFocus, onBlur } = useDebouncedTextCommit(value, onCommit);
+
+  return (
+    <input
+      id={id}
+      ref={inputRef}
+      type="text"
+      value={draft}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onChange={e => onDraftChange(e.target.value)}
+      placeholder={placeholder}
+      style={style}
+      aria-label={ariaLabel}
+    />
+  );
+});
 
 function makeId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -389,18 +528,24 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     }
   }, [focusSubTaskKey, selected?.tasks]);
 
-  useLayoutEffect(() => {
-    for (const el of taskInputRefs.current.values()) autosizeTaskTextarea(el);
-    for (const el of subTaskInputRefs.current.values()) autosizeTaskTextarea(el);
-  }, [selected?.id, selected?.tasks]);
+  const lastProgressRef = useRef<ProjectProgress | null>(null);
 
   useEffect(() => {
     if (!onSelectedProgressChange) return;
     if (!selected) {
-      onSelectedProgressChange(null);
+      if (lastProgressRef.current !== null) {
+        lastProgressRef.current = null;
+        onSelectedProgressChange(null);
+      }
       return;
     }
-    onSelectedProgressChange(getProjectProgress(selected.tasks));
+    const next = getProjectProgress(selected.tasks);
+    const prev = lastProgressRef.current;
+    if (prev && prev.percent === next.percent && prev.done === next.done && prev.total === next.total) {
+      return;
+    }
+    lastProgressRef.current = next;
+    onSelectedProgressChange(next);
   }, [selected, onSelectedProgressChange]);
 
   useEffect(() => {
@@ -1117,12 +1262,11 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
           {selected ? (
             <>
               <div style={styles.nameBlock}>
-                <input
+                <ProjectDebouncedInput
                   id="project-name"
-                  ref={nameRef}
-                  type="text"
+                  inputRef={nameRef}
                   value={selected.name}
-                  onChange={e => touchProject(selected.id, { name: e.target.value })}
+                  onCommit={name => touchProject(selected.id, { name })}
                   placeholder="Name this thing…"
                   style={styles.nameInput}
                   aria-label="Thing name"
@@ -1212,36 +1356,14 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                           >
                             <DragHandleIcon />
                           </span>
-                          <textarea
-                            ref={getTaskInputRef(task.id)}
-                            rows={1}
+                          <ProjectDebouncedTextarea
                             value={task.text}
-                            onChange={e => {
-                              updateTask(selected.id, task.id, { text: e.target.value });
-                              autosizeTaskTextarea(e.currentTarget);
-                            }}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                const input = e.currentTarget;
-                                const cursor = input.selectionStart ?? input.value.length;
-                                splitTaskAfter(
-                                  selected.id,
-                                  task.id,
-                                  input.value.slice(0, cursor),
-                                  input.value.slice(cursor)
-                                );
-                                return;
-                              }
-                              if (
-                                (e.key === 'Backspace' || e.key === 'Delete') &&
-                                !task.text.trim()
-                              ) {
-                                e.preventDefault();
-                                removeEmptyTask(selected.id, task.id, taskIndex);
-                              }
-                            }}
-                            placeholder=""
+                            inputRef={getTaskInputRef(task.id)}
+                            onCommit={text => updateTask(selected.id, task.id, { text })}
+                            onEnterSplit={(before, after) =>
+                              splitTaskAfter(selected.id, task.id, before, after)
+                            }
+                            onEmptyDelete={() => removeEmptyTask(selected.id, task.id, taskIndex)}
                             style={{
                               ...styles.taskInput,
                               ...(task.done ? styles.taskInputDone : {}),
@@ -1402,37 +1524,18 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             >
                               <DragHandleIcon />
                             </span>
-                            <textarea
-                              ref={getSubTaskInputRef(subTaskKey(task.id, sub.id))}
-                              rows={1}
+                            <ProjectDebouncedTextarea
                               value={sub.text}
-                              onChange={e => {
-                                updateSubTask(selected.id, task.id, sub.id, { text: e.target.value });
-                                autosizeTaskTextarea(e.currentTarget);
-                              }}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  const input = e.currentTarget;
-                                  const cursor = input.selectionStart ?? input.value.length;
-                                  splitSubTaskAfter(
-                                    selected.id,
-                                    task.id,
-                                    sub.id,
-                                    input.value.slice(0, cursor),
-                                    input.value.slice(cursor)
-                                  );
-                                  return;
-                                }
-                                if (
-                                  (e.key === 'Backspace' || e.key === 'Delete') &&
-                                  !sub.text.trim()
-                                ) {
-                                  e.preventDefault();
-                                  removeEmptySubTask(selected.id, task.id, sub.id, subIndex);
-                                }
-                              }}
-                              placeholder=""
+                              inputRef={getSubTaskInputRef(subTaskKey(task.id, sub.id))}
+                              onCommit={text =>
+                                updateSubTask(selected.id, task.id, sub.id, { text })
+                              }
+                              onEnterSplit={(before, after) =>
+                                splitSubTaskAfter(selected.id, task.id, sub.id, before, after)
+                              }
+                              onEmptyDelete={() =>
+                                removeEmptySubTask(selected.id, task.id, sub.id, subIndex)
+                              }
                               style={{
                                 ...styles.subTaskInput,
                                 ...(sub.done ? styles.taskInputDone : {}),
