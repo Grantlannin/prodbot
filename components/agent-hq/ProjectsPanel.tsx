@@ -395,6 +395,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   }, [selected?.id, selected?.tasks]);
 
   useEffect(() => {
+    if (!onSelectedProgressChange) return;
     if (!selected) {
       onSelectedProgressChange(null);
       return;

@@ -402,7 +402,6 @@ export function useWorkTracker() {
       timerPaused: false,
     }));
     patchTick({ elapsed: 0, pomodoroLeft: null, breakLeft: null, openCountdownLeft: null });
-    patchTick({ openCountdownLeft: null });
   }, [setState]);
 
   const startBreak = useCallback(
@@ -586,7 +585,7 @@ export function useWorkTracker() {
           const openElapsed = readTick().breakLeft ?? now - brk.startTime;
           brk.startTime = now - openElapsed;
         } else {
-          const openElapsed = breakLeft ?? now - brk.startTime;
+          const openElapsed = readTick().breakLeft ?? now - brk.startTime;
           brk.startTime = now - openElapsed;
         }
         return { ...prev, timerPaused: false, currentBreak: brk };
