@@ -88,13 +88,28 @@ function useDebouncedTextCommit(value: string, onCommit: (text: string) => void)
     flush(draftRef.current);
   }, [flush]);
 
+  const cancelPendingCommit = useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  }, []);
+
+  const endEditing = useCallback(() => {
+    cancelPendingCommit();
+    focusedRef.current = false;
+  }, [cancelPendingCommit]);
+
   return {
     draft,
+    setDraft,
     focusedRef,
     flush,
     onDraftChange,
     onFocus,
     onBlur,
+    cancelPendingCommit,
+    endEditing,
   };
 }
 
@@ -113,7 +128,8 @@ const ProjectDebouncedTextarea = memo(function ProjectDebouncedTextarea({
   onEnterSplit?: (before: string, after: string) => void;
   onEmptyDelete?: () => void;
 }) {
-  const { draft, flush, onDraftChange, onFocus, onBlur } = useDebouncedTextCommit(value, onCommit);
+  const { draft, setDraft, flush, onDraftChange, onFocus, onBlur, endEditing } =
+    useDebouncedTextCommit(value, onCommit);
 
   return (
     <textarea
@@ -126,9 +142,12 @@ const ProjectDebouncedTextarea = memo(function ProjectDebouncedTextarea({
       onKeyDown={e => {
         if (e.key === 'Enter' && !e.shiftKey && onEnterSplit) {
           e.preventDefault();
+          endEditing();
           const cursor = e.currentTarget.selectionStart ?? draft.length;
-          flush(draft.slice(0, cursor));
-          onEnterSplit(draft.slice(0, cursor), draft.slice(cursor));
+          const before = draft.slice(0, cursor);
+          const after = draft.slice(cursor);
+          setDraft(before);
+          onEnterSplit(before, after);
           return;
         }
         if ((e.key === 'Backspace' || e.key === 'Delete') && !draft.trim() && onEmptyDelete) {
@@ -510,22 +529,42 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
 
   useEffect(() => {
     if (!focusTaskId) return;
-    const el = taskInputRefs.current.get(focusTaskId);
-    if (el) {
-      el.focus();
-      el.scrollIntoView({ block: 'nearest' });
-      setFocusTaskId(null);
-    }
+    const id = focusTaskId;
+    let attempts = 0;
+    let frame = 0;
+    const tryFocus = () => {
+      const el = taskInputRefs.current.get(id);
+      if (el) {
+        el.focus();
+        el.scrollIntoView({ block: 'nearest' });
+        setFocusTaskId(null);
+        return;
+      }
+      attempts += 1;
+      if (attempts < 8) frame = requestAnimationFrame(tryFocus);
+    };
+    frame = requestAnimationFrame(tryFocus);
+    return () => cancelAnimationFrame(frame);
   }, [focusTaskId, selected?.tasks]);
 
   useEffect(() => {
     if (!focusSubTaskKey) return;
-    const el = subTaskInputRefs.current.get(focusSubTaskKey);
-    if (el) {
-      el.focus();
-      el.scrollIntoView({ block: 'nearest' });
-      setFocusSubTaskKey(null);
-    }
+    const key = focusSubTaskKey;
+    let attempts = 0;
+    let frame = 0;
+    const tryFocus = () => {
+      const el = subTaskInputRefs.current.get(key);
+      if (el) {
+        el.focus();
+        el.scrollIntoView({ block: 'nearest' });
+        setFocusSubTaskKey(null);
+        return;
+      }
+      attempts += 1;
+      if (attempts < 8) frame = requestAnimationFrame(tryFocus);
+    };
+    frame = requestAnimationFrame(tryFocus);
+    return () => cancelAnimationFrame(frame);
   }, [focusSubTaskKey, selected?.tasks]);
 
   const lastProgressRef = useRef<ProjectProgress | null>(null);
