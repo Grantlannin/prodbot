@@ -173,7 +173,12 @@ export function useWorkTracker() {
         countdownStartTime: countdownTargetMs ? now : null,
         countdownBonusMs: 0,
         lockMode: data.lockMode,
-        ...(data.source === 'misc' ? { source: 'misc' as const } : {}),
+        ...(data.source === 'misc'
+          ? {
+              source: 'misc' as const,
+              ...(data.miscLineId ? { miscLineId: data.miscLineId } : {}),
+            }
+          : {}),
       };
 
       setState(prev => ({

@@ -29,6 +29,8 @@ export interface WorkSession {
   lockMode?: FocusLockMode;
   /** Homeless / misc list work — tracked, but skipped in wind-down note prompts */
   source?: 'misc';
+  /** Stable id of the misc task line while this session is active */
+  miscLineId?: string;
 }
 
 export interface BreakSession {

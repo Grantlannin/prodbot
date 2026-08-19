@@ -11,6 +11,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import {
   TODAY_LINE_DRAG_TYPE,
   TODAY_TASK_LIST_KEY,
@@ -86,8 +87,22 @@ export default function MiscTasksPanel({
   const todayLinesRef = useRef<HTMLDivElement | null>(null);
   const emptyDraftIdRef = useRef(makeTodayLineId());
   const scrollTopRef = useRef(0);
+  const { status, currentSession } = useWorkTrackerContext();
 
   const today = useMemo(() => normalizeTodayTaskList(todayStore), [todayStore]);
+
+  const activeMiscLineId = useMemo(() => {
+    const sessionActive = status === 'working' || status === 'on_break';
+    if (!sessionActive || !currentSession || currentSession.source !== 'misc') return null;
+    if (currentSession.miscLineId) return currentSession.miscLineId;
+    const match = today.lines.find(line => line.text.trim() === currentSession.project.trim());
+    return match?.id ?? null;
+  }, [status, currentSession, today.lines]);
+
+  const isLineLocked = useCallback(
+    (lineId: string) => activeMiscLineId != null && activeMiscLineId === lineId,
+    [activeMiscLineId]
+  );
 
   useEffect(() => {
     const rolled = normalizeTodayTaskList(todayStore);
@@ -115,6 +130,7 @@ export default function MiscTasksPanel({
   };
 
   const updateLineText = (lineId: string, text: string) => {
+    if (isLineLocked(lineId)) return;
     if (today.lines.length === 0) {
       commitLines([{ id: emptyDraftIdRef.current, text, createdAt: Date.now() }]);
       return;
@@ -123,6 +139,7 @@ export default function MiscTasksPanel({
   };
 
   const removeTodayLine = (lineId: string) => {
+    if (isLineLocked(lineId)) return;
     if (today.lines.length === 0) return;
     const savedScrollTop = todayLinesRef.current?.scrollTop ?? 0;
     pushUndoSnapshot();
@@ -133,6 +150,7 @@ export default function MiscTasksPanel({
   };
 
   const undoLastChange = () => {
+    if (activeMiscLineId) return;
     if (undoStack.length === 0) return;
     const savedScrollTop = todayLinesRef.current?.scrollTop ?? 0;
     const snap = undoStack[undoStack.length - 1];
@@ -186,8 +204,11 @@ export default function MiscTasksPanel({
   }, [focusLineId, scrollTodayLineIntoView]);
 
   const handleLineKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>, lineId: string) => {
+    if (isLineLocked(lineId)) return;
+
     if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
       e.preventDefault();
+      if (activeMiscLineId) return;
       undoLastChange();
       return;
     }
@@ -231,6 +252,7 @@ export default function MiscTasksPanel({
   };
 
   const reorderTodayLine = (fromId: string, toId: string, edge: 'before' | 'after') => {
+    if (isLineLocked(fromId) || isLineLocked(toId)) return;
     if (today.lines.length === 0) return;
     const content = [...editorLines];
     const fromIndex = content.findIndex(line => line.id === fromId);
@@ -249,6 +271,10 @@ export default function MiscTasksPanel({
   };
 
   const handleTodayDragStart = (line: TodayTaskLine) => (e: DragEvent) => {
+    if (isLineLocked(line.id)) {
+      e.preventDefault();
+      return;
+    }
     const text = line.text.trim();
     if (!text) {
       e.preventDefault();
@@ -307,7 +333,7 @@ export default function MiscTasksPanel({
       <div style={styles.header}>
         <div style={styles.title}>Misc tasks</div>
         <div style={styles.headerActions}>
-          {undoStack.length > 0 ? (
+          {undoStack.length > 0 && !activeMiscLineId ? (
             <button
               type="button"
               onClick={undoLastChange}
@@ -334,7 +360,8 @@ export default function MiscTasksPanel({
         }}
       >
         {editorLines.map((line, index) => {
-          const canDrag = line.text.trim().length > 0;
+          const locked = isLineLocked(line.id);
+          const canDrag = line.text.trim().length > 0 && !locked;
           const canStart = canDrag && !!onStartLine;
           const isDragging = draggingLineId === line.id;
           const showLine =
@@ -377,9 +404,11 @@ export default function MiscTasksPanel({
                   if (wasMissing) autosizeTodayLine(el);
                 }}
                 value={line.text}
+                readOnly={locked}
                 placeholder={index === 0 ? 'quick misc task…' : ''}
                 rows={1}
                 onChange={e => {
+                  if (locked) return;
                   const el = e.currentTarget;
                   const container = todayLinesRef.current;
                   const savedScrollTop = container?.scrollTop ?? scrollTopRef.current;
@@ -391,23 +420,29 @@ export default function MiscTasksPanel({
                   }
                 }}
                 onKeyDown={e => handleLineKeyDown(e, line.id)}
-                style={styles.todayInput}
-                aria-label={`Misc task ${index + 1}`}
+                style={{
+                  ...styles.todayInput,
+                  ...(locked ? styles.todayInputLocked : {}),
+                }}
+                aria-label={locked ? `Misc task ${index + 1} (tracking)` : `Misc task ${index + 1}`}
+                title={locked ? 'Locked while timer is running for this task' : undefined}
               />
               {line.text.trim() ? (
                 <div style={styles.todayActions}>
-                  <button
-                    type="button"
-                    data-misc-delete=""
-                    onMouseDown={e => e.preventDefault()}
-                    onClick={() => removeTodayLine(line.id)}
-                    style={styles.todayDeleteBtn}
-                    aria-label={`Delete ${line.text.trim()}`}
-                    title="Delete"
-                    tabIndex={-1}
-                  >
-                    ×
-                  </button>
+                  {!locked ? (
+                    <button
+                      type="button"
+                      data-misc-delete=""
+                      onMouseDown={e => e.preventDefault()}
+                      onClick={() => removeTodayLine(line.id)}
+                      style={styles.todayDeleteBtn}
+                      aria-label={`Delete ${line.text.trim()}`}
+                      title="Delete"
+                      tabIndex={-1}
+                    >
+                      ×
+                    </button>
+                  ) : null}
                   {canStart ? (
                     <button
                       type="button"
@@ -569,6 +604,10 @@ const styles: Record<string, CSSProperties> = {
     padding: '6px 0',
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
+  },
+  todayInputLocked: {
+    color: '#0f172a',
+    cursor: 'default',
   },
   todayActions: {
     display: 'inline-flex',

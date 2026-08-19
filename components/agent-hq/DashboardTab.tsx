@@ -19,6 +19,7 @@ import HowToStartBanner from './HowToStartBanner';
 import WorkTimerBanner from './WorkTimerBanner';
 import { sessionLabel } from './quickstartTask';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
+import type { TodayTaskLine } from './todayTaskList/storage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -56,12 +57,13 @@ export default function DashboardTab({
     setStartWorkOpen(true);
   }, []);
 
-  const handleStartMiscLine = useCallback((line: { text: string }) => {
+  const handleStartMiscLine = useCallback((line: TodayTaskLine) => {
     const text = line.text.trim();
     if (!text) return;
     setStartWorkPreset({
       label: text,
       source: 'misc',
+      miscLineId: line.id,
     });
     setStartWorkOpen(true);
   }, []);

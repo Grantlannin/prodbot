@@ -31,6 +31,7 @@ interface PendingSession {
   taskRef?: { projectId: string; taskId: string; subTaskId?: string };
   /** Homeless misc-list work — tracked but skipped in wind-down note prompts */
   source?: 'misc';
+  miscLineId?: string;
 }
 
 export type StartWorkPreset = PendingSession;
@@ -100,7 +101,8 @@ export default function StartWorkModal({
     taskRef?: { projectId: string; taskId: string; subTaskId?: string },
     countdownMinutes?: number,
     sessionLockMode: FocusLockMode = 'none',
-    source?: 'misc'
+    source?: 'misc',
+    miscLineId?: string
   ) => {
     if (busy) return;
     const minutes = countdownMinutes && countdownMinutes > 0 ? countdownMinutes : durationMinutes;
@@ -110,7 +112,12 @@ export default function StartWorkModal({
       type: 'open',
       countdownTargetMs: minutes * 60 * 1000,
       lockMode: sessionLockMode,
-      ...(source === 'misc' ? { source: 'misc' as const } : {}),
+      ...(source === 'misc'
+        ? {
+            source: 'misc' as const,
+            ...(miscLineId ? { miscLineId } : {}),
+          }
+        : {}),
     });
     requestOpen();
     if (taskRef) {
@@ -189,7 +196,8 @@ export default function StartWorkModal({
       pendingSession.taskRef,
       resolvedCustomMinutes,
       lockMode,
-      pendingSession.source
+      pendingSession.source,
+      pendingSession.miscLineId
     );
   };
 
