@@ -9,6 +9,10 @@ import {
   KICKSTART_DURATION_MS,
 } from '../stuckHelp/flows';
 import { computeActiveWorkMs, isSameLocalDay, pomodoroTargetMs, sessionWorkMs } from '../workTime';
+import {
+  createWorkTrackerTickStore,
+  type WorkTrackerTickSnapshot,
+} from './workTrackerTickStore';
 
 const SESSIONS_KEY = 'agentHQ_sessions';
 const BREAKS_KEY = 'agentHQ_breaks';
@@ -36,18 +40,22 @@ export function useWorkTracker() {
   const [breaks, setBreaks] = useLocalStorage<BreakSession[]>(BREAKS_KEY, []);
   const [state, setState] = useLocalStorage<TrackerState>(TRACKER_STATE_KEY, initialState);
 
-  const [elapsed, setElapsed] = useState(0);
-  const [pomodoroLeft, setPomodoroLeft] = useState<number | null>(null);
-  const [breakLeft, setBreakLeft] = useState<number | null>(null);
-  const [openCountdownLeft, setOpenCountdownLeft] = useState<number | null>(null);
+  const tickStoreRef = useRef<ReturnType<typeof createWorkTrackerTickStore> | null>(null);
+  if (!tickStoreRef.current) tickStoreRef.current = createWorkTrackerTickStore();
+  const tickStore = tickStoreRef.current;
+
+  const patchTick = (patch: Partial<WorkTrackerTickSnapshot>) => {
+    tickStore.setSnapshot(patch);
+    if ('pomodoroLeft' in patch) pomodoroLeftRef.current = patch.pomodoroLeft ?? null;
+    if ('openCountdownLeft' in patch) openCountdownLeftRef.current = patch.openCountdownLeft ?? null;
+  };
+  const readTick = () => tickStore.getSnapshot();
 
   const tickRef = useRef<NodeJS.Timeout | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
-  const openCountdownLeftRef = useRef(openCountdownLeft);
-  openCountdownLeftRef.current = openCountdownLeft;
-  const pomodoroLeftRef = useRef(pomodoroLeft);
-  pomodoroLeftRef.current = pomodoroLeft;
+  const openCountdownLeftRef = useRef<number | null>(readTick().openCountdownLeft);
+  const pomodoroLeftRef = useRef<number | null>(readTick().pomodoroLeft);
 
   useEffect(() => {
     setState(prev => {
@@ -84,30 +92,33 @@ export function useWorkTracker() {
     const s = stateRef.current;
     if (s.timerPaused) return;
     const now = Date.now();
+    const patch: Partial<WorkTrackerTickSnapshot> = {};
 
     if (s.status === 'working' && s.currentSession) {
       const start = s.currentSession.startTime;
-      setElapsed(now - start);
+      patch.elapsed = now - start;
       if (
         s.currentSession.countdownTargetMs != null &&
         s.currentSession.countdownStartTime != null &&
         s.currentSession.type === 'open'
       ) {
         const target = s.currentSession.countdownTargetMs;
-        setOpenCountdownLeft(Math.max(0, target - (now - s.currentSession.countdownStartTime)));
+        patch.openCountdownLeft = Math.max(0, target - (now - s.currentSession.countdownStartTime));
       }
       if (s.phase === 'pomodoro_working' && s.currentSession.pomodoroMinutes) {
         const target = pomodoroTargetMs(s.currentSession);
-        setPomodoroLeft(Math.max(0, target - (now - start)));
+        patch.pomodoroLeft = Math.max(0, target - (now - start));
       }
     } else if (s.status === 'on_break' && s.currentBreak) {
       if (s.phase === 'pomodoro_break' && s.currentBreak.durationMinutes) {
         const target = s.currentBreak.durationMinutes * 60 * 1000;
-        setBreakLeft(Math.max(0, target - (now - s.currentBreak.startTime)));
+        patch.breakLeft = Math.max(0, target - (now - s.currentBreak.startTime));
       } else {
-        setBreakLeft(now - s.currentBreak.startTime);
+        patch.breakLeft = now - s.currentBreak.startTime;
       }
     }
+
+    if (Object.keys(patch).length > 0) patchTick(patch);
   }, []);
 
   useEffect(() => {
@@ -177,11 +188,13 @@ export function useWorkTracker() {
         timerPaused: false,
       }));
 
-      setElapsed(0);
-      setOpenCountdownLeft(countdownTargetMs);
-      if (data.pomodoroMinutes) {
-        setPomodoroLeft(data.pomodoroMinutes * 60 * 1000);
-      }
+      patchTick({
+        elapsed: 0,
+        openCountdownLeft: countdownTargetMs,
+        ...(data.pomodoroMinutes
+          ? { pomodoroLeft: data.pomodoroMinutes * 60 * 1000 }
+          : {}),
+      });
     },
     [setState]
   );
@@ -194,8 +207,8 @@ export function useWorkTracker() {
       session: state.currentSession,
       status: state.status,
       phase: state.phase,
-      elapsed,
-      pomodoroLeft,
+      elapsed: readTick().elapsed,
+      pomodoroLeft: readTick().pomodoroLeft,
       pomodoroPausedRemaining: state.pomodoroPausedRemaining ?? null,
       pausedWorkElapsed: state.pausedWorkElapsed ?? null,
     });
@@ -216,12 +229,10 @@ export function useWorkTracker() {
       timerPaused: false,
     }));
 
-    setElapsed(workMs);
-    setPomodoroLeft(null);
-    setOpenCountdownLeft(null);
+    patchTick({ elapsed: workMs, pomodoroLeft: null, openCountdownLeft: null });
 
     return stopped;
-  }, [state.currentSession, state.status, state.phase, state.pomodoroPausedRemaining, state.pausedWorkElapsed, elapsed, pomodoroLeft, setState]);
+  }, [state.currentSession, state.status, state.phase, state.pomodoroPausedRemaining, state.pausedWorkElapsed, setState]);
 
   const endSession = useCallback(
     (sessionNotes?: string) => {
@@ -244,8 +255,7 @@ export function useWorkTracker() {
         timerPaused: false,
       }));
 
-      setElapsed(0);
-      setPomodoroLeft(null);
+      patchTick({ elapsed: 0, pomodoroLeft: null });
 
       return completed;
     },
@@ -267,8 +277,8 @@ export function useWorkTracker() {
         session: s.currentSession,
         status: s.status,
         phase: s.phase,
-        elapsed,
-        pomodoroLeft,
+        elapsed: readTick().elapsed,
+        pomodoroLeft: readTick().pomodoroLeft,
         pomodoroPausedRemaining: s.pomodoroPausedRemaining ?? null,
         pausedWorkElapsed: s.pausedWorkElapsed ?? null,
       });
@@ -295,14 +305,11 @@ export function useWorkTracker() {
         timerPaused: false,
       }));
 
-      setElapsed(0);
-      setPomodoroLeft(null);
-      setBreakLeft(null);
-      setOpenCountdownLeft(null);
+      patchTick({ elapsed: 0, pomodoroLeft: null, breakLeft: null, openCountdownLeft: null });
 
       return completed;
     },
-    [elapsed, pomodoroLeft, setBreaks, setSessions, setState]
+    [setBreaks, setSessions, setState]
   );
 
   const continueStuckWorkSession = useCallback(
@@ -325,8 +332,8 @@ export function useWorkTracker() {
           session: s.currentSession,
           status: s.status,
           phase: s.phase,
-          elapsed,
-          pomodoroLeft,
+          elapsed: readTick().elapsed,
+          pomodoroLeft: readTick().pomodoroLeft,
           pomodoroPausedRemaining: s.pomodoroPausedRemaining ?? null,
           pausedWorkElapsed: s.pausedWorkElapsed ?? null,
         });
@@ -376,12 +383,9 @@ export function useWorkTracker() {
         timerPaused: false,
       }));
 
-      setElapsed(0);
-      setOpenCountdownLeft(ms);
-      setPomodoroLeft(null);
-      setBreakLeft(null);
+      patchTick({ elapsed: 0, openCountdownLeft: ms, pomodoroLeft: null, breakLeft: null });
     },
-    [elapsed, pomodoroLeft, setSessions, setState]
+[setSessions, setState]
   );
 
   const abortActiveSession = useCallback(() => {
@@ -397,10 +401,8 @@ export function useWorkTracker() {
       pausedWorkElapsed: null,
       timerPaused: false,
     }));
-    setElapsed(0);
-    setPomodoroLeft(null);
-    setBreakLeft(null);
-    setOpenCountdownLeft(null);
+    patchTick({ elapsed: 0, pomodoroLeft: null, breakLeft: null, openCountdownLeft: null });
+    patchTick({ openCountdownLeft: null });
   }, [setState]);
 
   const startBreak = useCallback(
@@ -427,7 +429,7 @@ export function useWorkTracker() {
         const target = pomodoroTargetMs(s.currentSession);
         pomodoroPausedRemaining = Math.max(0, target - (Date.now() - s.currentSession.startTime));
         phase = 'pomodoro_paused';
-        setPomodoroLeft(pomodoroPausedRemaining);
+        patchTick({ pomodoroLeft: pomodoroPausedRemaining });
         if (pausedSession) {
           pausedSession.accumulatedWorkMs =
             (pausedSession.accumulatedWorkMs ?? 0) + (target - pomodoroPausedRemaining);
@@ -440,9 +442,12 @@ export function useWorkTracker() {
       } else if (!durationMinutes && s.status === 'working' && s.currentSession?.type === 'open') {
         pausedWorkElapsed = Date.now() - s.currentSession.startTime;
         if (s.currentSession.countdownTargetMs && s.currentSession.countdownStartTime) {
-          setOpenCountdownLeft(
-            Math.max(0, s.currentSession.countdownTargetMs - (Date.now() - s.currentSession.countdownStartTime))
-          );
+          patchTick({
+            openCountdownLeft: Math.max(
+              0,
+              s.currentSession.countdownTargetMs - (Date.now() - s.currentSession.countdownStartTime)
+            ),
+          });
         }
       } else if (durationMinutes) {
         pomodoroPausedRemaining = null;
@@ -473,7 +478,7 @@ export function useWorkTracker() {
       }
 
       if (durationMinutes) {
-        setBreakLeft(durationMinutes * 60 * 1000);
+        patchTick({ breakLeft: durationMinutes * 60 * 1000 });
       }
     },
     [setState]
@@ -509,14 +514,14 @@ export function useWorkTracker() {
     }
 
     if (nextPomodoroLeft != null) {
-      setPomodoroLeft(nextPomodoroLeft);
+      patchTick({ pomodoroLeft: nextPomodoroLeft });
     }
-    setBreakLeft(null);
+    patchTick({ breakLeft: null });
 
     if (session?.type === 'pomodoro') {
-      setElapsed(Date.now() - session.startTime);
+      patchTick({ elapsed: Date.now() - session.startTime });
     } else if (session?.type === 'open' && s.pausedWorkElapsed != null) {
-      setElapsed(s.pausedWorkElapsed);
+      patchTick({ elapsed: s.pausedWorkElapsed });
     }
 
     setState(prev => ({
@@ -541,10 +546,10 @@ export function useWorkTracker() {
         0,
         s.currentSession.countdownTargetMs - (now - s.currentSession.countdownStartTime)
       );
-      setOpenCountdownLeft(remaining);
+      patchTick({ openCountdownLeft: remaining });
     }
     if (s.status === 'on_break' && s.currentBreak && s.phase !== 'pomodoro_break') {
-      setBreakLeft(now - s.currentBreak.startTime);
+      patchTick({ breakLeft: now - s.currentBreak.startTime });
     }
     setState(prev => ({ ...prev, timerPaused: true }));
   }, [state.timerPaused, setState]);
@@ -559,14 +564,14 @@ export function useWorkTracker() {
       if (prev.status === 'working' && prev.currentSession) {
         const session = { ...prev.currentSession };
         if (prev.phase === 'pomodoro_working' && session.pomodoroMinutes) {
-          const remaining = pomodoroLeft ?? pomodoroTargetMs(session);
+          const remaining = readTick().pomodoroLeft ?? pomodoroTargetMs(session);
           const target = pomodoroTargetMs(session);
           session.startTime = now - (target - remaining);
         } else if (session.countdownTargetMs && session.countdownStartTime) {
-          const remaining = openCountdownLeft ?? session.countdownTargetMs;
+          const remaining = readTick().openCountdownLeft ?? session.countdownTargetMs;
           session.countdownStartTime = now - (session.countdownTargetMs - remaining);
         } else {
-          session.startTime = now - elapsed;
+          session.startTime = now - readTick().elapsed;
         }
         return { ...prev, timerPaused: false, currentSession: session };
       }
@@ -574,11 +579,11 @@ export function useWorkTracker() {
       if (prev.status === 'on_break' && prev.currentBreak) {
         const brk = { ...prev.currentBreak };
         if (prev.phase === 'pomodoro_break' && brk.durationMinutes) {
-          const remaining = breakLeft ?? brk.durationMinutes * 60 * 1000;
+          const remaining = readTick().breakLeft ?? brk.durationMinutes * 60 * 1000;
           const target = brk.durationMinutes * 60 * 1000;
           brk.startTime = now - (target - remaining);
         } else if (prev.phase === 'pomodoro_paused') {
-          const openElapsed = breakLeft ?? now - brk.startTime;
+          const openElapsed = readTick().breakLeft ?? now - brk.startTime;
           brk.startTime = now - openElapsed;
         } else {
           const openElapsed = breakLeft ?? now - brk.startTime;
@@ -589,7 +594,7 @@ export function useWorkTracker() {
 
       return { ...prev, timerPaused: false };
     });
-  }, [state.timerPaused, elapsed, pomodoroLeft, breakLeft, openCountdownLeft, setState]);
+  }, [state.timerPaused, setState]);
 
   const resetTimer = useCallback(() => {
     const now = Date.now();
@@ -599,15 +604,15 @@ export function useWorkTracker() {
         const session = { ...prev.currentSession, startTime: now };
         if (prev.phase === 'pomodoro_working' && session.pomodoroMinutes) {
           const target = pomodoroTargetMs(session);
-          setPomodoroLeft(target);
-          setElapsed(0);
+          patchTick({ pomodoroLeft: target });
+          patchTick({ elapsed: 0 });
         } else if (session.type === 'open' && session.countdownTargetMs && session.countdownStartTime) {
           session.countdownStartTime = now;
-          setOpenCountdownLeft(session.countdownTargetMs);
-          setElapsed(0);
+          patchTick({ openCountdownLeft: session.countdownTargetMs });
+          patchTick({ elapsed: 0 });
         } else {
-          setElapsed(0);
-          setPomodoroLeft(null);
+          patchTick({ elapsed: 0 });
+          patchTick({ pomodoroLeft: null });
         }
         return { ...prev, timerPaused: false, currentSession: session };
       }
@@ -615,7 +620,7 @@ export function useWorkTracker() {
       if (prev.status === 'on_break' && prev.currentBreak) {
         const brk = { ...prev.currentBreak, startTime: now };
         if (prev.phase === 'pomodoro_break' && brk.durationMinutes) {
-          setBreakLeft(brk.durationMinutes * 60 * 1000);
+          patchTick({ breakLeft: brk.durationMinutes * 60 * 1000 });
         }
         return { ...prev, timerPaused: false, currentBreak: brk };
       }
@@ -636,11 +641,11 @@ export function useWorkTracker() {
             const target = pomodoroTargetMs(session);
             const remaining = Math.min(ms, target);
             session.startTime = now - (target - remaining);
-            setPomodoroLeft(remaining);
-            setElapsed(now - session.startTime);
+            patchTick({ pomodoroLeft: remaining });
+            patchTick({ elapsed: now - session.startTime });
           } else {
             session.startTime = now - ms;
-            setElapsed(ms);
+            patchTick({ elapsed: ms });
           }
           return { ...prev, timerPaused: false, currentSession: session };
         }
@@ -651,7 +656,7 @@ export function useWorkTracker() {
             const target = brk.durationMinutes * 60 * 1000;
             const remaining = Math.min(ms, target);
             brk.startTime = now - (target - remaining);
-            setBreakLeft(remaining);
+            patchTick({ breakLeft: remaining });
           } else {
             brk.startTime = now - ms;
           }
@@ -676,12 +681,12 @@ export function useWorkTracker() {
             const target = pomodoroTargetMs(session);
             const remaining = Math.min(ms, target);
             session.startTime = now - (target - remaining);
-            setPomodoroLeft(remaining);
-            setElapsed(now - session.startTime);
+            patchTick({ pomodoroLeft: remaining });
+            patchTick({ elapsed: now - session.startTime });
           } else if (session.type === 'open') {
             session.countdownTargetMs = ms;
             session.countdownStartTime = now;
-            setOpenCountdownLeft(ms);
+            patchTick({ openCountdownLeft: ms });
           }
           return { ...prev, timerPaused: false, currentSession: session };
         }
@@ -692,7 +697,7 @@ export function useWorkTracker() {
             const target = brk.durationMinutes * 60 * 1000;
             const remaining = Math.min(ms, target);
             brk.startTime = now - (target - remaining);
-            setBreakLeft(remaining);
+            patchTick({ breakLeft: remaining });
           }
           return { ...prev, timerPaused: false, currentBreak: brk };
         }
@@ -735,8 +740,7 @@ export function useWorkTracker() {
         };
         return { ...prev, timerPaused: false, currentSession: session };
       });
-      setOpenCountdownLeft(ms);
-      setElapsed(0);
+      patchTick({ openCountdownLeft: ms, elapsed: 0 });
     },
     [setState]
   );
@@ -771,7 +775,7 @@ export function useWorkTracker() {
           session.startTime = now - (newTarget - next);
           return { ...prev, currentSession: session };
         });
-        setPomodoroLeft(next);
+        patchTick({ pomodoroLeft: next });
         return;
       }
 
@@ -803,7 +807,7 @@ export function useWorkTracker() {
             },
           };
         });
-        setOpenCountdownLeft(next);
+        patchTick({ openCountdownLeft: next });
       }
     },
     [setState]
@@ -838,9 +842,9 @@ export function useWorkTracker() {
 
   const reset = useCallback(() => {
     setState(initialState);
-    setElapsed(0);
-    setPomodoroLeft(null);
-    setBreakLeft(null);
+    patchTick({ elapsed: 0 });
+    patchTick({ pomodoroLeft: null });
+    patchTick({ breakLeft: null });
   }, [setState]);
 
   const getTodayStats = useCallback(() => {
@@ -869,8 +873,8 @@ export function useWorkTracker() {
             session: cs,
             status: state.status,
             phase: state.phase,
-            elapsed,
-            pomodoroLeft,
+            elapsed: readTick().elapsed,
+            pomodoroLeft: readTick().pomodoroLeft,
             pomodoroPausedRemaining: state.pomodoroPausedRemaining ?? null,
             pausedWorkElapsed: state.pausedWorkElapsed ?? null,
           });
@@ -942,8 +946,6 @@ export function useWorkTracker() {
     state.phase,
     state.pomodoroPausedRemaining,
     state.pausedWorkElapsed,
-    elapsed,
-    pomodoroLeft,
   ]);
 
   return {
@@ -955,10 +957,8 @@ export function useWorkTracker() {
     pomodoroPausedRemaining: state.pomodoroPausedRemaining ?? null,
     pausedWorkElapsed: state.pausedWorkElapsed ?? null,
     timerPaused: state.timerPaused ?? false,
-    elapsed,
-    pomodoroLeft,
-    breakLeft,
-    openCountdownLeft,
+    tickStore,
+    getTickSnapshot: readTick,
     sessions,
     breaks,
     startSession,

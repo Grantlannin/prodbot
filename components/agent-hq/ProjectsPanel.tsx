@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, memo, type CSSProperties } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, forwardRef, useImperativeHandle, memo, type CSSProperties } from 'react';
 import type { ProjectBoard, ProjectSubTask, ProjectTask, TaskContextLink } from './types';
 import { useProjects } from './hooks/ProjectsProvider';
 import TaskContextLinksBox from './TaskContextLinksBox';
@@ -389,8 +389,12 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     }
   }, [focusSubTaskKey, selected?.tasks]);
 
+  useLayoutEffect(() => {
+    for (const el of taskInputRefs.current.values()) autosizeTaskTextarea(el);
+    for (const el of subTaskInputRefs.current.values()) autosizeTaskTextarea(el);
+  }, [selected?.id, selected?.tasks]);
+
   useEffect(() => {
-    if (!onSelectedProgressChange) return;
     if (!selected) {
       onSelectedProgressChange(null);
       return;

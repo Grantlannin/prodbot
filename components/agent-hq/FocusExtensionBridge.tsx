@@ -25,13 +25,17 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
   const {
     status,
     currentSession,
-    openCountdownLeft,
     timerPaused,
     finishWorkSession,
+    tickStore,
   } = useWorkTrackerContext();
   const { blockStuckSessionAutoEnd, workCompleteOpen, isContinuingStuckWork } = useStuckHelp();
   const autoEndedRef = useRef(false);
   const seenInfractionsRef = useRef<Set<string>>(new Set());
+  const blocklistRef = useRef(blocklist);
+  const entitledRef = useRef(entitled);
+  blocklistRef.current = blocklist;
+  entitledRef.current = entitled;
 
   useEffect(() => {
     let cancelled = false;
@@ -65,16 +69,22 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
   }, []);
 
   useEffect(() => {
-    const payload = buildFocusSyncPayload({
-      status,
-      session: currentSession,
-      blocklist,
-      openCountdownLeft,
-      timerPaused,
-      entitled,
-    });
-    postFocusSync(payload);
-  }, [status, currentSession, blocklist, openCountdownLeft, timerPaused, entitled]);
+    const sync = () => {
+      const { openCountdownLeft } = tickStore.getSnapshot();
+      const payload = buildFocusSyncPayload({
+        status,
+        session: currentSession,
+        blocklist: blocklistRef.current,
+        openCountdownLeft,
+        timerPaused,
+        entitled: entitledRef.current,
+      });
+      postFocusSync(payload);
+    };
+
+    sync();
+    return tickStore.subscribe(sync);
+  }, [status, currentSession, timerPaused, tickStore]);
 
   useEffect(() => {
     return onExtensionInfraction(payload => {
@@ -87,24 +97,35 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
   }, [onAddInfraction]);
 
   useEffect(() => {
-    if (openCountdownLeft != null && openCountdownLeft > 0) {
-      autoEndedRef.current = false;
-    }
-  }, [openCountdownLeft]);
-
-  useEffect(() => {
-    if (status !== 'working' || !currentSession?.countdownTargetMs) {
-      autoEndedRef.current = false;
-      return;
-    }
-    if (openCountdownLeft === 0 && !autoEndedRef.current) {
-      if (blockStuckSessionAutoEnd || workCompleteOpen || isContinuingStuckWork) {
+    const check = () => {
+      const { openCountdownLeft } = tickStore.getSnapshot();
+      if (openCountdownLeft != null && openCountdownLeft > 0) {
+        autoEndedRef.current = false;
+      }
+      if (status !== 'working' || !currentSession?.countdownTargetMs) {
+        autoEndedRef.current = false;
         return;
       }
-      autoEndedRef.current = true;
-      finishWorkSession();
-    }
-  }, [status, currentSession, openCountdownLeft, finishWorkSession, blockStuckSessionAutoEnd, workCompleteOpen, isContinuingStuckWork]);
+      if (openCountdownLeft === 0 && !autoEndedRef.current) {
+        if (blockStuckSessionAutoEnd || workCompleteOpen || isContinuingStuckWork) {
+          return;
+        }
+        autoEndedRef.current = true;
+        finishWorkSession();
+      }
+    };
+
+    check();
+    return tickStore.subscribe(check);
+  }, [
+    status,
+    currentSession,
+    finishWorkSession,
+    blockStuckSessionAutoEnd,
+    workCompleteOpen,
+    isContinuingStuckWork,
+    tickStore,
+  ]);
 
   return null;
 }

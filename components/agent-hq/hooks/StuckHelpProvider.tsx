@@ -172,7 +172,7 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
     if (saved) setWorkMeta(saved);
   }, [workMeta]);
 
-  const { startSession, continueStuckWorkSession, finishWorkSession, abortActiveSession, status, openCountdownLeft, currentSession } =
+  const { startSession, continueStuckWorkSession, finishWorkSession, abortActiveSession, status, tickStore, currentSession } =
     useWorkTrackerContext();
   const { requestOpen, open: openHoverTimer, supported: hoverTimerSupported } = useHoverTimer();
   const { addItem: addDoneToday } = useDoneToday();
@@ -480,15 +480,23 @@ export function StuckHelpProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!blockPrepAutoEnd) return;
-    if (openCountdownLeft !== 0) return;
-    notifyPrepComplete();
-  }, [blockPrepAutoEnd, openCountdownLeft, notifyPrepComplete]);
+    const check = () => {
+      if (tickStore.getSnapshot().openCountdownLeft !== 0) return;
+      notifyPrepComplete();
+    };
+    check();
+    return tickStore.subscribe(check);
+  }, [blockPrepAutoEnd, notifyPrepComplete, tickStore]);
 
   useEffect(() => {
     if (!blockWorkAutoEnd) return;
-    if (openCountdownLeft !== 0) return;
-    notifyWorkComplete();
-  }, [blockWorkAutoEnd, openCountdownLeft, notifyWorkComplete]);
+    const check = () => {
+      if (tickStore.getSnapshot().openCountdownLeft !== 0) return;
+      notifyWorkComplete();
+    };
+    check();
+    return tickStore.subscribe(check);
+  }, [blockWorkAutoEnd, notifyWorkComplete, tickStore]);
 
   const extendWorkSession = useCallback(
     (minutes: number, lockMode: FocusLockMode) => {

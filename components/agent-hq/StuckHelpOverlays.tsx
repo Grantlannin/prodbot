@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { fireCelebrationConfetti } from './celebrationEffects';
 import { useStuckHelp } from './hooks/StuckHelpProvider';
-import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
+import { useWorkTrackerTick } from './hooks/WorkTrackerProvider';
 import { KICKSTART_DURATION_PRESETS, STARTING_FLOW_COPY } from './stuckHelp/flows';
 import { FOCUS_LOCK_MODE_COPY, FOCUS_LOCK_MODES } from './focusBlocking';
 import type { FocusLockMode } from './types';
@@ -31,20 +31,16 @@ export default function StuckHelpOverlays() {
     endWorkSession,
     dismissWorkLogged,
   } = useStuckHelp();
-  const { openCountdownLeft } = useWorkTrackerContext();
+  const { openCountdownLeft } = useWorkTrackerTick();
   const [extendMinutes, setExtendMinutes] = useState(25);
   const [extendLockMode, setExtendLockMode] = useState<FocusLockMode>('soft');
   const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [prepStopConfirmOpen, setPrepStopConfirmOpen] = useState(false);
-  const [, setTick] = useState(0);
 
   useEffect(() => {
     if (!prepOverlayOpen) {
       setPrepStopConfirmOpen(false);
-      return;
     }
-    const id = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(id);
   }, [prepOverlayOpen]);
 
   useEffect(() => {

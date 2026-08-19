@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, type CSSProperties } from 'react';
-import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
+import { useWorkTrackerContext, useWorkTrackerTick } from './hooks/WorkTrackerProvider';
 import { useEndSession } from './hooks/EndSessionProvider';
 import { useHoverTimer } from './hooks/HoverTimerProvider';
 import type { Infraction } from './types';
@@ -34,16 +34,13 @@ export default function WorkTimerBanner({
     timerPaused,
     pauseTimer,
     resumeTimer,
-    elapsed,
-    pomodoroLeft,
-    breakLeft,
-    openCountdownLeft,
     pomodoroPausedRemaining,
     pausedWorkElapsed,
     currentSession,
     currentBreak,
     adjustCountdownByMs,
   } = useWorkTrackerContext();
+  const { elapsed, pomodoroLeft, breakLeft, openCountdownLeft } = useWorkTrackerTick();
 
   const todayStats = getTodayStats();
   const projectStatsToday = todayStats.projectStats;

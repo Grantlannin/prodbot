@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
-import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
+import { useWorkTrackerContext, useWorkTrackerTick } from './hooks/WorkTrackerProvider';
 import { formatDuration } from './chatLogic';
 import { SOFT_LOCK_COOLDOWN_MS } from './focusBlocking';
 
@@ -24,7 +24,8 @@ function formatCooldown(ms: number): string {
 }
 
 export default function EndWorkSessionConfirmModal({ open, onClose }: EndWorkSessionConfirmModalProps) {
-  const { currentSession, elapsed, finishWorkSession, status, openCountdownLeft } = useWorkTrackerContext();
+  const { currentSession, finishWorkSession, status } = useWorkTrackerContext();
+  const { elapsed, openCountdownLeft } = useWorkTrackerTick();
 
   const [softPhase, setSoftPhase] = useState<SoftPhase>('initial');
   const [cooldownLeft, setCooldownLeft] = useState(SOFT_LOCK_COOLDOWN_MS);

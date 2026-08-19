@@ -1,10 +1,18 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import HoverTabsContent from '../HoverTabsContent';
 import { getTimerDisplay, timerTitle } from '../timerDisplay';
-import { useWorkTrackerContext } from './WorkTrackerProvider';
+import { useWorkTrackerContext, useWorkTrackerTick } from './WorkTrackerProvider';
 import { useEndSession } from './EndSessionProvider';
 import { useHoverTabsWindow } from './useHoverTabsWindow';
 
@@ -19,32 +27,39 @@ interface HoverTimerContextValue {
   requestOpen: () => void;
 }
 
-const HoverTimerContext = createContext<HoverTimerContextValue | null>(null);
+const noopApi: HoverTimerContextValue = {
+  isOpen: false,
+  supported: false,
+  open: async () => {},
+  close: async () => {},
+  toggle: async () => {},
+  requestOpen: () => {},
+};
 
-export function HoverTimerProvider({
-  children,
+const HoverTimerContext = createContext<HoverTimerContextValue>(noopApi);
+
+function HoverTimerInternals({
   onAddInfraction,
+  onApi,
 }: {
-  children: ReactNode;
   onAddInfraction?: (categoryKey: string, label: string) => void;
+  onApi: (api: HoverTimerContextValue) => void;
 }) {
   const tracker = useWorkTrackerContext();
+  const tick = useWorkTrackerTick();
   const { requestEndSession } = useEndSession();
-  const [tick, setTick] = useState(0);
   const pendingOpenRef = useRef(false);
   const baseTitleRef = useRef(DEFAULT_TITLE);
-
-  void tick;
 
   const display = getTimerDisplay({
     status: tracker.status,
     phase: tracker.phase,
-    elapsed: tracker.elapsed,
-    pomodoroLeft: tracker.pomodoroLeft,
-    breakLeft: tracker.breakLeft,
+    elapsed: tick.elapsed,
+    pomodoroLeft: tick.pomodoroLeft,
+    breakLeft: tick.breakLeft,
     pomodoroPausedRemaining: tracker.pomodoroPausedRemaining,
     pausedWorkElapsed: tracker.pausedWorkElapsed,
-    openCountdownLeft: tracker.openCountdownLeft,
+    openCountdownLeft: tick.openCountdownLeft,
     currentSession: tracker.currentSession,
     currentBreak: tracker.currentBreak,
     timerPaused: tracker.timerPaused,
@@ -55,8 +70,6 @@ export function HoverTimerProvider({
     else tracker.pauseTimer();
   }, [tracker]);
 
-  const hasActiveTimer = display !== null;
-
   const { videoRef, canvasRef, isOpen, supported, open, close, toggle, pipWindow } =
     useHoverTabsWindow(display);
 
@@ -64,15 +77,13 @@ export function HoverTimerProvider({
     requestEndSession();
   }, [requestEndSession]);
 
-  useEffect(() => {
-    if (!display && isOpen) {
-      void close();
-    }
-  }, [display, isOpen, close]);
-
   const requestOpen = useCallback(() => {
     pendingOpenRef.current = true;
   }, []);
+
+  useEffect(() => {
+    onApi({ isOpen, supported, open, close, toggle, requestOpen });
+  }, [isOpen, supported, open, close, toggle, requestOpen, onApi]);
 
   useEffect(() => {
     if (!pendingOpenRef.current || !display || !supported) return;
@@ -81,10 +92,9 @@ export function HoverTimerProvider({
   }, [display, isOpen, supported, open]);
 
   useEffect(() => {
-    if (!hasActiveTimer || tracker.timerPaused) return;
-    const id = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [hasActiveTimer, tracker.status, tracker.phase, tracker.timerPaused]);
+    if (typeof document === 'undefined') return;
+    document.title = display ? timerTitle(display) : baseTitleRef.current || DEFAULT_TITLE;
+  }, [display]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -94,26 +104,12 @@ export function HoverTimerProvider({
   }, []);
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    document.title = display ? timerTitle(display) : baseTitleRef.current || DEFAULT_TITLE;
-  }, [display]);
-
-  useEffect(() => {
     return () => {
       if (typeof document !== 'undefined') {
         document.title = baseTitleRef.current || DEFAULT_TITLE;
       }
     };
   }, []);
-
-  const value: HoverTimerContextValue = {
-    isOpen,
-    supported,
-    open,
-    close,
-    toggle,
-    requestOpen,
-  };
 
   const pipPortal =
     pipWindow && display
@@ -139,17 +135,31 @@ export function HoverTimerProvider({
       : null;
 
   return (
-    <HoverTimerContext.Provider value={value}>
-      {children}
+    <>
       {pipPortal}
       <canvas ref={canvasRef} width={160} height={90} style={{ display: 'none' }} aria-hidden />
       <video ref={videoRef} muted playsInline disablePictureInPicture={false} style={{ display: 'none' }} aria-hidden />
+    </>
+  );
+}
+
+export function HoverTimerProvider({
+  children,
+  onAddInfraction,
+}: {
+  children: ReactNode;
+  onAddInfraction?: (categoryKey: string, label: string) => void;
+}) {
+  const [api, setApi] = useState<HoverTimerContextValue>(noopApi);
+
+  return (
+    <HoverTimerContext.Provider value={api}>
+      {children}
+      <HoverTimerInternals onAddInfraction={onAddInfraction} onApi={setApi} />
     </HoverTimerContext.Provider>
   );
 }
 
 export function useHoverTimer(): HoverTimerContextValue {
-  const ctx = useContext(HoverTimerContext);
-  if (!ctx) throw new Error('useHoverTimer must be used within HoverTimerProvider');
-  return ctx;
+  return useContext(HoverTimerContext);
 }
