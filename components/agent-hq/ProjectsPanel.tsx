@@ -133,6 +133,7 @@ const ProjectDebouncedTextarea = memo(function ProjectDebouncedTextarea({
   onEnterSplit,
   onEmptyDelete,
   onShiftPasteLayers,
+  onUndoLayerPaste,
   title,
 }: {
   value: string;
@@ -143,6 +144,8 @@ const ProjectDebouncedTextarea = memo(function ProjectDebouncedTextarea({
   onEmptyDelete?: () => void;
   /** Shift+paste with multiple lines → one layer/part per line. Normal paste stays one block. */
   onShiftPasteLayers?: (layers: string[]) => void;
+  /** ⌘Z / Ctrl+Z — undo last Shift+paste as one step. Returns true if handled. */
+  onUndoLayerPaste?: () => boolean;
   title?: string;
 }) {
   const { draft, setDraft, flush, onDraftChange, onFocus, onBlur, endEditing } =
@@ -204,6 +207,12 @@ const ProjectDebouncedTextarea = memo(function ProjectDebouncedTextarea({
       onPaste={handlePaste}
       title={title}
       onKeyDown={e => {
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+          if (onUndoLayerPaste?.()) {
+            e.preventDefault();
+            return;
+          }
+        }
         if (e.key === 'Enter' && !e.shiftKey && onEnterSplit) {
           e.preventDefault();
           endEditing();
@@ -390,6 +399,30 @@ type QuickstartTarget = {
   taskRef: { projectId: string; taskId: string; subTaskId?: string };
 };
 
+/** One-shot undo for Shift+paste layering (⌘Z / Ctrl+Z undoes the whole paste). */
+type LayerPasteUndo =
+  | {
+      kind: 'parts';
+      projectId: string;
+      tasks: ProjectTask[];
+      focusTaskId: string;
+    }
+  | {
+      kind: 'subs';
+      projectId: string;
+      taskId: string;
+      subTasks: ProjectSubTask[];
+      focusSubTaskId: string;
+    };
+
+function cloneTasks(tasks: ProjectTask[]): ProjectTask[] {
+  return JSON.parse(JSON.stringify(tasks)) as ProjectTask[];
+}
+
+function cloneSubTasks(subs: ProjectSubTask[]): ProjectSubTask[] {
+  return JSON.parse(JSON.stringify(subs)) as ProjectSubTask[];
+}
+
 function NoteIcon({ active = false }: { active?: boolean }) {
   return (
     <svg
@@ -474,6 +507,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const [projectDropIndex, setProjectDropIndex] = useState<number | null>(null);
   const [draggingProjectIndex, setDraggingProjectIndex] = useState<number | null>(null);
   const [partDropProjectId, setPartDropProjectId] = useState<string | null>(null);
+  const [layerPasteUndo, setLayerPasteUndo] = useState<LayerPasteUndo | null>(null);
   const { celebration, getCelebrationMessage } = useUserProfile();
   const nameRef = useRef<HTMLInputElement>(null);
   const taskInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
@@ -559,6 +593,10 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       setSelectedId(projects[0]?.id ?? null);
     }
   }, [projects, selectedId]);
+
+  useEffect(() => {
+    setLayerPasteUndo(null);
+  }, [selectedId]);
 
   const focusProjectInPanel = useCallback(
     (projectId: string) => {
@@ -770,6 +808,15 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const insertTaskLayers = useCallback(
     (projectId: string, taskId: string, layers: string[]) => {
       if (layers.length === 0) return;
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        setLayerPasteUndo({
+          kind: 'parts',
+          projectId,
+          tasks: cloneTasks(project.tasks),
+          focusTaskId: taskId,
+        });
+      }
       const created = layers.slice(1).map(text => ({ ...emptyTask(), text }));
       setProjects(prev =>
         prev.map(p => {
@@ -785,8 +832,41 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       const focusId = created[created.length - 1]?.id ?? taskId;
       setFocusTaskId(focusId);
     },
-    [setProjects]
+    [projects, setProjects]
   );
+
+  const undoLayerPaste = useCallback((): boolean => {
+    if (!layerPasteUndo) return false;
+    const snap = layerPasteUndo;
+    setLayerPasteUndo(null);
+    if (snap.kind === 'parts') {
+      setProjects(prev =>
+        prev.map(p =>
+          p.id === snap.projectId
+            ? { ...p, tasks: cloneTasks(snap.tasks), updatedAt: Date.now() }
+            : p
+        )
+      );
+      setFocusTaskId(snap.focusTaskId);
+      return true;
+    }
+    setProjects(prev =>
+      prev.map(p => {
+        if (p.id !== snap.projectId) return p;
+        return {
+          ...p,
+          tasks: p.tasks.map(t =>
+            t.id === snap.taskId
+              ? { ...t, subTasks: cloneSubTasks(snap.subTasks) }
+              : t
+          ),
+          updatedAt: Date.now(),
+        };
+      })
+    );
+    setFocusSubTaskKey(subTaskKey(snap.taskId, snap.focusSubTaskId));
+    return true;
+  }, [layerPasteUndo, setProjects]);
 
   const appendEmptyTask = useCallback(
     (projectId: string) => {
@@ -985,6 +1065,17 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const insertSubTaskLayers = useCallback(
     (projectId: string, taskId: string, subTaskId: string, layers: string[]) => {
       if (layers.length === 0) return;
+      const project = projects.find(p => p.id === projectId);
+      const parent = project?.tasks.find(t => t.id === taskId);
+      if (parent) {
+        setLayerPasteUndo({
+          kind: 'subs',
+          projectId,
+          taskId,
+          subTasks: cloneSubTasks(parent.subTasks ?? []),
+          focusSubTaskId: subTaskId,
+        });
+      }
       const created = layers.slice(1).map(text => ({ ...emptySubTask(), text }));
       setProjects(prev =>
         prev.map(p => {
@@ -1007,7 +1098,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       const focusSub = created[created.length - 1] ?? null;
       setFocusSubTaskKey(subTaskKey(taskId, focusSub?.id ?? subTaskId));
     },
-    [setProjects]
+    [projects, setProjects]
   );
 
   const updateSubTask = useCallback(
@@ -1519,8 +1610,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             onShiftPasteLayers={layers =>
                               insertTaskLayers(selected.id, task.id, layers)
                             }
+                            onUndoLayerPaste={undoLayerPaste}
                             onEmptyDelete={() => removeEmptyTask(selected.id, task.id, taskIndex)}
-                            title="Shift+paste to split a list into parts"
+                            title="Shift+paste to split · ⌘Z / Ctrl+Z undoes the whole paste"
                             style={{
                               ...styles.taskInput,
                               ...(task.done ? styles.taskInputDone : {}),
@@ -1693,10 +1785,11 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               onShiftPasteLayers={layers =>
                                 insertSubTaskLayers(selected.id, task.id, sub.id, layers)
                               }
+                              onUndoLayerPaste={undoLayerPaste}
                               onEmptyDelete={() =>
                                 removeEmptySubTask(selected.id, task.id, sub.id, subIndex)
                               }
-                              title="Shift+paste to split a list into tasks"
+                              title="Shift+paste to split · ⌘Z / Ctrl+Z undoes the whole paste"
                               style={{
                                 ...styles.subTaskInput,
                                 ...(sub.done ? styles.taskInputDone : {}),
