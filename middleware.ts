@@ -12,7 +12,7 @@ import {
 import { isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { getSupabaseConfig, isAuthRequired } from '@/lib/supabase/config';
 
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/auth/confirm', '/subscribe', '/privacy', '/terms'];
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/auth/confirm', '/subscribe', '/privacy', '/terms', '/worksheet'];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(`${path}/`));
