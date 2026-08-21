@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, memo, type CSSProperties, type RefObject } from 'react';
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, memo, type ClipboardEvent, type CSSProperties, type RefObject } from 'react';
 import type { ProjectBoard, ProjectSubTask, ProjectTask, TaskContextLink } from './types';
 import { useProjects } from './hooks/ProjectsProvider';
 import TaskContextLinksBox from './TaskContextLinksBox';
@@ -35,6 +35,18 @@ const PROJECT_SIDEBAR_SCROLL_HEIGHT =
   PROJECT_SIDEBAR_LIST_PADDING_PX * 2;
 
 const TEXT_COMMIT_DEBOUNCE_MS = 250;
+
+/** Split a Shift+paste dump into layered parts (one per non-empty line). */
+function parsePastedLayerLines(raw: string): string[] {
+  return raw
+    .split(/\r\n|\n|\r/)
+    .map(line =>
+      line
+        .replace(/^\s*(?:[-*•–—]+|\d+[.)]|#\d+\s*[-–—.:]?)\s*/u, '')
+        .trim()
+    )
+    .filter(line => line.length > 0 && !/^to\s*dos?:?$/i.test(line));
+}
 
 function useDebouncedTextCommit(value: string, onCommit: (text: string) => void) {
   const [draft, setDraft] = useState(value);
@@ -120,6 +132,8 @@ const ProjectDebouncedTextarea = memo(function ProjectDebouncedTextarea({
   style,
   onEnterSplit,
   onEmptyDelete,
+  onShiftPasteLayers,
+  title,
 }: {
   value: string;
   onCommit: (text: string) => void;
@@ -127,9 +141,33 @@ const ProjectDebouncedTextarea = memo(function ProjectDebouncedTextarea({
   style: CSSProperties;
   onEnterSplit?: (before: string, after: string) => void;
   onEmptyDelete?: () => void;
+  /** Shift+paste with multiple lines → one layer/part per line. Normal paste stays one block. */
+  onShiftPasteLayers?: (layers: string[]) => void;
+  title?: string;
 }) {
   const { draft, setDraft, flush, onDraftChange, onFocus, onBlur, endEditing } =
     useDebouncedTextCommit(value, onCommit);
+
+  const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!e.shiftKey || !onShiftPasteLayers) return;
+    const pasted = e.clipboardData.getData('text/plain');
+    if (!pasted || !/[\r\n]/.test(pasted)) return;
+    const pieces = parsePastedLayerLines(pasted);
+    if (pieces.length <= 1) return;
+
+    e.preventDefault();
+    endEditing();
+    const start = e.currentTarget.selectionStart ?? draft.length;
+    const endSel = e.currentTarget.selectionEnd ?? draft.length;
+    const before = draft.slice(0, start);
+    const after = draft.slice(endSel);
+    const first = `${before}${pieces[0]}`.trimStart();
+    const middle = pieces.slice(1, -1);
+    const last = `${pieces[pieces.length - 1]}${after}`;
+    const layers = [first, ...middle, last];
+    setDraft(first);
+    onShiftPasteLayers(layers);
+  };
 
   return (
     <textarea
@@ -139,6 +177,8 @@ const ProjectDebouncedTextarea = memo(function ProjectDebouncedTextarea({
       onFocus={onFocus}
       onBlur={onBlur}
       onChange={e => onDraftChange(e.target.value)}
+      onPaste={handlePaste}
+      title={title}
       onKeyDown={e => {
         if (e.key === 'Enter' && !e.shiftKey && onEnterSplit) {
           e.preventDefault();
@@ -702,6 +742,28 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     [setProjects]
   );
 
+  /** Shift+paste: replace current part with layers[0], insert the rest as new parts below. */
+  const insertTaskLayers = useCallback(
+    (projectId: string, taskId: string, layers: string[]) => {
+      if (layers.length === 0) return;
+      const created = layers.slice(1).map(text => ({ ...emptyTask(), text }));
+      setProjects(prev =>
+        prev.map(p => {
+          if (p.id !== projectId) return p;
+          const idx = p.tasks.findIndex(t => t.id === taskId);
+          if (idx === -1) return p;
+          const tasks = [...p.tasks];
+          tasks[idx] = { ...tasks[idx], text: layers[0] };
+          if (created.length) tasks.splice(idx + 1, 0, ...created);
+          return { ...p, tasks, updatedAt: Date.now() };
+        })
+      );
+      const focusId = created[created.length - 1]?.id ?? taskId;
+      setFocusTaskId(focusId);
+    },
+    [setProjects]
+  );
+
   const appendEmptyTask = useCallback(
     (projectId: string) => {
       const task = emptyTask();
@@ -892,6 +954,34 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
         })
       );
       setFocusSubTaskKey(subTaskKey(taskId, sub.id));
+    },
+    [setProjects]
+  );
+
+  const insertSubTaskLayers = useCallback(
+    (projectId: string, taskId: string, subTaskId: string, layers: string[]) => {
+      if (layers.length === 0) return;
+      const created = layers.slice(1).map(text => ({ ...emptySubTask(), text }));
+      setProjects(prev =>
+        prev.map(p => {
+          if (p.id !== projectId) return p;
+          return {
+            ...p,
+            tasks: p.tasks.map(t => {
+              if (t.id !== taskId) return t;
+              const subs = [...(t.subTasks ?? [])];
+              const idx = subs.findIndex(s => s.id === subTaskId);
+              if (idx === -1) return t;
+              subs[idx] = { ...subs[idx], text: layers[0] };
+              if (created.length) subs.splice(idx + 1, 0, ...created);
+              return { ...t, subTasks: subs };
+            }),
+            updatedAt: Date.now(),
+          };
+        })
+      );
+      const focusSub = created[created.length - 1] ?? null;
+      setFocusSubTaskKey(subTaskKey(taskId, focusSub?.id ?? subTaskId));
     },
     [setProjects]
   );
@@ -1402,7 +1492,11 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             onEnterSplit={(before, after) =>
                               splitTaskAfter(selected.id, task.id, before, after)
                             }
+                            onShiftPasteLayers={layers =>
+                              insertTaskLayers(selected.id, task.id, layers)
+                            }
                             onEmptyDelete={() => removeEmptyTask(selected.id, task.id, taskIndex)}
+                            title="Shift+paste to split a list into parts"
                             style={{
                               ...styles.taskInput,
                               ...(task.done ? styles.taskInputDone : {}),
@@ -1572,9 +1666,13 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               onEnterSplit={(before, after) =>
                                 splitSubTaskAfter(selected.id, task.id, sub.id, before, after)
                               }
+                              onShiftPasteLayers={layers =>
+                                insertSubTaskLayers(selected.id, task.id, sub.id, layers)
+                              }
                               onEmptyDelete={() =>
                                 removeEmptySubTask(selected.id, task.id, sub.id, subIndex)
                               }
+                              title="Shift+paste to split a list into tasks"
                               style={{
                                 ...styles.subTaskInput,
                                 ...(sub.done ? styles.taskInputDone : {}),
