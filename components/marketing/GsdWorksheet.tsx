@@ -60,10 +60,6 @@ export default function GsdWorksheet() {
               <span>Start date</span>
               <span className={styles.line} />
             </label>
-            <label className={styles.field}>
-              <span>Partner</span>
-              <span className={styles.line} />
-            </label>
           </div>
         </header>
 
