@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ClipboardEvent,
   type CSSProperties,
   type DragEvent,
   type KeyboardEvent,
@@ -29,6 +30,18 @@ const TODAY_ROW_HEIGHT_PX = 28;
 const TODAY_ROW_GAP_PX = 2;
 const TODAY_LIST_MAX_HEIGHT =
   TODAY_VISIBLE_ROWS * TODAY_ROW_HEIGHT_PX + (TODAY_VISIBLE_ROWS - 1) * TODAY_ROW_GAP_PX;
+
+/** Split a pasted dump into misc task lines (one per non-empty line). */
+function parsePastedTaskLines(raw: string): string[] {
+  return raw
+    .split(/\r\n|\n|\r/)
+    .map(line =>
+      line
+        .replace(/^\s*(?:[-*•–—]+|\d+[.)]|#\d+\s*[-–—.:]?)\s*/u, '')
+        .trim()
+    )
+    .filter(line => line.length > 0 && !/^to\s*dos?:?$/i.test(line));
+}
 
 function UndoIcon() {
   return (
@@ -245,6 +258,52 @@ export default function MiscTasksPanel({
     }
   };
 
+  const handleLinePaste = (e: ClipboardEvent<HTMLTextAreaElement>, lineId: string) => {
+    if (isLineLocked(lineId)) return;
+    const pasted = e.clipboardData.getData('text/plain');
+    if (!pasted || !/[\r\n]/.test(pasted)) return;
+
+    const pieces = parsePastedTaskLines(pasted);
+    if (pieces.length <= 1) return;
+
+    e.preventDefault();
+    const el = e.currentTarget;
+    const value = el.value;
+    const start = el.selectionStart ?? value.length;
+    const end = el.selectionEnd ?? value.length;
+    const before = value.slice(0, start);
+    const after = value.slice(end);
+
+    const firstText = `${before}${pieces[0]}`.trimStart();
+    const middle = pieces.slice(1, -1);
+    const lastText = `${pieces[pieces.length - 1]}${after}`;
+
+    const now = Date.now();
+    const newLines: TodayTaskLine[] = [
+      ...middle.map(text => ({ id: makeTodayLineId(), text, createdAt: now })),
+      { id: makeTodayLineId(), text: lastText, createdAt: now },
+    ];
+    const focusId = newLines[newLines.length - 1]?.id ?? lineId;
+
+    pushUndoSnapshot();
+    if (today.lines.length === 0) {
+      commitLines([
+        { id: emptyDraftIdRef.current, text: firstText, createdAt: now },
+        ...newLines,
+      ]);
+      setFocusLineId(focusId);
+      return;
+    }
+
+    const next = [...editorLines];
+    const idx = next.findIndex(line => line.id === lineId);
+    if (idx < 0) return;
+    next[idx] = { ...next[idx], text: firstText };
+    next.splice(idx + 1, 0, ...newLines);
+    commitLines(next);
+    setFocusLineId(focusId);
+  };
+
   const clearTodayLineDrag = () => {
     setDraggingLineId(null);
     setDropLineId(null);
@@ -405,7 +464,7 @@ export default function MiscTasksPanel({
                 }}
                 value={line.text}
                 readOnly={locked}
-                placeholder={index === 0 ? 'quick misc task…' : ''}
+                placeholder={index === 0 ? 'paste a list, or type a quick misc task…' : ''}
                 rows={1}
                 onChange={e => {
                   if (locked) return;
@@ -420,6 +479,7 @@ export default function MiscTasksPanel({
                   }
                 }}
                 onKeyDown={e => handleLineKeyDown(e, line.id)}
+                onPaste={e => handleLinePaste(e, line.id)}
                 style={{
                   ...styles.todayInput,
                   ...(locked ? styles.todayInputLocked : {}),
