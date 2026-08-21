@@ -13,6 +13,7 @@ import {
 } from './simpleNotesUtils';
 import { CornerResizeHandles, useCornerResize } from './hooks/useCornerResize';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useNoteTextDraft } from './hooks/useNoteTextDraft';
 import { useProjects } from './hooks/ProjectsProvider';
 import { useNoteClipBubble } from './NoteSelectionClipBubble';
 import type { SimpleNote } from './types';
@@ -59,22 +60,6 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
     [applyWindowSize, setSize, size.h, size.w]
   );
 
-  const { textareaHandlers: clipHandlers, bubbleNode: clipBubble } = useNoteClipBubble({
-    textareaRef,
-    noteText: selected?.content ?? '',
-    projects,
-    setProjects,
-    portalDocument: pipWindow.document,
-    onEnsureWindowHeight: ensureWindowHeight,
-  });
-
-  useEffect(() => {
-    if (notes.length === 0) return;
-    if (!selectedId || !notes.some(n => n.id === selectedId)) {
-      setSelectedId(sorted[0]?.id ?? null);
-    }
-  }, [notes, selectedId, sorted, setSelectedId]);
-
   const { onResizeStart } = useCornerResize({
     size,
     onSizeChange: next => {
@@ -92,16 +77,41 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
     applyWindowSize(size);
   }, [applyWindowSize, size]);
 
-  const updateContent = useCallback(
-    (content: string) => {
-      if (!selectedId) return;
-      const now = Date.now();
+  const commitNoteContent = useCallback(
+    (noteId: string, content: string) => {
       setNotes(prev =>
-        prev.map(n => (n.id === selectedId ? { ...n, content, updatedAt: now } : n))
+        prev.map(n => {
+          if (n.id !== noteId) return n;
+          if (n.content === content) return n;
+          return { ...n, content, updatedAt: Date.now() };
+        })
       );
     },
-    [selectedId, setNotes]
+    [setNotes]
   );
+
+  const {
+    draft: editorDraft,
+    onChange: onDraftChange,
+    onFocus: onDraftFocus,
+    onBlur: onDraftBlur,
+  } = useNoteTextDraft(selectedId, selected?.content ?? '', commitNoteContent);
+
+  const { textareaHandlers: clipHandlers, bubbleNode: clipBubble } = useNoteClipBubble({
+    textareaRef,
+    noteText: editorDraft,
+    projects,
+    setProjects,
+    portalDocument: pipWindow.document,
+    onEnsureWindowHeight: ensureWindowHeight,
+  });
+
+  useEffect(() => {
+    if (notes.length === 0) return;
+    if (!selectedId || !notes.some(n => n.id === selectedId)) {
+      setSelectedId(sorted[0]?.id ?? null);
+    }
+  }, [notes, selectedId, sorted, setSelectedId]);
 
   const addNote = useCallback(() => {
     const n = createSimpleNote();
@@ -115,7 +125,7 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
         <div style={styles.headerLeft}>
           <span style={styles.headerTitle}>Simple Notes</span>
           {selected ? (
-            <span style={styles.headerSubtitle}>{firstNoteLine(selected.content)}</span>
+            <span style={styles.headerSubtitle}>{firstNoteLine(editorDraft)}</span>
           ) : null}
         </div>
         <div style={styles.headerActions}>
@@ -134,7 +144,7 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
           >
             {sorted.map(note => (
               <option key={note.id} value={note.id}>
-                {firstNoteLine(note.content)}
+                {firstNoteLine(note.id === selectedId ? editorDraft : note.content)}
               </option>
             ))}
           </select>
@@ -146,8 +156,10 @@ export default function HoverNotesContent({ pipWindow }: HoverNotesContentProps)
           <>
             <textarea
               ref={textareaRef}
-              value={selected.content}
-              onChange={e => updateContent(e.target.value)}
+              value={editorDraft}
+              onChange={e => onDraftChange(e.target.value)}
+              onFocus={onDraftFocus}
+              onBlur={onDraftBlur}
               placeholder="Start typing…"
               {...clipHandlers}
               style={styles.textarea}
@@ -259,6 +271,7 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
     color: '#0f172a',
     background: '#fff',
+    cursor: 'text',
   },
   empty: {
     flex: 1,

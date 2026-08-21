@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import type { SimpleNote } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useHoverNotes } from './hooks/HoverNotesProvider';
+import { useNoteTextDraft } from './hooks/useNoteTextDraft';
 import { useProjects } from './hooks/ProjectsProvider';
 import { useNoteClipBubble } from './NoteSelectionClipBubble';
 import {
@@ -79,23 +80,34 @@ export default function SimpleNotesPanel() {
 
   const selected = useMemo(() => notes.find(n => n.id === selectedId) ?? null, [notes, selectedId]);
 
+  const commitNoteContent = useCallback(
+    (noteId: string, content: string) => {
+      setNotes(prev =>
+        prev.map(n => {
+          if (n.id !== noteId) return n;
+          if (n.content === content) return n;
+          return { ...n, content, updatedAt: Date.now() };
+        })
+      );
+    },
+    [setNotes]
+  );
+
+  const {
+    draft: editorDraft,
+    onChange: onDraftChange,
+    onFocus: onDraftFocus,
+    onBlur: onDraftBlur,
+  } = useNoteTextDraft(selectedId, selected?.content ?? '', commitNoteContent);
+
   const { textareaHandlers: clipHandlers, bubbleNode: clipBubble } = useNoteClipBubble({
     textareaRef,
-    noteText: selected?.content ?? '',
+    noteText: editorDraft,
     projects,
     setProjects,
   });
 
   const groups = useMemo(() => groupNotes(notes), [notes]);
-
-  const updateSelectedContent = useCallback(
-    (content: string) => {
-      if (!selectedId) return;
-      const now = Date.now();
-      setNotes(prev => prev.map(n => (n.id === selectedId ? { ...n, content, updatedAt: now } : n)));
-    },
-    [selectedId, setNotes]
-  );
 
   const addNote = useCallback(() => {
     const n = createSimpleNote();
@@ -108,14 +120,17 @@ export default function SimpleNotesPanel() {
       if (!window.confirm('Do you want to delete?')) return;
       const note = notes.find(n => n.id === id);
       if (!note) return;
+      // Include any unsaved draft so Undo restores what was on screen.
+      const snapshot =
+        selectedId === id ? { ...note, content: editorDraft, updatedAt: Date.now() } : note;
       const remaining = notes.filter(n => n.id !== id);
       setNotes(remaining);
-      setLastDeleted(note);
+      setLastDeleted(snapshot);
       if (selectedId === id) {
         setSelectedId(sortNotesByUpdated(remaining)[0]?.id ?? null);
       }
     },
-    [notes, selectedId, setNotes, setSelectedId]
+    [editorDraft, notes, selectedId, setNotes, setSelectedId]
   );
 
   const undoLastDelete = useCallback(() => {
@@ -151,13 +166,24 @@ export default function SimpleNotesPanel() {
 
   const confirmMassDelete = useCallback(() => {
     if (deleteIds.size === 0) return;
-    setNotes(prev => prev.filter(n => !deleteIds.has(n.id)));
+    setNotes(prev => {
+      // Persist the open draft onto the selected note before removing anything.
+      const withDraft =
+        selectedId && deleteIds.has(selectedId)
+          ? prev.map(n =>
+              n.id === selectedId && n.content !== editorDraft
+                ? { ...n, content: editorDraft, updatedAt: Date.now() }
+                : n
+            )
+          : prev;
+      return withDraft.filter(n => !deleteIds.has(n.id));
+    });
     if (selectedId && deleteIds.has(selectedId)) {
       setSelectedId(null);
     }
     setDeleteMenuOpen(false);
     setDeleteIds(new Set());
-  }, [deleteIds, selectedId, setNotes, setSelectedId]);
+  }, [deleteIds, editorDraft, selectedId, setNotes, setSelectedId]);
 
   const sortedForDelete = useMemo(() => sortNotesByUpdated(notes), [notes]);
 
@@ -322,8 +348,10 @@ export default function SimpleNotesPanel() {
             <div style={{ position: 'relative', flex: 1, display: 'flex', minHeight: 0 }}>
               <textarea
                 ref={textareaRef}
-                value={selected.content}
-                onChange={e => updateSelectedContent(e.target.value)}
+                value={editorDraft}
+                onChange={e => onDraftChange(e.target.value)}
+                onFocus={onDraftFocus}
+                onBlur={onDraftBlur}
                 placeholder="Start typing…"
                 {...clipHandlers}
                 style={{
@@ -340,6 +368,7 @@ export default function SimpleNotesPanel() {
                   fontSize: 14,
                   lineHeight: 1.6,
                   boxSizing: 'border-box',
+                  cursor: 'text',
                 }}
               />
               {clipBubble}

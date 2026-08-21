@@ -18,6 +18,13 @@ function injectPipStyles(doc: Document) {
   style.textContent = `
     html, body { margin: 0; padding: 0; overflow: hidden; background: #fff; height: 100%; }
     * { box-sizing: border-box; }
+    /* Keep typing / clicks from becoming a window-drag grab cursor in Document PiP */
+    textarea, input, button, select, a, [data-note-clip-ui], [data-resize-handle] {
+      -webkit-app-region: no-drag;
+    }
+    textarea { cursor: text !important; }
+    header { -webkit-app-region: drag; cursor: grab; }
+    header button { -webkit-app-region: no-drag; cursor: pointer; }
   `;
   doc.head.appendChild(style);
 }

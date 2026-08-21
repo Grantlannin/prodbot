@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -334,9 +334,17 @@ export function useNoteClipBubble({
   const textareaHandlers = {
     onPointerUp: updateBubble,
     onMouseUp: updateBubble,
-    onKeyUp: updateBubble,
+    onKeyUp: (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      const el = e.currentTarget;
+      // Only reposition clip chip when there is a real selection — not every keystroke.
+      if (el.selectionStart === el.selectionEnd) {
+        if (!expandedRef.current) clearClipUi();
+        return;
+      }
+      updateBubble();
+    },
     onSelect: updateBubble,
-    onContextMenu: (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    onContextMenu: (e: ReactMouseEvent<HTMLTextAreaElement>) => {
       const el = textareaRef.current;
       if (!el) return;
       const { from, to, picked } = readSelection(el);
