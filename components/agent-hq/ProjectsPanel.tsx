@@ -147,9 +147,33 @@ const ProjectDebouncedTextarea = memo(function ProjectDebouncedTextarea({
 }) {
   const { draft, setDraft, flush, onDraftChange, onFocus, onBlur, endEditing } =
     useDebouncedTextCommit(value, onCommit);
+  const shiftHeldRef = useRef(false);
+
+  useEffect(() => {
+    const onKeyDown = (ev: globalThis.KeyboardEvent) => {
+      if (ev.key === 'Shift') shiftHeldRef.current = true;
+    };
+    const onKeyUp = (ev: globalThis.KeyboardEvent) => {
+      if (ev.key === 'Shift') shiftHeldRef.current = false;
+    };
+    const clear = () => {
+      shiftHeldRef.current = false;
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', clear);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', clear);
+    };
+  }, []);
 
   const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
-    if (!e.shiftKey || !onShiftPasteLayers) return;
+    const nativeShift = Boolean(
+      (e.nativeEvent as unknown as { shiftKey?: boolean }).shiftKey
+    );
+    if ((!nativeShift && !shiftHeldRef.current) || !onShiftPasteLayers) return;
     const pasted = e.clipboardData.getData('text/plain');
     if (!pasted || !/[\r\n]/.test(pasted)) return;
     const pieces = parsePastedLayerLines(pasted);
