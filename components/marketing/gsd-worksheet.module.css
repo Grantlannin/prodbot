@@ -207,7 +207,7 @@
 }
 
 .tableWrap {
-  overflow-x: auto;
+  overflow-x: visible;
   border: 1.5px solid var(--ink);
   border-radius: 12px;
 }
