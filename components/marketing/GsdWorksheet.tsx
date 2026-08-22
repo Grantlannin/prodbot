@@ -191,36 +191,25 @@ export default function GsdWorksheet() {
 
   const downloadPdf = useCallback(async () => {
     if (downloading) return;
+    setDownloading(true);
     setDownloadError(null);
     setDownloadOk(null);
 
     try {
-      // Cached after preload — stays inside the click gesture for the Save dialog.
-      const { buildGsdFillablePdf, openPdfSaveDialog, finishPdfSave, worksheetPdfFilename } =
-        await import('@/lib/worksheet/gsd-fillable-pdf');
+      const { buildGsdWorksheetPdf, downloadBytes, worksheetPdfFilename } = await import(
+        '@/lib/worksheet/gsd-fillable-pdf'
+      );
       const filename = worksheetPdfFilename();
-      const handle = await openPdfSaveDialog(filename);
-
-      setDownloading(true);
-      const bytes = await buildGsdFillablePdf({
+      const bytes = await buildGsdWorksheetPdf({
         name: state.name,
         startDate: state.startDate,
         days: state.days,
       });
-      const how = await finishPdfSave(bytes, filename, handle);
-      setDownloadOk(
-        how === 'picker'
-          ? `Saved ${filename}. Open it in Preview or Adobe to click the boxes.`
-          : `Saved ${filename} — check your Downloads folder.`
-      );
+      downloadBytes(bytes, filename);
+      setDownloadOk(`Downloading ${filename}… check your Downloads folder.`);
     } catch (err) {
-      if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
-        return;
-      }
       console.error('[worksheet] pdf download', err);
-      setDownloadError(
-        'Could not save the PDF. Try again, or allow downloads for this site.'
-      );
+      setDownloadError('Could not download the PDF. Try again, or allow downloads for this site.');
     } finally {
       setDownloading(false);
     }
@@ -229,7 +218,7 @@ export default function GsdWorksheet() {
   return (
     <div className={`${styles.root} ${dmSans.variable} ${fraunces.variable}`}>
       <div className={`${styles.toolbar} ${styles.noPrint}`}>
-        <p className={styles.toolbarHint}>Fill here in the browser, or download a PDF to keep / print.</p>
+        <p className={styles.toolbarHint}>Fill here in the browser, then download a PDF to print.</p>
         <div className={styles.toolbarActions}>
           <button
             type="button"
@@ -237,7 +226,7 @@ export default function GsdWorksheet() {
             className={styles.download}
             disabled={downloading}
           >
-            {downloading ? 'Saving PDF…' : 'Download PDF'}
+            {downloading ? 'Downloading…' : 'Download PDF'}
           </button>
         </div>
       </div>

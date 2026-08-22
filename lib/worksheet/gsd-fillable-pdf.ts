@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
 
-export type GsdFillablePdfInput = {
+export type GsdWorksheetPdfInput = {
   name: string;
   startDate: string;
   days: Record<
@@ -52,14 +52,35 @@ function drawText(
   page.drawText(text, { x, y, size, font, color });
 }
 
-/**
- * Build a fillable (AcroForm) PDF — checkboxes work in Adobe Reader / Preview.
- * Browser preview support varies.
- */
-export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Uint8Array> {
+function drawCheckBox(
+  page: PDFPage,
+  fontBold: PDFFont,
+  x: number,
+  y: number,
+  size: number,
+  checked: boolean
+) {
+  page.drawRectangle({
+    x,
+    y,
+    width: size,
+    height: size,
+    borderWidth: 1.5,
+    borderColor: checked ? ACCENT : INK,
+    color: checked ? ACCENT : rgb(1, 1, 1),
+  });
+  if (checked) {
+    const mark = 'X';
+    const markSize = 11;
+    const tw = fontBold.widthOfTextAtSize(mark, markSize);
+    drawText(page, fontBold, mark, x + (size - tw) / 2, y + 3.5, markSize, rgb(1, 1, 1));
+  }
+}
+
+/** Static printable PDF of the worksheet with current answers baked in. */
+export async function buildGsdWorksheetPdf(data: GsdWorksheetPdfInput): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
-  const form = pdfDoc.getForm();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
@@ -69,62 +90,34 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   y -= 28;
   drawText(page, fontBold, '7-Day Get Sh*t Done Challenge', MARGIN, y, 22, INK);
   y -= 16;
-  drawText(
-    page,
-    font,
-    'Four boxes a day. Click boxes in any PDF app that supports forms (Adobe, Preview, etc.).',
-    MARGIN,
-    y,
-    9,
-    MUTED
-  );
+  drawText(page, font, 'Printable checkbook — fill online, then download and print.', MARGIN, y, 9, MUTED);
   y -= 28;
 
   drawText(page, fontBold, 'NAME', MARGIN, y, 8, MUTED);
   drawText(page, fontBold, 'START DATE', MARGIN + 360, y, 8, MUTED);
-  y -= 4;
-
-  const nameField = form.createTextField('name');
-  nameField.setText(data.name || '');
-  nameField.addToPage(page, {
-    x: MARGIN,
-    y: y - 22,
-    width: 330,
-    height: 22,
-    borderWidth: 1,
-    borderColor: INK,
-    backgroundColor: rgb(1, 1, 1),
-    textColor: INK,
-    font: fontBold,
-  });
-  nameField.setFontSize(11);
-
-  const dateField = form.createTextField('startDate');
-  dateField.setText(data.startDate || '');
-  dateField.addToPage(page, {
-    x: MARGIN + 360,
-    y: y - 22,
-    width: 180,
-    height: 22,
-    borderWidth: 1,
-    borderColor: INK,
-    backgroundColor: rgb(1, 1, 1),
-    textColor: INK,
+  y -= 18;
+  drawText(page, fontBold, data.name?.trim() || '________________________', MARGIN, y, 12, INK);
+  drawText(
+    page,
     font,
-  });
-  dateField.setFontSize(11);
-  y -= 40;
+    data.startDate?.trim() || '____________',
+    MARGIN + 360,
+    y,
+    12,
+    INK
+  );
+  y -= 22;
 
   drawText(
     page,
     font,
-    'Did I do the down flow & set up my #1 task? · 2 hrs tracked (minimum) · uncertain decisions · Screenshot social time (Y/N) · Total Phone hours',
+    'The Simple Metrics We\'re Tracking Daily · 4 checks + Total Phone hours',
     MARGIN,
     y,
-    7,
+    8,
     MUTED
   );
-  y -= 18;
+  y -= 16;
 
   const tableX = MARGIN;
   const tableTop = y;
@@ -185,6 +178,8 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   });
   y -= headerH;
 
+  let score = 0;
+
   for (const day of DAYS) {
     const row = data.days[day];
     const rowBottom = y - rowH;
@@ -216,32 +211,25 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
       const boxSize = 16;
       const cx = colXs[i + 1] + checkW / 2 - boxSize / 2;
       const cy = rowBottom + (rowH - boxSize) / 2;
-      const field = form.createCheckBox(`day${day}.${check.key}`);
-      if (row.checks[check.key]) field.check();
-      field.addToPage(page, {
-        x: cx,
-        y: cy,
-        width: boxSize,
-        height: boxSize,
-        borderWidth: 1.5,
-        borderColor: INK,
-        backgroundColor: rgb(1, 1, 1),
-      });
+      const on = row.checks[check.key];
+      if (on) score += 1;
+      drawCheckBox(page, fontBold, cx, cy, boxSize, on);
     });
 
-    const phoneField = form.createTextField(`day${day}.phoneHours`);
-    phoneField.setText(row.phoneHours || '');
-    phoneField.addToPage(page, {
-      x: colXs[5] + 6,
-      y: rowBottom + 8,
-      width: phoneW - 12,
-      height: 20,
-      borderWidth: 0,
-      backgroundColor: rgb(1, 1, 1),
-      textColor: INK,
-      font,
-    });
-    phoneField.setFontSize(10);
+    const phone = row.phoneHours?.trim() || '';
+    if (phone) {
+      const phoneSize = 10;
+      const tw = font.widthOfTextAtSize(phone, phoneSize);
+      drawText(
+        page,
+        font,
+        phone,
+        colXs[5] + phoneW / 2 - tw / 2,
+        rowBottom + 13,
+        phoneSize,
+        INK
+      );
+    }
 
     y = rowBottom;
   }
@@ -256,28 +244,27 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   });
 
   y -= 28;
-  drawText(page, fontBold, 'Final score: ____ / 28', MARGIN, y, 12, INK);
+  drawText(page, fontBold, `Final score: ${score} / 28`, MARGIN, y, 12, INK);
   drawText(
     page,
     font,
     '4 checks x 7 days · Total Phone hours tracked separately · daywinner.bot/worksheet',
-    MARGIN + 160,
+    MARGIN + 150,
     y,
     8,
     MUTED
   );
-  y -= 16;
+  y -= 18;
   drawText(
     page,
-    font,
-    'Tip: Open this PDF in Adobe Acrobat, Preview, or another form-capable reader to click the boxes.',
+    fontBold,
+    '"if you don\'t honestly track it, you can\'t honestly change it"',
     MARGIN,
     y,
-    8,
-    MUTED
+    10,
+    ACCENT
   );
 
-  form.updateFieldAppearances(font);
   return pdfDoc.save();
 }
 
@@ -285,58 +272,7 @@ export function worksheetPdfFilename() {
   return 'daywinner 7-day challenge worksheet.pdf';
 }
 
-type PdfSaveHandle = {
-  createWritable: () => Promise<{
-    write: (data: BufferSource) => Promise<void>;
-    close: () => Promise<void>;
-  }>;
-};
-
-/** Call this first from a click handler so Chrome/Edge keep the user-gesture for the Save dialog. */
-export async function openPdfSaveDialog(filename: string): Promise<PdfSaveHandle | null> {
-  const w = window as Window & {
-    showSaveFilePicker?: (options: {
-      suggestedName?: string;
-      types?: Array<{ description?: string; accept: Record<string, string[]> }>;
-    }) => Promise<PdfSaveHandle>;
-  };
-
-  if (typeof w.showSaveFilePicker !== 'function') return null;
-
-  try {
-    return await w.showSaveFilePicker({
-      suggestedName: filename,
-      types: [
-        {
-          description: 'PDF',
-          accept: { 'application/pdf': ['.pdf'] },
-        },
-      ],
-    });
-  } catch (err) {
-    if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
-      throw err;
-    }
-    return null;
-  }
-}
-
-export async function finishPdfSave(
-  bytes: Uint8Array,
-  filename: string,
-  handle: PdfSaveHandle | null
-): Promise<'picker' | 'download'> {
-  const copy = new Uint8Array(bytes);
-  if (handle) {
-    const writable = await handle.createWritable();
-    await writable.write(copy);
-    await writable.close();
-    return 'picker';
-  }
-  downloadBytes(copy, filename);
-  return 'download';
-}
-
+/** Trigger a normal browser download into the Downloads folder. */
 export function downloadBytes(bytes: Uint8Array, filename: string) {
   const copy = new Uint8Array(bytes);
   const blob = new Blob([copy], { type: 'application/pdf' });
@@ -351,5 +287,5 @@ export function downloadBytes(bytes: Uint8Array, filename: string) {
   window.setTimeout(() => {
     a.remove();
     URL.revokeObjectURL(url);
-  }, 2000);
+  }, 4000);
 }
