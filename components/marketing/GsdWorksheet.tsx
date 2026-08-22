@@ -38,8 +38,8 @@ const CHECKS = [
   },
   {
     key: 'scary',
-    label: 'Scary decision',
-    prompt: 'Did you make one uncertain / scary call instead of delaying it?',
+    label: 'Uncertain decision',
+    prompt: 'Did you make one uncertain decision instead of delaying it?',
   },
 ] as const;
 
