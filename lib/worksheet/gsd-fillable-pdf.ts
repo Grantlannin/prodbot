@@ -21,7 +21,10 @@ const DAYS = [1, 2, 3, 4, 5, 6, 7] as const;
 const CHECKS = [
   { key: 'teed' as const, label: 'Did I do the down flow & set up my #1 task?' },
   { key: 'tracked' as const, label: 'Do I have 2 hours of work tracked (minimum?)' },
-  { key: 'uncertain' as const, label: 'Did i move forward & make uncertain decisions' },
+  {
+    key: 'uncertain' as const,
+    label: 'Did i move forward & make uncertain decisions while i went',
+  },
   {
     key: 'screenshot' as const,
     label: 'Did i screenshot my social media time on my phone (Y/N)',

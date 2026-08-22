@@ -31,7 +31,7 @@ const CHECKS = [
   },
   {
     key: 'uncertain',
-    label: 'Did i move forward & make uncertain decisions',
+    label: 'Did i move forward & make uncertain decisions while i went',
   },
   {
     key: 'screenshot',
