@@ -23,6 +23,18 @@ function drawText(
   page.drawText(text, { x, y, size, font, color });
 }
 
+function drawCentered(
+  page: PDFPage,
+  font: PDFFont,
+  text: string,
+  y: number,
+  size: number,
+  color = INK
+) {
+  const w = font.widthOfTextAtSize(text, size);
+  drawText(page, font, text, (PAGE_W - w) / 2, y, size, color);
+}
+
 function drawEmptyCheckBox(page: PDFPage, x: number, y: number, size: number) {
   page.drawRectangle({
     x,
@@ -44,39 +56,32 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
 
   let y = PAGE_H - MARGIN;
 
-  drawText(page, fontBold, 'DAYWINNER BOT', MARGIN, y - 10, 9, ACCENT);
-  y -= 28;
-  drawText(page, fontBold, '7-Day Get Sh*t Done Challenge', MARGIN, y, 22, INK);
-  y -= 16;
-  drawText(page, font, 'Blank printable checkbook — print and fill by hand.', MARGIN, y, 9, MUTED);
+  drawCentered(page, fontBold, 'DAYWINNER BOT', y - 8, 10, ACCENT);
+  y -= 30;
+  drawCentered(page, fontBold, '7-Day Get Sh*t Done Challenge', y, 22, INK);
+  y -= 18;
+  drawCentered(page, font, 'printable checkbook', y, 11, MUTED);
   y -= 28;
 
+  // Hand-writable name / start date — blank lines only (no typed date).
   drawText(page, fontBold, 'NAME', MARGIN, y, 8, MUTED);
   drawText(page, fontBold, 'START DATE', MARGIN + 360, y, 8, MUTED);
-  y -= 6;
+  y -= 8;
   page.drawLine({
     start: { x: MARGIN, y },
     end: { x: MARGIN + 300, y },
-    thickness: 1,
+    thickness: 1.25,
     color: INK,
   });
   page.drawLine({
     start: { x: MARGIN + 360, y },
-    end: { x: MARGIN + 520, y },
-    thickness: 1,
+    end: { x: MARGIN + 540, y },
+    thickness: 1.25,
     color: INK,
   });
   y -= 22;
 
-  drawText(
-    page,
-    font,
-    "The Simple Metrics We're Tracking Daily · 4 checks + Total Phone hours",
-    MARGIN,
-    y,
-    8,
-    MUTED
-  );
+  drawCentered(page, font, "what we're tracking: 4 metrics + phone hours", y, 9, MUTED);
   y -= 16;
 
   const tableX = MARGIN;
@@ -171,7 +176,6 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
       drawEmptyCheckBox(page, cx, cy, boxSize);
     }
 
-    // Blank underline for phone hours
     page.drawLine({
       start: { x: colXs[5] + 10, y: rowBottom + 12 },
       end: { x: colXs[5] + phoneW - 10, y: rowBottom + 12 },
@@ -191,25 +195,19 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
     borderWidth: 1.5,
   });
 
-  y -= 28;
-  drawText(page, fontBold, 'Final score: ____ / 28', MARGIN, y, 12, INK);
-  drawText(
-    page,
-    font,
-    '4 checks x 7 days · Total Phone hours tracked separately · daywinner.bot/worksheet',
-    MARGIN + 150,
-    y,
-    8,
-    MUTED
-  );
+  y -= 34;
+  drawCentered(page, fontBold, 'Final score', y, 14, INK);
+  y -= 26;
+  drawCentered(page, fontBold, '_ / 28', y, 28, INK);
   y -= 18;
-  drawText(
+  drawCentered(page, font, '(every box counts as 1 point)', y, 10, MUTED);
+  y -= 22;
+  drawCentered(
     page,
     fontBold,
     '"if you don\'t honestly track it, you can\'t honestly change it"',
-    MARGIN,
     y,
-    10,
+    11,
     ACCENT
   );
 
