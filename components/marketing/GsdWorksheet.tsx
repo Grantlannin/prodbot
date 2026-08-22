@@ -309,7 +309,7 @@ export default function GsdWorksheet() {
             </div>
           </div>
           <p className={styles.legendQuote}>
-            if you don&apos;t honestly track it, you can&apos;t honestly change it
+            &ldquo;if you don&apos;t honestly track it, you can&apos;t honestly change it&rdquo;
           </p>
         </section>
 
