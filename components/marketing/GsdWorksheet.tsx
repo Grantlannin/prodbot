@@ -244,10 +244,10 @@ export default function GsdWorksheet() {
       {downloadError ? <p className={`${styles.downloadError} ${styles.noPrint}`}>{downloadError}</p> : null}
       {downloadOk ? <p className={`${styles.downloadOk} ${styles.noPrint}`}>{downloadOk}</p> : null}
 
-      <article className={styles.sheet} aria-label="7-Day Get Shit Done Challenge worksheet">
+      <article className={styles.sheet} aria-label="7-Day Get Sh*t Done Challenge worksheet">
         <header className={styles.header}>
           <div className={styles.brand}>Daywinner bot</div>
-          <h1 className={styles.title}>7-Day Get Shit Done Challenge</h1>
+          <h1 className={styles.title}>7-Day Get Sh*t Done Challenge</h1>
           <p className={styles.subtitle}>
             Four boxes a day, plus phone hours. Tap only if it actually happened.
           </p>

@@ -67,7 +67,7 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
 
   drawText(page, fontBold, 'DAYWINNER BOT', MARGIN, y - 10, 9, ACCENT);
   y -= 28;
-  drawText(page, fontBold, '7-Day Get Shit Done Challenge', MARGIN, y, 22, INK);
+  drawText(page, fontBold, '7-Day Get Sh*t Done Challenge', MARGIN, y, 22, INK);
   y -= 16;
   drawText(
     page,
