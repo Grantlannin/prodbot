@@ -60,12 +60,12 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
   y -= 30;
   drawCentered(page, fontBold, '7-Day Get Sh*t Done Challenge', y, 22, INK);
   y -= 18;
-  drawCentered(page, font, 'printable checkbook', y, 11, MUTED);
+  drawCentered(page, font, 'printable worksheet', y, 11, MUTED);
   y -= 28;
 
   // Hand-writable name / start date — blank lines only (no typed date).
-  drawText(page, fontBold, 'NAME', MARGIN, y, 8, MUTED);
-  drawText(page, fontBold, 'START DATE', MARGIN + 360, y, 8, MUTED);
+  drawText(page, fontBold, 'NAME:', MARGIN, y, 8, MUTED);
+  drawText(page, fontBold, 'START DATE:', MARGIN + 360, y, 8, MUTED);
   y -= 8;
   page.drawLine({
     start: { x: MARGIN, y },
@@ -90,7 +90,7 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
   const dayW = 40;
   const phoneW = 78;
   const checkW = (tableW - dayW - phoneW) / 4;
-  const headerH = 52;
+  const headerH = 58;
   const rowH = 36;
 
   const colXs = [
@@ -127,7 +127,10 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
     colXs[5] + phoneW / 2,
   ];
   headerLines.forEach((lines, i) => {
-    const size = 6.5;
+    const size = i === 0 ? 9 : 8;
+    const lineGap = 11;
+    const blockH = (lines.length - 1) * lineGap;
+    const startY = y - (headerH - blockH) / 2 - 2;
     lines.forEach((line, lineIdx) => {
       const textW = fontBold.widthOfTextAtSize(line, size);
       drawText(
@@ -135,7 +138,7 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
         fontBold,
         line,
         headerCenters[i] - textW / 2,
-        y - 16 - lineIdx * 10,
+        startY - lineIdx * lineGap,
         size,
         rgb(1, 1, 1)
       );
@@ -195,13 +198,13 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
     borderWidth: 1.5,
   });
 
-  y -= 34;
+  y -= 36;
   drawCentered(page, fontBold, 'Final score', y, 14, INK);
-  y -= 26;
-  drawCentered(page, fontBold, '_ / 28', y, 28, INK);
-  y -= 18;
-  drawCentered(page, font, '(every box counts as 1 point)', y, 10, MUTED);
+  y -= 32;
+  drawCentered(page, fontBold, '/ 28', y, 28, INK);
   y -= 22;
+  drawCentered(page, font, '(every box counts as 1 point)', y, 10, MUTED);
+  y -= 24;
   drawCentered(
     page,
     fontBold,
