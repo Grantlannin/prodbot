@@ -24,22 +24,22 @@ const CHECKS = [
   {
     key: 'teed',
     label: 'Task teed up',
-    prompt: 'Wind-down flow to set up task',
+    prompt: 'wind down flow to set up task',
   },
   {
     key: 'tracked',
-    label: '2 hrs tracked',
+    label: '2 hrs of work tracked',
     prompt: '2 hrs of work tracked',
   },
   {
     key: 'uncertain',
-    label: 'Uncertain decisions',
-    prompt: 'Did I move forward & make uncertain decisions?',
+    label: 'Did i move forward & make Uncertain decisions',
+    prompt: 'Did i move forward & make Uncertain decisions',
   },
   {
     key: 'screenshot',
-    label: 'Social screenshot',
-    prompt: 'Did I screenshot my social media time on my phone? (Y/N)',
+    label: 'Did i screenshot my social media time on my phone (Y/N)',
+    prompt: 'Did i screenshot my social media time on my phone (Y/N)',
   },
 ] as const;
 
@@ -47,6 +47,7 @@ type CheckKey = (typeof CHECKS)[number]['key'];
 
 type DayRow = {
   checks: Record<CheckKey, boolean>;
+  phoneHours: string;
 };
 
 type WorksheetState = {
@@ -58,6 +59,7 @@ type WorksheetState = {
 function emptyDay(): DayRow {
   return {
     checks: { teed: false, tracked: false, uncertain: false, screenshot: false },
+    phoneHours: '',
   };
 }
 
@@ -98,7 +100,12 @@ function loadState(): WorksheetState {
       startDate: typeof parsed.startDate === 'string' ? parsed.startDate : '',
       days: DAYS.reduce(
         (acc, day) => {
-          const row = parsed.days?.[day];
+          const row = parsed.days?.[day] as
+            | {
+                checks?: Partial<Record<CheckKey | 'notes' | 'scary', boolean>>;
+                phoneHours?: string;
+              }
+            | undefined;
           acc[day] = {
             checks: {
               teed: Boolean(row?.checks?.teed),
@@ -106,6 +113,7 @@ function loadState(): WorksheetState {
               uncertain: Boolean(row?.checks?.uncertain ?? row?.checks?.scary),
               screenshot: Boolean(row?.checks?.screenshot),
             },
+            phoneHours: typeof row?.phoneHours === 'string' ? row.phoneHours : '',
           };
           return acc;
         },
@@ -165,6 +173,19 @@ export default function GsdWorksheet() {
             ...prev.days[day].checks,
             [key]: !prev.days[day].checks[key],
           },
+        },
+      },
+    }));
+  }, []);
+
+  const setPhoneHours = useCallback((day: Day, value: string) => {
+    setState(prev => ({
+      ...prev,
+      days: {
+        ...prev.days,
+        [day]: {
+          ...prev.days[day],
+          phoneHours: value,
         },
       },
     }));
@@ -249,7 +270,7 @@ export default function GsdWorksheet() {
           <div className={styles.brand}>Daywinner bot</div>
           <h1 className={styles.title}>7-Day Get Shit Done Challenge</h1>
           <p className={styles.subtitle}>
-            Four boxes a day. Tap only if it actually happened.
+            Four boxes a day, plus phone hours. Tap only if it actually happened.
           </p>
           <div className={styles.meta}>
             <label className={styles.field}>
@@ -279,9 +300,13 @@ export default function GsdWorksheet() {
           {CHECKS.map(check => (
             <div key={check.key} className={styles.legendItem}>
               <strong>{check.label}</strong>
-              <span>{check.prompt}</span>
+              {check.key === 'teed' ? <span>{check.prompt}</span> : null}
             </div>
           ))}
+          <div className={styles.legendItem}>
+            <strong>Phone hrs</strong>
+            <span>Type today’s phone hours from Screen Time / Digital Wellbeing.</span>
+          </div>
         </section>
 
         <div className={styles.tableWrap}>
@@ -294,8 +319,17 @@ export default function GsdWorksheet() {
                 {CHECKS.map(check => (
                   <th key={check.key} scope="col">
                     {check.label}
+                    {check.key === 'teed' ? (
+                      <>
+                        <br />
+                        <span className={styles.thSub}>{check.prompt}</span>
+                      </>
+                    ) : null}
                   </th>
                 ))}
+                <th scope="col" className={styles.phoneCol}>
+                  Phone hrs
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -322,6 +356,17 @@ export default function GsdWorksheet() {
                         </td>
                       );
                     })}
+                    <td className={styles.phoneCell}>
+                      <input
+                        className={styles.cellInput}
+                        type="text"
+                        inputMode="decimal"
+                        value={row.phoneHours}
+                        onChange={e => setPhoneHours(day, e.target.value)}
+                        placeholder="0"
+                        aria-label={`Day ${day} phone hours`}
+                      />
+                    </td>
                   </tr>
                 );
               })}
@@ -336,7 +381,7 @@ export default function GsdWorksheet() {
               <span className={styles.scoreLive}>{score}</span>
               <span className={styles.scoreOf}>/ 28</span>
             </span>
-            <span className={styles.scoreHint}>4 checks × 7 days</span>
+            <span className={styles.scoreHint}>4 checks × 7 days · phone hrs tracked separately</span>
           </div>
           <p className={styles.closer}>
             Missed a box? Don’t rewrite history. Show up tomorrow and get the next one.

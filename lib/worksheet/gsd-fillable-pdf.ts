@@ -12,6 +12,7 @@ export type GsdFillablePdfInput = {
         uncertain: boolean;
         screenshot: boolean;
       };
+      phoneHours: string;
     }
   >;
 };
@@ -19,9 +20,9 @@ export type GsdFillablePdfInput = {
 const DAYS = [1, 2, 3, 4, 5, 6, 7] as const;
 const CHECKS = [
   { key: 'teed' as const, label: 'Task teed up' },
-  { key: 'tracked' as const, label: '2 hrs tracked' },
-  { key: 'uncertain' as const, label: 'Uncertain decisions' },
-  { key: 'screenshot' as const, label: 'Social screenshot' },
+  { key: 'tracked' as const, label: '2 hrs of work tracked' },
+  { key: 'uncertain' as const, label: 'Did i move forward & make Uncertain decisions' },
+  { key: 'screenshot' as const, label: 'Did i screenshot my social media time on my phone (Y/N)' },
 ];
 
 const PAGE_W = 792; // letter landscape
@@ -111,10 +112,10 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   drawText(
     page,
     font,
-    'Task teed up (wind-down) · 2 hrs tracked · Moved forward / uncertain decisions · Screenshot social media time (Y/N)',
+    'Task teed up (wind down flow to set up task) · 2 hrs of work tracked · Did i move forward & make Uncertain decisions · Screenshot social time (Y/N) · Phone hrs',
     MARGIN,
     y,
-    8,
+    7,
     MUTED
   );
   y -= 18;
@@ -122,10 +123,11 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   const tableX = MARGIN;
   const tableTop = y;
   const tableW = PAGE_W - MARGIN * 2;
-  const dayW = 56;
-  const checkW = (tableW - dayW) / 4;
-  const headerH = 28;
-  const rowH = 40;
+  const dayW = 40;
+  const phoneW = 70;
+  const checkW = (tableW - dayW - phoneW) / 4;
+  const headerH = 52;
+  const rowH = 36;
 
   const colXs = [
     tableX,
@@ -133,6 +135,7 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
     tableX + dayW + checkW,
     tableX + dayW + checkW * 2,
     tableX + dayW + checkW * 3,
+    tableX + dayW + checkW * 4,
   ];
 
   page.drawRectangle({
@@ -143,26 +146,37 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
     color: HEADER_BG,
   });
 
-  const headers = ['Day', ...CHECKS.map(c => c.label)];
+  // Short header lines so long labels fit in the PDF columns
+  const headerLines: string[][] = [
+    ['Day'],
+    ['Task teed up', 'wind down flow', 'to set up task'],
+    ['2 hrs of', 'work tracked'],
+    ['Did i move forward &', 'make Uncertain', 'decisions'],
+    ['Did i screenshot my', 'social media time', 'on my phone (Y/N)'],
+    ['Phone hrs'],
+  ];
   const headerCenters = [
     colXs[0] + dayW / 2,
     colXs[1] + checkW / 2,
     colXs[2] + checkW / 2,
     colXs[3] + checkW / 2,
     colXs[4] + checkW / 2,
+    colXs[5] + phoneW / 2,
   ];
-  headers.forEach((label, i) => {
-    const size = i === 0 ? 9 : 8;
-    const textW = fontBold.widthOfTextAtSize(label, size);
-    drawText(
-      page,
-      fontBold,
-      label,
-      headerCenters[i] - textW / 2,
-      y - 18,
-      size,
-      rgb(1, 1, 1)
-    );
+  headerLines.forEach((lines, i) => {
+    const size = 6.5;
+    lines.forEach((line, lineIdx) => {
+      const textW = fontBold.widthOfTextAtSize(line, size);
+      drawText(
+        page,
+        fontBold,
+        line,
+        headerCenters[i] - textW / 2,
+        y - 16 - lineIdx * 10,
+        size,
+        rgb(1, 1, 1)
+      );
+    });
   });
   y -= headerH;
 
@@ -190,11 +204,11 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
     }
 
     const dayLabel = String(day);
-    const dayWText = fontBold.widthOfTextAtSize(dayLabel, 12);
-    drawText(page, fontBold, dayLabel, colXs[0] + dayW / 2 - dayWText / 2, rowBottom + 14, 12, INK);
+    const dayWText = fontBold.widthOfTextAtSize(dayLabel, 11);
+    drawText(page, fontBold, dayLabel, colXs[0] + dayW / 2 - dayWText / 2, rowBottom + 13, 11, INK);
 
     CHECKS.forEach((check, i) => {
-      const boxSize = 18;
+      const boxSize = 16;
       const cx = colXs[i + 1] + checkW / 2 - boxSize / 2;
       const cy = rowBottom + (rowH - boxSize) / 2;
       const field = form.createCheckBox(`day${day}.${check.key}`);
@@ -210,6 +224,20 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
       });
     });
 
+    const phoneField = form.createTextField(`day${day}.phoneHours`);
+    phoneField.setText(row.phoneHours || '');
+    phoneField.addToPage(page, {
+      x: colXs[5] + 6,
+      y: rowBottom + 8,
+      width: phoneW - 12,
+      height: 20,
+      borderWidth: 0,
+      backgroundColor: rgb(1, 1, 1),
+      textColor: INK,
+      font,
+    });
+    phoneField.setFontSize(10);
+
     y = rowBottom;
   }
 
@@ -224,7 +252,15 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
 
   y -= 28;
   drawText(page, fontBold, 'Final score: ____ / 28', MARGIN, y, 12, INK);
-  drawText(page, font, '4 checks x 7 days · daywinner.bot/worksheet', MARGIN + 160, y, 8, MUTED);
+  drawText(
+    page,
+    font,
+    '4 checks x 7 days · Phone hrs tracked separately · daywinner.bot/worksheet',
+    MARGIN + 160,
+    y,
+    8,
+    MUTED
+  );
   y -= 16;
   drawText(
     page,
