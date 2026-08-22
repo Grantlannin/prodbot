@@ -295,15 +295,15 @@ export default function GsdWorksheet() {
         </header>
 
         <section className={styles.legend} aria-label="What to check">
-          <h2 className={styles.legendTitle}>the simple metrics we&apos;re tracking daily</h2>
-          <ol className={styles.legendList}>
+          <h2 className={styles.legendTitle}>The Simple Metrics We&apos;re Tracking Daily</h2>
+          <div className={styles.legendGrid}>
             {CHECKS.map(check => (
-              <li key={check.key} className={styles.legendItem}>
+              <div key={check.key} className={styles.legendItem}>
                 {check.label}
-              </li>
+              </div>
             ))}
-            <li className={styles.legendItem}>{PHONE_LABEL}</li>
-          </ol>
+            <div className={styles.legendItem}>{PHONE_LABEL}</div>
+          </div>
           <p className={styles.legendQuote}>
             &ldquo;if you don&apos;t honestly track it, you can&apos;t honestly change it&rdquo;
           </p>
