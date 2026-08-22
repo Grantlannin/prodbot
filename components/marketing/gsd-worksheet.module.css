@@ -57,6 +57,14 @@
   color: #b91c1c;
 }
 
+.downloadOk {
+  margin: -8px auto 16px;
+  max-width: 8.5in;
+  padding: 0 8px;
+  font-size: 13px;
+  color: #047857;
+}
+
 .secondaryBtn {
   border: 1px solid #cbd5e1;
   border-radius: 999px;
@@ -405,6 +413,8 @@
 
   .root {
     padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .sheet {
@@ -425,7 +435,9 @@
     min-width: 0;
   }
 
+  .table thead th,
   .checkBtn,
+  .checkBtnOn,
   .metaInput,
   .cellInput {
     -webkit-print-color-adjust: exact;

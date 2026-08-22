@@ -119,10 +119,16 @@ export default function GsdWorksheet() {
   const [hydrated, setHydrated] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadOk, setDownloadOk] = useState<string | null>(null);
 
   useEffect(() => {
     setState(loadState());
     setHydrated(true);
+  }, []);
+
+  // Warm the PDF module so Download can open the Save dialog on the same click.
+  useEffect(() => {
+    void import('@/lib/worksheet/gsd-fillable-pdf');
   }, []);
 
   useEffect(() => {
@@ -181,25 +187,35 @@ export default function GsdWorksheet() {
 
   const downloadPdf = useCallback(async () => {
     if (downloading) return;
-    setDownloading(true);
     setDownloadError(null);
+    setDownloadOk(null);
+
     try {
-      const { buildGsdFillablePdf, downloadBytes } = await import('@/lib/worksheet/gsd-fillable-pdf');
+      // Cached after preload — stays inside the click gesture for the Save dialog.
+      const { buildGsdFillablePdf, openPdfSaveDialog, finishPdfSave, worksheetPdfFilename } =
+        await import('@/lib/worksheet/gsd-fillable-pdf');
+      const filename = worksheetPdfFilename(state.name);
+      const handle = await openPdfSaveDialog(filename);
+
+      setDownloading(true);
       const bytes = await buildGsdFillablePdf({
         name: state.name,
         startDate: state.startDate,
         days: state.days,
       });
-      const stamp = new Date().toISOString().slice(0, 10);
-      const who = state.name.trim().replace(/[^\w\-]+/g, '_').slice(0, 40);
-      const filename = who
-        ? `daywinner-gsd-worksheet-${who}-${stamp}.pdf`
-        : `daywinner-gsd-worksheet-${stamp}.pdf`;
-      downloadBytes(bytes, filename);
+      const how = await finishPdfSave(bytes, filename, handle);
+      setDownloadOk(
+        how === 'picker'
+          ? `Saved ${filename}. Open it in Preview or Adobe to click the boxes.`
+          : `Saved ${filename} — check your Downloads folder (browser Print → Save as PDF does not appear there).`
+      );
     } catch (err) {
+      if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
+        return;
+      }
       console.error('[worksheet] pdf download', err);
       setDownloadError(
-        'Could not build the fillable PDF. Try Print, or open the downloaded file in Adobe/Preview if the browser blocked it.'
+        'Could not save the PDF. Use “Download fillable PDF” again, or allow downloads for this site.'
       );
     } finally {
       setDownloading(false);
@@ -210,13 +226,19 @@ export default function GsdWorksheet() {
     <div className={`${styles.root} ${dmSans.variable} ${fraunces.variable}`}>
       <div className={`${styles.toolbar} ${styles.noPrint}`}>
         <p className={styles.toolbarHint}>
-          Fill online here (saved in this browser), or download a clickable PDF for Adobe / Preview.
+          Fill here in the browser. To keep a file, use Download (not Print → Save as PDF — that
+          won’t show in your download bar).
         </p>
         <div className={styles.toolbarActions}>
           <button type="button" onClick={resetSheet} className={styles.secondaryBtn}>
             Reset
           </button>
-          <button type="button" onClick={() => window.print()} className={styles.secondaryBtn}>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className={styles.secondaryBtn}
+            title="Opens the system print dialog. Choose a printer, or Save as PDF from that dialog."
+          >
             Print
           </button>
           <button
@@ -225,11 +247,12 @@ export default function GsdWorksheet() {
             className={styles.download}
             disabled={downloading}
           >
-            {downloading ? 'Building PDF…' : 'Download fillable PDF'}
+            {downloading ? 'Saving PDF…' : 'Download fillable PDF'}
           </button>
         </div>
       </div>
       {downloadError ? <p className={`${styles.downloadError} ${styles.noPrint}`}>{downloadError}</p> : null}
+      {downloadOk ? <p className={`${styles.downloadOk} ${styles.noPrint}`}>{downloadOk}</p> : null}
 
       <article className={styles.sheet} aria-label="7-Day Get Shit Done Challenge worksheet">
         <header className={styles.header}>

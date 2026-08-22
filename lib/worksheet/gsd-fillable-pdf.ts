@@ -292,6 +292,63 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   return pdfDoc.save();
 }
 
+export function worksheetPdfFilename(name: string, stamp = new Date().toISOString().slice(0, 10)) {
+  const who = name.trim().replace(/[^\w\-]+/g, '_').slice(0, 40);
+  return who ? `daywinner-gsd-worksheet-${who}-${stamp}.pdf` : `daywinner-gsd-worksheet-${stamp}.pdf`;
+}
+
+type PdfSaveHandle = {
+  createWritable: () => Promise<{
+    write: (data: BufferSource) => Promise<void>;
+    close: () => Promise<void>;
+  }>;
+};
+
+/** Call this first from a click handler so Chrome/Edge keep the user-gesture for the Save dialog. */
+export async function openPdfSaveDialog(filename: string): Promise<PdfSaveHandle | null> {
+  const w = window as Window & {
+    showSaveFilePicker?: (options: {
+      suggestedName?: string;
+      types?: Array<{ description?: string; accept: Record<string, string[]> }>;
+    }) => Promise<PdfSaveHandle>;
+  };
+
+  if (typeof w.showSaveFilePicker !== 'function') return null;
+
+  try {
+    return await w.showSaveFilePicker({
+      suggestedName: filename,
+      types: [
+        {
+          description: 'PDF',
+          accept: { 'application/pdf': ['.pdf'] },
+        },
+      ],
+    });
+  } catch (err) {
+    if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
+      throw err;
+    }
+    return null;
+  }
+}
+
+export async function finishPdfSave(
+  bytes: Uint8Array,
+  filename: string,
+  handle: PdfSaveHandle | null
+): Promise<'picker' | 'download'> {
+  const copy = new Uint8Array(bytes);
+  if (handle) {
+    const writable = await handle.createWritable();
+    await writable.write(copy);
+    await writable.close();
+    return 'picker';
+  }
+  downloadBytes(copy, filename);
+  return 'download';
+}
+
 export function downloadBytes(bytes: Uint8Array, filename: string) {
   const copy = new Uint8Array(bytes);
   const blob = new Blob([copy], { type: 'application/pdf' });
@@ -300,8 +357,12 @@ export function downloadBytes(bytes: Uint8Array, filename: string) {
   a.href = url;
   a.download = filename;
   a.rel = 'noopener';
+  a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  // Keep the URL alive briefly so the browser can finish starting the download.
+  window.setTimeout(() => {
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, 2000);
 }
