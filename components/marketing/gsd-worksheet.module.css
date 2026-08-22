@@ -158,14 +158,29 @@
 }
 
 .legend {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-bottom: 18px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   border: 1px dashed #94a3b8;
   border-radius: 12px;
   background: rgba(248, 250, 252, 0.9);
+}
+
+.legendTitle {
+  margin: 0;
+  font-family: var(--font-gsd-display), Georgia, serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.legendGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
 }
 
 .legendItem {
@@ -185,6 +200,19 @@
   font-size: 11px;
   line-height: 1.35;
   color: var(--muted);
+}
+
+.legendQuote {
+  margin: 0;
+  padding-top: 4px;
+  border-top: 1px solid #e2e8f0;
+  font-family: var(--font-gsd-display), Georgia, serif;
+  font-size: 14px;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: var(--accent);
 }
 
 .tableWrap {
@@ -373,7 +401,7 @@
 
 @media (max-width: 720px) {
   .meta,
-  .legend,
+  .legendGrid,
   .footer {
     grid-template-columns: 1fr;
   }

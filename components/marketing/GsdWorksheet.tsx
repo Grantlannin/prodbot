@@ -296,15 +296,21 @@ export default function GsdWorksheet() {
         </header>
 
         <section className={styles.legend} aria-label="What to check">
-          {CHECKS.map(check => (
-            <div key={check.key} className={styles.legendItem}>
-              <strong>{check.label}</strong>
+          <h2 className={styles.legendTitle}>the simple metrics we&apos;re tracking daily</h2>
+          <div className={styles.legendGrid}>
+            {CHECKS.map(check => (
+              <div key={check.key} className={styles.legendItem}>
+                <strong>{check.label}</strong>
+              </div>
+            ))}
+            <div className={styles.legendItem}>
+              <strong>{PHONE_LABEL}</strong>
+              <span>{PHONE_HINT}</span>
             </div>
-          ))}
-          <div className={styles.legendItem}>
-            <strong>{PHONE_LABEL}</strong>
-            <span>{PHONE_HINT}</span>
           </div>
+          <p className={styles.legendQuote}>
+            if you don&apos;t honestly track it, you can&apos;t honestly change it
+          </p>
         </section>
 
         <div className={styles.tableWrap}>
