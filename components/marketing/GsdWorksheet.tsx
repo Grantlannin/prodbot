@@ -31,11 +31,11 @@ const CHECKS = [
   },
   {
     key: 'uncertain',
-    label: 'Did i move forward & make uncertain decisions while i went',
+    label: 'Did i move forward & make uncertain decisions while i went?',
   },
   {
     key: 'screenshot',
-    label: 'Did i screenshot my social media time on my phone (Y/N)',
+    label: 'Did i screenshot my social media time on my phone? (Y/N)',
   },
 ] as const;
 
@@ -128,7 +128,6 @@ export default function GsdWorksheet() {
   const [hydrated, setHydrated] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
-  const [downloadOk, setDownloadOk] = useState<string | null>(null);
 
   useEffect(() => {
     setState(loadState());
@@ -203,7 +202,6 @@ export default function GsdWorksheet() {
       // Always a blank printable template — never bake in on-page answers.
       const bytes = await buildGsdWorksheetPdf();
       downloadBytes(bytes, filename);
-      setDownloadOk(`Downloading ${filename}… check your Downloads folder.`);
     } catch (err) {
       console.error('[worksheet] pdf download', err);
       setDownloadError('Could not download the PDF. Try again, or allow downloads for this site.');
@@ -228,7 +226,6 @@ export default function GsdWorksheet() {
         </div>
       </div>
       {downloadError ? <p className={`${styles.downloadError} ${styles.noPrint}`}>{downloadError}</p> : null}
-      {downloadOk ? <p className={`${styles.downloadOk} ${styles.noPrint}`}>{downloadOk}</p> : null}
 
       <article className={styles.sheet} aria-label="7-Day Get Sh*t Done Challenge worksheet">
         <header className={styles.header}>
