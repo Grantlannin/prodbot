@@ -230,14 +230,6 @@
   hyphens: auto;
 }
 
-.thSub {
-  display: inline-block;
-  margin-top: 4px;
-  font-size: 10px;
-  font-weight: 500;
-  opacity: 0.85;
-}
-
 .phoneCol {
   width: 72px;
 }

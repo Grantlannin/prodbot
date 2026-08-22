@@ -23,25 +23,24 @@ type Day = (typeof DAYS)[number];
 const CHECKS = [
   {
     key: 'teed',
-    label: 'Task teed up',
-    prompt: 'wind down flow to set up task',
+    label: 'Did I do the down flow & set up my #1 task?',
   },
   {
     key: 'tracked',
     label: '2 hrs of work tracked',
-    prompt: '2 hrs of work tracked',
   },
   {
     key: 'uncertain',
     label: 'Did i move forward & make Uncertain decisions',
-    prompt: 'Did i move forward & make Uncertain decisions',
   },
   {
     key: 'screenshot',
     label: 'Did i screenshot my social media time on my phone (Y/N)',
-    prompt: 'Did i screenshot my social media time on my phone (Y/N)',
   },
 ] as const;
+
+const PHONE_LABEL = 'Phone hrs';
+const PHONE_HINT = 'Type today’s phone hours from Screen Time / Digital Wellbeing.';
 
 type CheckKey = (typeof CHECKS)[number]['key'];
 
@@ -300,12 +299,11 @@ export default function GsdWorksheet() {
           {CHECKS.map(check => (
             <div key={check.key} className={styles.legendItem}>
               <strong>{check.label}</strong>
-              {check.key === 'teed' ? <span>{check.prompt}</span> : null}
             </div>
           ))}
           <div className={styles.legendItem}>
-            <strong>Phone hrs</strong>
-            <span>Type today’s phone hours from Screen Time / Digital Wellbeing.</span>
+            <strong>{PHONE_LABEL}</strong>
+            <span>{PHONE_HINT}</span>
           </div>
         </section>
 
@@ -319,16 +317,10 @@ export default function GsdWorksheet() {
                 {CHECKS.map(check => (
                   <th key={check.key} scope="col">
                     {check.label}
-                    {check.key === 'teed' ? (
-                      <>
-                        <br />
-                        <span className={styles.thSub}>{check.prompt}</span>
-                      </>
-                    ) : null}
                   </th>
                 ))}
                 <th scope="col" className={styles.phoneCol}>
-                  Phone hrs
+                  {PHONE_LABEL}
                 </th>
               </tr>
             </thead>

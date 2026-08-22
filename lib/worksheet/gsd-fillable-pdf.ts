@@ -19,10 +19,13 @@ export type GsdFillablePdfInput = {
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7] as const;
 const CHECKS = [
-  { key: 'teed' as const, label: 'Task teed up' },
+  { key: 'teed' as const, label: 'Did I do the down flow & set up my #1 task?' },
   { key: 'tracked' as const, label: '2 hrs of work tracked' },
   { key: 'uncertain' as const, label: 'Did i move forward & make Uncertain decisions' },
-  { key: 'screenshot' as const, label: 'Did i screenshot my social media time on my phone (Y/N)' },
+  {
+    key: 'screenshot' as const,
+    label: 'Did i screenshot my social media time on my phone (Y/N)',
+  },
 ];
 
 const PAGE_W = 792; // letter landscape
@@ -112,7 +115,7 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   drawText(
     page,
     font,
-    'Task teed up (wind down flow to set up task) · 2 hrs of work tracked · Did i move forward & make Uncertain decisions · Screenshot social time (Y/N) · Phone hrs',
+    'Did I do the down flow & set up my #1 task? · 2 hrs of work tracked · Did i move forward & make Uncertain decisions · Screenshot social time (Y/N) · Phone hrs',
     MARGIN,
     y,
     7,
@@ -146,10 +149,9 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
     color: HEADER_BG,
   });
 
-  // Short header lines so long labels fit in the PDF columns
   const headerLines: string[][] = [
     ['Day'],
-    ['Task teed up', 'wind down flow', 'to set up task'],
+    ['Did I do the down flow', '& set up my #1 task?'],
     ['2 hrs of', 'work tracked'],
     ['Did i move forward &', 'make Uncertain', 'decisions'],
     ['Did i screenshot my', 'social media time', 'on my phone (Y/N)'],
