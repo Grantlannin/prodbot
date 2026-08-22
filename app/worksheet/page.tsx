@@ -17,6 +17,8 @@ export default function WorksheetPage() {
         </Link>
         <Link
           href="/app"
+          target="_blank"
+          rel="noopener noreferrer"
           className="text-sm font-semibold text-slate-600 no-underline transition hover:text-slate-900"
         >
           Open app

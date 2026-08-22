@@ -156,7 +156,7 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
     ['Day'],
     ['Did I do the down flow', '& set up my #1 task?'],
     ['Do I have 2 hours of', 'work tracked', '(minimum?)'],
-    ['Did i move forward &', 'make uncertain', 'decisions'],
+    ['Did i move forward &', 'make uncertain decisions', 'while i went'],
     ['Did i screenshot my', 'social media time', 'on my phone (Y/N)'],
     ['Total Phone', 'hours'],
   ];
@@ -281,9 +281,8 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   return pdfDoc.save();
 }
 
-export function worksheetPdfFilename(name: string, stamp = new Date().toISOString().slice(0, 10)) {
-  const who = name.trim().replace(/[^\w\-]+/g, '_').slice(0, 40);
-  return who ? `daywinner-gsd-worksheet-${who}-${stamp}.pdf` : `daywinner-gsd-worksheet-${stamp}.pdf`;
+export function worksheetPdfFilename() {
+  return 'daywinner 7-day challenge worksheet.pdf';
 }
 
 type PdfSaveHandle = {

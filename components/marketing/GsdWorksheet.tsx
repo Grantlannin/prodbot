@@ -189,11 +189,6 @@ export default function GsdWorksheet() {
     }));
   }, []);
 
-  const resetSheet = useCallback(() => {
-    if (!window.confirm('Clear this worksheet? Your saved progress will be wiped.')) return;
-    setState(emptyState());
-  }, []);
-
   const downloadPdf = useCallback(async () => {
     if (downloading) return;
     setDownloadError(null);
@@ -203,7 +198,7 @@ export default function GsdWorksheet() {
       // Cached after preload — stays inside the click gesture for the Save dialog.
       const { buildGsdFillablePdf, openPdfSaveDialog, finishPdfSave, worksheetPdfFilename } =
         await import('@/lib/worksheet/gsd-fillable-pdf');
-      const filename = worksheetPdfFilename(state.name);
+      const filename = worksheetPdfFilename();
       const handle = await openPdfSaveDialog(filename);
 
       setDownloading(true);
