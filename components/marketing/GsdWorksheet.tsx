@@ -200,11 +200,8 @@ export default function GsdWorksheet() {
         '@/lib/worksheet/gsd-fillable-pdf'
       );
       const filename = worksheetPdfFilename();
-      const bytes = await buildGsdWorksheetPdf({
-        name: state.name,
-        startDate: state.startDate,
-        days: state.days,
-      });
+      // Always a blank printable template — never bake in on-page answers.
+      const bytes = await buildGsdWorksheetPdf();
       downloadBytes(bytes, filename);
       setDownloadOk(`Downloading ${filename}… check your Downloads folder.`);
     } catch (err) {
@@ -213,12 +210,12 @@ export default function GsdWorksheet() {
     } finally {
       setDownloading(false);
     }
-  }, [downloading, state]);
+  }, [downloading]);
 
   return (
     <div className={`${styles.root} ${dmSans.variable} ${fraunces.variable}`}>
       <div className={`${styles.toolbar} ${styles.noPrint}`}>
-        <p className={styles.toolbarHint}>Fill here in the browser, then download a PDF to print.</p>
+        <p className={styles.toolbarHint}>Fill online here, or download a blank PDF to print.</p>
         <div className={styles.toolbarActions}>
           <button
             type="button"

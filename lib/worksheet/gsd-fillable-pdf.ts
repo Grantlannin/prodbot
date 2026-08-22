@@ -1,35 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
 
-export type GsdWorksheetPdfInput = {
-  name: string;
-  startDate: string;
-  days: Record<
-    1 | 2 | 3 | 4 | 5 | 6 | 7,
-    {
-      checks: {
-        teed: boolean;
-        tracked: boolean;
-        uncertain: boolean;
-        screenshot: boolean;
-      };
-      phoneHours: string;
-    }
-  >;
-};
-
 const DAYS = [1, 2, 3, 4, 5, 6, 7] as const;
-const CHECKS = [
-  { key: 'teed' as const, label: 'Did I do the down flow & set up my #1 task?' },
-  { key: 'tracked' as const, label: 'Do I have 2 hours of work tracked (minimum?)' },
-  {
-    key: 'uncertain' as const,
-    label: 'Did i move forward & make uncertain decisions while i went',
-  },
-  {
-    key: 'screenshot' as const,
-    label: 'Did i screenshot my social media time on my phone (Y/N)',
-  },
-];
 
 const PAGE_W = 792; // letter landscape
 const PAGE_H = 612;
@@ -52,33 +23,20 @@ function drawText(
   page.drawText(text, { x, y, size, font, color });
 }
 
-function drawCheckBox(
-  page: PDFPage,
-  fontBold: PDFFont,
-  x: number,
-  y: number,
-  size: number,
-  checked: boolean
-) {
+function drawEmptyCheckBox(page: PDFPage, x: number, y: number, size: number) {
   page.drawRectangle({
     x,
     y,
     width: size,
     height: size,
     borderWidth: 1.5,
-    borderColor: checked ? ACCENT : INK,
-    color: checked ? ACCENT : rgb(1, 1, 1),
+    borderColor: INK,
+    color: rgb(1, 1, 1),
   });
-  if (checked) {
-    const mark = 'X';
-    const markSize = 11;
-    const tw = fontBold.widthOfTextAtSize(mark, markSize);
-    drawText(page, fontBold, mark, x + (size - tw) / 2, y + 3.5, markSize, rgb(1, 1, 1));
-  }
 }
 
-/** Static printable PDF of the worksheet with current answers baked in. */
-export async function buildGsdWorksheetPdf(data: GsdWorksheetPdfInput): Promise<Uint8Array> {
+/** Blank printable PDF template — no answers, ready to print and fill by hand. */
+export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -90,28 +48,30 @@ export async function buildGsdWorksheetPdf(data: GsdWorksheetPdfInput): Promise<
   y -= 28;
   drawText(page, fontBold, '7-Day Get Sh*t Done Challenge', MARGIN, y, 22, INK);
   y -= 16;
-  drawText(page, font, 'Printable checkbook — fill online, then download and print.', MARGIN, y, 9, MUTED);
+  drawText(page, font, 'Blank printable checkbook — print and fill by hand.', MARGIN, y, 9, MUTED);
   y -= 28;
 
   drawText(page, fontBold, 'NAME', MARGIN, y, 8, MUTED);
   drawText(page, fontBold, 'START DATE', MARGIN + 360, y, 8, MUTED);
-  y -= 18;
-  drawText(page, fontBold, data.name?.trim() || '________________________', MARGIN, y, 12, INK);
-  drawText(
-    page,
-    font,
-    data.startDate?.trim() || '____________',
-    MARGIN + 360,
-    y,
-    12,
-    INK
-  );
+  y -= 6;
+  page.drawLine({
+    start: { x: MARGIN, y },
+    end: { x: MARGIN + 300, y },
+    thickness: 1,
+    color: INK,
+  });
+  page.drawLine({
+    start: { x: MARGIN + 360, y },
+    end: { x: MARGIN + 520, y },
+    thickness: 1,
+    color: INK,
+  });
   y -= 22;
 
   drawText(
     page,
     font,
-    'The Simple Metrics We\'re Tracking Daily · 4 checks + Total Phone hours',
+    "The Simple Metrics We're Tracking Daily · 4 checks + Total Phone hours",
     MARGIN,
     y,
     8,
@@ -178,10 +138,7 @@ export async function buildGsdWorksheetPdf(data: GsdWorksheetPdfInput): Promise<
   });
   y -= headerH;
 
-  let score = 0;
-
   for (const day of DAYS) {
-    const row = data.days[day];
     const rowBottom = y - rowH;
 
     page.drawRectangle({
@@ -207,29 +164,20 @@ export async function buildGsdWorksheetPdf(data: GsdWorksheetPdfInput): Promise<
     const dayWText = fontBold.widthOfTextAtSize(dayLabel, 11);
     drawText(page, fontBold, dayLabel, colXs[0] + dayW / 2 - dayWText / 2, rowBottom + 13, 11, INK);
 
-    CHECKS.forEach((check, i) => {
+    for (let i = 0; i < 4; i++) {
       const boxSize = 16;
       const cx = colXs[i + 1] + checkW / 2 - boxSize / 2;
       const cy = rowBottom + (rowH - boxSize) / 2;
-      const on = row.checks[check.key];
-      if (on) score += 1;
-      drawCheckBox(page, fontBold, cx, cy, boxSize, on);
-    });
-
-    const phone = row.phoneHours?.trim() || '';
-    if (phone) {
-      const phoneSize = 10;
-      const tw = font.widthOfTextAtSize(phone, phoneSize);
-      drawText(
-        page,
-        font,
-        phone,
-        colXs[5] + phoneW / 2 - tw / 2,
-        rowBottom + 13,
-        phoneSize,
-        INK
-      );
+      drawEmptyCheckBox(page, cx, cy, boxSize);
     }
+
+    // Blank underline for phone hours
+    page.drawLine({
+      start: { x: colXs[5] + 10, y: rowBottom + 12 },
+      end: { x: colXs[5] + phoneW - 10, y: rowBottom + 12 },
+      thickness: 0.75,
+      color: RULE,
+    });
 
     y = rowBottom;
   }
@@ -244,7 +192,7 @@ export async function buildGsdWorksheetPdf(data: GsdWorksheetPdfInput): Promise<
   });
 
   y -= 28;
-  drawText(page, fontBold, `Final score: ${score} / 28`, MARGIN, y, 12, INK);
+  drawText(page, fontBold, 'Final score: ____ / 28', MARGIN, y, 12, INK);
   drawText(
     page,
     font,
