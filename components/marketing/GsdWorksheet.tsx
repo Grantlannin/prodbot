@@ -40,15 +40,13 @@ const CHECKS = [
 ] as const;
 
 const PHONE_LABEL = 'Total Phone hours';
-const WORK_LABEL = 'Total tracked work hours';
-const TRACKING_SUMMARY = 'What we\'re tracking: 4 metrics, phone + work hours.';
+const TRACKING_SUMMARY = 'What we\'re tracking: 4 metrics, phone hours.';
 
 type CheckKey = (typeof CHECKS)[number]['key'];
 
 type DayRow = {
   checks: Record<CheckKey, boolean>;
   phoneHours: string;
-  workHours: string;
 };
 
 type WorksheetState = {
@@ -61,7 +59,6 @@ function emptyDay(): DayRow {
   return {
     checks: { teed: false, tracked: false, uncertain: false, screenshot: false },
     phoneHours: '',
-    workHours: '',
   };
 }
 
@@ -106,7 +103,6 @@ function loadState(): WorksheetState {
             | {
                 checks?: Partial<Record<CheckKey | 'notes' | 'scary', boolean>>;
                 phoneHours?: string;
-                workHours?: string;
               }
             | undefined;
           acc[day] = {
@@ -117,7 +113,6 @@ function loadState(): WorksheetState {
               screenshot: Boolean(row?.checks?.screenshot),
             },
             phoneHours: typeof row?.phoneHours === 'string' ? row.phoneHours : '',
-            workHours: typeof row?.workHours === 'string' ? row.workHours : '',
           };
           return acc;
         },
@@ -181,14 +176,14 @@ export default function GsdWorksheet() {
     }));
   }, []);
 
-  const setHourField = useCallback((day: Day, field: 'phoneHours' | 'workHours', value: string) => {
+  const setPhoneHours = useCallback((day: Day, value: string) => {
     setState(prev => ({
       ...prev,
       days: {
         ...prev.days,
         [day]: {
           ...prev.days[day],
-          [field]: value,
+          phoneHours: value,
         },
       },
     }));
@@ -237,7 +232,7 @@ export default function GsdWorksheet() {
           <div className={styles.brand}>Daywinner bot</div>
           <h1 className={styles.title}>7-Day Get Sh*t Done Challenge</h1>
           <p className={styles.subtitle}>
-            Four boxes a day, plus phone and work hours. Tap only if it actually happened.
+            Four boxes a day, plus phone hours. Tap only if it actually happened.
           </p>
           <div className={styles.meta}>
             <label className={styles.field}>
@@ -272,7 +267,6 @@ export default function GsdWorksheet() {
               </div>
             ))}
             <div className={styles.legendItem}>{PHONE_LABEL}</div>
-            <div className={styles.legendItem}>{WORK_LABEL}</div>
           </div>
           <p className={styles.legendQuote}>
             &ldquo;if you don&apos;t honestly track it, you can&apos;t honestly change it&rdquo;
@@ -293,9 +287,6 @@ export default function GsdWorksheet() {
                 ))}
                 <th scope="col" className={styles.hoursCol}>
                   {PHONE_LABEL}
-                </th>
-                <th scope="col" className={styles.hoursCol}>
-                  {WORK_LABEL}
                 </th>
               </tr>
             </thead>
@@ -329,20 +320,9 @@ export default function GsdWorksheet() {
                         type="text"
                         inputMode="decimal"
                         value={row.phoneHours}
-                        onChange={e => setHourField(day, 'phoneHours', e.target.value)}
+                        onChange={e => setPhoneHours(day, e.target.value)}
                         placeholder="0"
                         aria-label={`Day ${day} phone hours`}
-                      />
-                    </td>
-                    <td className={styles.hoursCell}>
-                      <input
-                        className={styles.cellInput}
-                        type="text"
-                        inputMode="decimal"
-                        value={row.workHours}
-                        onChange={e => setHourField(day, 'workHours', e.target.value)}
-                        placeholder="0"
-                        aria-label={`Day ${day} tracked work hours`}
                       />
                     </td>
                   </tr>
@@ -359,9 +339,7 @@ export default function GsdWorksheet() {
               <span className={styles.scoreLive}>{score}</span>
               <span className={styles.scoreOf}>/ 28</span>
             </span>
-            <span className={styles.scoreHint}>
-              4 checks × 7 days · phone + work hours tracked separately
-            </span>
+            <span className={styles.scoreHint}>4 checks × 7 days · phone hours tracked separately</span>
           </div>
           <p className={styles.closer}>
             Missed a box? Don’t rewrite history. Show up tomorrow and get the next one.
