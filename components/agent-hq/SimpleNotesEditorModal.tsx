@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { editableHtmlToNoteText, noteTextToEditableHtml } from './noteFormatUtils';
@@ -8,38 +8,82 @@ import { editableHtmlToNoteText, noteTextToEditableHtml } from './noteFormatUtil
 const font =
   '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+const COMMIT_DEBOUNCE_MS = 300;
+
 interface SimpleNotesEditorModalProps {
   open: boolean;
+  /** Stable id for the note being edited — only used to (re)load the DOM. */
+  syncKey?: string;
   title: string;
   value: string;
   onChange: (value: string) => void;
   onClose: () => void;
 }
 
+/**
+ * Project notes/context editor.
+ * Keeps typing in the contentEditable DOM; only loads from `value` when opening
+ * or switching notes — never while focused (avoids caret jumps).
+ */
 export default function SimpleNotesEditorModal({
   open,
+  syncKey = '',
   title,
   value,
   onChange,
   onClose,
 }: SimpleNotesEditorModalProps) {
   const editorRef = useRef<HTMLDivElement>(null);
-  const syncedValueRef = useRef('');
   const wasOpenRef = useRef(false);
+  const syncKeyRef = useRef('');
+  const draftRef = useRef('');
+  const lastCommittedRef = useRef('');
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const composingRef = useRef(false);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const commitDraft = useCallback(() => {
+    clearTimer();
+    const next = draftRef.current;
+    if (next === lastCommittedRef.current) return;
+    lastCommittedRef.current = next;
+    onChangeRef.current(next);
+  }, [clearTimer]);
+
+  const handleClose = useCallback(() => {
+    commitDraft();
+    onClose();
+  }, [commitDraft, onClose]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, handleClose]);
 
+  // Load DOM only when opening or switching note targets — never on every parent value tick.
   useEffect(() => {
     if (!open) {
+      if (wasOpenRef.current) {
+        // Parent closed the modal (or we unmounted) — persist any pending draft.
+        commitDraft();
+      }
       wasOpenRef.current = false;
-      syncedValueRef.current = '';
+      syncKeyRef.current = '';
+      clearTimer();
       return;
     }
 
@@ -47,32 +91,57 @@ export default function SimpleNotesEditorModal({
     if (!el) return;
 
     const justOpened = !wasOpenRef.current;
+    const keyChanged = syncKey !== syncKeyRef.current;
     wasOpenRef.current = true;
 
-    // On remount the editor DOM is empty; always repopulate when opening.
-    if (!justOpened && syncedValueRef.current === value) return;
+    if (!justOpened && !keyChanged) return;
 
-    el.innerHTML = noteTextToEditableHtml(value);
-    syncedValueRef.current = value;
-
-    if (justOpened) {
-      const timer = window.setTimeout(() => el.focus(), 0);
-      return () => window.clearTimeout(timer);
+    if (!justOpened && keyChanged) {
+      commitDraft();
     }
-  }, [open, value]);
+
+    syncKeyRef.current = syncKey;
+    const incoming = valueRef.current;
+    el.innerHTML = noteTextToEditableHtml(incoming);
+    draftRef.current = incoming;
+    lastCommittedRef.current = incoming;
+
+    const timer = window.setTimeout(() => el.focus(), 0);
+    return () => window.clearTimeout(timer);
+  }, [open, syncKey, clearTimer, commitDraft]);
+
+  useEffect(
+    () => () => {
+      clearTimer();
+      const next = draftRef.current;
+      if (next !== lastCommittedRef.current) {
+        lastCommittedRef.current = next;
+        onChangeRef.current(next);
+      }
+    },
+    [clearTimer]
+  );
+
+  const scheduleCommit = useCallback(() => {
+    if (composingRef.current) return;
+    clearTimer();
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      commitDraft();
+    }, COMMIT_DEBOUNCE_MS);
+  }, [clearTimer, commitDraft]);
 
   const handleInput = () => {
     const el = editorRef.current;
     if (!el) return;
-    const next = editableHtmlToNoteText(el);
-    syncedValueRef.current = next;
-    onChange(next);
+    draftRef.current = editableHtmlToNoteText(el);
+    scheduleCommit();
   };
 
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div style={styles.backdrop} onClick={onClose} role="presentation">
+    <div style={styles.backdrop} onClick={handleClose} role="presentation">
       <div
         style={styles.panel}
         onClick={e => e.stopPropagation()}
@@ -82,7 +151,7 @@ export default function SimpleNotesEditorModal({
       >
         <div style={styles.header}>
           <span style={styles.headerTitle}>{title}</span>
-          <button type="button" onClick={onClose} style={styles.doneBtn}>
+          <button type="button" onClick={handleClose} style={styles.doneBtn}>
             Done
           </button>
         </div>
@@ -91,6 +160,16 @@ export default function SimpleNotesEditorModal({
           contentEditable
           suppressContentEditableWarning
           onInput={handleInput}
+          onBlur={commitDraft}
+          onCompositionStart={() => {
+            composingRef.current = true;
+          }}
+          onCompositionEnd={() => {
+            composingRef.current = false;
+            const el = editorRef.current;
+            if (el) draftRef.current = editableHtmlToNoteText(el);
+            scheduleCommit();
+          }}
           data-placeholder="Start typing…"
           style={styles.editor}
         />

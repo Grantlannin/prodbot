@@ -1343,6 +1343,13 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     [setProjects]
   );
 
+  const notesEditorKey = (() => {
+    if (!notesEditor) return '';
+    if (notesEditor.kind === 'project') return `project:${notesEditor.projectId}`;
+    if (notesEditor.kind === 'task') return `task:${notesEditor.projectId}:${notesEditor.taskId}`;
+    return `sub:${notesEditor.projectId}:${notesEditor.taskId}:${notesEditor.subTaskId}`;
+  })();
+
   const notesEditorValue = (() => {
     if (!notesEditor || !selected) return '';
     if (notesEditor.kind === 'project') return selected.notes ?? '';
@@ -1411,6 +1418,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       />
       <SimpleNotesEditorModal
         open={notesEditor !== null}
+        syncKey={notesEditorKey}
         title={notesEditorTitle}
         value={notesEditorValue}
         onChange={updateNotesEditorValue}
