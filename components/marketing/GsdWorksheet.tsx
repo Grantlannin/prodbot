@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DM_Sans, Fraunces } from 'next/font/google';
 import styles from './gsd-worksheet.module.css';
 
@@ -117,6 +117,9 @@ function loadState(): WorksheetState {
 export default function GsdWorksheet() {
   const [state, setState] = useState<WorksheetState>(emptyState);
   const [hydrated, setHydrated] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const sheetRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setState(loadState());
@@ -177,23 +180,87 @@ export default function GsdWorksheet() {
     setState(emptyState());
   }, []);
 
+  const downloadPdf = useCallback(async () => {
+    const el = sheetRef.current;
+    if (!el || downloading) return;
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+        windowWidth: el.scrollWidth,
+      });
+
+      const img = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'pt',
+        format: 'letter',
+      });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 18;
+      const maxW = pageW - margin * 2;
+      const maxH = pageH - margin * 2;
+      const ratio = Math.min(maxW / canvas.width, maxH / canvas.height);
+      const drawW = canvas.width * ratio;
+      const drawH = canvas.height * ratio;
+      const x = (pageW - drawW) / 2;
+      const y = (pageH - drawH) / 2;
+      pdf.addImage(img, 'PNG', x, y, drawW, drawH);
+
+      const stamp = new Date().toISOString().slice(0, 10);
+      const who = state.name.trim().replace(/[^\w\-]+/g, '_').slice(0, 40);
+      const filename = who
+        ? `daywinner-gsd-worksheet-${who}-${stamp}.pdf`
+        : `daywinner-gsd-worksheet-${stamp}.pdf`;
+      pdf.save(filename);
+    } catch (err) {
+      console.error('[worksheet] pdf download', err);
+      setDownloadError('Could not build the PDF. Try Print instead, then choose Save as PDF.');
+    } finally {
+      setDownloading(false);
+    }
+  }, [downloading, state.name]);
+
   return (
     <div className={`${styles.root} ${dmSans.variable} ${fraunces.variable}`}>
       <div className={`${styles.toolbar} ${styles.noPrint}`}>
         <p className={styles.toolbarHint}>
-          Click boxes, type as you go — saved in this browser. Print anytime.
+          Click boxes, type as you go — saved in this browser. Download a PDF anytime.
         </p>
         <div className={styles.toolbarActions}>
           <button type="button" onClick={resetSheet} className={styles.secondaryBtn}>
             Reset
           </button>
-          <button type="button" onClick={() => window.print()} className={styles.download}>
-            Download / Print PDF
+          <button type="button" onClick={() => window.print()} className={styles.secondaryBtn}>
+            Print
+          </button>
+          <button
+            type="button"
+            onClick={() => void downloadPdf()}
+            className={styles.download}
+            disabled={downloading}
+          >
+            {downloading ? 'Building PDF…' : 'Download PDF'}
           </button>
         </div>
       </div>
+      {downloadError ? <p className={`${styles.downloadError} ${styles.noPrint}`}>{downloadError}</p> : null}
 
-      <article className={styles.sheet} aria-label="7-Day Get Shit Done Challenge worksheet">
+      <article
+        ref={sheetRef}
+        className={styles.sheet}
+        aria-label="7-Day Get Shit Done Challenge worksheet"
+      >
         <header className={styles.header}>
           <div className={styles.brand}>Daywinner bot</div>
           <h1 className={styles.title}>7-Day Get Shit Done Challenge</h1>
