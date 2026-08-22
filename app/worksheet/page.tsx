@@ -5,7 +5,7 @@ import GsdWorksheet from '@/components/marketing/GsdWorksheet';
 export const metadata: Metadata = {
   title: '7-Day Get Shit Done Challenge Worksheet | Daywinner bot',
   description:
-    'Printable daily checkbook: tee up your task, track 2 hours, add notes, make one scary decision — every day for 7 days.',
+    'Interactive daily checkbook: tee up your task, track 2 hours, add notes, make one scary decision, and log phone Screen Time — every day for 7 days.',
 };
 
 export default function WorksheetPage() {
