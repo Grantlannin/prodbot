@@ -19,6 +19,43 @@ export interface CloudSnapshot {
   notesUpdatedAt: string | null;
 }
 
+type NotesTable = 'user_simple_notes' | 'user_apple_notes';
+
+let resolvedNotesTable: NotesTable | null = null;
+
+function syncErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message;
+  if (err && typeof err === 'object') {
+    const o = err as { message?: string; details?: string; hint?: string; code?: string };
+    if (typeof o.message === 'string' && o.message.trim()) {
+      return [o.message, o.hint, o.details].filter(Boolean).join(' — ');
+    }
+  }
+  return fallback;
+}
+
+/** Prod may still have the pre-rename table until migration 008 is applied. */
+async function getNotesTable(supabase: SupabaseClient): Promise<NotesTable> {
+  if (resolvedNotesTable) return resolvedNotesTable;
+
+  const simple = await supabase.from('user_simple_notes').select('user_id').limit(1);
+  if (!simple.error) {
+    resolvedNotesTable = 'user_simple_notes';
+    return resolvedNotesTable;
+  }
+
+  // PGRST205 = table missing from schema cache
+  if (simple.error.code === 'PGRST205') {
+    const apple = await supabase.from('user_apple_notes').select('user_id').limit(1);
+    if (!apple.error) {
+      resolvedNotesTable = 'user_apple_notes';
+      return resolvedNotesTable;
+    }
+  }
+
+  throw simple.error;
+}
+
 function parseProjects(raw: unknown): ProjectBoard[] {
   return Array.isArray(raw) ? (raw as ProjectBoard[]) : [];
 }
@@ -42,9 +79,10 @@ export async function fetchSyncSettings(
 }
 
 export async function fetchCloudSnapshot(supabase: SupabaseClient, userId: string): Promise<CloudSnapshot> {
+  const notesTable = await getNotesTable(supabase);
   const [projectsRes, notesRes] = await Promise.all([
     supabase.from('user_project_boards').select('projects, updated_at').eq('user_id', userId).maybeSingle(),
-    supabase.from('user_simple_notes').select('notes, updated_at').eq('user_id', userId).maybeSingle(),
+    supabase.from(notesTable).select('notes, updated_at').eq('user_id', userId).maybeSingle(),
   ]);
 
   if (projectsRes.error) throw projectsRes.error;
@@ -74,32 +112,42 @@ export async function pushCloudSnapshot(
   }
 
   const now = new Date().toISOString();
+  const notesTable = await getNotesTable(supabase);
 
   const [projectsRes, notesRes] = await Promise.all([
-    supabase.from('user_project_boards').upsert({
-      user_id: userId,
-      projects: cleanProjects,
-      updated_at: now,
-    }),
-    supabase.from('user_simple_notes').upsert({
-      user_id: userId,
-      notes: cleanNotes,
-      updated_at: now,
-    }),
+    supabase.from('user_project_boards').upsert(
+      {
+        user_id: userId,
+        projects: cleanProjects,
+        updated_at: now,
+      },
+      { onConflict: 'user_id' }
+    ),
+    supabase.from(notesTable).upsert(
+      {
+        user_id: userId,
+        notes: cleanNotes,
+        updated_at: now,
+      },
+      { onConflict: 'user_id' }
+    ),
   ]);
 
   if (projectsRes.error) throw projectsRes.error;
   if (notesRes.error) throw notesRes.error;
 
   const existing = await fetchSyncSettings(supabase, userId);
-  const settingsRes = await supabase.from('user_sync_settings').upsert({
-    user_id: userId,
-    cloud_enabled: true,
-    enabled_at: existing?.enabled_at ?? now,
-    last_sync_at: now,
-    projects_updated_at: now,
-    notes_updated_at: now,
-  });
+  const settingsRes = await supabase.from('user_sync_settings').upsert(
+    {
+      user_id: userId,
+      cloud_enabled: true,
+      enabled_at: existing?.enabled_at ?? now,
+      last_sync_at: now,
+      projects_updated_at: now,
+      notes_updated_at: now,
+    },
+    { onConflict: 'user_id' }
+  );
 
   if (settingsRes.error) throw settingsRes.error;
 
@@ -112,7 +160,11 @@ export async function enableCloudBackup(
   projects: ProjectBoard[],
   notes: SimpleNote[]
 ): Promise<{ lastSyncAt: string }> {
-  return pushCloudSnapshot(supabase, userId, projects, notes);
+  try {
+    return await pushCloudSnapshot(supabase, userId, projects, notes);
+  } catch (err) {
+    throw new Error(syncErrorMessage(err, 'Could not enable backup.'));
+  }
 }
 
 export async function disableCloudBackup(
@@ -123,17 +175,21 @@ export async function disableCloudBackup(
   const now = new Date().toISOString();
 
   if (deleteCloudCopy) {
+    const notesTable = await getNotesTable(supabase);
     await Promise.all([
       supabase.from('user_project_boards').delete().eq('user_id', userId),
-      supabase.from('user_simple_notes').delete().eq('user_id', userId),
+      supabase.from(notesTable).delete().eq('user_id', userId),
     ]);
   }
 
-  const { error } = await supabase.from('user_sync_settings').upsert({
-    user_id: userId,
-    cloud_enabled: false,
-    last_sync_at: now,
-  });
+  const { error } = await supabase.from('user_sync_settings').upsert(
+    {
+      user_id: userId,
+      cloud_enabled: false,
+      last_sync_at: now,
+    },
+    { onConflict: 'user_id' }
+  );
 
-  if (error) throw error;
+  if (error) throw new Error(syncErrorMessage(error, 'Could not turn off backup.'));
 }
