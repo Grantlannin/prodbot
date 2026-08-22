@@ -392,6 +392,7 @@
 
 @media (max-width: 720px) {
   .meta,
+  .legendGrid,
   .footer {
     grid-template-columns: 1fr;
   }

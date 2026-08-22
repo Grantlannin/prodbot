@@ -3,7 +3,7 @@ import Link from 'next/link';
 import GsdWorksheet from '@/components/marketing/GsdWorksheet';
 
 export const metadata: Metadata = {
-  title: '7-Day Get Shit Done Challenge Worksheet | Daywinner bot',
+  title: '7-Day Get Sh*t Done Challenge Worksheet | Daywinner bot',
   description:
     'Interactive daily checkbook: tee up your task via wind-down, track 2 hours, move forward on uncertain decisions, and screenshot social media time — every day for 7 days.',
 };
