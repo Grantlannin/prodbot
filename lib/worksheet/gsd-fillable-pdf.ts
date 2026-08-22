@@ -20,8 +20,8 @@ export type GsdFillablePdfInput = {
 const DAYS = [1, 2, 3, 4, 5, 6, 7] as const;
 const CHECKS = [
   { key: 'teed' as const, label: 'Did I do the down flow & set up my #1 task?' },
-  { key: 'tracked' as const, label: '2 hrs of work tracked' },
-  { key: 'uncertain' as const, label: 'Did i move forward & make Uncertain decisions' },
+  { key: 'tracked' as const, label: 'Do I have 2 hours of work tracked (minimum?)' },
+  { key: 'uncertain' as const, label: 'Did i move forward & make uncertain decisions' },
   {
     key: 'screenshot' as const,
     label: 'Did i screenshot my social media time on my phone (Y/N)',
@@ -115,7 +115,7 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   drawText(
     page,
     font,
-    'Did I do the down flow & set up my #1 task? · 2 hrs of work tracked · Did i move forward & make Uncertain decisions · Screenshot social time (Y/N) · Phone hrs',
+    'Did I do the down flow & set up my #1 task? · 2 hrs tracked (minimum) · uncertain decisions · Screenshot social time (Y/N) · Total Phone hours',
     MARGIN,
     y,
     7,
@@ -127,7 +127,7 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   const tableTop = y;
   const tableW = PAGE_W - MARGIN * 2;
   const dayW = 40;
-  const phoneW = 70;
+  const phoneW = 78;
   const checkW = (tableW - dayW - phoneW) / 4;
   const headerH = 52;
   const rowH = 36;
@@ -152,10 +152,10 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   const headerLines: string[][] = [
     ['Day'],
     ['Did I do the down flow', '& set up my #1 task?'],
-    ['2 hrs of', 'work tracked'],
-    ['Did i move forward &', 'make Uncertain', 'decisions'],
+    ['Do I have 2 hours of', 'work tracked', '(minimum?)'],
+    ['Did i move forward &', 'make uncertain', 'decisions'],
     ['Did i screenshot my', 'social media time', 'on my phone (Y/N)'],
-    ['Phone hrs'],
+    ['Total Phone', 'hours'],
   ];
   const headerCenters = [
     colXs[0] + dayW / 2,
@@ -257,7 +257,7 @@ export async function buildGsdFillablePdf(data: GsdFillablePdfInput): Promise<Ui
   drawText(
     page,
     font,
-    '4 checks x 7 days · Phone hrs tracked separately · daywinner.bot/worksheet',
+    '4 checks x 7 days · Total Phone hours tracked separately · daywinner.bot/worksheet',
     MARGIN + 160,
     y,
     8,

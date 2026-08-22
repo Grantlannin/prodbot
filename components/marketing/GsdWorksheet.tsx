@@ -27,11 +27,11 @@ const CHECKS = [
   },
   {
     key: 'tracked',
-    label: '2 hrs of work tracked',
+    label: 'Do I have 2 hours of work tracked (minimum?)',
   },
   {
     key: 'uncertain',
-    label: 'Did i move forward & make Uncertain decisions',
+    label: 'Did i move forward & make uncertain decisions',
   },
   {
     key: 'screenshot',
@@ -39,8 +39,7 @@ const CHECKS = [
   },
 ] as const;
 
-const PHONE_LABEL = 'Phone hrs';
-const PHONE_HINT = 'Type today’s phone hours from Screen Time / Digital Wellbeing.';
+const PHONE_LABEL = 'Total Phone hours';
 
 type CheckKey = (typeof CHECKS)[number]['key'];
 
@@ -297,17 +296,14 @@ export default function GsdWorksheet() {
 
         <section className={styles.legend} aria-label="What to check">
           <h2 className={styles.legendTitle}>the simple metrics we&apos;re tracking daily</h2>
-          <div className={styles.legendGrid}>
+          <ol className={styles.legendList}>
             {CHECKS.map(check => (
-              <div key={check.key} className={styles.legendItem}>
-                <strong>{check.label}</strong>
-              </div>
+              <li key={check.key} className={styles.legendItem}>
+                {check.label}
+              </li>
             ))}
-            <div className={styles.legendItem}>
-              <strong>{PHONE_LABEL}</strong>
-              <span>{PHONE_HINT}</span>
-            </div>
-          </div>
+            <li className={styles.legendItem}>{PHONE_LABEL}</li>
+          </ol>
           <p className={styles.legendQuote}>
             &ldquo;if you don&apos;t honestly track it, you can&apos;t honestly change it&rdquo;
           </p>
@@ -379,7 +375,7 @@ export default function GsdWorksheet() {
               <span className={styles.scoreLive}>{score}</span>
               <span className={styles.scoreOf}>/ 28</span>
             </span>
-            <span className={styles.scoreHint}>4 checks × 7 days · phone hrs tracked separately</span>
+            <span className={styles.scoreHint}>4 checks × 7 days · Total Phone hours tracked separately</span>
           </div>
           <p className={styles.closer}>
             Missed a box? Don’t rewrite history. Show up tomorrow and get the next one.
