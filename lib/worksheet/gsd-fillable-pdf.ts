@@ -4,7 +4,7 @@ const DAYS = [1, 2, 3, 4, 5, 6, 7] as const;
 
 const PAGE_W = 792; // letter landscape
 const PAGE_H = 612;
-const MARGIN = 36;
+const MARGIN = 28;
 const INK = rgb(0.04, 0.07, 0.13);
 const MUTED = rgb(0.28, 0.33, 0.41);
 const ACCENT = rgb(0.02, 0.47, 0.34);
@@ -63,7 +63,6 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
   drawCentered(page, font, 'printable worksheet', y, 11, MUTED);
   y -= 28;
 
-  // Hand-writable name / start date — blank lines only (no typed date).
   drawText(page, fontBold, 'NAME:', MARGIN, y, 8, MUTED);
   drawText(page, fontBold, 'START DATE:', MARGIN + 360, y, 8, MUTED);
   y -= 8;
@@ -81,17 +80,17 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
   });
   y -= 22;
 
-  drawCentered(page, font, "what we're tracking: 4 metrics + phone hours", y, 9, MUTED);
+  drawCentered(page, font, "What we're tracking: 4 metrics, phone + work hours.", y, 9, MUTED);
   y -= 16;
 
   const tableX = MARGIN;
   const tableTop = y;
   const tableW = PAGE_W - MARGIN * 2;
-  const dayW = 40;
-  const phoneW = 78;
-  const checkW = (tableW - dayW - phoneW) / 4;
+  const dayW = 36;
+  const hoursW = 70;
+  const checkW = (tableW - dayW - hoursW * 2) / 4;
   const headerH = 58;
-  const rowH = 36;
+  const rowH = 34;
 
   const colXs = [
     tableX,
@@ -100,6 +99,7 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
     tableX + dayW + checkW * 2,
     tableX + dayW + checkW * 3,
     tableX + dayW + checkW * 4,
+    tableX + dayW + checkW * 4 + hoursW,
   ];
 
   page.drawRectangle({
@@ -117,6 +117,7 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
     ['Did i move forward &', 'make uncertain decisions', 'while i went?'],
     ['Did i screenshot my', 'social media time', 'on my phone? (Y/N)'],
     ['Total Phone', 'hours'],
+    ['Total tracked', 'work hours'],
   ];
   const headerCenters = [
     colXs[0] + dayW / 2,
@@ -124,11 +125,12 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
     colXs[2] + checkW / 2,
     colXs[3] + checkW / 2,
     colXs[4] + checkW / 2,
-    colXs[5] + phoneW / 2,
+    colXs[5] + hoursW / 2,
+    colXs[6] + hoursW / 2,
   ];
   headerLines.forEach((lines, i) => {
-    const size = i === 0 ? 9 : 8;
-    const lineGap = 11;
+    const size = i === 0 ? 9 : i >= 5 ? 7.5 : 7.5;
+    const lineGap = 10;
     const blockH = (lines.length - 1) * lineGap;
     const startY = y - (headerH - blockH) / 2 - 2;
     lines.forEach((line, lineIdx) => {
@@ -170,21 +172,23 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
 
     const dayLabel = String(day);
     const dayWText = fontBold.widthOfTextAtSize(dayLabel, 11);
-    drawText(page, fontBold, dayLabel, colXs[0] + dayW / 2 - dayWText / 2, rowBottom + 13, 11, INK);
+    drawText(page, fontBold, dayLabel, colXs[0] + dayW / 2 - dayWText / 2, rowBottom + 12, 11, INK);
 
     for (let i = 0; i < 4; i++) {
-      const boxSize = 16;
+      const boxSize = 15;
       const cx = colXs[i + 1] + checkW / 2 - boxSize / 2;
       const cy = rowBottom + (rowH - boxSize) / 2;
       drawEmptyCheckBox(page, cx, cy, boxSize);
     }
 
-    page.drawLine({
-      start: { x: colXs[5] + 10, y: rowBottom + 12 },
-      end: { x: colXs[5] + phoneW - 10, y: rowBottom + 12 },
-      thickness: 0.75,
-      color: RULE,
-    });
+    for (const hoursCol of [5, 6] as const) {
+      page.drawLine({
+        start: { x: colXs[hoursCol] + 8, y: rowBottom + 11 },
+        end: { x: colXs[hoursCol] + hoursW - 8, y: rowBottom + 11 },
+        thickness: 0.75,
+        color: RULE,
+      });
+    }
 
     y = rowBottom;
   }
@@ -199,9 +203,25 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
   });
 
   y -= 36;
-  drawCentered(page, fontBold, 'Final score', y, 14, INK);
+  const scoreLabel = 'Final score';
+  const scoreLabelSize = 14;
+  const scoreLabelW = fontBold.widthOfTextAtSize(scoreLabel, scoreLabelSize);
+  const scoreLabelX = (PAGE_W - scoreLabelW) / 2;
+  drawText(page, fontBold, scoreLabel, scoreLabelX, y, scoreLabelSize, INK);
+
+  // Align the "8" in "/ 28" under the "e" in "score"
+  const beforeE = fontBold.widthOfTextAtSize('Final scor', scoreLabelSize);
+  const eW = fontBold.widthOfTextAtSize('e', scoreLabelSize);
+  const eCenterX = scoreLabelX + beforeE + eW / 2;
+
   y -= 32;
-  drawCentered(page, fontBold, '/ 28', y, 28, INK);
+  const slash = '/ 28';
+  const slashSize = 28;
+  const eightW = fontBold.widthOfTextAtSize('8', slashSize);
+  const slashW = fontBold.widthOfTextAtSize(slash, slashSize);
+  const slashX = eCenterX - (slashW - eightW / 2);
+  drawText(page, fontBold, slash, slashX, y, slashSize, INK);
+
   y -= 22;
   drawCentered(page, font, '(every box counts as 1 point)', y, 10, MUTED);
   y -= 24;
