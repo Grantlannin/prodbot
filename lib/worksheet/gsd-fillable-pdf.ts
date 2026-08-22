@@ -114,8 +114,8 @@ export async function buildGsdWorksheetPdf(): Promise<Uint8Array> {
     ['Day'],
     ['Did I do the down flow', '& set up my #1 task?'],
     ['Do I have 2 hours of', 'work tracked', '(minimum?)'],
-    ['Did i move forward &', 'make uncertain decisions', 'while i went'],
-    ['Did i screenshot my', 'social media time', 'on my phone (Y/N)'],
+    ['Did i move forward &', 'make uncertain decisions', 'while i went?'],
+    ['Did i screenshot my', 'social media time', 'on my phone? (Y/N)'],
     ['Total Phone', 'hours'],
   ];
   const headerCenters = [

@@ -192,7 +192,6 @@ export default function GsdWorksheet() {
     if (downloading) return;
     setDownloading(true);
     setDownloadError(null);
-    setDownloadOk(null);
 
     try {
       const { buildGsdWorksheetPdf, downloadBytes, worksheetPdfFilename } = await import(
