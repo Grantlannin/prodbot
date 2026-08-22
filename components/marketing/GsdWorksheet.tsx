@@ -216,7 +216,7 @@ export default function GsdWorksheet() {
       setDownloadOk(
         how === 'picker'
           ? `Saved ${filename}. Open it in Preview or Adobe to click the boxes.`
-          : `Saved ${filename} — check your Downloads folder (browser Print → Save as PDF does not appear there).`
+          : `Saved ${filename} — check your Downloads folder.`
       );
     } catch (err) {
       if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
@@ -224,7 +224,7 @@ export default function GsdWorksheet() {
       }
       console.error('[worksheet] pdf download', err);
       setDownloadError(
-        'Could not save the PDF. Use “Download fillable PDF” again, or allow downloads for this site.'
+        'Could not save the PDF. Try again, or allow downloads for this site.'
       );
     } finally {
       setDownloading(false);
@@ -234,29 +234,15 @@ export default function GsdWorksheet() {
   return (
     <div className={`${styles.root} ${dmSans.variable} ${fraunces.variable}`}>
       <div className={`${styles.toolbar} ${styles.noPrint}`}>
-        <p className={styles.toolbarHint}>
-          Fill here in the browser. To keep a file, use Download (not Print → Save as PDF — that
-          won’t show in your download bar).
-        </p>
+        <p className={styles.toolbarHint}>Fill here in the browser, or download a PDF to keep / print.</p>
         <div className={styles.toolbarActions}>
-          <button type="button" onClick={resetSheet} className={styles.secondaryBtn}>
-            Reset
-          </button>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className={styles.secondaryBtn}
-            title="Opens the system print dialog. Choose a printer, or Save as PDF from that dialog."
-          >
-            Print
-          </button>
           <button
             type="button"
             onClick={() => void downloadPdf()}
             className={styles.download}
             disabled={downloading}
           >
-            {downloading ? 'Saving PDF…' : 'Download fillable PDF'}
+            {downloading ? 'Saving PDF…' : 'Download PDF'}
           </button>
         </div>
       </div>
