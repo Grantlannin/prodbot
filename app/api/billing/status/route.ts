@@ -1,7 +1,9 @@
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { DEMO_PAID_COOKIE } from '@/lib/billing/demo';
 import { hasCourseAccess, isActiveSubscription } from '@/lib/billing/subscription';
 import { fetchBillingForUser } from '@/lib/billing/profile';
-import { isBillingEnabled } from '@/lib/stripe/config';
+import { isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -39,12 +41,14 @@ export async function GET() {
     }
 
     const billing = await fetchBillingForUser(supabase, user.id);
+    const demoPaid =
+      isBillingDemoFlow() && cookies().get(DEMO_PAID_COOKIE)?.value === '1';
 
     return NextResponse.json({
       billingEnabled: true,
-      active: isActiveSubscription(billing),
+      active: isActiveSubscription(billing) || demoPaid,
       courseAccess: hasCourseAccess(billing),
-      status: billing?.subscription_status ?? 'none',
+      status: billing?.subscription_status ?? (demoPaid ? 'active' : 'none'),
       endsAt: billing?.subscription_ends_at ?? null,
     });
   } catch (error) {

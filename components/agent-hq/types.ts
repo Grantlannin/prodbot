@@ -219,6 +219,8 @@ export interface EodReport {
   learnings: string;
   sessions: { project: string; durationMs: number }[];
   doneToday?: { text: string; detail?: string }[];
+  /** Timed “what are you doing?” check-ins from the extension */
+  timeStudyCheckIns?: { text: string; createdAt: number }[];
   infractions: { label: string; count: number }[];
   /** From wind-down "didn't get done" path — what happened */
   missedWhatHappened?: string;

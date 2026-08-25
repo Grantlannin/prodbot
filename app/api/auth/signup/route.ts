@@ -6,10 +6,13 @@ import {
   CHECKOUT_SESSION_COOKIE,
   isCheckoutSessionId,
 } from '@/lib/billing/checkout-receipt';
-import { DEMO_COURSE_COOKIE, DEMO_PAID_COOKIE } from '@/lib/billing/demo';
-import { grantCourseAccess } from '@/lib/billing/course';
+import {
+  DEMO_COURSE_COOKIE,
+  DEMO_PAID_COOKIE,
+  isDemoCheckoutSessionId,
+} from '@/lib/billing/demo';
+import { attachDemoEntitlements } from '@/lib/billing/demo-entitlements';
 import { reconcileBillingForUser } from '@/lib/billing/link-stripe';
-import { upsertBillingForUser } from '@/lib/billing/profile';
 import { clientIpFromRequest, rateLimitAllow } from '@/lib/security/rate-limit';
 import { getStripeClient } from '@/lib/stripe/client';
 import { isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
@@ -17,24 +20,6 @@ import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
-}
-
-async function attachDemoEntitlements(userId: string) {
-  const cookieStore = cookies();
-  const paid = cookieStore.get(DEMO_PAID_COOKIE)?.value === '1';
-  const course = cookieStore.get(DEMO_COURSE_COOKIE)?.value === '1';
-
-  if (paid) {
-    await upsertBillingForUser(createAdminSupabaseClient(), userId, {
-      stripe_customer_id: `cus_demo_${userId.slice(0, 8)}`,
-      subscription_status: 'active',
-      subscription_ends_at: null,
-    });
-  }
-
-  if (course) {
-    await grantCourseAccess(userId);
-  }
 }
 
 function resolveSessionId(bodySessionId: string | undefined): string | null {
@@ -80,50 +65,92 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 });
     }
 
-    if (sessionId) {
+    if (sessionId && !(isBillingDemoFlow() && isDemoCheckoutSessionId(sessionId))) {
       const mismatch = await assertSessionEmailMatches(sessionId, email);
       if (mismatch) {
         return NextResponse.json({ error: mismatch }, { status: 400 });
       }
     }
 
-    const admin = createAdminSupabaseClient();
+    let admin: ReturnType<typeof createAdminSupabaseClient> | null = null;
+    try {
+      admin = createAdminSupabaseClient();
+    } catch (configError) {
+      if (!isBillingDemoFlow()) {
+        console.error('[auth/signup] admin client', configError);
+        return NextResponse.json(
+          { error: 'Account create is not configured (missing service role key).' },
+          { status: 503 }
+        );
+      }
+    }
 
     // Auto-confirm + session claim only with Stripe-return claim cookie (or demo).
     const claimAuthorized =
       isBillingDemoFlow() || (Boolean(sessionId) && canClaimCheckoutSession(sessionId, false));
 
-    const { data, error } = await admin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: claimAuthorized,
-    });
+    let userId: string | null = null;
+    if (admin) {
+      const { data, error } = await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: claimAuthorized,
+      });
 
-    if (error) {
-      const msg = error.message.toLowerCase();
-      const alreadyExists =
-        msg.includes('already') || msg.includes('registered') || msg.includes('exists');
-      if (alreadyExists) {
-        return NextResponse.json(
-          { error: 'An account with this email already exists. Sign in instead.' },
-          { status: 409 }
-        );
+      if (error) {
+        const msg = error.message.toLowerCase();
+        const alreadyExists =
+          msg.includes('already') || msg.includes('registered') || msg.includes('exists');
+        if (alreadyExists) {
+          return NextResponse.json(
+            { error: 'An account with this email already exists. Sign in instead.' },
+            { status: 409 }
+          );
+        }
+        return NextResponse.json({ error: error.message }, { status: 400 });
       }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      userId = data.user.id;
+    } else {
+      const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+      const supabase = createServerSupabaseClient();
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        const msg = error.message.toLowerCase();
+        const alreadyExists =
+          msg.includes('already') || msg.includes('registered') || msg.includes('exists');
+        if (alreadyExists) {
+          return NextResponse.json(
+            { error: 'An account with this email already exists. Sign in instead.' },
+            { status: 409 }
+          );
+        }
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      userId = data.user?.id ?? null;
+      if (!userId) {
+        return NextResponse.json({ error: 'Could not create account.' }, { status: 400 });
+      }
     }
 
     let link: { linked: boolean; reason: string } | null = null;
     if (isBillingDemoFlow()) {
       try {
-        await attachDemoEntitlements(data.user.id);
-        link = { linked: true, reason: 'linked' };
+        const cookieStore = cookies();
+        const paid =
+          cookieStore.get(DEMO_PAID_COOKIE)?.value === '1' || isDemoCheckoutSessionId(sessionId);
+        const course = cookieStore.get(DEMO_COURSE_COOKIE)?.value === '1';
+        if (paid) {
+          await attachDemoEntitlements(userId, { course });
+          link = { linked: true, reason: 'linked' };
+        }
       } catch (demoError) {
         console.error('[auth/signup] demo billing', demoError);
+        link = { linked: true, reason: 'linked' };
       }
-    } else if (isBillingEnabled()) {
+    } else if (isBillingEnabled() && userId) {
       try {
         const claimSessionId = claimAuthorized ? sessionId : null;
-        link = await reconcileBillingForUser(data.user.id, email, claimSessionId, {
+        link = await reconcileBillingForUser(userId, email, claimSessionId, {
           emailConfirmed: claimAuthorized,
         });
         // Demo course cookie must never grant access outside demo mode.
@@ -132,7 +159,7 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ ok: true, userId: data.user.id, link });
+    return NextResponse.json({ ok: true, userId, link });
   } catch (error) {
     console.error('[auth/signup]', error);
     return NextResponse.json({ error: 'Could not create account.' }, { status: 500 });

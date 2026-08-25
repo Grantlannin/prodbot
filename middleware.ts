@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isActiveSubscription } from '@/lib/billing/subscription';
 import { parseBillingRow } from '@/lib/billing/profile';
+import { DEMO_PAID_COOKIE } from '@/lib/billing/demo';
 import {
   CHROME_INTRO_COMPLETE_COOKIE,
   EXTENSION_INTRO_COMPLETE_COOKIE,
@@ -9,7 +10,7 @@ import {
   INTRO_EXTENSION_PATH,
   SETUP_REQUIRED_COOKIE,
 } from '@/lib/intro';
-import { isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
+import { isBillingDemoFlow, isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { getSupabaseConfig, isAuthRequired } from '@/lib/supabase/config';
 
 const PUBLIC_PATHS = [
@@ -148,6 +149,9 @@ export async function middleware(request: NextRequest) {
           .eq('id', user.id)
           .maybeSingle();
         active = isActiveSubscription(parseBillingRow(profile));
+        if (!active && isBillingDemoFlow() && request.cookies.get(DEMO_PAID_COOKIE)?.value === '1') {
+          active = true;
+        }
       }
 
       // Keep marketing landing public even when logged in.

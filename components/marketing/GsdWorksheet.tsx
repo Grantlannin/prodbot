@@ -124,7 +124,7 @@ function loadState(): WorksheetState {
   }
 }
 
-export default function GsdWorksheet() {
+export default function GsdWorksheet({ preview = false }: { preview?: boolean }) {
   const [state, setState] = useState<WorksheetState>(emptyState);
   const [hydrated, setHydrated] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -211,21 +211,27 @@ export default function GsdWorksheet() {
   }, [downloading]);
 
   return (
-    <div className={`${styles.root} ${dmSans.variable} ${fraunces.variable}`}>
-      <div className={`${styles.toolbar} ${styles.noPrint}`}>
-        <p className={styles.toolbarHint}>Fill online here, or download a blank PDF to print.</p>
-        <div className={styles.toolbarActions}>
-          <button
-            type="button"
-            onClick={() => void downloadPdf()}
-            className={styles.download}
-            disabled={downloading}
-          >
-            {downloading ? 'Downloading…' : 'Download PDF'}
-          </button>
-        </div>
-      </div>
-      {downloadError ? <p className={`${styles.downloadError} ${styles.noPrint}`}>{downloadError}</p> : null}
+    <div
+      className={`${styles.root} ${preview ? styles.preview : ''} ${dmSans.variable} ${fraunces.variable}`}
+    >
+      {!preview ? (
+        <>
+          <div className={`${styles.toolbar} ${styles.noPrint}`}>
+            <p className={styles.toolbarHint}>Fill online here, or download a blank PDF to print.</p>
+            <div className={styles.toolbarActions}>
+              <button
+                type="button"
+                onClick={() => void downloadPdf()}
+                className={styles.download}
+                disabled={downloading}
+              >
+                {downloading ? 'Downloading…' : 'Download PDF'}
+              </button>
+            </div>
+          </div>
+          {downloadError ? <p className={`${styles.downloadError} ${styles.noPrint}`}>{downloadError}</p> : null}
+        </>
+      ) : null}
 
       <article className={styles.sheet} aria-label="7-Day Get Sh*t Done Challenge worksheet">
         <header className={styles.header}>

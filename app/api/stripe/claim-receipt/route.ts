@@ -7,6 +7,7 @@ import {
   verifyCheckoutNonceCookie,
 } from '@/lib/billing/checkout-claim';
 import { isCheckoutSessionId } from '@/lib/billing/checkout-receipt';
+import { applyDemoPaidCookie } from '@/lib/billing/demo-entitlements';
 import { isDemoCheckoutSessionId } from '@/lib/billing/demo';
 import { clientIpFromRequest, rateLimitAllow } from '@/lib/security/rate-limit';
 import { getAppOrigin, isBillingDemoFlow, isBillingEnabled } from '@/lib/stripe/config';
@@ -19,9 +20,11 @@ import { getStripeClient } from '@/lib/stripe/client';
  */
 export async function GET(request: Request) {
   const origin = getAppOrigin();
-  const loginSignup = `${origin}/login?mode=signup&next=/app`;
   const url = new URL(request.url);
   const sessionId = url.searchParams.get('session_id')?.trim() || '';
+  const loginSignup = `${origin}/login?mode=signup&next=/app${
+    isCheckoutSessionId(sessionId) ? `&session_id=${encodeURIComponent(sessionId)}` : ''
+  }`;
 
   const ip = clientIpFromRequest(request);
   if (!rateLimitAllow(`claim-receipt:${ip}`, 30, 60_000)) {
@@ -40,6 +43,7 @@ export async function GET(request: Request) {
     }
     const res = NextResponse.redirect(loginSignup);
     applyCheckoutClaimCookies(res, sessionId);
+    applyDemoPaidCookie(res);
     return res;
   }
 

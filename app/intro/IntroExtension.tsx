@@ -65,7 +65,15 @@ export default function IntroExtension() {
             </>
           )}
 
-          <ExtensionInstallInstructions />
+          <ExtensionInstallInstructions
+            step2={
+              <>
+                Once you see the extension downloaded, refresh your tab here so it can connect. You should see it say
+                &apos;connected&apos; &amp; turn green. Then just hit continue, and watch the tutorial vid on
+                &apos;how to start&apos; to see how to block your chosen sites.
+              </>
+            }
+          />
 
           {detected ? (
             <button type="button" onClick={handleContinue} style={styles.btn}>

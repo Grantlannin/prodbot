@@ -7,6 +7,113 @@
   color: var(--ink);
 }
 
+.preview .sheet {
+  max-width: none;
+  padding: 16px 14px 12px;
+  border-radius: 14px;
+  box-shadow: none;
+  border: 1px solid #e2e8f0;
+}
+
+.preview .header {
+  margin-bottom: 10px;
+}
+
+.preview .brand {
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.preview .title {
+  font-size: clamp(18px, 3.2vw, 24px);
+  margin-bottom: 4px;
+}
+
+.preview .subtitle {
+  margin: 0 0 10px;
+  font-size: 12px;
+}
+
+.preview .meta {
+  gap: 8px;
+}
+
+.preview .field span {
+  font-size: 10px;
+}
+
+.preview .metaInput {
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.preview .legend {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+}
+
+.preview .legendTitle {
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.preview .legendItem {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.preview .legendQuote {
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+.preview .table thead th {
+  font-size: 9px;
+  padding: 6px 2px;
+  line-height: 1.2;
+}
+
+.preview .dayNum {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+
+.preview .checkBtn {
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+}
+
+.preview .cellInput {
+  font-size: 12px;
+  padding: 4px 2px;
+  min-width: 0;
+}
+
+.preview .footer {
+  margin-top: 10px;
+  gap: 8px;
+}
+
+.preview .score {
+  font-size: 12px;
+}
+
+.preview .scoreLive {
+  font-size: 22px;
+}
+
+.preview .scoreOf {
+  font-size: 14px;
+}
+
+.preview .scoreHint,
+.preview .closer,
+.preview .url {
+  font-size: 11px;
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;

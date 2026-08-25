@@ -62,8 +62,26 @@ export interface FocusInfractionPayload {
   createdAt: number;
 }
 
+export interface TimeStudyCheckInPayload {
+  id: string;
+  text: string;
+  createdAt: number;
+}
+
+export interface TimeStudySyncPayload {
+  enabled: boolean;
+  intervalMinutes: number;
+  /** True while a focus/work session timer is running (not break / idle / paused). */
+  sessionActive?: boolean;
+  /** When true, extension shows a check-in ping immediately (local testing). */
+  pingNow?: boolean;
+}
+
 const PRODUC_FOCUS_SYNC = 'PRODUC_FOCUS_SYNC';
 const PRODUC_FOCUS_INFRACTION = 'PRODUC_FOCUS_INFRACTION';
+const PRODUC_TIME_STUDY_SYNC = 'PRODUC_TIME_STUDY_SYNC';
+const PRODUC_TIME_STUDY_CHECKIN = 'PRODUC_TIME_STUDY_CHECKIN';
+const PRODUC_TIME_STUDY_ACK = 'PRODUC_TIME_STUDY_ACK';
 export const PRODUC_FOCUS_PING = 'PRODUC_FOCUS_PING';
 export const PRODUC_FOCUS_PONG = 'PRODUC_FOCUS_PONG';
 
@@ -248,6 +266,57 @@ export function onExtensionInfraction(handler: (payload: FocusInfractionPayload)
     if (event.data?.type !== PRODUC_FOCUS_INFRACTION) return;
     const payload = event.data.payload as FocusInfractionPayload | undefined;
     if (!payload?.label) return;
+    handler(payload);
+  };
+
+  window.addEventListener('message', listener);
+  return () => window.removeEventListener('message', listener);
+}
+
+export function postTimeStudySync(payload: TimeStudySyncPayload): void {
+  if (typeof window === 'undefined') return;
+  window.postMessage({ type: PRODUC_TIME_STUDY_SYNC, payload }, window.location.origin);
+}
+
+export function onTimeStudyAck(
+  handler: (payload: {
+    ok: boolean;
+    error?: string | null;
+    pingNow?: boolean;
+    notified?: boolean;
+    overlay?: boolean;
+    method?: string | null;
+    permission?: string | null;
+  }) => void
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+
+  const listener = (event: MessageEvent) => {
+    if (event.source !== window) return;
+    if (event.data?.type !== PRODUC_TIME_STUDY_ACK) return;
+    handler({
+      ok: !!event.data.ok,
+      error: event.data.error ?? null,
+      pingNow: !!event.data.pingNow,
+      notified: !!event.data.notified,
+      overlay: !!event.data.overlay,
+      method: event.data.method ?? null,
+      permission: event.data.permission ?? null,
+    });
+  };
+
+  window.addEventListener('message', listener);
+  return () => window.removeEventListener('message', listener);
+}
+
+export function onTimeStudyCheckIn(handler: (payload: TimeStudyCheckInPayload) => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+
+  const listener = (event: MessageEvent) => {
+    if (event.source !== window) return;
+    if (event.data?.type !== PRODUC_TIME_STUDY_CHECKIN) return;
+    const payload = event.data.payload as TimeStudyCheckInPayload | undefined;
+    if (!payload?.text?.trim() || !payload.createdAt) return;
     handler(payload);
   };
 

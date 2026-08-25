@@ -24,6 +24,7 @@ import MorningFlowModal from './MorningFlowModal';
 import StuckHelpOverlays from './StuckHelpOverlays';
 import StuckHelpNavButton from './StuckHelpNavButton';
 import FocusExtensionModal from './FocusExtensionModal';
+import TimeStudyModal from './TimeStudyModal';
 import GetCourseModal from './GetCourseModal';
 import EndSessionWorkCompleteDismiss from './EndSessionWorkCompleteDismiss';
 import { clearNightPrepDeepLinkParam, readNightPrepDeepLink } from './nightPrepReminder';
@@ -167,6 +168,7 @@ function AgentHQInner() {
                 full bot tutorial
               </button>
               <FocusExtensionModal variant="nav" />
+              <TimeStudyModal variant="nav" />
               <StuckHelpNavButton />
             </div>
           </nav>

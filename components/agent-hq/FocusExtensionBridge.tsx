@@ -11,9 +11,21 @@ import {
   blockedSiteInfraction,
   buildFocusSyncPayload,
   onExtensionInfraction,
+  onTimeStudyCheckIn,
   postFocusSync,
+  postTimeStudySync,
   type FocusBlocklistStore,
 } from './focusBlocking';
+import {
+  DEFAULT_TIME_STUDY_SETTINGS,
+  TIME_STUDY_CHECKINS_KEY,
+  TIME_STUDY_SETTINGS_KEY,
+  makeTimeStudyCheckInId,
+  normalizeTimeStudyCheckInsStore,
+  normalizeTimeStudySettings,
+  type TimeStudyCheckInsStore,
+  type TimeStudySettings,
+} from './timeStudy';
 
 interface FocusExtensionBridgeProps {
   onAddInfraction: (categoryKey: string, label: string, source: Infraction['source']) => void;
@@ -21,6 +33,14 @@ interface FocusExtensionBridgeProps {
 
 export default function FocusExtensionBridge({ onAddInfraction }: FocusExtensionBridgeProps) {
   const [blocklist] = useLocalStorage<FocusBlocklistStore>(FOCUS_BLOCKLIST_KEY, DEFAULT_FOCUS_BLOCKLIST);
+  const [timeStudySettings] = useLocalStorage<TimeStudySettings>(
+    TIME_STUDY_SETTINGS_KEY,
+    DEFAULT_TIME_STUDY_SETTINGS
+  );
+  const [, setTimeStudyCheckIns] = useLocalStorage<TimeStudyCheckInsStore>(TIME_STUDY_CHECKINS_KEY, {
+    dayStartMs: 0,
+    items: [],
+  });
   const [entitled, setEntitled] = useState(false);
   const {
     status,
@@ -95,6 +115,37 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
       onAddInfraction(categoryKey, label, 'extension');
     });
   }, [onAddInfraction]);
+
+  useEffect(() => {
+    const settings = normalizeTimeStudySettings(timeStudySettings);
+    postTimeStudySync({
+      enabled: settings.enabled,
+      intervalMinutes: settings.intervalMinutes,
+      sessionActive: status === 'working' && !timerPaused,
+    });
+  }, [timeStudySettings, status, timerPaused]);
+
+  useEffect(() => {
+    return onTimeStudyCheckIn(payload => {
+      const text = payload.text.trim();
+      if (!text) return;
+      setTimeStudyCheckIns(prev => {
+        const normalized = normalizeTimeStudyCheckInsStore(prev);
+        if (normalized.items.some(item => item.id === payload.id)) return normalized;
+        return {
+          ...normalized,
+          items: [
+            ...normalized.items,
+            {
+              id: payload.id || makeTimeStudyCheckInId(),
+              text,
+              createdAt: payload.createdAt || Date.now(),
+            },
+          ],
+        };
+      });
+    });
+  }, [setTimeStudyCheckIns]);
 
   useEffect(() => {
     const check = () => {

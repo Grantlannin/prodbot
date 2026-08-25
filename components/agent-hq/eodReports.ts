@@ -81,6 +81,7 @@ export interface BuildEodReportParams {
   sessions: WorkSession[];
   infractions: Infraction[];
   doneToday: DoneTodayItem[];
+  timeStudyCheckIns?: { text: string; createdAt: number }[];
   activeSession?: { project: string; elapsedMs: number } | null;
 }
 
@@ -115,6 +116,9 @@ export function createEodReport(params: BuildEodReportParams, now = Date.now()):
     missedTomorrowPrep: params.missedTomorrowPrep?.trim() || undefined,
     sessions: sessionRows,
     doneToday: params.doneToday.map(i => ({ text: i.text, detail: i.detail })),
+    timeStudyCheckIns: (params.timeStudyCheckIns ?? [])
+      .filter(c => c.text.trim())
+      .map(c => ({ text: c.text.trim(), createdAt: c.createdAt })),
     infractions: infractionsToday.reduce<{ label: string; count: number }[]>((acc, inf) => {
       const existing = acc.find(x => x.label === inf.label);
       if (existing) existing.count += 1;
@@ -202,6 +206,17 @@ export function buildEodReportText(report: EodReport): string {
   if (report.infractions.length > 0) {
     for (const inf of report.infractions) {
       lines.push(`• ${inf.label}${inf.count > 1 ? ` ×${inf.count}` : ''}`);
+    }
+  } else {
+    lines.push('—');
+  }
+
+  const checkIns = report.timeStudyCheckIns ?? [];
+  lines.push('', `TIME STUDY CHECK-INS (${checkIns.length})`);
+  if (checkIns.length > 0) {
+    for (const item of checkIns) {
+      const time = new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      lines.push(`• ${time} — ${item.text}`);
     }
   } else {
     lines.push('—');

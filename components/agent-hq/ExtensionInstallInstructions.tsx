@@ -1,11 +1,19 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+const DEFAULT_STEP2 =
+  'Once you see the extension downloaded, refresh this Daywinner tab so it can connect. Then start a work session with soft lock and open a blocked site — if it blocks, it’s working. You can then add additional sites to block on the bottom if you choose.';
+
 /** Collapsed install help under “Add to Chrome” — intro + blocked-sites modal. */
-export default function ExtensionInstallInstructions() {
+export default function ExtensionInstallInstructions({
+  step2 = DEFAULT_STEP2,
+}: {
+  /** Overrides Step 2 body (intro uses different copy than in-app). */
+  step2?: ReactNode;
+}) {
   return (
     <details data-ext-instructions="" style={styles.details}>
       <style>{`
@@ -25,9 +33,7 @@ export default function ExtensionInstallInstructions() {
           style={styles.screenshot}
         />
         <p style={styles.stepLine}>
-          <strong>Step 2</strong> — Once you see the extension downloaded, refresh this Daywinner tab so it can
-          connect. Then start a work session with soft lock and open a blocked site — if it blocks, it&apos;s
-          working. You can then add additional sites to block on the bottom if you choose.
+          <strong>Step 2</strong> — {step2}
         </p>
       </div>
     </details>

@@ -36,6 +36,7 @@ Privacy policy (required): https://daywinner.bot/privacy/focus-extension
 - While a focus session is active with **soft or hard lock**, matching domains redirect to `blocked.html`
 - Blocking is off during breaks, no-lock sessions, and when no session is active
 - Block hits log infractions in Produc (`Blocked site: …`)
+- **Time study check-ins** (v1.1+): during an active focus session, a type-in card appears on your current tab; answers queue until a Daywinner tab is open, then land in today’s EOD
 - All extension data stays in `chrome.storage.local` — nothing sent to external servers
 
 ## Configure blocking

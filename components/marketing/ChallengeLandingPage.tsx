@@ -5,6 +5,7 @@ import { MONTHLY_PRICE_LABEL, STARTER_PRICE_LABEL } from '@/lib/billing/price';
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/site';
 import MarketingShell from './MarketingShell';
 import StartCheckoutButton from './StartCheckoutButton';
+import GsdWorksheet from './GsdWorksheet';
 
 const ctaBtnClass =
   'inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 no-underline shadow-sm transition hover:bg-slate-800 disabled:opacity-70';
@@ -32,6 +33,27 @@ const steps = [
   },
 ];
 
+function ChallengeCta({
+  useCheckout,
+  fallbackHref,
+}: {
+  useCheckout: boolean;
+  fallbackHref: string;
+}) {
+  if (useCheckout) {
+    return (
+      <StartCheckoutButton className={ctaBtnClass}>
+        <span className="text-sm font-semibold text-white">Start challenge — {STARTER_PRICE_LABEL}</span>
+      </StartCheckoutButton>
+    );
+  }
+  return (
+    <Link href={fallbackHref} className={ctaBtnClass}>
+      <span className="text-sm font-semibold text-white">Start challenge — {STARTER_PRICE_LABEL}</span>
+    </Link>
+  );
+}
+
 export default function ChallengeLandingPage() {
   const paywall = isBillingEnabled();
   const paywallOff = isPaywallDisabled();
@@ -40,21 +62,26 @@ export default function ChallengeLandingPage() {
   const fallbackHref = paywallOff ? '/login?mode=signup&next=/app' : '/app';
 
   return (
-    <MarketingShell>
-      <section className="flex min-h-[calc(100svh-4.5rem)] flex-col items-center justify-center py-8">
-        <div className="flex w-full max-w-2xl flex-col items-center text-center">
-          <p className="mb-4 max-w-xl text-sm font-semibold leading-snug text-slate-600 sm:text-base">
-            For anyone who&apos;s had (or is having) trouble actually doing the work that moves their life forward.
-            This is for{' '}
-            <span className="rounded-md bg-slate-900 px-1.5 py-0.5 font-bold text-white">YOU</span>!
+    <MarketingShell
+      wide
+      topBanner={
+        <div className="border-b border-slate-800 bg-slate-900 px-4 py-3 text-center">
+          <p className="mx-auto max-w-3xl text-sm font-semibold leading-snug text-slate-100 sm:text-base">
+            ATTENTION: For anyone who wants to get more done in 7 days than they have in the past 7 months.
           </p>
+        </div>
+      }
+    >
+      <section className="flex min-h-[calc(100svh-7rem)] flex-col items-center justify-center py-8">
+        <div className="mx-auto flex w-full max-w-2xl flex-col items-center text-center">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">Daywinner bot</p>
           <h1 className="mb-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
             The 7-day Get Sh*t Done Challenge
           </h1>
           <p className="mb-6 max-w-xl text-base leading-relaxed text-slate-700 sm:text-lg">
             Everything you need (but haven&apos;t yet found) to{' '}
-            <span className="font-semibold text-slate-900">*actually*</span> get sh*t done
+            <span className="font-semibold text-slate-900">*actually*</span> get sh*t done. Start your challenge today
+            for just $1.
           </p>
           <Image
             src="/marketing/daywinner-bot-hero.png"
@@ -66,17 +93,10 @@ export default function ChallengeLandingPage() {
             priority
           />
           <div className="flex flex-col items-center gap-2">
-            {useCheckout ? (
-              <StartCheckoutButton className={ctaBtnClass}>
-                <span className="text-sm font-semibold text-white">Start challenge — {STARTER_PRICE_LABEL}</span>
-              </StartCheckoutButton>
-            ) : (
-              <Link href={fallbackHref} className={ctaBtnClass}>
-                <span className="text-sm font-semibold text-white">Start challenge — {STARTER_PRICE_LABEL}</span>
-              </Link>
-            )}
-            <p className="text-xs text-slate-500 sm:text-sm">
-              Then {MONTHLY_PRICE_LABEL}/mo after day 7. Cancel anytime.
+            <ChallengeCta useCheckout={useCheckout} fallbackHref={fallbackHref} />
+            <p className="max-w-md text-xs leading-relaxed text-slate-500 sm:text-sm">
+              $1 to start. Then if you like winning, {MONTHLY_PRICE_LABEL}/mo after day 7. Cancel anytime. We&apos;ll
+              send you an email on day 7 that reminds you.
             </p>
           </div>
         </div>
@@ -86,13 +106,13 @@ export default function ChallengeLandingPage() {
         <div className="mx-auto flex w-full max-w-2xl flex-col items-center text-center">
           <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500">What the challenge is</p>
           <h2 className="mb-5 text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl">
-            7 days. One simple system. More actually productive sh*t than you&apos;ve ever done.
+            7 days. One simple system. More <em>*actually productive*</em> sh*t than you&apos;ve ever done before.
           </h2>
           <p className="text-base leading-relaxed text-slate-600 sm:text-lg">
-            The 7-day Get Sh*t Done Challenge is a 7-day period where you run the “Simple productivity system” —
-            using both your personal productivity bot &amp; the task-setup system behind it — to get you doing more
-            “actually productive sh*t” than you&apos;ve ever done before. No more busywork, doing the wrong stuff,
-            &amp; spinning your wheels.
+            The 7-day Get Sh*t Done Challenge is a 7-day period where you run the “Simple productivity system” — using
+            both your personal productivity bot &amp; the task-setup system behind it — to get you doing more “actually
+            productive sh*t” in 7 days than you&apos;ve done in the last 7 months. No more busywork, no more doing the
+            wrong stuff, no more spinning your wheels. Only winning.
           </p>
         </div>
       </section>
@@ -119,15 +139,7 @@ export default function ChallengeLandingPage() {
             ))}
           </ol>
           <div className="mt-10 flex justify-center">
-            {useCheckout ? (
-              <StartCheckoutButton className={ctaBtnClass}>
-                <span className="text-sm font-semibold text-white">Start challenge — {STARTER_PRICE_LABEL}</span>
-              </StartCheckoutButton>
-            ) : (
-              <Link href={fallbackHref} className={ctaBtnClass}>
-                <span className="text-sm font-semibold text-white">Start challenge — {STARTER_PRICE_LABEL}</span>
-              </Link>
-            )}
+            <ChallengeCta useCheckout={useCheckout} fallbackHref={fallbackHref} />
           </div>
         </div>
       </section>
@@ -136,12 +148,13 @@ export default function ChallengeLandingPage() {
         <div className="mx-auto flex w-full max-w-2xl flex-col items-center text-center">
           <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-red-600">Here&apos;s the issue</p>
           <h2 className="mb-5 text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl">
-            Your day is won or lost before it even begins.
+            Your day is WON (or lost) before it even begins.
           </h2>
           <p className="text-base leading-relaxed text-slate-600 sm:text-lg">
-            The reason you can&apos;t get sh*t done is because your preparation has been wrong. This is what 99% of
-            people don&apos;t understand. Get this 1 technique down, and you will out-produce &amp; get ahead of everyone
-            you know. They will wonder what happened to you.
+            The reason you can&apos;t get sh*t done is because your preparation has been wrong (underneath your own
+            conscious awareness), and nobody has ever told you how to fix it. This is the single secret that 99% of
+            people don&apos;t understand. Get this 1 technique down, and you will out-produce &amp; get ahead of
+            everyone you know. And as you fly by them… They&apos;ll wonder…”what the hell happened to you?”
           </p>
         </div>
       </section>
@@ -155,9 +168,10 @@ export default function ChallengeLandingPage() {
             That&apos;s up to you.
           </h2>
           <p className="mb-4 text-base leading-relaxed text-slate-600 sm:text-lg">
-            When your Daywinner bot trial ends (on day 7), we will automatically re-bill you at {MONTHLY_PRICE_LABEL}.
-            If you&apos;d like to cancel, simply email us or reply to the email with{' '}
-            <span className="font-semibold text-slate-900">CANCEL</span> and it will automatically cancel.
+            When your Daywinner bot trial ends (on day 7), we will automatically re-bill you at {MONTHLY_PRICE_LABEL}{' '}
+            2 days later, so you can keep winning. But if for any reason you&apos;d like to cancel (which we have no
+            idea why you would, because it&apos;s so superior to the old way of doing things), then simply click the
+            link in the email that we send you on day 7, and cancel.
           </p>
           <p className="text-sm text-slate-500">
             Support:{' '}
@@ -165,22 +179,30 @@ export default function ChallengeLandingPage() {
               {SUPPORT_EMAIL}
             </a>
           </p>
-          <div className="mt-8 flex flex-col items-center gap-3">
-            {useCheckout ? (
-              <StartCheckoutButton className={ctaBtnClass}>
-                <span className="text-sm font-semibold text-white">Start challenge — {STARTER_PRICE_LABEL}</span>
-              </StartCheckoutButton>
-            ) : (
-              <Link href={fallbackHref} className={ctaBtnClass}>
-                <span className="text-sm font-semibold text-white">Start challenge — {STARTER_PRICE_LABEL}</span>
-              </Link>
-            )}
-            <Link
-              href="/worksheet"
-              className="text-sm font-semibold text-slate-600 no-underline transition hover:text-slate-900"
-            >
-              Preview the printable challenge worksheet →
-            </Link>
+          <div className="mt-8">
+            <ChallengeCta useCheckout={useCheckout} fallbackHref={fallbackHref} />
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 py-12 sm:py-16">
+        <div className="mx-auto flex w-full max-w-4xl flex-col items-center text-center">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500">
+            A preview of your challenge worksheet
+          </p>
+          <h2 className="mb-4 text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl">
+            Every day you track 4 simple, secret metrics.
+          </h2>
+          <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            Do them? You&apos;re winning. Don&apos;t do them? You&apos;ll know exactly what&apos;s going wrong.
+          </p>
+          <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-100 px-4 py-3 text-left">
+              <p className="text-sm font-semibold text-slate-800">A preview of your worksheet:</p>
+            </div>
+            <div className="px-2 py-3 sm:px-3 sm:py-4">
+              <GsdWorksheet preview />
+            </div>
           </div>
         </div>
       </section>

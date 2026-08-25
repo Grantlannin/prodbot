@@ -31,6 +31,11 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
 import type { DoneTodayItem, Infraction } from './types';
 import { windDownBetterUsePrefill, windDownMissedPrefill, MISSED_DONE_TODAY_LABEL } from './nightPrep/windDownEodNotes';
+import {
+  TIME_STUDY_CHECKINS_KEY,
+  normalizeTimeStudyCheckInsStore,
+  type TimeStudyCheckInsStore,
+} from './timeStudy';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -48,6 +53,10 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
   const [partnerEmail, setPartnerEmail] = useLocalStorage<string>(ACCOUNTABILITY_PARTNER_EMAIL_KEY, '');
   const [selfEmail, setSelfEmail] = useLocalStorage<string>(ACCOUNTABILITY_SELF_EMAIL_KEY, '');
   const [sendToSelf, setSendToSelf] = useLocalStorage<boolean>(ACCOUNTABILITY_SEND_TO_SELF_KEY, false);
+  const [timeStudyStore] = useLocalStorage<TimeStudyCheckInsStore>(TIME_STUDY_CHECKINS_KEY, {
+    dayStartMs: 0,
+    items: [],
+  });
   const [completed, setCompleted] = useState('');
   const [learnings, setLearnings] = useState('');
   const [missedWhatHappened, setMissedWhatHappened] = useState('');
@@ -63,6 +72,10 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
   const reportParams = useMemo(() => {
     const stats = getTodayStats();
     const nightPrep = readNightPrepForEod();
+    const timeStudyCheckIns = normalizeTimeStudyCheckInsStore(timeStudyStore).items.map(item => ({
+      text: item.text,
+      createdAt: item.createdAt,
+    }));
     return {
       completed,
       tomorrow: nightPrep.tomorrow,
@@ -76,11 +89,21 @@ export default function EodSendModal({ open, onClose, infractions, doneTodayItem
       sessions: stats.sessions,
       infractions,
       doneToday: doneTodayItems,
+      timeStudyCheckIns,
       activeSession: stats.activeSession
         ? { project: stats.activeSession.project, elapsedMs: stats.activeSession.workMs }
         : null,
     };
-  }, [completed, learnings, missedWhatHappened, missedTomorrowPrep, getTodayStats, infractions, doneTodayItems]);
+  }, [
+    completed,
+    learnings,
+    missedWhatHappened,
+    missedTomorrowPrep,
+    getTodayStats,
+    infractions,
+    doneTodayItems,
+    timeStudyStore,
+  ]);
 
   const generatedBody = useMemo(
     () => buildEodReportText(buildEodReportPreview(reportParams)),

@@ -1,4 +1,4 @@
-/** Shared demo-checkout helpers for fake purchase → OTO → onboard testing. */
+/** Shared demo-checkout helpers for fake purchase → onboard testing. */
 
 export const DEMO_CHECKOUT_SESSION_ID = 'cs_test_demo';
 export const DEMO_PAID_COOKIE = 'dw_demo_paid';
