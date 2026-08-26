@@ -90,6 +90,22 @@ export default function LoginForm({ prefillEmail = null }: { prefillEmail?: stri
     return () => subscription.unsubscribe();
   }, []);
 
+  const unlockFromCheckout = () => {
+    clearCheckoutSessionId();
+    setCheckoutSessionId('');
+    setEmailLocked(false);
+    setMode('signin');
+    setError(null);
+    setMessage(null);
+    // Drop checkout query params so a refresh doesn’t re-lock the email.
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('session_id');
+      if (url.searchParams.get('mode') === 'signup') url.searchParams.delete('mode');
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+  };
+
   if (!isSupabaseConfigured()) {
     return (
       <MarketingShell showSignIn={false}>
@@ -392,7 +408,12 @@ export default function LoginForm({ prefillEmail = null }: { prefillEmail?: stri
                 Email
               </label>
               {emailLocked ? (
-                <p style={styles.emailHint}>Locked to the email from your checkout.</p>
+                <p style={styles.emailHint}>
+                  Locked to the email from your checkout.{' '}
+                  <button type="button" onClick={unlockFromCheckout} style={styles.unlockBtn}>
+                    Sign in with a different email
+                  </button>
+                </p>
               ) : null}
               <input
                 id="email"
@@ -565,6 +586,18 @@ const styles: Record<string, CSSProperties> = {
     color: '#64748b',
     cursor: 'pointer',
     marginBottom: 4,
+  },
+  unlockBtn: {
+    appearance: 'none',
+    border: 'none',
+    background: 'transparent',
+    padding: 0,
+    margin: 0,
+    font: 'inherit',
+    fontWeight: 700,
+    color: '#0f172a',
+    textDecoration: 'underline',
+    cursor: 'pointer',
   },
   error: {
     margin: '0 0 12px',
