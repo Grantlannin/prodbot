@@ -90,20 +90,28 @@ export default function LoginForm({ prefillEmail = null }: { prefillEmail?: stri
     return () => subscription.unsubscribe();
   }, []);
 
-  const unlockFromCheckout = () => {
+  const abandonCheckoutClaim = async () => {
     clearCheckoutSessionId();
     setCheckoutSessionId('');
     setEmailLocked(false);
     setMode('signin');
     setError(null);
     setMessage(null);
-    // Drop checkout query params so a refresh doesn’t re-lock the email.
+    try {
+      await fetch('/api/billing/clear-checkout', { method: 'POST', credentials: 'same-origin' });
+    } catch {
+      /* best-effort */
+    }
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.delete('session_id');
       if (url.searchParams.get('mode') === 'signup') url.searchParams.delete('mode');
       window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
     }
+  };
+
+  const unlockFromCheckout = () => {
+    void abandonCheckoutClaim();
   };
 
   if (!isSupabaseConfigured()) {
@@ -135,7 +143,9 @@ export default function LoginForm({ prefillEmail = null }: { prefillEmail?: stri
   const afterAuth = async (opts?: { isNewAccount?: boolean; linkReason?: string }) => {
     let linked = opts?.linkReason === 'linked';
     let reason = opts?.linkReason;
-    if (!linked) {
+    const claimingCheckout = fromCheckout || Boolean(resolveCheckoutSessionId(checkoutSessionId));
+
+    if (!linked && claimingCheckout) {
       try {
         const result = await linkBilling();
         linked = result.linked;
@@ -143,7 +153,7 @@ export default function LoginForm({ prefillEmail = null }: { prefillEmail?: stri
       } catch {
         /* subscription link is best-effort; /subscribe will retry */
       }
-    } else {
+    } else if (linked) {
       clearCheckoutSessionId();
     }
 
@@ -152,9 +162,16 @@ export default function LoginForm({ prefillEmail = null }: { prefillEmail?: stri
     }
 
     const dest = safeNextPath(nextPath, '/app');
-    if (dest.startsWith('/app') && !linked && (reason === 'already_claimed' || reason === 'email_mismatch')) {
-      setError(linkReasonMessage(reason));
-      setBusy(false);
+    if (!linked && (reason === 'already_claimed' || reason === 'email_mismatch')) {
+      if (claimingCheckout) {
+        // Still in purchase-claim flow — show the mismatch / already-claimed error.
+        setError(linkReasonMessage(reason));
+        setBusy(false);
+        return;
+      }
+      // Leftover claim cookies from live testing — drop them and continue sign-in.
+      await abandonCheckoutClaim();
+      window.location.href = dest;
       return;
     }
 
