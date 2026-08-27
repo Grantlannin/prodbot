@@ -10,6 +10,7 @@ import {
   INTRO_EXTENSION_PATH,
   SETUP_REQUIRED_COOKIE,
 } from '@/lib/intro';
+import { isSitePaused } from '@/lib/site/pause';
 import { isBillingDemoFlow, isBillingEnabled, isPaywallDisabled } from '@/lib/stripe/config';
 import { getSupabaseConfig, isAuthRequired } from '@/lib/supabase/config';
 
@@ -42,9 +43,14 @@ function hasIntroCookie(request: NextRequest, name: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  if (isSitePaused() && pathname !== '/paused') {
+    return NextResponse.redirect(new URL('/paused', request.url));
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
-  const pathname = request.nextUrl.pathname;
   // Supabase Site URL fallbacks often land on /?code=... — finish auth there.
   const authCode = request.nextUrl.searchParams.get('code');
   if (authCode && pathname !== '/auth/callback') {
