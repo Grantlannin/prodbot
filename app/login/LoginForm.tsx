@@ -145,7 +145,7 @@ export default function LoginForm({ prefillEmail = null }: { prefillEmail?: stri
     let reason = opts?.linkReason;
     const claimingCheckout = fromCheckout || Boolean(resolveCheckoutSessionId(checkoutSessionId));
 
-    if (!linked && claimingCheckout) {
+    if (!linked) {
       try {
         const result = await linkBilling();
         linked = result.linked;
@@ -153,7 +153,7 @@ export default function LoginForm({ prefillEmail = null }: { prefillEmail?: stri
       } catch {
         /* subscription link is best-effort; /subscribe will retry */
       }
-    } else if (linked) {
+    } else {
       clearCheckoutSessionId();
     }
 
@@ -164,7 +164,6 @@ export default function LoginForm({ prefillEmail = null }: { prefillEmail?: stri
     const dest = safeNextPath(nextPath, '/app');
     if (!linked && (reason === 'already_claimed' || reason === 'email_mismatch')) {
       if (claimingCheckout) {
-        // Still in purchase-claim flow — show the mismatch / already-claimed error.
         setError(linkReasonMessage(reason));
         setBusy(false);
         return;
