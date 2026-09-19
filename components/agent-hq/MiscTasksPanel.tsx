@@ -145,10 +145,16 @@ export default function MiscTasksPanel({
   const updateLineText = (lineId: string, text: string) => {
     if (isLineLocked(lineId)) return;
     if (today.lines.length === 0) {
-      commitLines([{ id: emptyDraftIdRef.current, text, createdAt: Date.now() }]);
+      commitLines([{ id: emptyDraftIdRef.current, text, createdAt: Date.now(), done: false }]);
       return;
     }
-    commitLines(editorLines.map(line => (line.id === lineId ? { ...line, text } : line)));
+    commitLines(
+      editorLines.map(line =>
+        line.id === lineId
+          ? { ...line, text, ...(text.trim() ? {} : { done: false }) }
+          : line
+      )
+    );
   };
 
   const removeTodayLine = (lineId: string) => {
@@ -160,6 +166,13 @@ export default function MiscTasksPanel({
     requestAnimationFrame(() => {
       if (todayLinesRef.current) todayLinesRef.current.scrollTop = savedScrollTop;
     });
+  };
+
+  const toggleLineDone = (lineId: string, done: boolean) => {
+    if (isLineLocked(lineId)) return;
+    if (today.lines.length === 0) return;
+    pushUndoSnapshot();
+    commitLines(editorLines.map(line => (line.id === lineId ? { ...line, done } : line)));
   };
 
   const undoLastChange = () => {
@@ -420,8 +433,10 @@ export default function MiscTasksPanel({
       >
         {editorLines.map((line, index) => {
           const locked = isLineLocked(line.id);
-          const canDrag = line.text.trim().length > 0 && !locked;
-          const canStart = canDrag && !!onStartLine;
+          const hasText = line.text.trim().length > 0;
+          const isDone = Boolean(line.done) && hasText;
+          const canDrag = hasText && !locked;
+          const canStart = canDrag && !isDone && !!onStartLine;
           const isDragging = draggingLineId === line.id;
           const showLine =
             dropLineId === line.id && draggingLineId != null && draggingLineId !== line.id;
@@ -438,6 +453,20 @@ export default function MiscTasksPanel({
               onDrop={handleTodayRowDrop(line.id)}
             >
               {showLine && dropEdge === 'before' ? <div style={styles.dropLine} /> : null}
+              {hasText ? (
+                <input
+                  type="checkbox"
+                  checked={isDone}
+                  disabled={locked}
+                  onChange={e => toggleLineDone(line.id, e.target.checked)}
+                  onMouseDown={e => e.preventDefault()}
+                  style={styles.todayCheck}
+                  aria-label={isDone ? `Uncheck ${line.text.trim()}` : `Check off ${line.text.trim()}`}
+                  title={locked ? 'Locked while timer is running for this task' : isDone ? 'Mark not done' : 'Check off'}
+                />
+              ) : (
+                <span style={styles.todayCheckSpacer} aria-hidden />
+              )}
               <span
                 draggable={canDrag}
                 onDragStart={canDrag ? handleTodayDragStart(line) : undefined}
@@ -483,11 +512,12 @@ export default function MiscTasksPanel({
                 style={{
                   ...styles.todayInput,
                   ...(locked ? styles.todayInputLocked : {}),
+                  ...(isDone ? styles.todayInputDone : {}),
                 }}
                 aria-label={locked ? `Misc task ${index + 1} (tracking)` : `Misc task ${index + 1}`}
                 title={locked ? 'Locked while timer is running for this task' : undefined}
               />
-              {line.text.trim() ? (
+              {hasText ? (
                 <div style={styles.todayActions}>
                   {!locked ? (
                     <button
@@ -645,6 +675,20 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1,
     paddingTop: 8,
   },
+  todayCheck: {
+    flexShrink: 0,
+    width: 14,
+    height: 14,
+    marginTop: 7,
+    cursor: 'pointer',
+    accentColor: '#0f172a',
+  },
+  todayCheckSpacer: {
+    flexShrink: 0,
+    width: 14,
+    height: 14,
+    marginTop: 7,
+  },
   todayDragHandle: {
     cursor: 'grab',
     color: '#64748b',
@@ -668,6 +712,10 @@ const styles: Record<string, CSSProperties> = {
   todayInputLocked: {
     color: '#0f172a',
     cursor: 'default',
+  },
+  todayInputDone: {
+    color: '#94a3b8',
+    textDecoration: 'line-through',
   },
   todayActions: {
     display: 'inline-flex',

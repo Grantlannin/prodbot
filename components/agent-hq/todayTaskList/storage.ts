@@ -9,6 +9,8 @@ export interface TodayTaskLine {
   id: string;
   text: string;
   createdAt: number;
+  /** Checked off in the misc list (kept until deleted / day rolls). */
+  done?: boolean;
 }
 
 export interface TodayTaskListStore {
@@ -43,6 +45,7 @@ export function normalizeTodayTaskList(
       id: line.id,
       text: line.text,
       createdAt: typeof line.createdAt === 'number' ? line.createdAt : now,
+      done: Boolean(line.done),
     }));
   return {
     dateKey: today,
