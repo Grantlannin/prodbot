@@ -166,8 +166,8 @@ export default function NightPrepPanel({
       ) : (
         <div style={styles.emptyPlan}>
           {miscOpen
-            ? 'Wind down builds this list.'
-            : 'Wind down builds this list. Use + for misc / homeless tasks.'}
+            ? "Wind down builds this list for 'most important prepped task'."
+            : "Wind down builds this list for 'most important prepped task'. Use + for misc / spontaneous tasks."}
         </div>
       )}
     </div>
