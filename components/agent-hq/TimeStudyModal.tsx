@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
-import { onTimeStudyAck, pingFocusExtension, postTimeStudySync } from './focusBlocking';
+import { pingFocusExtension, postTimeStudySync } from './focusBlocking';
 import {
   DEFAULT_TIME_STUDY_SETTINGS,
   TIME_STUDY_CHECKINS_KEY,
@@ -28,7 +28,6 @@ interface TimeStudyModalProps {
 export default function TimeStudyModal({ variant = 'default' }: TimeStudyModalProps) {
   const [open, setOpen] = useState(false);
   const [extensionConnected, setExtensionConnected] = useState(false);
-  const [pingStatus, setPingStatus] = useState<string | null>(null);
   const { status, timerPaused } = useWorkTrackerContext();
   const sessionActive = status === 'working' && !timerPaused;
   const [rawSettings, setRawSettings] = useLocalStorage<TimeStudySettings>(
@@ -50,20 +49,6 @@ export default function TimeStudyModal({ variant = 'default' }: TimeStudyModalPr
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
-    return onTimeStudyAck(payload => {
-      if (!payload.pingNow) return;
-      if (payload.overlay) {
-        setPingStatus('Check-in card shown — click Enter task, type, then press Enter to save.');
-      } else if (payload.error) {
-        setPingStatus(payload.error);
-      } else {
-        setPingStatus('Ping sent. If you don’t see the type box, reload the extension and try again.');
-      }
-    });
-  }, [open]);
-
-  useEffect(() => {
     postTimeStudySync({
       enabled: settings.enabled,
       intervalMinutes: settings.intervalMinutes,
@@ -77,26 +62,6 @@ export default function TimeStudyModal({ variant = 'default' }: TimeStudyModalPr
 
   const setIntervalMinutes = (intervalMinutes: number) => {
     setRawSettings(prev => ({ ...normalizeTimeStudySettings(prev), intervalMinutes }));
-  };
-
-  const sendTestPing = () => {
-    if (!extensionConnected) {
-      setPingStatus(
-        'Extension not connected. Reload Daywinner bot on chrome://extensions, then hard-refresh this page (Cmd+Shift+R).'
-      );
-      return;
-    }
-    if (!sessionActive) {
-      setPingStatus('Start a focus session first — pings only run while the focus timer is active.');
-      return;
-    }
-    setPingStatus('Sending ping to extension…');
-    postTimeStudySync({
-      enabled: true,
-      intervalMinutes: settings.intervalMinutes,
-      sessionActive: true,
-      pingNow: true,
-    });
   };
 
   const modal =
@@ -153,12 +118,6 @@ export default function TimeStudyModal({ variant = 'default' }: TimeStudyModalPr
                     ? 'Extension connected.'
                     : 'Extension not detected — reload the extension, then hard-refresh this page (Cmd+Shift+R).'}
                 </p>
-                {settings.enabled ? (
-                  <button type="button" style={styles.testBtn} onClick={sendTestPing}>
-                    Send test ping now
-                  </button>
-                ) : null}
-                {pingStatus ? <p style={styles.pingStatus}>{pingStatus}</p> : null}
               </div>
 
               <div style={styles.section}>
@@ -314,25 +273,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     lineHeight: 1.4,
     color: '#94a3b8',
-  },
-  pingStatus: {
-    margin: '8px 0 0',
-    fontSize: 12,
-    lineHeight: 1.4,
-    color: '#b45309',
-  },
-  testBtn: {
-    marginTop: 10,
-    appearance: 'none',
-    border: '1px solid #cbd5e1',
-    borderRadius: 8,
-    background: '#f8fafc',
-    color: '#0f172a',
-    fontSize: 13,
-    fontWeight: 600,
-    fontFamily: font,
-    padding: '8px 12px',
-    cursor: 'pointer',
   },
   empty: {
     margin: 0,
