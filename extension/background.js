@@ -20,7 +20,7 @@ async function getTimeStudySettings() {
   const data = await chrome.storage.local.get(['timeStudy']);
   const raw = data.timeStudy || {};
   const interval = Number(raw.intervalMinutes);
-  const allowed = [0.25, 5, 15, 30, 45, 60];
+  const allowed = [5, 15, 30, 45, 60];
   return {
     enabled: !!raw.enabled,
     intervalMinutes: allowed.includes(interval) ? interval : 30,
@@ -118,12 +118,6 @@ async function scheduleTimeStudyAlarm(settings) {
   // Only ping while a focus session timer is actively running.
   if (!settings.enabled || !settings.sessionActive) return;
   const minutes = Number(settings.intervalMinutes) || 30;
-  if (minutes < 1) {
-    // Chrome repeating alarms can't be under 1 minute — use one-shot + reschedule.
-    const ms = Math.max(1000, Math.round(minutes * 60 * 1000));
-    chrome.alarms.create(TIME_STUDY_ALARM, { when: Date.now() + ms });
-    return;
-  }
   chrome.alarms.create(TIME_STUDY_ALARM, {
     delayInMinutes: minutes,
     periodInMinutes: minutes,
@@ -133,7 +127,7 @@ async function scheduleTimeStudyAlarm(settings) {
 async function applyTimeStudySync(payload) {
   const prev = await getTimeStudySettings();
   const interval = Number(payload?.intervalMinutes);
-  const allowed = [0.25, 5, 15, 30, 45, 60];
+  const allowed = [5, 15, 30, 45, 60];
   const settings = {
     enabled: !!payload?.enabled,
     intervalMinutes: allowed.includes(interval) ? interval : prev.intervalMinutes || 30,
@@ -365,11 +359,6 @@ chrome.alarms.onAlarm.addListener(alarm => {
         return;
       }
       await fireTimeStudyPing();
-      // Sub-minute intervals are one-shot; schedule the next ping.
-      const next = await getTimeStudySettings();
-      if (next.enabled && next.sessionActive && next.intervalMinutes < 1) {
-        await scheduleTimeStudyAlarm(next);
-      }
     })();
   }
 });

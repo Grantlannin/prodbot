@@ -3,12 +3,12 @@ import { startOfLocalDayMs } from './infractions';
 export const TIME_STUDY_SETTINGS_KEY = 'agentHQ_timeStudySettings';
 export const TIME_STUDY_CHECKINS_KEY = 'agentHQ_timeStudyCheckIns';
 
-/** Minutes between pings. `0.25` = 15 seconds (local testing only). */
-export const TIME_STUDY_INTERVAL_OPTIONS = [0.25, 5, 15, 30, 45, 60] as const;
+/** Minutes between pings. */
+export const TIME_STUDY_INTERVAL_OPTIONS = [5, 15, 30, 45, 60] as const;
 
 export interface TimeStudySettings {
   enabled: boolean;
-  /** Minutes between check-in pings. Values under 1 are one-shot + reschedule (Chrome min period is 1 min). */
+  /** Minutes between check-in pings. */
   intervalMinutes: number;
 }
 
@@ -38,9 +38,6 @@ export function normalizeTimeStudySettings(raw: Partial<TimeStudySettings> | nul
 }
 
 export function formatTimeStudyIntervalLabel(intervalMinutes: number): string {
-  if (intervalMinutes < 1) {
-    return `Every ${Math.round(intervalMinutes * 60)} seconds (test)`;
-  }
   return `Every ${intervalMinutes} minutes`;
 }
 
