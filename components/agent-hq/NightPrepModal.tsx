@@ -1353,6 +1353,10 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: 6,
+    maxHeight: 288,
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+    paddingRight: 2,
   },
   taskListRow: {
     display: 'flex',
