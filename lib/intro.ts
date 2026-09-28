@@ -140,7 +140,7 @@ export function clearHowToStartDismissedClient(): void {
 }
 
 /** Shared tutorial video URL for first-watch + full bot tutorial (YouTube or Loom). */
-const DEFAULT_FULL_BOT_TUTORIAL_URL = 'https://www.youtube.com/watch?v=gjFPQ1Gy9Xw';
+const DEFAULT_FULL_BOT_TUTORIAL_URL = 'https://youtu.be/IYqgCi-vlYk';
 
 export function getFullBotTutorialLoomUrl(): string | null {
   return (
