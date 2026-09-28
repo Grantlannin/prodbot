@@ -320,6 +320,12 @@ export default function NightPrepModal() {
     setNightPrepPhase('wind_down_missed_why');
   };
 
+  const handleSkipContextToTaskSetup = () => {
+    if (typing) return;
+    appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.skipContextToTaskSetup });
+    beginNightPrep(WIND_DOWN_FLOW_COPY.prepIntroAfterMissed);
+  };
+
   const handleBestUseYes = () => {
     if (typing) return;
     appendNightPrepMessages({ role: 'user', text: WIND_DOWN_FLOW_COPY.yes });
@@ -874,6 +880,9 @@ export default function NightPrepModal() {
               <div style={styles.chipWrap}>
                 <button type="button" onClick={handleDidntGetDone} style={styles.chip}>
                   {WIND_DOWN_FLOW_COPY.didntGetDone}
+                </button>
+                <button type="button" onClick={handleSkipContextToTaskSetup} style={styles.chip}>
+                  {WIND_DOWN_FLOW_COPY.skipContextToTaskSetup}
                 </button>
               </div>
             ) : null}

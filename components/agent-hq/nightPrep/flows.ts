@@ -13,6 +13,7 @@ export const WIND_DOWN_FLOW_COPY = {
   reflectIntro:
     "Let's begin your wind down. What did you objectively get done today?\n& was that the best use of your time? Reflect below.",
   didntGetDone: "i didn't get done what I wanted to",
+  skipContextToTaskSetup: 'skip context & take me to task setup',
   missedWhy:
     "Happens, let's figure out why & build a system around it. What happened? analyze as best as you can.",
   missedPrep:
