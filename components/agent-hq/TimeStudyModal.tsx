@@ -85,9 +85,10 @@ export default function TimeStudyModal({ variant = 'default' }: TimeStudyModalPr
               </div>
 
               <p style={styles.lead}>
-                When on, Daywinner shows a check-in card during an <strong>active focus session</strong>. Click{' '}
-                <strong>Enter task</strong>, type in that same card, press <strong>Enter</strong> to save to today’s
-                EOD. No pings on break or when the timer is off/paused.
+                If you turn this on, you will get a pop-up while you&apos;re working that will ask you &quot;what are you
+                doing right now?&quot; that you can then type into to get an accurate view of what you&apos;re actually
+                doing. What you enter will then appear below + on your EOD report. if you use this - BE HONEST WITH IT,
+                so you can accurately see where your time is going.
               </p>
 
               <label style={styles.toggleRow}>
