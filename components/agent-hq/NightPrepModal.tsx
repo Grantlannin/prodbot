@@ -952,16 +952,18 @@ export default function NightPrepModal() {
 
             {phase === 'prep_project_pick' && !typing && projectOptions.length > 0 ? (
               <div style={styles.chipWrap}>
-                {projectOptions.map(project => (
-                  <button
-                    key={project.id}
-                    type="button"
-                    onClick={() => selectProject(project)}
-                    style={styles.chip}
-                  >
-                    {project.name.trim()}
-                  </button>
-                ))}
+                <div style={styles.chipScrollList}>
+                  {projectOptions.map(project => (
+                    <button
+                      key={project.id}
+                      type="button"
+                      onClick={() => selectProject(project)}
+                      style={styles.chip}
+                    >
+                      {project.name.trim()}
+                    </button>
+                  ))}
+                </div>
                 {hasTomorrowTasks ? (
                   <button type="button" onClick={finishTaskList} style={{ ...styles.chip, ...styles.chipFinish }}>
                     {WIND_DOWN_FLOW_COPY.taskListFinished}
@@ -1322,6 +1324,16 @@ const styles: Record<string, CSSProperties> = {
     gap: 12,
   },
   chipWrap: { display: 'flex', flexDirection: 'column', gap: 8 },
+  /** ~6 project chips visible; scroll for the rest so the modal stays usable. */
+  chipScrollList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    maxHeight: 288,
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+    paddingRight: 2,
+  },
   chipSectionLabel: {
     fontSize: 10,
     fontWeight: 700,
