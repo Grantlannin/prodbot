@@ -5,11 +5,13 @@ import { localDateKey } from '../eodReports';
 import { NIGHT_PREP_PLAN_KEY, type NightPrepTomorrowPlan } from '../nightPrep/storage';
 import { getActiveNightPrepPlan } from '../nightPrep/storage';
 import {
+  buildMorningFlowUsedRecord,
   isMorningFlowUsedForActivePlan,
   MORNING_FLOW_USED_KEY,
   type MorningFlowUsedRecord,
 } from '../morningFlow/storage';
 import { useLocalStorage } from './useLocalStorage';
+import { useWorkTrackerContext } from './WorkTrackerProvider';
 
 function msUntilNextLocalMidnight(now = Date.now()): number {
   const next = new Date(now);
@@ -19,8 +21,9 @@ function msUntilNextLocalMidnight(now = Date.now()): number {
 
 export function useBeginMyDayVisible(): boolean {
   const [plan] = useLocalStorage<NightPrepTomorrowPlan | null>(NIGHT_PREP_PLAN_KEY, null);
-  const [used] = useLocalStorage<MorningFlowUsedRecord | string | null>(MORNING_FLOW_USED_KEY, null);
+  const [used, setUsed] = useLocalStorage<MorningFlowUsedRecord | string | null>(MORNING_FLOW_USED_KEY, null);
   const [todayKey, setTodayKey] = useState(() => localDateKey());
+  const { status } = useWorkTrackerContext();
 
   useEffect(() => {
     const refresh = () => setTodayKey(localDateKey());
@@ -45,6 +48,15 @@ export function useBeginMyDayVisible(): boolean {
       if (midnightTimer !== undefined) window.clearTimeout(midnightTimer);
     };
   }, []);
+
+  // Starting any focus session counts as beginning the day — hide Begin work for this plan.
+  useEffect(() => {
+    if (status !== 'working' && status !== 'on_break') return;
+    const active = getActiveNightPrepPlan(plan);
+    if (!active?.tasks?.length) return;
+    if (isMorningFlowUsedForActivePlan(used, plan)) return;
+    setUsed(buildMorningFlowUsedRecord(active));
+  }, [status, plan, used, setUsed]);
 
   return useMemo(() => {
     if (isMorningFlowUsedForActivePlan(used, plan)) return false;
