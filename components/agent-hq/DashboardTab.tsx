@@ -17,10 +17,11 @@ import EodSendModal from './EodSendModal';
 import StartWorkModal, { type StartWorkPreset } from './StartWorkModal';
 import HowToStartBanner from './HowToStartBanner';
 import WorkTimerBanner from './WorkTimerBanner';
+import TutorialVideoModal from './TutorialVideoModal';
 import { sessionLabel } from './quickstartTask';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
 import type { TodayTaskLine } from './todayTaskList/storage';
-
+import { TUTORIAL_LOOM_URLS } from './tutorialLinks';
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 interface DashboardTabProps {
@@ -40,6 +41,7 @@ export default function DashboardTab({
   const [startWorkPreset, setStartWorkPreset] = useState<StartWorkPreset | null>(null);
   const [eodSendOpen, setEodSendOpen] = useState(false);
   const [showOpenLoopExplain, setShowOpenLoopExplain] = useState(false);
+  const [windDownTutorialOpen, setWindDownTutorialOpen] = useState(false);
   const [sessionBusy, setSessionBusy] = useState(false);
   const nightPrepRef = useRef<HTMLDivElement>(null);
   const { items: doneTodayItems, addItem: addDoneToday } = useDoneToday();
@@ -120,6 +122,12 @@ export default function DashboardTab({
         infractions={infractions}
         doneTodayItems={doneTodayItems}
       />
+      <TutorialVideoModal
+        open={windDownTutorialOpen}
+        onClose={() => setWindDownTutorialOpen(false)}
+        title="How to use wind down prep"
+        videoUrl={TUTORIAL_LOOM_URLS.windDown}
+      />
       <WorkTimerBanner
         infractions={infractions}
         onSendEod={handleSendEod}
@@ -155,6 +163,15 @@ export default function DashboardTab({
           <div ref={nightPrepRef} id="night-prep" style={styles.nightPrepCell}>
             <DashCard
               title="WIND DOWN & NIGHT PREP"
+              headerRight={
+                <button
+                  type="button"
+                  onClick={() => setWindDownTutorialOpen(true)}
+                  style={openLoopExplainLinkStyle}
+                >
+                  how to use wind down prep
+                </button>
+              }
             >
               <NightPrepPanel
                 autoStartWindDown={focusNightPrep}

@@ -7,7 +7,9 @@ export const TUTORIAL_LOOM_URLS = {
     process.env.NEXT_PUBLIC_LOOM_HOW_TO_START_URL?.trim() ||
     process.env.NEXT_PUBLIC_LOOM_INTRO_URL?.trim() ||
     DEFAULT_FULL_BOT_TUTORIAL_URL,
-  windDown: process.env.NEXT_PUBLIC_LOOM_WIND_DOWN_URL?.trim() || '',
+  windDown:
+    process.env.NEXT_PUBLIC_LOOM_WIND_DOWN_URL?.trim() ||
+    'https://www.loom.com/share/fcdf219d1468441d97c5a1a782a7b02c',
   projects: process.env.NEXT_PUBLIC_LOOM_PROJECTS_URL?.trim() || '',
   notes: process.env.NEXT_PUBLIC_LOOM_NOTES_URL?.trim() || '',
   openLoops: process.env.NEXT_PUBLIC_LOOM_OPEN_LOOPS_URL?.trim() || '',

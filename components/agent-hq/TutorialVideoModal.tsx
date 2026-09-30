@@ -10,6 +10,8 @@ interface TutorialVideoModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  /** Optional override (YouTube or Loom share/embed URL). Defaults to full bot tutorial. */
+  videoUrl?: string | null;
   footer?: ReactNode;
 }
 
@@ -17,11 +19,12 @@ export default function TutorialVideoModal({
   open,
   onClose,
   title = 'Full bot tutorial',
+  videoUrl: videoUrlProp,
   footer,
 }: TutorialVideoModalProps) {
   if (!open || typeof document === 'undefined') return null;
 
-  const videoUrl = getFullBotTutorialLoomUrl();
+  const videoUrl = videoUrlProp?.trim() || getFullBotTutorialLoomUrl();
   const embedUrl = getVideoEmbedUrl(videoUrl ?? undefined);
 
   return createPortal(
