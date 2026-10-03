@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import DashboardTab from './DashboardTab';
-import MobileAppShell from './MobileAppShell';
+import MobileDesktopOnlyNotice from './MobileDesktopOnlyNotice';
 import AccountMenu from './AccountMenu';
 import { AuthProvider, useAuth } from './hooks/AuthProvider';
-import { useMobileAppMode } from './hooks/useMobileAppMode';
 import { WorkTrackerProvider } from './hooks/WorkTrackerProvider';
 import { EndSessionProvider } from './hooks/EndSessionProvider';
 import { HoverTimerProvider } from './hooks/HoverTimerProvider';
@@ -73,7 +72,6 @@ export default function AgentHQ() {
 function AgentHQInner() {
   const { authEnabled, authRequired, loading: authLoading, user } = useAuth();
   const { profile, completeOnboarding } = useUserProfile();
-  const { useLimitedMobileUi, isPhoneBrowser, showDesktopUi, showMobileUi } = useMobileAppMode();
   const [focusNightPrep, setFocusNightPrep] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [infractions, setInfractions] = useLocalStorage<Infraction[]>(INFRACTIONS_STORAGE_KEY, []);
@@ -148,52 +146,42 @@ function AgentHQInner() {
             fontFamily: font,
           }}
         >
-          {useLimitedMobileUi ? (
-            <MobileAppShell onUseDesktopUi={showDesktopUi} />
-          ) : (
-            <>
-              <nav
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 20px',
-                  background: '#fff',
-                  borderBottom: '1px solid #e2e8f0',
-                  flexShrink: 0,
-                  minHeight: 52,
-                }}
+          <MobileDesktopOnlyNotice />
+          <nav
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 20px',
+              background: '#fff',
+              borderBottom: '1px solid #e2e8f0',
+              flexShrink: 0,
+              minHeight: 52,
+            }}
+          >
+            <AccountMenu />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <GetCourseModal variant="nav" />
+              <button
+                type="button"
+                onClick={() => setTutorialOpen(true)}
+                style={fullBotTutorialLinkStyle}
               >
-                <AccountMenu />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  {isPhoneBrowser ? (
-                    <button type="button" onClick={showMobileUi} style={fullBotTutorialLinkStyle}>
-                      limited mobile UI
-                    </button>
-                  ) : null}
-                  <GetCourseModal variant="nav" />
-                  <button
-                    type="button"
-                    onClick={() => setTutorialOpen(true)}
-                    style={fullBotTutorialLinkStyle}
-                  >
-                    full bot tutorial
-                  </button>
-                  <FocusExtensionModal variant="nav" />
-                  <TimeStudyModal variant="nav" />
-                  <StuckHelpNavButton />
-                </div>
-              </nav>
+                full bot tutorial
+              </button>
+              <FocusExtensionModal variant="nav" />
+              <TimeStudyModal variant="nav" />
+              <StuckHelpNavButton />
+            </div>
+          </nav>
 
-              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <DashboardTab
-                  infractions={infractions}
-                  focusNightPrep={focusNightPrep}
-                  onNightPrepFocused={() => setFocusNightPrep(false)}
-                />
-              </div>
-            </>
-          )}
+          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <DashboardTab
+              infractions={infractions}
+              focusNightPrep={focusNightPrep}
+              onNightPrepFocused={() => setFocusNightPrep(false)}
+            />
+          </div>
         </div>
         <TutorialVideoModal open={tutorialOpen} onClose={() => setTutorialOpen(false)} />
       </StuckHelpProvider>
