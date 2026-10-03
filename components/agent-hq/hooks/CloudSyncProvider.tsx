@@ -19,6 +19,7 @@ import { NIGHT_PREP_PLAN_KEY, type NightPrepTomorrowPlan } from '../nightPrep/st
 import {
   TODAY_TASK_LIST_KEY,
   emptyTodayTaskList,
+  hasMiscLinesForToday,
   type TodayTaskListStore,
 } from '../todayTaskList/storage';
 import {
@@ -167,6 +168,22 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     [setMorningFlowUsed]
   );
 
+  /** Pull today's misc from cloud when this device has none (avoids empty backup wiping the other device). */
+  const applyMiscFromCloud = useCallback(
+    (cloudMisc: TodayTaskListStore | null | undefined) => {
+      if (!cloudMisc || !hasMiscLinesForToday(cloudMisc)) return false;
+      if (hasMiscLinesForToday(miscTaskListRef.current)) return false;
+      skipPushRef.current = true;
+      setMiscTaskList(cloudMisc);
+      miscTaskListRef.current = cloudMisc;
+      window.setTimeout(() => {
+        skipPushRef.current = false;
+      }, SYNC_DEBOUNCE_MS + 500);
+      return true;
+    },
+    [setMiscTaskList]
+  );
+
   const offerRestoreIfNeeded = useCallback(
     async (supabase: ReturnType<typeof createBrowserSupabaseClient>, userId: string): Promise<boolean> => {
       if (
@@ -213,21 +230,24 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         setCloudEnabled(enabled);
         setCloudEnabledLocal(enabled);
         setLastSyncAt(settings?.last_sync_at ? new Date(settings.last_sync_at).getTime() : null);
-        setHydratedFromServer(true);
 
         if (enabled) {
-          const offered = await offerRestoreIfNeeded(supabase, user.id);
-          if (!cancelled && !offered) {
+          await offerRestoreIfNeeded(supabase, user.id);
+          if (!cancelled) {
             try {
               const snapshot = await fetchCloudSnapshot(supabase, user.id);
               if (!cancelled) {
                 applyMorningFlowUsedFromCloud(snapshot.morningFlowUsed, snapshot.nightPrepPlan);
+                applyMiscFromCloud(snapshot.miscTaskList);
               }
             } catch {
-              /* non-fatal — begin-work sync is best-effort on login */
+              /* non-fatal — soft pull is best-effort on login */
             }
           }
         }
+
+        // Hydrate after soft-pull so the first auto-backup doesn't upload an empty misc list.
+        if (!cancelled) setHydratedFromServer(true);
       } catch {
         if (!cancelled) setSyncError('Could not load backup settings.');
       }
@@ -236,7 +256,14 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [authEnabled, user, setCloudEnabledLocal, offerRestoreIfNeeded, applyMorningFlowUsedFromCloud]);
+  }, [
+    authEnabled,
+    user,
+    setCloudEnabledLocal,
+    offerRestoreIfNeeded,
+    applyMorningFlowUsedFromCloud,
+    applyMiscFromCloud,
+  ]);
 
   const runPush = useCallback(async (): Promise<boolean> => {
     if (!authEnabled || !user || !cloudEnabled || skipPushRef.current || restoreOfferOpenRef.current) {
@@ -247,7 +274,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     setSyncError(null);
     try {
       const supabase = createBrowserSupabaseClient();
-      const local = currentSnapshot();
+      let local = currentSnapshot();
 
       if (
         isLocalDataEmpty(
@@ -262,6 +289,19 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         if (hasCloudBackup) return false;
       }
 
+      // Never clobber today's cloud misc with an empty local list.
+      if (!hasMiscLinesForToday(local.miscTaskList)) {
+        try {
+          const snapshot = await fetchCloudSnapshot(supabase, user.id);
+          if (hasMiscLinesForToday(snapshot.miscTaskList)) {
+            applyMiscFromCloud(snapshot.miscTaskList);
+            local = { ...local, miscTaskList: snapshot.miscTaskList };
+          }
+        } catch {
+          /* keep local */
+        }
+      }
+
       const { lastSyncAt: iso } = await pushCloudSnapshot(supabase, user.id, local);
       setLastSyncAt(new Date(iso).getTime());
       return true;
@@ -271,7 +311,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     } finally {
       setSyncing(false);
     }
-  }, [authEnabled, user, cloudEnabled, offerRestoreIfNeeded, currentSnapshot]);
+  }, [authEnabled, user, cloudEnabled, offerRestoreIfNeeded, currentSnapshot, applyMiscFromCloud]);
 
   useEffect(() => {
     if (!cloudEnabled || !user || !hydratedFromServer || restoreOfferOpen) return;

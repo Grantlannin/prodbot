@@ -3,7 +3,7 @@ import type { CaptureNote, SimpleNote, ProjectBoard } from '@/components/agent-h
 import type { NightPrepTomorrowPlan } from '@/components/agent-hq/nightPrep/storage';
 import type { MorningFlowUsedRecord } from '@/components/agent-hq/morningFlow/storage';
 import type { TodayTaskListStore } from '@/components/agent-hq/todayTaskList/storage';
-import { emptyTodayTaskList, normalizeTodayTaskList } from '@/components/agent-hq/todayTaskList/storage';
+import { emptyTodayTaskList, sanitizeTodayTaskListStore } from '@/components/agent-hq/todayTaskList/storage';
 import { MAX_SYNC_PAYLOAD_BYTES } from './constants';
 import {
   buildNightPrepCloudBlob,
@@ -105,7 +105,7 @@ function parseOpenLoops(raw: unknown): CaptureNote[] {
 
 function parseMiscTaskList(raw: unknown): TodayTaskListStore {
   if (!raw || typeof raw !== 'object') return emptyTodayTaskList();
-  return normalizeTodayTaskList(raw as TodayTaskListStore);
+  return sanitizeTodayTaskListStore(raw as TodayTaskListStore);
 }
 
 export async function fetchSyncSettings(

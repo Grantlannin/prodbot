@@ -31,15 +31,16 @@ export function emptyTodayTaskList(now = Date.now()): TodayTaskListStore {
   };
 }
 
-export function normalizeTodayTaskList(
+/** Clean lines/shape without day-roll wipe — use for cloud sync so restores aren't emptied. */
+export function sanitizeTodayTaskListStore(
   store: TodayTaskListStore | null | undefined,
   now = Date.now()
 ): TodayTaskListStore {
-  const today = localDateKey(now);
-  if (!store || store.dateKey !== today) {
-    return emptyTodayTaskList(now);
-  }
-  const lines = (store.lines ?? [])
+  const dateKey =
+    typeof store?.dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(store.dateKey)
+      ? store.dateKey
+      : localDateKey(now);
+  const lines = (store?.lines ?? [])
     .filter(line => typeof line?.id === 'string' && typeof line?.text === 'string')
     .map(line => ({
       id: line.id,
@@ -48,10 +49,32 @@ export function normalizeTodayTaskList(
       done: Boolean(line.done),
     }));
   return {
-    dateKey: today,
+    dateKey,
     lines,
-    updatedAt: typeof store.updatedAt === 'number' ? store.updatedAt : now,
+    updatedAt: typeof store?.updatedAt === 'number' ? store.updatedAt : now,
   };
+}
+
+export function normalizeTodayTaskList(
+  store: TodayTaskListStore | null | undefined,
+  now = Date.now()
+): TodayTaskListStore {
+  const today = localDateKey(now);
+  const cleaned = sanitizeTodayTaskListStore(store, now);
+  if (cleaned.dateKey !== today) {
+    return emptyTodayTaskList(now);
+  }
+  return { ...cleaned, dateKey: today };
+}
+
+/** True when store has real misc lines for the local calendar day. */
+export function hasMiscLinesForToday(
+  store: TodayTaskListStore | null | undefined,
+  now = Date.now()
+): boolean {
+  const today = localDateKey(now);
+  if (!store || store.dateKey !== today) return false;
+  return (store.lines ?? []).some(line => typeof line?.text === 'string' && line.text.trim().length > 0);
 }
 
 export type TodayLineDragPayload = {

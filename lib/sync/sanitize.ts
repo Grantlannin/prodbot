@@ -2,7 +2,7 @@ import type { CaptureNote, SimpleNote, ProjectBoard, ProjectSubTask, ProjectTask
 import type { NightPrepTomorrowPlan } from '@/components/agent-hq/nightPrep/storage';
 import { normalizeNightPrepPlan } from '@/components/agent-hq/nightPrep/storage';
 import type { TodayTaskListStore } from '@/components/agent-hq/todayTaskList/storage';
-import { normalizeTodayTaskList } from '@/components/agent-hq/todayTaskList/storage';
+import { sanitizeTodayTaskListStore } from '@/components/agent-hq/todayTaskList/storage';
 import {
   parseMorningFlowUsed,
   type MorningFlowUsedRecord,
@@ -105,7 +105,8 @@ export function sanitizeNightPrepPlanForCloud(
 }
 
 export function sanitizeMiscTaskListForCloud(store: TodayTaskListStore): TodayTaskListStore {
-  return normalizeTodayTaskList(store);
+  // Keep the store's dateKey — day-roll wipe belongs in the UI, not in cloud payloads.
+  return sanitizeTodayTaskListStore(store);
 }
 
 export function sanitizeMorningFlowUsedForCloud(
