@@ -213,9 +213,17 @@ export default function MiscTasksPanel({
   useEffect(() => {
     if (!focusLineId) return;
     const id = focusLineId;
-    const handle = window.requestAnimationFrame(() => {
+    let cancelled = false;
+
+    const tryFocus = (attemptsLeft: number) => {
+      if (cancelled) return;
       const input = lineInputRefs.current.get(id);
-      if (!input) return;
+      if (!input) {
+        if (attemptsLeft > 0) {
+          window.requestAnimationFrame(() => tryFocus(attemptsLeft - 1));
+        }
+        return;
+      }
       const container = todayLinesRef.current;
       const savedScrollTop = container?.scrollTop ?? 0;
       input.focus({ preventScroll: true });
@@ -224,9 +232,14 @@ export default function MiscTasksPanel({
       autosizeTodayLine(input);
       if (container) container.scrollTop = savedScrollTop;
       scrollTodayLineIntoView(id);
-    });
-    setFocusLineId(null);
-    return () => window.cancelAnimationFrame(handle);
+      setFocusLineId(null);
+    };
+
+    // Wait for the new row to mount — clearing focusLineId before rAF used to cancel focus.
+    window.requestAnimationFrame(() => tryFocus(12));
+    return () => {
+      cancelled = true;
+    };
   }, [focusLineId, scrollTodayLineIntoView]);
 
   const handleLineKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>, lineId: string) => {
