@@ -5,6 +5,7 @@ import DashboardTab from './DashboardTab';
 import MobileDesktopOnlyNotice from './MobileDesktopOnlyNotice';
 import AccountMenu from './AccountMenu';
 import { AuthProvider, useAuth } from './hooks/AuthProvider';
+import { usePhoneGate } from './hooks/useMobileAppMode';
 import { WorkTrackerProvider } from './hooks/WorkTrackerProvider';
 import { EndSessionProvider } from './hooks/EndSessionProvider';
 import { HoverTimerProvider } from './hooks/HoverTimerProvider';
@@ -72,6 +73,7 @@ export default function AgentHQ() {
 function AgentHQInner() {
   const { authEnabled, authRequired, loading: authLoading, user } = useAuth();
   const { profile, completeOnboarding } = useUserProfile();
+  const { ready: phoneGateReady, isPhone } = usePhoneGate();
   const [focusNightPrep, setFocusNightPrep] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [infractions, setInfractions] = useLocalStorage<Infraction[]>(INFRACTIONS_STORAGE_KEY, []);
@@ -102,6 +104,22 @@ function AgentHQInner() {
       if (name) completeOnboarding(name);
     });
   }, [authEnabled, user, profile.displayName, completeOnboarding]);
+
+  if (!phoneGateReady) {
+    return (
+      <div
+        style={{
+          height: '100vh',
+          background: '#f1f5f9',
+          fontFamily: font,
+        }}
+      />
+    );
+  }
+
+  if (isPhone) {
+    return <MobileDesktopOnlyNotice />;
+  }
 
   if (authRequired && authLoading) {
     return (
@@ -146,7 +164,6 @@ function AgentHQInner() {
             fontFamily: font,
           }}
         >
-          <MobileDesktopOnlyNotice />
           <nav
             style={{
               display: 'flex',

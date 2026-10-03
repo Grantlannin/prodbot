@@ -13,12 +13,14 @@ export function detectPhoneBrowser(): boolean {
   return window.matchMedia('(max-width: 900px)').matches;
 }
 
-export function useIsPhoneBrowser(): boolean {
-  const [phone, setPhone] = useState(false);
+export function usePhoneGate(): { ready: boolean; isPhone: boolean } {
+  const [ready, setReady] = useState(false);
+  const [isPhone, setIsPhone] = useState(false);
 
   useEffect(() => {
-    const refresh = () => setPhone(detectPhoneBrowser());
+    const refresh = () => setIsPhone(detectPhoneBrowser());
     refresh();
+    setReady(true);
     window.addEventListener('resize', refresh);
     window.addEventListener('orientationchange', refresh);
     return () => {
@@ -27,5 +29,5 @@ export function useIsPhoneBrowser(): boolean {
     };
   }, []);
 
-  return phone;
+  return { ready, isPhone };
 }
