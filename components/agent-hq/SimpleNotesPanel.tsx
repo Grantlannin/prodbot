@@ -50,7 +50,12 @@ function groupNotes(notes: SimpleNote[]): { key: GroupKey; label: string; items:
   return out;
 }
 
-export default function SimpleNotesPanel() {
+interface SimpleNotesPanelProps {
+  /** Hide floating / pop-out notes controls (mobile limited UI). */
+  hideFloatingNotes?: boolean;
+}
+
+export default function SimpleNotesPanel({ hideFloatingNotes = false }: SimpleNotesPanelProps) {
   const [notes, setNotes] = useLocalStorage<SimpleNote[]>(SIMPLE_NOTES_KEY, []);
   const [selectedId, setSelectedId] = useLocalStorage<string | null>(SIMPLE_NOTES_SELECTED_KEY, null);
   const [migrated, setMigrated] = useState(false);
@@ -59,6 +64,7 @@ export default function SimpleNotesPanel() {
   const [lastDeleted, setLastDeleted] = useState<SimpleNote | null>(null);
   const { open: openHoverNotes, toggle: toggleHoverNotes, isOpen: hoverNotesOpen, supported: hoverNotesSupported } =
     useHoverNotes();
+  const showFloatingNotes = !hideFloatingNotes && hoverNotesSupported;
   const { projects, setProjects } = useProjects();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -260,20 +266,22 @@ export default function SimpleNotesPanel() {
             theme="light"
           />
           <div style={{ flex: 1 }} />
-          <ToolbarBtn
-            label={
-              hoverNotesSupported
-                ? hoverNotesOpen
-                  ? 'Dock notes'
-                  : 'Pop out notes'
-                : 'Pop out notes (Chrome only)'
-            }
-            onClick={() => (hoverNotesOpen ? void toggleHoverNotes() : handlePopOut())}
-            icon="⧉"
-            disabled={!hoverNotesSupported}
-            active={hoverNotesOpen}
-            theme="light"
-          />
+          {!hideFloatingNotes ? (
+            <ToolbarBtn
+              label={
+                hoverNotesSupported
+                  ? hoverNotesOpen
+                    ? 'Dock notes'
+                    : 'Pop out notes'
+                  : 'Pop out notes (Chrome only)'
+              }
+              onClick={() => (hoverNotesOpen ? void toggleHoverNotes() : handlePopOut())}
+              icon="⧉"
+              disabled={!hoverNotesSupported}
+              active={hoverNotesOpen}
+              theme="light"
+            />
+          ) : null}
           <ToolbarBtn label="New note" onClick={addNote} icon="✎" primary theme="light" />
         </div>
 
@@ -335,7 +343,7 @@ export default function SimpleNotesPanel() {
                   timeStyle: 'short',
                 })}
               </span>
-              {hoverNotesSupported ? (
+              {showFloatingNotes ? (
                 <button
                   type="button"
                   onClick={() => (hoverNotesOpen ? void toggleHoverNotes() : handlePopOut())}
