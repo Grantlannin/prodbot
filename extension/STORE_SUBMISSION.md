@@ -44,7 +44,7 @@ Daywinner bot is the official companion extension for [Daywinner](https://daywin
 While you run a focus session in Produc, the extension blocks sites you choose—social media bundle and custom domains. Blocking turns off during breaks and when your session ends.
 
 **Features**
-- Block Twitter/X, Reddit, YouTube, Instagram, and more—or add your own domains
+- Block Twitter/X, Reddit, YouTube, Instagram, and more (including common aliases like youtu.be / fb.com)—or add your own domains
 - Syncs with your Produc dashboard blocklist
 - Logs block attempts as infractions in Produc
 - No data sent to external servers; settings stay on your device

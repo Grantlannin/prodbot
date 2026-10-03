@@ -36,20 +36,20 @@ export default function PrivacyPage() {
         <li>Display name on your profile, if you provide one</li>
         <li>
           <strong>Optional cloud backup</strong> (only if you turn it on under Account → Back up to cloud):
-          projects, tasks, notes, and link URLs you attach to tasks. We do not store the content of those
-          websites.
+          projects, tasks, notes, open loops, today/tomorrow task lists, misc tasks, and link URLs you attach to
+          tasks. We do not store the content of those websites.
         </li>
       </ul>
 
       <h2 style={{ fontSize: 18, marginTop: 28 }}>What stays on your device by default</h2>
       <p>
-        Unless you enable cloud backup, your projects, tasks, and notes are saved in your browser&apos;s local
-        storage. Timer history, infractions, night prep, focus blocklist, and extension settings are always stored
-        locally.
+        Unless you enable cloud backup, your projects, tasks, notes, open loops, and task lists are saved in your
+        browser&apos;s local storage. Timer history, infractions, focus blocklist, and extension settings are always
+        stored locally.
       </p>
       <p>
         Clearing browser data or switching devices may remove local information. Cloud backup lets you restore
-        projects and notes after signing in on another computer.
+        your workspace after signing in on another computer.
       </p>
 
       <h2 style={{ fontSize: 18, marginTop: 28 }}>Chrome extension</h2>

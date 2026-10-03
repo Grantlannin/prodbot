@@ -27,6 +27,7 @@ import {
 import DailyStructureCalendar from './DailyStructureCalendar';
 import StructureBlockForm from './stuckHelp/StructureBlockForm';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { OPEN_LOOPS_STORAGE_KEY } from './openLoopsUi';
 import type { CaptureNote } from './types';
 import { localDateKey } from './eodReports';
 import {
@@ -107,7 +108,7 @@ export default function StuckHelpModal() {
     RECURRING_COMMITMENTS_KEY,
     []
   );
-  const [openLoops, setOpenLoops] = useLocalStorage<CaptureNote[]>('agentHQ_openLoops', []);
+  const [openLoops, setOpenLoops] = useLocalStorage<CaptureNote[]>(OPEN_LOOPS_STORAGE_KEY, []);
   const [typing, setTyping] = useState(false);
   const [chooseProjectError, setChooseProjectError] = useState(false);
   const [kickstartError, setKickstartError] = useState<string | null>(null);

@@ -11,9 +11,16 @@ import {
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import type { SimpleNote, ProjectBoard } from '../types';
+import type { CaptureNote, SimpleNote, ProjectBoard } from '../types';
 import { SIMPLE_NOTES_KEY } from '../simpleNotesUtils';
 import { PROJECTS_STORAGE_KEY } from '../stuckHelp/projectMutations';
+import { OPEN_LOOPS_STORAGE_KEY } from '../openLoopsUi';
+import { NIGHT_PREP_PLAN_KEY, type NightPrepTomorrowPlan } from '../nightPrep/storage';
+import {
+  TODAY_TASK_LIST_KEY,
+  emptyTodayTaskList,
+  type TodayTaskListStore,
+} from '../todayTaskList/storage';
 import { useAuth } from './AuthProvider';
 import { useProjects } from './ProjectsProvider';
 import { useLocalStorage } from './useLocalStorage';
@@ -24,6 +31,7 @@ import {
   fetchCloudSnapshot,
   fetchSyncSettings,
   pushCloudSnapshot,
+  type CloudSnapshotInput,
 } from '@/lib/sync/cloudApi';
 import { CLOUD_SYNC_ENABLED_KEY, SYNC_DEBOUNCE_MS } from '@/lib/sync/constants';
 import CloudSyncModals from '../CloudSyncModals';
@@ -49,8 +57,36 @@ interface CloudSyncContextValue {
 
 const CloudSyncContext = createContext<CloudSyncContextValue | null>(null);
 
-function isLocalDataEmpty(projects: ProjectBoard[], notes: SimpleNote[]): boolean {
-  return projects.length === 0 && notes.length === 0;
+function isLocalDataEmpty(
+  projects: ProjectBoard[],
+  notes: SimpleNote[],
+  openLoops: CaptureNote[],
+  nightPrepPlan: NightPrepTomorrowPlan | null,
+  miscTaskList: TodayTaskListStore
+): boolean {
+  return (
+    projects.length === 0 &&
+    notes.length === 0 &&
+    openLoops.length === 0 &&
+    !nightPrepPlan?.tasks?.length &&
+    !(miscTaskList.lines?.length > 0)
+  );
+}
+
+function snapshotHasData(input: {
+  projects: ProjectBoard[];
+  notes: SimpleNote[];
+  openLoops: CaptureNote[];
+  nightPrepPlan: NightPrepTomorrowPlan | null;
+  miscTaskList: TodayTaskListStore;
+}): boolean {
+  return !isLocalDataEmpty(
+    input.projects,
+    input.notes,
+    input.openLoops,
+    input.nightPrepPlan,
+    input.miscTaskList
+  );
 }
 
 export function CloudSyncProvider({ children }: { children: ReactNode }) {
@@ -58,6 +94,15 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const { authEnabled, user } = useAuth();
   const { projects, setProjects } = useProjects();
   const [notes, setNotes] = useLocalStorage<SimpleNote[]>(SIMPLE_NOTES_KEY, []);
+  const [openLoops, setOpenLoops] = useLocalStorage<CaptureNote[]>(OPEN_LOOPS_STORAGE_KEY, []);
+  const [nightPrepPlan, setNightPrepPlan] = useLocalStorage<NightPrepTomorrowPlan | null>(
+    NIGHT_PREP_PLAN_KEY,
+    null
+  );
+  const [miscTaskList, setMiscTaskList] = useLocalStorage<TodayTaskListStore>(
+    TODAY_TASK_LIST_KEY,
+    emptyTodayTaskList()
+  );
   const [cloudEnabledLocal, setCloudEnabledLocal] = useLocalStorage<boolean>(CLOUD_SYNC_ENABLED_KEY, false);
 
   const [cloudEnabled, setCloudEnabled] = useState(false);
@@ -74,18 +119,44 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const projectsRef = useRef(projects);
   const notesRef = useRef(notes);
+  const openLoopsRef = useRef(openLoops);
+  const nightPrepPlanRef = useRef(nightPrepPlan);
+  const miscTaskListRef = useRef(miscTaskList);
 
   projectsRef.current = projects;
   notesRef.current = notes;
+  openLoopsRef.current = openLoops;
+  nightPrepPlanRef.current = nightPrepPlan;
+  miscTaskListRef.current = miscTaskList;
   restoreOfferOpenRef.current = restoreOfferOpen;
+
+  const currentSnapshot = useCallback((): CloudSnapshotInput => {
+    return {
+      projects: projectsRef.current,
+      notes: notesRef.current,
+      openLoops: openLoopsRef.current,
+      nightPrepPlan: nightPrepPlanRef.current,
+      miscTaskList: miscTaskListRef.current,
+    };
+  }, []);
 
   const offerRestoreIfNeeded = useCallback(
     async (supabase: ReturnType<typeof createBrowserSupabaseClient>, userId: string): Promise<boolean> => {
-      if (!isLocalDataEmpty(projectsRef.current, notesRef.current)) return false;
+      if (
+        !isLocalDataEmpty(
+          projectsRef.current,
+          notesRef.current,
+          openLoopsRef.current,
+          nightPrepPlanRef.current,
+          miscTaskListRef.current
+        )
+      ) {
+        return false;
+      }
       if (declinedRestoreRef.current) return false;
 
       const snapshot = await fetchCloudSnapshot(supabase, userId);
-      if (snapshot.projects.length > 0 || snapshot.notes.length > 0) {
+      if (snapshotHasData(snapshot)) {
         setRestoreOfferOpen(true);
         return true;
       }
@@ -137,25 +208,29 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     setSyncError(null);
     try {
       const supabase = createBrowserSupabaseClient();
+      const local = currentSnapshot();
 
-      if (isLocalDataEmpty(projectsRef.current, notesRef.current)) {
+      if (
+        isLocalDataEmpty(
+          local.projects,
+          local.notes,
+          local.openLoops,
+          local.nightPrepPlan,
+          local.miscTaskList
+        )
+      ) {
         const hasCloudBackup = await offerRestoreIfNeeded(supabase, user.id);
         if (hasCloudBackup) return;
       }
 
-      const { lastSyncAt: iso } = await pushCloudSnapshot(
-        supabase,
-        user.id,
-        projectsRef.current,
-        notesRef.current
-      );
+      const { lastSyncAt: iso } = await pushCloudSnapshot(supabase, user.id, local);
       setLastSyncAt(new Date(iso).getTime());
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'Backup failed.');
     } finally {
       setSyncing(false);
     }
-  }, [authEnabled, user, cloudEnabled, offerRestoreIfNeeded]);
+  }, [authEnabled, user, cloudEnabled, offerRestoreIfNeeded, currentSnapshot]);
 
   useEffect(() => {
     if (!cloudEnabled || !user || !hydratedFromServer || restoreOfferOpen) return;
@@ -168,7 +243,18 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     return () => {
       if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
     };
-  }, [projects, notes, cloudEnabled, user, hydratedFromServer, restoreOfferOpen, runPush]);
+  }, [
+    projects,
+    notes,
+    openLoops,
+    nightPrepPlan,
+    miscTaskList,
+    cloudEnabled,
+    user,
+    hydratedFromServer,
+    restoreOfferOpen,
+    runPush,
+  ]);
 
   const enableBackup = useCallback(() => {
     if (!authEnabled) return;
@@ -186,12 +272,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     setSyncError(null);
     try {
       const supabase = createBrowserSupabaseClient();
-      const { lastSyncAt: iso } = await enableCloudBackup(
-        supabase,
-        user.id,
-        projectsRef.current,
-        notesRef.current
-      );
+      const { lastSyncAt: iso } = await enableCloudBackup(supabase, user.id, currentSnapshot());
       setCloudEnabled(true);
       setCloudEnabledLocal(true);
       setLastSyncAt(new Date(iso).getTime());
@@ -200,7 +281,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     } finally {
       setSyncing(false);
     }
-  }, [user, setCloudEnabledLocal]);
+  }, [user, setCloudEnabledLocal, currentSnapshot]);
 
   const disableBackup = useCallback(
     async (deleteCloudCopy: boolean) => {
@@ -235,18 +316,22 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       skipPushRef.current = true;
       setProjects(snapshot.projects);
       setNotes(snapshot.notes);
+      setOpenLoops(snapshot.openLoops);
+      setNightPrepPlan(snapshot.nightPrepPlan);
+      setMiscTaskList(snapshot.miscTaskList);
       setRestoreOfferOpen(false);
       window.setTimeout(() => {
         skipPushRef.current = false;
       }, SYNC_DEBOUNCE_MS + 500);
 
       if (cloudEnabled) {
-        const { lastSyncAt: iso } = await pushCloudSnapshot(
-          supabase,
-          user.id,
-          snapshot.projects,
-          snapshot.notes
-        );
+        const { lastSyncAt: iso } = await pushCloudSnapshot(supabase, user.id, {
+          projects: snapshot.projects,
+          notes: snapshot.notes,
+          openLoops: snapshot.openLoops,
+          nightPrepPlan: snapshot.nightPrepPlan,
+          miscTaskList: snapshot.miscTaskList,
+        });
         setLastSyncAt(new Date(iso).getTime());
       }
     } catch (err) {
@@ -254,7 +339,15 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     } finally {
       setSyncing(false);
     }
-  }, [user, cloudEnabled, setProjects, setNotes]);
+  }, [
+    user,
+    cloudEnabled,
+    setProjects,
+    setNotes,
+    setOpenLoops,
+    setNightPrepPlan,
+    setMiscTaskList,
+  ]);
 
   const dismissRestoreOffer = useCallback(() => {
     setRestoreOfferOpen(false);
@@ -270,7 +363,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       try {
         const supabase = createBrowserSupabaseClient();
         const snapshot = await fetchCloudSnapshot(supabase, user.id);
-        if (snapshot.projects.length > 0 || snapshot.notes.length > 0) {
+        if (snapshotHasData(snapshot)) {
           setRestoreOfferOpen(true);
         } else {
           setSyncError('No cloud backup found for this account.');
@@ -336,4 +429,10 @@ export function useCloudSync(): CloudSyncContextValue {
 }
 
 /** Keys synced to cloud (documentation / tests). */
-export const CLOUD_SYNC_STORAGE_KEYS = [PROJECTS_STORAGE_KEY, SIMPLE_NOTES_KEY] as const;
+export const CLOUD_SYNC_STORAGE_KEYS = [
+  PROJECTS_STORAGE_KEY,
+  SIMPLE_NOTES_KEY,
+  OPEN_LOOPS_STORAGE_KEY,
+  NIGHT_PREP_PLAN_KEY,
+  TODAY_TASK_LIST_KEY,
+] as const;

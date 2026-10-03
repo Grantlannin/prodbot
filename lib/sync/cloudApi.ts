@@ -1,7 +1,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { SimpleNote, ProjectBoard } from '@/components/agent-hq/types';
+import type { CaptureNote, SimpleNote, ProjectBoard } from '@/components/agent-hq/types';
+import type { NightPrepTomorrowPlan } from '@/components/agent-hq/nightPrep/storage';
+import { normalizeNightPrepPlan } from '@/components/agent-hq/nightPrep/storage';
+import type { TodayTaskListStore } from '@/components/agent-hq/todayTaskList/storage';
+import { emptyTodayTaskList, normalizeTodayTaskList } from '@/components/agent-hq/todayTaskList/storage';
 import { MAX_SYNC_PAYLOAD_BYTES } from './constants';
-import { estimateJsonBytes, sanitizeNotesForCloud, sanitizeProjectsForCloud } from './sanitize';
+import {
+  estimateJsonBytes,
+  sanitizeMiscTaskListForCloud,
+  sanitizeNightPrepPlanForCloud,
+  sanitizeNotesForCloud,
+  sanitizeOpenLoopsForCloud,
+  sanitizeProjectsForCloud,
+} from './sanitize';
 
 export interface SyncSettingsRow {
   user_id: string;
@@ -10,14 +21,31 @@ export interface SyncSettingsRow {
   last_sync_at: string | null;
   projects_updated_at: string | null;
   notes_updated_at: string | null;
+  open_loops_updated_at?: string | null;
+  night_prep_updated_at?: string | null;
+  misc_tasks_updated_at?: string | null;
 }
 
 export interface CloudSnapshot {
   projects: ProjectBoard[];
   notes: SimpleNote[];
+  openLoops: CaptureNote[];
+  nightPrepPlan: NightPrepTomorrowPlan | null;
+  miscTaskList: TodayTaskListStore;
   projectsUpdatedAt: string | null;
   notesUpdatedAt: string | null;
+  openLoopsUpdatedAt: string | null;
+  nightPrepUpdatedAt: string | null;
+  miscTasksUpdatedAt: string | null;
 }
+
+export type CloudSnapshotInput = {
+  projects: ProjectBoard[];
+  notes: SimpleNote[];
+  openLoops: CaptureNote[];
+  nightPrepPlan: NightPrepTomorrowPlan | null;
+  miscTaskList: TodayTaskListStore;
+};
 
 type NotesTable = 'user_simple_notes' | 'user_apple_notes';
 
@@ -32,6 +60,10 @@ function syncErrorMessage(err: unknown, fallback: string): string {
     }
   }
   return fallback;
+}
+
+function isMissingTableError(err: unknown): boolean {
+  return !!err && typeof err === 'object' && (err as { code?: string }).code === 'PGRST205';
 }
 
 /** Prod may still have the pre-rename table until migration 008 is applied. */
@@ -64,6 +96,20 @@ function parseNotes(raw: unknown): SimpleNote[] {
   return Array.isArray(raw) ? (raw as SimpleNote[]) : [];
 }
 
+function parseOpenLoops(raw: unknown): CaptureNote[] {
+  return Array.isArray(raw) ? (raw as CaptureNote[]) : [];
+}
+
+function parseNightPrepPlan(raw: unknown): NightPrepTomorrowPlan | null {
+  if (!raw || typeof raw !== 'object') return null;
+  return normalizeNightPrepPlan(raw as NightPrepTomorrowPlan);
+}
+
+function parseMiscTaskList(raw: unknown): TodayTaskListStore {
+  if (!raw || typeof raw !== 'object') return emptyTodayTaskList();
+  return normalizeTodayTaskList(raw as TodayTaskListStore);
+}
+
 export async function fetchSyncSettings(
   supabase: SupabaseClient,
   userId: string
@@ -80,41 +126,56 @@ export async function fetchSyncSettings(
 
 export async function fetchCloudSnapshot(supabase: SupabaseClient, userId: string): Promise<CloudSnapshot> {
   const notesTable = await getNotesTable(supabase);
-  const [projectsRes, notesRes] = await Promise.all([
+  const [projectsRes, notesRes, openLoopsRes, nightPrepRes, miscRes] = await Promise.all([
     supabase.from('user_project_boards').select('projects, updated_at').eq('user_id', userId).maybeSingle(),
     supabase.from(notesTable).select('notes, updated_at').eq('user_id', userId).maybeSingle(),
+    supabase.from('user_open_loops').select('open_loops, updated_at').eq('user_id', userId).maybeSingle(),
+    supabase.from('user_night_prep_plans').select('plan, updated_at').eq('user_id', userId).maybeSingle(),
+    supabase.from('user_misc_task_lists').select('store, updated_at').eq('user_id', userId).maybeSingle(),
   ]);
 
   if (projectsRes.error) throw projectsRes.error;
   if (notesRes.error) throw notesRes.error;
 
+  // New tables may be missing until migration 009 is applied — treat as empty rather than failing restore.
+  if (openLoopsRes.error && !isMissingTableError(openLoopsRes.error)) throw openLoopsRes.error;
+  if (nightPrepRes.error && !isMissingTableError(nightPrepRes.error)) throw nightPrepRes.error;
+  if (miscRes.error && !isMissingTableError(miscRes.error)) throw miscRes.error;
+
   return {
     projects: parseProjects(projectsRes.data?.projects),
     notes: parseNotes(notesRes.data?.notes),
+    openLoops: openLoopsRes.error ? [] : parseOpenLoops(openLoopsRes.data?.open_loops),
+    nightPrepPlan: nightPrepRes.error ? null : parseNightPrepPlan(nightPrepRes.data?.plan),
+    miscTaskList: miscRes.error ? emptyTodayTaskList() : parseMiscTaskList(miscRes.data?.store),
     projectsUpdatedAt: projectsRes.data?.updated_at ?? null,
     notesUpdatedAt: notesRes.data?.updated_at ?? null,
+    openLoopsUpdatedAt: openLoopsRes.error ? null : openLoopsRes.data?.updated_at ?? null,
+    nightPrepUpdatedAt: nightPrepRes.error ? null : nightPrepRes.data?.updated_at ?? null,
+    miscTasksUpdatedAt: miscRes.error ? null : miscRes.data?.updated_at ?? null,
   };
 }
 
 export async function pushCloudSnapshot(
   supabase: SupabaseClient,
   userId: string,
-  projects: ProjectBoard[],
-  notes: SimpleNote[]
+  input: CloudSnapshotInput
 ): Promise<{ lastSyncAt: string }> {
-  const cleanProjects = sanitizeProjectsForCloud(projects);
-  const cleanNotes = sanitizeNotesForCloud(notes);
+  const cleanProjects = sanitizeProjectsForCloud(input.projects);
+  const cleanNotes = sanitizeNotesForCloud(input.notes);
+  const cleanOpenLoops = sanitizeOpenLoopsForCloud(input.openLoops);
+  const cleanNightPrep = sanitizeNightPrepPlanForCloud(input.nightPrepPlan);
+  const cleanMisc = sanitizeMiscTaskListForCloud(input.miscTaskList);
 
-  const projectsBytes = estimateJsonBytes(cleanProjects);
-  const notesBytes = estimateJsonBytes(cleanNotes);
-  if (projectsBytes > MAX_SYNC_PAYLOAD_BYTES || notesBytes > MAX_SYNC_PAYLOAD_BYTES) {
+  const payloads = [cleanProjects, cleanNotes, cleanOpenLoops, cleanNightPrep, cleanMisc];
+  if (payloads.some(value => estimateJsonBytes(value) > MAX_SYNC_PAYLOAD_BYTES)) {
     throw new Error('Backup is too large. Try removing old content or contact support.');
   }
 
   const now = new Date().toISOString();
   const notesTable = await getNotesTable(supabase);
 
-  const [projectsRes, notesRes] = await Promise.all([
+  const [projectsRes, notesRes, openLoopsRes, nightPrepRes, miscRes] = await Promise.all([
     supabase.from('user_project_boards').upsert(
       {
         user_id: userId,
@@ -131,10 +192,44 @@ export async function pushCloudSnapshot(
       },
       { onConflict: 'user_id' }
     ),
+    supabase.from('user_open_loops').upsert(
+      {
+        user_id: userId,
+        open_loops: cleanOpenLoops,
+        updated_at: now,
+      },
+      { onConflict: 'user_id' }
+    ),
+    supabase.from('user_night_prep_plans').upsert(
+      {
+        user_id: userId,
+        plan: cleanNightPrep,
+        updated_at: now,
+      },
+      { onConflict: 'user_id' }
+    ),
+    supabase.from('user_misc_task_lists').upsert(
+      {
+        user_id: userId,
+        store: cleanMisc,
+        updated_at: now,
+      },
+      { onConflict: 'user_id' }
+    ),
   ]);
 
   if (projectsRes.error) throw projectsRes.error;
   if (notesRes.error) throw notesRes.error;
+
+  const workspaceErrors = [openLoopsRes.error, nightPrepRes.error, miscRes.error].filter(Boolean);
+  if (workspaceErrors.length) {
+    if (workspaceErrors.every(isMissingTableError)) {
+      throw new Error(
+        'Cloud backup needs a one-time database update (migration 009). Run supabase/migrations/009_cloud_sync_workspace_lists.sql in the Supabase SQL editor, then try again.'
+      );
+    }
+    throw workspaceErrors[0];
+  }
 
   const existing = await fetchSyncSettings(supabase, userId);
   const settingsRes = await supabase.from('user_sync_settings').upsert(
@@ -145,11 +240,32 @@ export async function pushCloudSnapshot(
       last_sync_at: now,
       projects_updated_at: now,
       notes_updated_at: now,
+      open_loops_updated_at: now,
+      night_prep_updated_at: now,
+      misc_tasks_updated_at: now,
     },
     { onConflict: 'user_id' }
   );
 
-  if (settingsRes.error) throw settingsRes.error;
+  if (settingsRes.error) {
+    // Older DBs may lack the new timestamp columns — retry without them.
+    if (settingsRes.error.code === 'PGRST204' || /column/i.test(settingsRes.error.message || '')) {
+      const fallback = await supabase.from('user_sync_settings').upsert(
+        {
+          user_id: userId,
+          cloud_enabled: true,
+          enabled_at: existing?.enabled_at ?? now,
+          last_sync_at: now,
+          projects_updated_at: now,
+          notes_updated_at: now,
+        },
+        { onConflict: 'user_id' }
+      );
+      if (fallback.error) throw fallback.error;
+    } else {
+      throw settingsRes.error;
+    }
+  }
 
   return { lastSyncAt: now };
 }
@@ -157,11 +273,10 @@ export async function pushCloudSnapshot(
 export async function enableCloudBackup(
   supabase: SupabaseClient,
   userId: string,
-  projects: ProjectBoard[],
-  notes: SimpleNote[]
+  input: CloudSnapshotInput
 ): Promise<{ lastSyncAt: string }> {
   try {
-    return await pushCloudSnapshot(supabase, userId, projects, notes);
+    return await pushCloudSnapshot(supabase, userId, input);
   } catch (err) {
     throw new Error(syncErrorMessage(err, 'Could not enable backup.'));
   }
@@ -179,6 +294,9 @@ export async function disableCloudBackup(
     await Promise.all([
       supabase.from('user_project_boards').delete().eq('user_id', userId),
       supabase.from(notesTable).delete().eq('user_id', userId),
+      supabase.from('user_open_loops').delete().eq('user_id', userId),
+      supabase.from('user_night_prep_plans').delete().eq('user_id', userId),
+      supabase.from('user_misc_task_lists').delete().eq('user_id', userId),
     ]);
   }
 

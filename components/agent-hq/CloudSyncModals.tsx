@@ -25,13 +25,14 @@ export default function CloudSyncModals() {
       <div style={styles.backdrop} role="presentation">
         <div style={styles.panel} role="dialog" aria-modal="true" aria-labelledby="enable-backup-title">
           <h3 id="enable-backup-title" style={styles.title}>
-            Back up projects &amp; notes?
+            Back up to cloud?
           </h3>
           <p style={styles.body}>
-            Your projects, tasks, notes, and attached links (URLs only) will be saved to your account so you can
-            restore them on another computer. We don&apos;t store the content of linked websites.
+            Projects, notes, open loops, today/tomorrow&apos;s task list, misc tasks, and attached link URLs will
+            sync to your account so you can use Daywinner on another device. We don&apos;t store the content of
+            linked websites.
           </p>
-          <p style={styles.hint}>Timer history and extension settings stay on this device.</p>
+          <p style={styles.hint}>Timer history, infractions, and extension settings stay on this device.</p>
           <div style={styles.actions}>
             <button type="button" onClick={cancelEnableBackup} style={styles.secondaryBtn} disabled={syncing}>
               Cancel
@@ -54,7 +55,8 @@ export default function CloudSyncModals() {
             Restore from cloud?
           </h3>
           <p style={styles.body}>
-            This device has no projects or notes saved locally, but we found a cloud backup on your account.
+            This device is empty locally, but we found a cloud backup (projects, notes, open loops, task lists)
+            on your account.
           </p>
           <div style={styles.actions}>
             <button type="button" onClick={dismissRestoreOffer} style={styles.secondaryBtn} disabled={syncing}>

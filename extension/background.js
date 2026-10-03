@@ -108,7 +108,8 @@ async function updateRules(state) {
     },
     condition: {
       urlFilter: `||${domain}^`,
-      resourceTypes: ['main_frame'],
+      // main_frame = top-level tabs; sub_frame = embeds (YouTube player on other sites, etc.)
+      resourceTypes: ['main_frame', 'sub_frame'],
     },
   }));
 

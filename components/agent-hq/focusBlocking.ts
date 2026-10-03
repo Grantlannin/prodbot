@@ -23,12 +23,16 @@ export const FOCUS_LOCK_MODES: FocusLockMode[] = ['none', 'soft', 'hard'];
 
 export const SOCIAL_BUNDLE_SITES = [
   { key: 'twitter', label: 'X / Twitter', domains: ['twitter.com', 'x.com'] },
-  { key: 'reddit', label: 'Reddit', domains: ['reddit.com'] },
-  { key: 'youtube', label: 'YouTube', domains: ['youtube.com'] },
+  { key: 'reddit', label: 'Reddit', domains: ['reddit.com', 'redd.it'] },
+  { key: 'youtube', label: 'YouTube', domains: ['youtube.com', 'youtu.be', 'youtube-nocookie.com'] },
   { key: 'instagram', label: 'Instagram', domains: ['instagram.com'] },
   { key: 'tiktok', label: 'TikTok', domains: ['tiktok.com'] },
-  { key: 'facebook', label: 'Facebook', domains: ['facebook.com'] },
-  { key: 'linkedin', label: 'LinkedIn', domains: ['linkedin.com'] },
+  {
+    key: 'facebook',
+    label: 'Facebook',
+    domains: ['facebook.com', 'fb.com', 'messenger.com', 'fb.watch'],
+  },
+  { key: 'linkedin', label: 'LinkedIn', domains: ['linkedin.com', 'lnkd.in'] },
 ] as const;
 
 export interface FocusBlocklistStore {

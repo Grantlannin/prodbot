@@ -41,7 +41,8 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
     dayStartMs: 0,
     items: [],
   });
-  const [entitled, setEntitled] = useState(false);
+  /** Optimistic until billing status proves otherwise — avoids unlocking on fetch blips. */
+  const [entitled, setEntitled] = useState(true);
   const {
     status,
     currentSession,
@@ -65,10 +66,8 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
         .then(res => (res.ok ? res.json() : null))
         .then(data => {
           if (cancelled) return;
-          if (!data) {
-            setEntitled(false);
-            return;
-          }
+          // Keep last known entitlement on fetch failure so a blip doesn't unlock the blocker.
+          if (!data) return;
           if (data.billingEnabled) {
             setEntitled(!!data.active);
           } else {
@@ -76,7 +75,7 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
           }
         })
         .catch(() => {
-          if (!cancelled) setEntitled(false);
+          /* keep prior entitled state */
         });
     };
 

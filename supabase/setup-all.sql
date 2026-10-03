@@ -92,7 +92,10 @@ create table if not exists public.user_sync_settings (
   enabled_at timestamptz,
   last_sync_at timestamptz,
   projects_updated_at timestamptz,
-  notes_updated_at timestamptz
+  notes_updated_at timestamptz,
+  open_loops_updated_at timestamptz,
+  night_prep_updated_at timestamptz,
+  misc_tasks_updated_at timestamptz
 );
 
 create table if not exists public.user_project_boards (
@@ -126,5 +129,47 @@ create policy "project_boards_own"
 drop policy if exists "simple_notes_own" on public.user_simple_notes;
 create policy "simple_notes_own"
   on public.user_simple_notes for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- Workspace lists (see supabase/migrations/009_cloud_sync_workspace_lists.sql)
+
+create table if not exists public.user_open_loops (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  open_loops jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.user_night_prep_plans (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  plan jsonb,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.user_misc_task_lists (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  store jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.user_open_loops enable row level security;
+alter table public.user_night_prep_plans enable row level security;
+alter table public.user_misc_task_lists enable row level security;
+
+drop policy if exists "open_loops_own" on public.user_open_loops;
+create policy "open_loops_own"
+  on public.user_open_loops for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "night_prep_plans_own" on public.user_night_prep_plans;
+create policy "night_prep_plans_own"
+  on public.user_night_prep_plans for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "misc_task_lists_own" on public.user_misc_task_lists;
+create policy "misc_task_lists_own"
+  on public.user_misc_task_lists for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);

@@ -1,5 +1,7 @@
 import type { CaptureNote } from './types';
 
+export const OPEN_LOOPS_STORAGE_KEY = 'agentHQ_openLoops';
+
 export const OPEN_LOOP_ICON = '○';
 export const DECISION_ICON = '◇';
 

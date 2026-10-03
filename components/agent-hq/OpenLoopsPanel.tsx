@@ -7,7 +7,7 @@ import OpenLoopCalendarReminder, {
   OPEN_LOOP_CALENDAR_MINIMIZED_KEY,
   OpenLoopCalendarMinimizedTab,
 } from './OpenLoopCalendarReminder';
-import { DECISION_ICON, OPEN_LOOP_ICON, isDecisionNote } from './openLoopsUi';
+import { DECISION_ICON, OPEN_LOOP_ICON, OPEN_LOOPS_STORAGE_KEY, isDecisionNote } from './openLoopsUi';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -208,7 +208,7 @@ export default function OpenLoopsPanel() {
   return (
     <>
       <CaptureNotesPanel
-        storageKey="agentHQ_openLoops"
+        storageKey={OPEN_LOOPS_STORAGE_KEY}
         bodyTemplate=""
         bodyPrompt={OPEN_LOOP_BODY_PROMPT}
         addLabel="Add open loop"
