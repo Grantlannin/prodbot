@@ -28,6 +28,64 @@ async function getTimeStudySettings() {
   };
 }
 
+function normalizeDomain(domain) {
+  return String(domain || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, '');
+}
+
+function matchBlockedDomain(hostname, domains) {
+  const host = normalizeDomain(hostname);
+  if (!host) return null;
+  for (const raw of domains || []) {
+    const domain = normalizeDomain(raw);
+    if (!domain) continue;
+    if (host === domain || host.endsWith(`.${domain}`)) return domain;
+  }
+  return null;
+}
+
+function blockedPageUrl(domain) {
+  return chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(domain)}`);
+}
+
+async function redirectTabIfBlocked(tabId, url, domains) {
+  if (!tabId || !url || !domains?.length) return false;
+  let hostname;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    hostname = parsed.hostname;
+  } catch {
+    return false;
+  }
+
+  const domain = matchBlockedDomain(hostname, domains);
+  if (!domain) return false;
+
+  try {
+    await chrome.tabs.update(tabId, { url: blockedPageUrl(domain) });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** DNR only catches new network navigations — already-open SPA tabs (X, Reddit, etc.) keep working until we force them. */
+async function enforceBlockedTabs(state) {
+  if (!state?.blocking || !state.domains?.length) return;
+  const tabs = await chrome.tabs.query({});
+  await Promise.all(tabs.map(tab => redirectTabIfBlocked(tab.id, tab.url, state.domains)));
+}
+
+async function handlePossibleBlockedNavigation(details) {
+  if (details.frameId !== 0) return;
+  const state = await getStoredState();
+  if (!state.blocking || !state.domains?.length) return;
+  await redirectTabIfBlocked(details.tabId, details.url, state.domains);
+}
+
 async function updateRules(state) {
   const existing = await chrome.declarativeNetRequest.getDynamicRules();
   const removeIds = existing.map(rule => rule.id);
@@ -101,6 +159,7 @@ async function applySync(payload) {
 
   await chrome.storage.local.set({ focusState: state });
   await updateRules(state);
+  await enforceBlockedTabs(state);
 
   await chrome.alarms.clear('sessionEnd');
   if (
@@ -247,6 +306,7 @@ async function restoreFromStorage() {
     });
   } else {
     await updateRules(state);
+    await enforceBlockedTabs(state);
     if (
       !state.timerPaused &&
       state.blocking &&
@@ -361,6 +421,25 @@ chrome.alarms.onAlarm.addListener(alarm => {
       await fireTimeStudyPing();
     })();
   }
+});
+
+// Catch SPA route changes + back-button returns that skip full network navigations.
+chrome.webNavigation.onCommitted.addListener(details => {
+  void handlePossibleBlockedNavigation(details);
+});
+
+chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
+  void handlePossibleBlockedNavigation(details);
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  const url = changeInfo.url || (changeInfo.status === 'loading' ? tab.url : null);
+  if (!url) return;
+  void (async () => {
+    const state = await getStoredState();
+    if (!state.blocking || !state.domains?.length) return;
+    await redirectTabIfBlocked(tabId, url, state.domains);
+  })();
 });
 
 chrome.runtime.onStartup.addListener(() => {
