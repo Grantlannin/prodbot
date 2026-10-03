@@ -21,6 +21,11 @@ import {
   emptyTodayTaskList,
   type TodayTaskListStore,
 } from '../todayTaskList/storage';
+import {
+  isMorningFlowUsedForActivePlan,
+  MORNING_FLOW_USED_KEY,
+  type MorningFlowUsedRecord,
+} from '../morningFlow/storage';
 import { useAuth } from './AuthProvider';
 import { useProjects } from './ProjectsProvider';
 import { useLocalStorage } from './useLocalStorage';
@@ -103,6 +108,10 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     TODAY_TASK_LIST_KEY,
     emptyTodayTaskList()
   );
+  const [morningFlowUsed, setMorningFlowUsed] = useLocalStorage<MorningFlowUsedRecord | string | null>(
+    MORNING_FLOW_USED_KEY,
+    null
+  );
   const [cloudEnabledLocal, setCloudEnabledLocal] = useLocalStorage<boolean>(CLOUD_SYNC_ENABLED_KEY, false);
 
   const [cloudEnabled, setCloudEnabled] = useState(false);
@@ -122,12 +131,14 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const openLoopsRef = useRef(openLoops);
   const nightPrepPlanRef = useRef(nightPrepPlan);
   const miscTaskListRef = useRef(miscTaskList);
+  const morningFlowUsedRef = useRef(morningFlowUsed);
 
   projectsRef.current = projects;
   notesRef.current = notes;
   openLoopsRef.current = openLoops;
   nightPrepPlanRef.current = nightPrepPlan;
   miscTaskListRef.current = miscTaskList;
+  morningFlowUsedRef.current = morningFlowUsed;
   restoreOfferOpenRef.current = restoreOfferOpen;
 
   const currentSnapshot = useCallback((): CloudSnapshotInput => {
@@ -136,9 +147,25 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       notes: notesRef.current,
       openLoops: openLoopsRef.current,
       nightPrepPlan: nightPrepPlanRef.current,
+      morningFlowUsed: morningFlowUsedRef.current,
       miscTaskList: miscTaskListRef.current,
     };
   }, []);
+
+  /** If another device already began work for today's plan, hide Begin work here too. */
+  const applyMorningFlowUsedFromCloud = useCallback(
+    (cloudUsed: MorningFlowUsedRecord | null, plan: NightPrepTomorrowPlan | null) => {
+      const localPlan = plan ?? nightPrepPlanRef.current;
+      if (!cloudUsed || !isMorningFlowUsedForActivePlan(cloudUsed, localPlan)) return;
+      if (isMorningFlowUsedForActivePlan(morningFlowUsedRef.current, localPlan)) return;
+      skipPushRef.current = true;
+      setMorningFlowUsed(cloudUsed);
+      window.setTimeout(() => {
+        skipPushRef.current = false;
+      }, SYNC_DEBOUNCE_MS + 500);
+    },
+    [setMorningFlowUsed]
+  );
 
   const offerRestoreIfNeeded = useCallback(
     async (supabase: ReturnType<typeof createBrowserSupabaseClient>, userId: string): Promise<boolean> => {
@@ -189,7 +216,17 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         setHydratedFromServer(true);
 
         if (enabled) {
-          await offerRestoreIfNeeded(supabase, user.id);
+          const offered = await offerRestoreIfNeeded(supabase, user.id);
+          if (!cancelled && !offered) {
+            try {
+              const snapshot = await fetchCloudSnapshot(supabase, user.id);
+              if (!cancelled) {
+                applyMorningFlowUsedFromCloud(snapshot.morningFlowUsed, snapshot.nightPrepPlan);
+              }
+            } catch {
+              /* non-fatal — begin-work sync is best-effort on login */
+            }
+          }
         }
       } catch {
         if (!cancelled) setSyncError('Could not load backup settings.');
@@ -199,7 +236,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [authEnabled, user, setCloudEnabledLocal, offerRestoreIfNeeded]);
+  }, [authEnabled, user, setCloudEnabledLocal, offerRestoreIfNeeded, applyMorningFlowUsedFromCloud]);
 
   const runPush = useCallback(async (): Promise<boolean> => {
     if (!authEnabled || !user || !cloudEnabled || skipPushRef.current || restoreOfferOpenRef.current) {
@@ -253,6 +290,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     openLoops,
     nightPrepPlan,
     miscTaskList,
+    morningFlowUsed,
     cloudEnabled,
     user,
     hydratedFromServer,
@@ -323,6 +361,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       setOpenLoops(snapshot.openLoops);
       setNightPrepPlan(snapshot.nightPrepPlan);
       setMiscTaskList(snapshot.miscTaskList);
+      setMorningFlowUsed(snapshot.morningFlowUsed);
       setRestoreOfferOpen(false);
       window.setTimeout(() => {
         skipPushRef.current = false;
@@ -334,6 +373,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
           notes: snapshot.notes,
           openLoops: snapshot.openLoops,
           nightPrepPlan: snapshot.nightPrepPlan,
+          morningFlowUsed: snapshot.morningFlowUsed,
           miscTaskList: snapshot.miscTaskList,
         });
         setLastSyncAt(new Date(iso).getTime());
@@ -351,6 +391,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     setOpenLoops,
     setNightPrepPlan,
     setMiscTaskList,
+    setMorningFlowUsed,
   ]);
 
   const dismissRestoreOffer = useCallback(() => {
@@ -439,4 +480,5 @@ export const CLOUD_SYNC_STORAGE_KEYS = [
   OPEN_LOOPS_STORAGE_KEY,
   NIGHT_PREP_PLAN_KEY,
   TODAY_TASK_LIST_KEY,
+  MORNING_FLOW_USED_KEY,
 ] as const;

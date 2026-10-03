@@ -1,14 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CaptureNote, SimpleNote, ProjectBoard } from '@/components/agent-hq/types';
 import type { NightPrepTomorrowPlan } from '@/components/agent-hq/nightPrep/storage';
-import { normalizeNightPrepPlan } from '@/components/agent-hq/nightPrep/storage';
+import type { MorningFlowUsedRecord } from '@/components/agent-hq/morningFlow/storage';
 import type { TodayTaskListStore } from '@/components/agent-hq/todayTaskList/storage';
 import { emptyTodayTaskList, normalizeTodayTaskList } from '@/components/agent-hq/todayTaskList/storage';
 import { MAX_SYNC_PAYLOAD_BYTES } from './constants';
 import {
+  buildNightPrepCloudBlob,
   estimateJsonBytes,
+  parseNightPrepCloudBlob,
   sanitizeMiscTaskListForCloud,
-  sanitizeNightPrepPlanForCloud,
   sanitizeNotesForCloud,
   sanitizeOpenLoopsForCloud,
   sanitizeProjectsForCloud,
@@ -31,6 +32,7 @@ export interface CloudSnapshot {
   notes: SimpleNote[];
   openLoops: CaptureNote[];
   nightPrepPlan: NightPrepTomorrowPlan | null;
+  morningFlowUsed: MorningFlowUsedRecord | null;
   miscTaskList: TodayTaskListStore;
   projectsUpdatedAt: string | null;
   notesUpdatedAt: string | null;
@@ -44,6 +46,7 @@ export type CloudSnapshotInput = {
   notes: SimpleNote[];
   openLoops: CaptureNote[];
   nightPrepPlan: NightPrepTomorrowPlan | null;
+  morningFlowUsed: MorningFlowUsedRecord | string | null;
   miscTaskList: TodayTaskListStore;
 };
 
@@ -100,11 +103,6 @@ function parseOpenLoops(raw: unknown): CaptureNote[] {
   return Array.isArray(raw) ? (raw as CaptureNote[]) : [];
 }
 
-function parseNightPrepPlan(raw: unknown): NightPrepTomorrowPlan | null {
-  if (!raw || typeof raw !== 'object') return null;
-  return normalizeNightPrepPlan(raw as NightPrepTomorrowPlan);
-}
-
 function parseMiscTaskList(raw: unknown): TodayTaskListStore {
   if (!raw || typeof raw !== 'object') return emptyTodayTaskList();
   return normalizeTodayTaskList(raw as TodayTaskListStore);
@@ -142,11 +140,16 @@ export async function fetchCloudSnapshot(supabase: SupabaseClient, userId: strin
   if (nightPrepRes.error && !isMissingTableError(nightPrepRes.error)) throw nightPrepRes.error;
   if (miscRes.error && !isMissingTableError(miscRes.error)) throw miscRes.error;
 
+  const nightPrep = nightPrepRes.error
+    ? { plan: null, morningFlowUsed: null }
+    : parseNightPrepCloudBlob(nightPrepRes.data?.plan);
+
   return {
     projects: parseProjects(projectsRes.data?.projects),
     notes: parseNotes(notesRes.data?.notes),
     openLoops: openLoopsRes.error ? [] : parseOpenLoops(openLoopsRes.data?.open_loops),
-    nightPrepPlan: nightPrepRes.error ? null : parseNightPrepPlan(nightPrepRes.data?.plan),
+    nightPrepPlan: nightPrep.plan,
+    morningFlowUsed: nightPrep.morningFlowUsed,
     miscTaskList: miscRes.error ? emptyTodayTaskList() : parseMiscTaskList(miscRes.data?.store),
     projectsUpdatedAt: projectsRes.data?.updated_at ?? null,
     notesUpdatedAt: notesRes.data?.updated_at ?? null,
@@ -164,7 +167,7 @@ export async function pushCloudSnapshot(
   const cleanProjects = sanitizeProjectsForCloud(input.projects);
   const cleanNotes = sanitizeNotesForCloud(input.notes);
   const cleanOpenLoops = sanitizeOpenLoopsForCloud(input.openLoops);
-  const cleanNightPrep = sanitizeNightPrepPlanForCloud(input.nightPrepPlan);
+  const cleanNightPrep = buildNightPrepCloudBlob(input.nightPrepPlan, input.morningFlowUsed);
   const cleanMisc = sanitizeMiscTaskListForCloud(input.miscTaskList);
 
   const payloads = [cleanProjects, cleanNotes, cleanOpenLoops, cleanNightPrep, cleanMisc];

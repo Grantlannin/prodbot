@@ -3,6 +3,10 @@ import type { NightPrepTomorrowPlan } from '@/components/agent-hq/nightPrep/stor
 import { normalizeNightPrepPlan } from '@/components/agent-hq/nightPrep/storage';
 import type { TodayTaskListStore } from '@/components/agent-hq/todayTaskList/storage';
 import { normalizeTodayTaskList } from '@/components/agent-hq/todayTaskList/storage';
+import {
+  parseMorningFlowUsed,
+  type MorningFlowUsedRecord,
+} from '@/components/agent-hq/morningFlow/storage';
 
 function sanitizeLinks(links: TaskContextLink[] | undefined): TaskContextLink[] {
   return (links ?? []).map(link => ({
@@ -102,6 +106,58 @@ export function sanitizeNightPrepPlanForCloud(
 
 export function sanitizeMiscTaskListForCloud(store: TodayTaskListStore): TodayTaskListStore {
   return normalizeTodayTaskList(store);
+}
+
+export function sanitizeMorningFlowUsedForCloud(
+  stored: MorningFlowUsedRecord | string | null
+): MorningFlowUsedRecord | null {
+  const used = parseMorningFlowUsed(stored);
+  if (!used?.dateKey) return null;
+  return {
+    dateKey: used.dateKey,
+    planUpdatedAt: typeof used.planUpdatedAt === 'number' ? used.planUpdatedAt : 0,
+  };
+}
+
+/** Night-prep row payload: plan + whether Begin work already ran for that plan. */
+export type NightPrepCloudBlob = {
+  v: 1;
+  plan: NightPrepTomorrowPlan | null;
+  morningFlowUsed: MorningFlowUsedRecord | null;
+};
+
+export function buildNightPrepCloudBlob(
+  plan: NightPrepTomorrowPlan | null,
+  morningFlowUsed: MorningFlowUsedRecord | string | null
+): NightPrepCloudBlob {
+  return {
+    v: 1,
+    plan: sanitizeNightPrepPlanForCloud(plan),
+    morningFlowUsed: sanitizeMorningFlowUsedForCloud(morningFlowUsed),
+  };
+}
+
+export function parseNightPrepCloudBlob(raw: unknown): {
+  plan: NightPrepTomorrowPlan | null;
+  morningFlowUsed: MorningFlowUsedRecord | null;
+} {
+  if (!raw || typeof raw !== 'object') {
+    return { plan: null, morningFlowUsed: null };
+  }
+  const obj = raw as Record<string, unknown>;
+  if (obj.v === 1 && 'plan' in obj) {
+    return {
+      plan: sanitizeNightPrepPlanForCloud((obj.plan as NightPrepTomorrowPlan | null) ?? null),
+      morningFlowUsed: sanitizeMorningFlowUsedForCloud(
+        (obj.morningFlowUsed as MorningFlowUsedRecord | string | null) ?? null
+      ),
+    };
+  }
+  // Legacy: plan jsonb was the NightPrepTomorrowPlan itself
+  return {
+    plan: sanitizeNightPrepPlanForCloud(raw as NightPrepTomorrowPlan),
+    morningFlowUsed: null,
+  };
 }
 
 export function estimateJsonBytes(value: unknown): number {
