@@ -26,7 +26,9 @@ export default function AccountMenu() {
   const [draft, setDraft] = useState(profile.displayName);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isOpsAdmin, setIsOpsAdmin] = useState(false);
+  const [backupOk, setBackupOk] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const backupOkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -75,6 +77,23 @@ export default function AccountMenu() {
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [menuOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (backupOkTimerRef.current) clearTimeout(backupOkTimerRef.current);
+    };
+  }, []);
+
+  const handleBackupNow = () => {
+    setBackupOk(false);
+    if (backupOkTimerRef.current) clearTimeout(backupOkTimerRef.current);
+    void (async () => {
+      const ok = await pushNow();
+      if (!ok) return;
+      setBackupOk(true);
+      backupOkTimerRef.current = setTimeout(() => setBackupOk(false), 2500);
+    })();
+  };
 
   const saveName = () => {
     setDisplayName(draft);
@@ -132,6 +151,7 @@ export default function AccountMenu() {
                     <>
                       <div style={styles.backupStatus}>Cloud backup on</div>
                       {lastSavedLabel ? <div style={styles.backupMeta}>{lastSavedLabel}</div> : null}
+                      {backupOk ? <div style={styles.backupOk}>✓ Backed up</div> : null}
                       {syncError ? <div style={styles.backupError}>{syncError}</div> : null}
                       <button
                         type="button"
@@ -146,14 +166,11 @@ export default function AccountMenu() {
                       </button>
                       <button
                         type="button"
-                        style={styles.menuItem}
-                        onClick={() => {
-                          setMenuOpen(false);
-                          void pushNow();
-                        }}
+                        style={backupOk ? styles.menuItemOk : styles.menuItem}
+                        onClick={handleBackupNow}
                         disabled={syncing}
                       >
-                        {syncing ? 'Saving…' : 'Back up now'}
+                        {syncing ? 'Saving…' : backupOk ? '✓ Backed up' : 'Back up now'}
                       </button>
                       <button type="button" style={styles.menuItemMuted} onClick={handleDisableBackup}>
                         Turn off cloud backup…
@@ -355,9 +372,28 @@ const styles: Record<string, CSSProperties> = {
     color: '#94a3b8',
     marginBottom: 6,
   },
+  backupOk: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#15803d',
+    marginBottom: 6,
+  },
   backupError: {
     fontSize: 11,
     color: '#b45309',
     marginBottom: 6,
+  },
+  menuItemOk: {
+    display: 'block',
+    width: '100%',
+    border: 'none',
+    background: 'transparent',
+    textAlign: 'left',
+    padding: '8px 12px',
+    fontSize: 13,
+    fontWeight: 700,
+    fontFamily: font,
+    color: '#15803d',
+    cursor: 'pointer',
   },
 };

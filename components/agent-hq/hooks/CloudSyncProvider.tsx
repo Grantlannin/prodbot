@@ -46,7 +46,7 @@ interface CloudSyncContextValue {
   enableBackup: () => void;
   confirmEnableBackup: () => Promise<void>;
   disableBackup: (deleteCloudCopy: boolean) => Promise<void>;
-  pushNow: () => Promise<void>;
+  pushNow: () => Promise<boolean>;
   restoreFromCloud: () => Promise<void>;
   offerRestore: () => void;
   dismissRestoreOffer: () => void;
@@ -201,8 +201,10 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     };
   }, [authEnabled, user, setCloudEnabledLocal, offerRestoreIfNeeded]);
 
-  const runPush = useCallback(async () => {
-    if (!authEnabled || !user || !cloudEnabled || skipPushRef.current || restoreOfferOpenRef.current) return;
+  const runPush = useCallback(async (): Promise<boolean> => {
+    if (!authEnabled || !user || !cloudEnabled || skipPushRef.current || restoreOfferOpenRef.current) {
+      return false;
+    }
 
     setSyncing(true);
     setSyncError(null);
@@ -220,13 +222,15 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         )
       ) {
         const hasCloudBackup = await offerRestoreIfNeeded(supabase, user.id);
-        if (hasCloudBackup) return;
+        if (hasCloudBackup) return false;
       }
 
       const { lastSyncAt: iso } = await pushCloudSnapshot(supabase, user.id, local);
       setLastSyncAt(new Date(iso).getTime());
+      return true;
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'Backup failed.');
+      return false;
     } finally {
       setSyncing(false);
     }
@@ -303,7 +307,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   );
 
   const pushNow = useCallback(async () => {
-    await runPush();
+    return runPush();
   }, [runPush]);
 
   const restoreFromCloud = useCallback(async () => {
