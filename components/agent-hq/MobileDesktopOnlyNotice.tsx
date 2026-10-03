@@ -29,8 +29,8 @@ export default function MobileDesktopOnlyNotice() {
     <div style={styles.wrap} role="status">
       <p style={styles.text}>
         NOTE: This is a desktop-only app (very specific usecase) and we&apos;ve detected mobile. Daywinner
-        isn&apos;t made for phones — the Chrome blocker and most workflows won&apos;t work here. The point
-        is to get off your phone, not use more of it.
+        isn&apos;t made for phones — nothing will work on mobile. The point is to get off your phone, not
+        use more of it.
       </p>
       <button
         type="button"
