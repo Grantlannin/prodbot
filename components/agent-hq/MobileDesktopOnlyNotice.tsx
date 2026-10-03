@@ -10,8 +10,8 @@ export default function MobileDesktopOnlyNotice() {
     <div style={styles.screen} role="alert">
       <p style={styles.text}>
         NOTE: This is a desktop-only app (very specific usecase) and we&apos;ve detected mobile. Daywinner
-        isn&apos;t made for phones — nothing will work on mobile. The point is to get off your phone, not
-        use more of it.
+        sadly isn&apos;t made for phones — nothing will work on mobile. It is specifically a desktop +
+        chrome web-app. &lt;3
       </p>
     </div>
   );
