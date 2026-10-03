@@ -34,6 +34,7 @@ const files = [
   'blocked.html',
   'blocked.js',
   'pingOverlay.js',
+  'siteBlocker.js',
   'icons/icon16.png',
   'icons/icon48.png',
   'icons/icon128.png',

@@ -1,5 +1,7 @@
 const RULE_ID_BASE = 10000;
 const TIME_STUDY_ALARM = 'timeStudyCheckIn';
+const SITE_BLOCKER_SCRIPT_ID = 'daywinner-site-blocker';
+const ENFORCE_ALARM = 'enforceBlockedTabs';
 
 async function getStoredState() {
   const data = await chrome.storage.local.get(['focusState']);
@@ -50,6 +52,48 @@ function blockedPageUrl(domain) {
   return chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(domain)}`);
 }
 
+async function injectSiteBlocker(tabId) {
+  if (!tabId) return;
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['siteBlocker.js'],
+    });
+  } catch {
+    /* chrome:// pages, discarded tabs, etc. */
+  }
+}
+
+async function syncSiteBlockerRegistration(blocking) {
+  try {
+    const existing = await chrome.scripting.getRegisteredContentScripts();
+    const has = existing.some(script => script.id === SITE_BLOCKER_SCRIPT_ID);
+    if (blocking && !has) {
+      await chrome.scripting.registerContentScripts([
+        {
+          id: SITE_BLOCKER_SCRIPT_ID,
+          matches: ['http://*/*', 'https://*/*'],
+          js: ['siteBlocker.js'],
+          runAt: 'document_start',
+          allFrames: false,
+          persistAcrossSessions: true,
+        },
+      ]);
+    } else if (!blocking && has) {
+      await chrome.scripting.unregisterContentScripts({ ids: [SITE_BLOCKER_SCRIPT_ID] });
+    }
+  } catch (err) {
+    console.error('Daywinner site blocker registration failed', err);
+  }
+}
+
+async function scheduleEnforceAlarm(blocking) {
+  await chrome.alarms.clear(ENFORCE_ALARM);
+  if (!blocking) return;
+  // Keep kicking already-open SPA tabs; SW may sleep between events.
+  chrome.alarms.create(ENFORCE_ALARM, { periodInMinutes: 0.5 });
+}
+
 async function redirectTabIfBlocked(tabId, url, domains) {
   if (!tabId || !url || !domains?.length) return false;
   let hostname;
@@ -64,6 +108,9 @@ async function redirectTabIfBlocked(tabId, url, domains) {
   const domain = matchBlockedDomain(hostname, domains);
   if (!domain) return false;
 
+  // Inject SPA trap first so in-tab clicks get caught even if update is slow/fails.
+  await injectSiteBlocker(tabId);
+
   try {
     await chrome.tabs.update(tabId, { url: blockedPageUrl(domain) });
     return true;
@@ -72,11 +119,22 @@ async function redirectTabIfBlocked(tabId, url, domains) {
   }
 }
 
-/** DNR only catches new network navigations — already-open SPA tabs (X, Reddit, etc.) keep working until we force them. */
+/** DNR only catches new network navigations — already-open SPA tabs (X, Reddit, etc.) need force + in-page trap. */
 async function enforceBlockedTabs(state) {
   if (!state?.blocking || !state.domains?.length) return;
   const tabs = await chrome.tabs.query({});
-  await Promise.all(tabs.map(tab => redirectTabIfBlocked(tab.id, tab.url, state.domains)));
+  await Promise.all(
+    tabs.map(async tab => {
+      if (!tab.id) return;
+      const url = tab.url || tab.pendingUrl;
+      if (url) {
+        await redirectTabIfBlocked(tab.id, url, state.domains);
+        return;
+      }
+      // URL sometimes missing until hydrated — still try inject on http tabs later via alarm.
+      await injectSiteBlocker(tab.id);
+    })
+  );
 }
 
 async function handlePossibleBlockedNavigation(details) {
@@ -160,6 +218,8 @@ async function applySync(payload) {
 
   await chrome.storage.local.set({ focusState: state });
   await updateRules(state);
+  await syncSiteBlockerRegistration(state.blocking && state.domains.length > 0);
+  await scheduleEnforceAlarm(state.blocking && state.domains.length > 0);
   await enforceBlockedTabs(state);
 
   await chrome.alarms.clear('sessionEnd');
@@ -307,6 +367,8 @@ async function restoreFromStorage() {
     });
   } else {
     await updateRules(state);
+    await syncSiteBlockerRegistration(state.blocking && state.domains?.length > 0);
+    await scheduleEnforceAlarm(state.blocking && state.domains?.length > 0);
     await enforceBlockedTabs(state);
     if (
       !state.timerPaused &&
@@ -420,6 +482,18 @@ chrome.alarms.onAlarm.addListener(alarm => {
         return;
       }
       await fireTimeStudyPing();
+    })();
+    return;
+  }
+
+  if (alarm.name === ENFORCE_ALARM) {
+    void (async () => {
+      const state = await getStoredState();
+      if (!state.blocking || !state.domains?.length) {
+        await chrome.alarms.clear(ENFORCE_ALARM);
+        return;
+      }
+      await enforceBlockedTabs(state);
     })();
   }
 });
