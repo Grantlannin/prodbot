@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
@@ -11,7 +11,6 @@ import {
   resolveBlocklist,
   type FocusBlocklistStore,
 } from './focusBlocking';
-import type { SupportSurface } from '@/lib/support/types';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024;
@@ -47,13 +46,27 @@ function guessOs(ua: string): string {
   return 'Unknown';
 }
 
+function PaperclipIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M21.44 11.05l-8.49 8.49a5.5 5.5 0 01-7.78-7.78l8.49-8.49a3.5 3.5 0 014.95 4.95l-8.49 8.49a1.5 1.5 0 01-2.12-2.12l7.78-7.78"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function ReportIssueModal() {
   const { status, currentSession } = useWorkTrackerContext();
   const [blocklist] = useLocalStorage<FocusBlocklistStore>(FOCUS_BLOCKLIST_KEY, DEFAULT_FOCUS_BLOCKLIST);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [surface, setSurface] = useState<SupportSurface>('unknown');
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -89,10 +102,10 @@ export default function ReportIssueModal() {
   const resetForm = () => {
     setSubject('');
     setMessage('');
-    setSurface('unknown');
     setScreenshot(null);
     setSent(false);
     setTicketId(null);
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   const close = () => {
@@ -147,7 +160,7 @@ export default function ReportIssueModal() {
       const form = new FormData();
       form.set('subject', subject);
       form.set('message', message);
-      form.set('surface', surface);
+      form.set('surface', 'unknown');
       form.set('debug', JSON.stringify(debug));
       if (screenshot) form.set('screenshot', screenshot);
 
@@ -208,9 +221,7 @@ export default function ReportIssueModal() {
                 {sent ? (
                   <div style={styles.body}>
                     <p style={styles.success}>
-                      {ticketId
-                        ? `Ticket ${ticketId} filed — we’ll work it. Watch “my issues” for status.`
-                        : 'Sent — we’ll look at it. Thanks for the report.'}
+                      {ticketId ? `Sent — ${ticketId}. We’ll look at it.` : 'Sent — we’ll look at it.'}
                     </p>
                     <button type="button" onClick={close} style={styles.primaryBtn}>
                       Close
@@ -233,26 +244,6 @@ export default function ReportIssueModal() {
                         style={styles.input}
                       />
                     </label>
-                    <fieldset style={styles.fieldset}>
-                      <legend style={styles.legend}>Where?</legend>
-                      {(
-                        [
-                          ['unknown', 'Not sure'],
-                          ['app', 'App'],
-                          ['extension', 'Extension'],
-                        ] as const
-                      ).map(([value, label]) => (
-                        <label key={value} style={styles.radio}>
-                          <input
-                            type="radio"
-                            name="surface"
-                            checked={surface === value}
-                            onChange={() => setSurface(value)}
-                          />
-                          {label}
-                        </label>
-                      ))}
-                    </fieldset>
                     <label style={styles.label}>
                       What happened?
                       <textarea
@@ -265,21 +256,43 @@ export default function ReportIssueModal() {
                         style={styles.textarea}
                       />
                     </label>
-                    <label style={styles.label}>
-                      Screenshot (optional)
+                    <div style={styles.attachRow}>
                       <input
+                        ref={fileRef}
                         type="file"
                         accept="image/png,image/jpeg,image/webp,image/gif"
                         onChange={e => onPickScreenshot(e.target.files?.[0] ?? null)}
-                        style={styles.fileInput}
+                        style={styles.hiddenFile}
+                        tabIndex={-1}
                       />
-                    </label>
+                      <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        style={{
+                          ...styles.attachBtn,
+                          color: screenshot ? '#0f172a' : '#94a3b8',
+                        }}
+                        aria-label="Attach screenshot"
+                        title="Attach screenshot"
+                      >
+                        <PaperclipIcon />
+                      </button>
+                      {screenshot ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setScreenshot(null);
+                            if (fileRef.current) fileRef.current.value = '';
+                          }}
+                          style={styles.removeShot}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
                     {previewUrl ? (
                       <div style={styles.previewWrap}>
                         <img src={previewUrl} alt="Screenshot preview" style={styles.preview} />
-                        <button type="button" onClick={() => setScreenshot(null)} style={styles.removeShot}>
-                          Remove
-                        </button>
                       </div>
                     ) : null}
                     <p style={styles.auto}>
@@ -319,7 +332,7 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 10050,
   },
   panel: {
-    width: 'min(100%, 440px)',
+    width: 'min(100%, 420px)',
     background: '#fff',
     borderRadius: 12,
     border: '1px solid #e2e8f0',
@@ -370,30 +383,6 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 600,
     color: '#475569',
   },
-  fieldset: {
-    border: '1px solid #e2e8f0',
-    borderRadius: 8,
-    padding: '8px 10px',
-    margin: 0,
-    display: 'flex',
-    gap: 12,
-    flexWrap: 'wrap',
-  },
-  legend: {
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#475569',
-    padding: '0 4px',
-  },
-  radio: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    fontSize: 12,
-    fontWeight: 500,
-    color: '#334155',
-    cursor: 'pointer',
-  },
   input: {
     border: '1px solid #cbd5e1',
     borderRadius: 8,
@@ -412,10 +401,28 @@ const styles: Record<string, CSSProperties> = {
     resize: 'vertical',
     minHeight: 100,
   },
-  fileInput: {
-    fontSize: 13,
-    fontFamily: font,
-    color: '#0f172a',
+  attachRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  hiddenFile: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
+    pointerEvents: 'none',
+  },
+  attachBtn: {
+    border: 'none',
+    background: 'transparent',
+    padding: 4,
+    margin: 0,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
   },
   previewWrap: {
     display: 'flex',
@@ -431,7 +438,6 @@ const styles: Record<string, CSSProperties> = {
     background: '#f8fafc',
   },
   removeShot: {
-    alignSelf: 'flex-start',
     border: 'none',
     background: 'transparent',
     padding: 0,
