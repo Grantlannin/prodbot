@@ -236,13 +236,19 @@ export function postFocusClearSync(): void {
   postFocusSync(FOCUS_CLEAR_PAYLOAD);
 }
 
-export function pingFocusExtension(onPong: () => void): () => void {
+export function pingFocusExtension(
+  onPong: (info?: { version?: string | null }) => void
+): () => void {
   if (typeof window === 'undefined') return () => {};
 
   const listener = (event: MessageEvent) => {
     if (event.source !== window) return;
     if (event.data?.type !== PRODUC_FOCUS_PONG) return;
-    onPong();
+    const version =
+      typeof event.data?.version === 'string' && event.data.version.trim()
+        ? event.data.version.trim()
+        : null;
+    onPong({ version });
   };
 
   window.addEventListener('message', listener);
@@ -255,6 +261,28 @@ export function pingFocusExtension(onPong: () => void): () => void {
     window.removeEventListener('message', listener);
     window.clearInterval(interval);
   };
+}
+
+/** One-shot ping that resolves with extension version when available. */
+export function detectFocusExtension(timeoutMs = 1200): Promise<{
+  installed: boolean;
+  version: string | null;
+}> {
+  if (typeof window === 'undefined') {
+    return Promise.resolve({ installed: false, version: null });
+  }
+
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = (installed: boolean, version: string | null) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve({ installed, version });
+    };
+    const cleanup = pingFocusExtension(info => finish(true, info?.version ?? null));
+    window.setTimeout(() => finish(false, null), timeoutMs);
+  });
 }
 
 export function postFocusSync(payload: FocusSyncPayload): void {

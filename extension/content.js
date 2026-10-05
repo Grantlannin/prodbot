@@ -29,7 +29,13 @@ window.addEventListener('message', event => {
   if (event.source !== window) return;
 
   if (event.data?.type === 'PRODUC_FOCUS_PING') {
-    window.postMessage({ type: 'PRODUC_FOCUS_PONG' }, window.location.origin);
+    let version = null;
+    try {
+      version = chrome.runtime.getManifest()?.version || null;
+    } catch {
+      version = null;
+    }
+    window.postMessage({ type: 'PRODUC_FOCUS_PONG', version }, window.location.origin);
     return;
   }
 

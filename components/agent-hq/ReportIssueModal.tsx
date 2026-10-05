@@ -2,6 +2,16 @@
 
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import { useWorkTrackerContext } from './hooks/WorkTrackerProvider';
+import {
+  DEFAULT_FOCUS_BLOCKLIST,
+  FOCUS_BLOCKLIST_KEY,
+  detectFocusExtension,
+  resolveBlocklist,
+  type FocusBlocklistStore,
+} from './focusBlocking';
+import type { SupportSurface } from '@/lib/support/types';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024;
@@ -20,15 +30,40 @@ const navLinkStyle: CSSProperties = {
   textUnderlineOffset: 2,
 };
 
+function guessBrowser(ua: string): string {
+  if (/Edg\//.test(ua)) return 'Edge';
+  if (/Chrome\//.test(ua)) return 'Chrome';
+  if (/Firefox\//.test(ua)) return 'Firefox';
+  if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) return 'Safari';
+  return 'Unknown';
+}
+
+function guessOs(ua: string): string {
+  if (/Mac OS X/.test(ua)) return 'macOS';
+  if (/Windows/.test(ua)) return 'Windows';
+  if (/Android/.test(ua)) return 'Android';
+  if (/iPhone|iPad/.test(ua)) return 'iOS';
+  if (/Linux/.test(ua)) return 'Linux';
+  return 'Unknown';
+}
+
 export default function ReportIssueModal() {
+  const { status, currentSession } = useWorkTrackerContext();
+  const [blocklist] = useLocalStorage<FocusBlocklistStore>(FOCUS_BLOCKLIST_KEY, DEFAULT_FOCUS_BLOCKLIST);
   const [open, setOpen] = useState(false);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [surface, setSurface] = useState<SupportSurface>('unknown');
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [ticketId, setTicketId] = useState<string | null>(null);
+  const [extInfo, setExtInfo] = useState<{ installed: boolean; version: string | null }>({
+    installed: false,
+    version: null,
+  });
 
   useEffect(() => {
     if (!screenshot) {
@@ -40,11 +75,24 @@ export default function ReportIssueModal() {
     return () => URL.revokeObjectURL(url);
   }, [screenshot]);
 
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void detectFocusExtension().then(info => {
+      if (!cancelled) setExtInfo(info);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
   const resetForm = () => {
     setSubject('');
     setMessage('');
+    setSurface('unknown');
     setScreenshot(null);
     setSent(false);
+    setTicketId(null);
   };
 
   const close = () => {
@@ -79,27 +127,59 @@ export default function ReportIssueModal() {
     setSending(true);
     setError(null);
     try {
+      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+      const domains = resolveBlocklist(blocklist);
+      const sessionActive = status === 'working' || status === 'on_break';
+      const debug = {
+        lockMode: currentSession?.lockMode ?? 'none',
+        sessionActive,
+        sessionId: currentSession?.id ?? null,
+        blocklistDomains: domains.slice(0, 40),
+        blocklistCount: domains.length,
+        extensionInstalled: extInfo.installed,
+        extensionVersion: extInfo.version,
+        browser: guessBrowser(ua),
+        os: guessOs(ua),
+        appUrl: typeof window !== 'undefined' ? window.location.href : null,
+        userAgent: ua.slice(0, 300),
+      };
+
       const form = new FormData();
       form.set('subject', subject);
       form.set('message', message);
+      form.set('surface', surface);
+      form.set('debug', JSON.stringify(debug));
       if (screenshot) form.set('screenshot', screenshot);
 
       const res = await fetch('/api/support/report', {
         method: 'POST',
         body: form,
       });
-      const data = (await res.json().catch(() => null)) as { error?: string } | null;
+      const data = (await res.json().catch(() => null)) as {
+        error?: string;
+        ticketId?: string | null;
+      } | null;
       if (!res.ok) {
         setError(data?.error || 'Could not send. Try again.');
         return;
       }
+      setTicketId(data?.ticketId || null);
       setSent(true);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('daywinner:tickets-changed'));
+      }
     } catch {
       setError('Could not send. Check your connection and try again.');
     } finally {
       setSending(false);
     }
   };
+
+  const lockLabel = currentSession?.lockMode === 'soft'
+    ? 'Soft'
+    : currentSession?.lockMode === 'hard'
+      ? 'Hard'
+      : 'Off';
 
   return (
     <>
@@ -127,14 +207,21 @@ export default function ReportIssueModal() {
 
                 {sent ? (
                   <div style={styles.body}>
-                    <p style={styles.success}>Sent — we’ll look at it. Thanks for the report.</p>
+                    <p style={styles.success}>
+                      {ticketId
+                        ? `Ticket ${ticketId} filed — we’ll work it. Watch “my issues” for status.`
+                        : 'Sent — we’ll look at it. Thanks for the report.'}
+                    </p>
                     <button type="button" onClick={close} style={styles.primaryBtn}>
                       Close
                     </button>
                   </div>
                 ) : (
                   <form style={styles.body} onSubmit={e => void submit(e)}>
-                    <p style={styles.hint}>Tell us what’s broken. This goes straight to support.</p>
+                    <p style={styles.hint}>
+                      One thorough report. We auto-attach Soft/Hard, extension version, and browser so
+                      you don’t get a dozen follow-ups.
+                    </p>
                     <label style={styles.label}>
                       Short title
                       <input
@@ -146,12 +233,32 @@ export default function ReportIssueModal() {
                         style={styles.input}
                       />
                     </label>
+                    <fieldset style={styles.fieldset}>
+                      <legend style={styles.legend}>Where?</legend>
+                      {(
+                        [
+                          ['unknown', 'Not sure'],
+                          ['app', 'App'],
+                          ['extension', 'Extension'],
+                        ] as const
+                      ).map(([value, label]) => (
+                        <label key={value} style={styles.radio}>
+                          <input
+                            type="radio"
+                            name="surface"
+                            checked={surface === value}
+                            onChange={() => setSurface(value)}
+                          />
+                          {label}
+                        </label>
+                      ))}
+                    </fieldset>
                     <label style={styles.label}>
                       What happened?
                       <textarea
                         value={message}
                         onChange={e => setMessage(e.target.value)}
-                        placeholder="What you expected, what you saw, Soft/Hard on?, extension version if you know it…"
+                        placeholder="What you expected vs what you saw. Exact steps if you can."
                         rows={5}
                         maxLength={4000}
                         required
@@ -175,6 +282,16 @@ export default function ReportIssueModal() {
                         </button>
                       </div>
                     ) : null}
+                    <p style={styles.auto}>
+                      Auto: {lockLabel}
+                      {status === 'working' || status === 'on_break' ? ' · session on' : ''}
+                      {' · '}
+                      {extInfo.installed
+                        ? `ext ${extInfo.version || 'installed'}`
+                        : 'ext not detected'}
+                      {' · '}
+                      {resolveBlocklist(blocklist).length} blocked sites
+                    </p>
                     {error ? <p style={styles.error}>{error}</p> : null}
                     <button type="submit" disabled={sending || message.trim().length < 10} style={styles.primaryBtn}>
                       {sending ? 'Sending…' : 'Send to support'}
@@ -202,7 +319,7 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 10050,
   },
   panel: {
-    width: 'min(100%, 420px)',
+    width: 'min(100%, 440px)',
     background: '#fff',
     borderRadius: 12,
     border: '1px solid #e2e8f0',
@@ -253,6 +370,30 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 600,
     color: '#475569',
   },
+  fieldset: {
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    padding: '8px 10px',
+    margin: 0,
+    display: 'flex',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  legend: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#475569',
+    padding: '0 4px',
+  },
+  radio: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 12,
+    fontWeight: 500,
+    color: '#334155',
+    cursor: 'pointer',
+  },
   input: {
     border: '1px solid #cbd5e1',
     borderRadius: 8,
@@ -299,6 +440,12 @@ const styles: Record<string, CSSProperties> = {
     color: '#64748b',
     textDecoration: 'underline',
     cursor: 'pointer',
+  },
+  auto: {
+    margin: 0,
+    fontSize: 11,
+    color: '#94a3b8',
+    lineHeight: 1.4,
   },
   error: {
     margin: 0,
