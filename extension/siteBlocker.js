@@ -26,12 +26,9 @@
     return null;
   }
 
-  function kick(domain, { passive } = {}) {
+  function kick(domain) {
     if (!domain) return;
-    const params = new URLSearchParams({ site: domain });
-    // Already-open tabs kicked when Soft/Hard turns on are not infractions.
-    if (passive) params.set('passive', '1');
-    const target = chrome.runtime.getURL(`blocked.html?${params.toString()}`);
+    const target = chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(domain)}`);
     if (location.href.startsWith(chrome.runtime.getURL('blocked.html'))) return;
     try {
       location.replace(target);
@@ -40,21 +37,19 @@
     }
   }
 
-  function enforceFromState(state, { passive } = {}) {
+  function enforceFromState(state) {
     if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
     if (!state?.blocking || !state.domains?.length) return;
     const domain = matchBlockedDomain(location.hostname, state.domains);
-    if (domain) kick(domain, { passive: !!passive });
+    if (domain) kick(domain);
   }
 
-  // Page load / navigation while already locked → real attempt (counts as infraction).
   chrome.storage.local.get(['focusState'], data => {
-    enforceFromState(data.focusState, { passive: false });
+    enforceFromState(data.focusState);
   });
 
-  // Lock turned on (or list changed) under an already-open tab → kick, but not an infraction.
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || !changes.focusState) return;
-    enforceFromState(changes.focusState.newValue, { passive: true });
+    enforceFromState(changes.focusState.newValue);
   });
 })();

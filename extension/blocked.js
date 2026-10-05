@@ -1,8 +1,5 @@
-function getQuery() {
-  return new URLSearchParams(window.location.search);
-}
-
-function getSiteFromQuery(params) {
+function getSiteFromQuery() {
+  const params = new URLSearchParams(window.location.search);
   return (params.get('site') || 'this site').trim().toLowerCase().replace(/^www\./, '');
 }
 
@@ -13,15 +10,10 @@ function formatRemaining(ms) {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-const params = getQuery();
-const site = getSiteFromQuery(params);
-const passiveKick = params.get('passive') === '1';
+const site = getSiteFromQuery();
 document.getElementById('site-label').textContent = site;
 
-// Don't count already-open tabs that Soft/Hard kicked when lock turned on.
-if (!passiveKick) {
-  chrome.runtime.sendMessage({ type: 'LOG_INFRACTION', domain: site }).catch(() => {});
-}
+chrome.runtime.sendMessage({ type: 'LOG_INFRACTION', domain: site }).catch(() => {});
 
 function updateRemaining() {
   chrome.runtime.sendMessage({ type: 'GET_STATE' }, state => {

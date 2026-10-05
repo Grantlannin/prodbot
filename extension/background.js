@@ -2,43 +2,6 @@ const RULE_ID_BASE = 10000;
 const TIME_STUDY_ALARM = 'timeStudyCheckIn';
 const SITE_BLOCKER_SCRIPT_ID = 'daywinner-site-blocker';
 
-/** Lightweight counters so we can verify Soft/Hard isn't thrashing (RAM leak regression). */
-const ramDiag = {
-  startedAt: Date.now(),
-  syncReceived: 0,
-  syncApplied: 0,
-  syncSkipped: 0,
-  ruleUpdates: 0,
-};
-
-async function getRamDiag() {
-  const state = await getStoredState();
-  const alarms = await chrome.alarms.getAll();
-  const alarmNames = alarms.map(a => a.name).sort();
-  const hasEnforceLoop = alarmNames.includes('enforceBlockedTabs');
-  const uptimeMs = Date.now() - ramDiag.startedAt;
-  const appliedRatio =
-    ramDiag.syncReceived > 0 ? ramDiag.syncApplied / ramDiag.syncReceived : 0;
-  // Healthy after warm-up: most syncs are no-ops; no forever enforce alarm.
-  const healthy =
-    !hasEnforceLoop && (ramDiag.syncReceived < 20 || appliedRatio < 0.35);
-
-  return {
-    version: chrome.runtime.getManifest().version,
-    blocking: !!state.blocking,
-    lockMode: state.lockMode || null,
-    domainCount: Array.isArray(state.domains) ? state.domains.length : 0,
-    uptimeMs,
-    syncReceived: ramDiag.syncReceived,
-    syncApplied: ramDiag.syncApplied,
-    syncSkipped: ramDiag.syncSkipped,
-    ruleUpdates: ramDiag.ruleUpdates,
-    alarms: alarmNames,
-    hasEnforceLoop,
-    healthy,
-  };
-}
-
 async function getStoredState() {
   const data = await chrome.storage.local.get(['focusState']);
   return (
@@ -87,7 +50,6 @@ function sameFocusState(a, b) {
 }
 
 async function updateRules(state) {
-  ramDiag.ruleUpdates += 1;
   const existing = await chrome.declarativeNetRequest.getDynamicRules();
   const removeIds = existing.map(rule => rule.id);
 
@@ -137,8 +99,6 @@ async function clearLegacySiteBlockerRegistration() {
  * New tabs on stubborn sites (X SW) are handled by siteBlocker.js at document_start.
  */
 async function applySync(payload) {
-  ramDiag.syncReceived += 1;
-
   if (payload.entitled !== true) {
     payload = {
       blocking: false,
@@ -177,11 +137,7 @@ async function applySync(payload) {
   }
 
   const prev = await getStoredState();
-  if (sameFocusState(prev, state)) {
-    ramDiag.syncSkipped += 1;
-    return;
-  }
-  ramDiag.syncApplied += 1;
+  if (sameFocusState(prev, state)) return;
 
   const prevActive = isActiveBlockingState(prev);
   const active = isActiveBlockingState(state);
@@ -370,13 +326,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === 'GET_STATE') {
     getStoredState().then(state => sendResponse(state));
-    return true;
-  }
-
-  if (msg.type === 'GET_RAM_DIAG') {
-    getRamDiag()
-      .then(diag => sendResponse({ ok: true, diag }))
-      .catch(err => sendResponse({ ok: false, error: String(err) }));
     return true;
   }
 

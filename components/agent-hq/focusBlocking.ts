@@ -88,20 +88,6 @@ const PRODUC_TIME_STUDY_CHECKIN = 'PRODUC_TIME_STUDY_CHECKIN';
 const PRODUC_TIME_STUDY_ACK = 'PRODUC_TIME_STUDY_ACK';
 export const PRODUC_FOCUS_PING = 'PRODUC_FOCUS_PING';
 export const PRODUC_FOCUS_PONG = 'PRODUC_FOCUS_PONG';
-export interface ExtensionRamDiag {
-  version: string;
-  blocking: boolean;
-  lockMode: string | null;
-  domainCount: number;
-  uptimeMs: number;
-  syncReceived: number;
-  syncApplied: number;
-  syncSkipped: number;
-  ruleUpdates: number;
-  alarms: string[];
-  hasEnforceLoop: boolean;
-  healthy: boolean;
-}
 
 export const FOCUS_CLEAR_PAYLOAD: FocusSyncPayload = {
   blocking: false,
@@ -251,7 +237,7 @@ export function postFocusClearSync(): void {
 }
 
 export function pingFocusExtension(
-  onPong: (info?: { version?: string | null; extensionId?: string | null }) => void
+  onPong: (info?: { version?: string | null }) => void
 ): () => void {
   if (typeof window === 'undefined') return () => {};
 
@@ -262,11 +248,7 @@ export function pingFocusExtension(
       typeof event.data?.version === 'string' && event.data.version.trim()
         ? event.data.version.trim()
         : null;
-    const extensionId =
-      typeof event.data?.extensionId === 'string' && event.data.extensionId.trim()
-        ? event.data.extensionId.trim()
-        : null;
-    onPong({ version, extensionId });
+    onPong({ version });
   };
 
   window.addEventListener('message', listener);
@@ -285,61 +267,21 @@ export function pingFocusExtension(
 export function detectFocusExtension(timeoutMs = 1200): Promise<{
   installed: boolean;
   version: string | null;
-  extensionId: string | null;
 }> {
   if (typeof window === 'undefined') {
-    return Promise.resolve({ installed: false, version: null, extensionId: null });
+    return Promise.resolve({ installed: false, version: null });
   }
 
   return new Promise(resolve => {
     let settled = false;
-    const finish = (
-      installed: boolean,
-      version: string | null,
-      extensionId: string | null
-    ) => {
+    const finish = (installed: boolean, version: string | null) => {
       if (settled) return;
       settled = true;
       cleanup();
-      resolve({ installed, version, extensionId });
+      resolve({ installed, version });
     };
-    const cleanup = pingFocusExtension(info =>
-      finish(true, info?.version ?? null, info?.extensionId ?? null)
-    );
-    window.setTimeout(() => finish(false, null, null), timeoutMs);
-  });
-}
-
-/** Ask the extension service worker for Soft/Hard thrash counters (via ping/pong). */
-export function fetchExtensionRamDiag(timeoutMs = 2000): Promise<ExtensionRamDiag | null> {
-  if (typeof window === 'undefined') return Promise.resolve(null);
-
-  return new Promise(resolve => {
-    let settled = false;
-    const finish = (diag: ExtensionRamDiag | null) => {
-      if (settled) return;
-      settled = true;
-      window.removeEventListener('message', listener);
-      window.clearTimeout(timer);
-      resolve(diag);
-    };
-    const listener = (event: MessageEvent) => {
-      if (event.source !== window) return;
-      if (event.data?.type !== PRODUC_FOCUS_PONG) return;
-      // Ignore plain pongs from the keepalive ping (no ramDiag field).
-      if (!('ramDiag' in (event.data || {})) && !event.data?.ramDiagError) return;
-      if (event.data?.ramDiag) {
-        finish(event.data.ramDiag as ExtensionRamDiag);
-        return;
-      }
-      finish(null);
-    };
-    window.addEventListener('message', listener);
-    window.postMessage(
-      { type: PRODUC_FOCUS_PING, wantRamDiag: true },
-      window.location.origin
-    );
-    const timer = window.setTimeout(() => finish(null), timeoutMs);
+    const cleanup = pingFocusExtension(info => finish(true, info?.version ?? null));
+    window.setTimeout(() => finish(false, null), timeoutMs);
   });
 }
 
