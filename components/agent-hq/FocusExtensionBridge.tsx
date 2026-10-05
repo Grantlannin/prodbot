@@ -87,6 +87,8 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
     };
   }, []);
 
+  const lastSyncKeyRef = useRef('');
+
   useEffect(() => {
     const sync = () => {
       const { openCountdownLeft } = tickStore.getSnapshot();
@@ -98,10 +100,25 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
         timerPaused,
         entitled: entitledRef.current,
       });
+      // Fingerprint stable fields — countdown tick must NOT re-sync every second
+      // (that was rewriting DNR + reinjecting into every tab → multi-GB Chrome leaks).
+      const key = JSON.stringify({
+        blocking: payload.blocking,
+        domains: payload.domains,
+        sessionEndsAt: payload.sessionEndsAt,
+        lockMode: payload.lockMode,
+        sessionId: payload.sessionId,
+        timerPaused: payload.timerPaused,
+        remainingMs: payload.remainingMs,
+        entitled: payload.entitled !== false,
+      });
+      if (key === lastSyncKeyRef.current) return;
+      lastSyncKeyRef.current = key;
       postFocusSync(payload);
     };
 
     sync();
+    // Tick only matters when countdown hits 0 (blocking clears) or pause remaining changes.
     return tickStore.subscribe(sync);
   }, [status, currentSession, timerPaused, tickStore]);
 
