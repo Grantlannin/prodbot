@@ -94,6 +94,9 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
   }, []);
 
   const lastSyncKeyRef = useRef('');
+  const wasBlockingRef = useRef(false);
+  /** Wall-clock when Soft/Hard blocking last turned on — lock-on kicks share this window. */
+  const blockingOnAtRef = useRef(0);
 
   const pushFocusSync = () => {
     const { openCountdownLeft } = tickStore.getSnapshot();
@@ -118,6 +121,15 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
     });
     if (key === lastSyncKeyRef.current) return;
     lastSyncKeyRef.current = key;
+
+    if (payload.blocking && !wasBlockingRef.current) {
+      blockingOnAtRef.current = Date.now();
+    }
+    if (!payload.blocking) {
+      blockingOnAtRef.current = 0;
+    }
+    wasBlockingRef.current = !!payload.blocking;
+
     postFocusSync(payload);
   };
 
@@ -142,14 +154,24 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
 
   useEffect(() => {
     return onExtensionInfraction(payload => {
-      // Soft/Hard lock-on kicks of already-open tabs arrive in the first seconds —
-      // those are not intentional visits and must not count as infractions.
+      // Lock-on kicks are logged in the extension immediately but may flush to the
+      // app seconds later — judge by createdAt vs when blocking turned on, not receive time.
+      const LOCK_ON_GRACE_MS = 20_000;
+      const created =
+        typeof payload.createdAt === 'number' && payload.createdAt > 0
+          ? payload.createdAt
+          : Date.now();
+      const blockingOnAt = blockingOnAtRef.current;
+      if (blockingOnAt > 0 && created >= blockingOnAt - 1000 && created < blockingOnAt + LOCK_ON_GRACE_MS) {
+        return;
+      }
       const session = sessionRef.current;
       const lock = session?.lockMode;
       if (
         (lock === 'soft' || lock === 'hard') &&
         typeof session?.startTime === 'number' &&
-        Date.now() - session.startTime < 8000
+        created >= session.startTime - 1000 &&
+        created < session.startTime + LOCK_ON_GRACE_MS
       ) {
         return;
       }
