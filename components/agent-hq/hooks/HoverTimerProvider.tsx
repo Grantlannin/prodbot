@@ -74,8 +74,8 @@ function HoverTimerInternals({
   const { videoRef, canvasRef, isOpen, supported, open, close, toggle, pipWindow } =
     useHoverTabsWindow(display);
 
-  // Keep latest open/close/toggle behind stable wrappers so publishing the hover-timer
-  // API does not churn context every tick (that was an infinite re-render → 100% CPU).
+  // Stable wrappers — publishing a new context object every tick was an infinite
+  // re-render loop that pegged the Daywinner tab at ~100% CPU.
   const openRef = useRef(open);
   const closeRef = useRef(close);
   const toggleRef = useRef(toggle);
@@ -107,6 +107,7 @@ function HoverTimerInternals({
   }, [isOpen, supported, stableOpen, stableClose, stableToggle, requestOpen, onApi]);
 
   const hasDisplay = display != null;
+  const titleText = display ? timerTitle(display) : null;
 
   useEffect(() => {
     if (!pendingOpenRef.current || !hasDisplay || !supported) return;
@@ -116,11 +117,11 @@ function HoverTimerInternals({
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    const next = display ? timerTitle(display) : baseTitleRef.current || DEFAULT_TITLE;
+    const next = titleText ?? (baseTitleRef.current || DEFAULT_TITLE);
     if (lastTitleRef.current === next) return;
     lastTitleRef.current = next;
     document.title = next;
-  }, [display]);
+  }, [titleText]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -178,10 +179,26 @@ export function HoverTimerProvider({
 }) {
   const [api, setApi] = useState<HoverTimerContextValue>(noopApi);
 
+  const publishApi = useCallback((next: HoverTimerContextValue) => {
+    setApi(prev => {
+      if (
+        prev.isOpen === next.isOpen &&
+        prev.supported === next.supported &&
+        prev.open === next.open &&
+        prev.close === next.close &&
+        prev.toggle === next.toggle &&
+        prev.requestOpen === next.requestOpen
+      ) {
+        return prev;
+      }
+      return next;
+    });
+  }, []);
+
   return (
     <HoverTimerContext.Provider value={api}>
       {children}
-      <HoverTimerInternals onAddInfraction={onAddInfraction} onApi={setApi} />
+      <HoverTimerInternals onAddInfraction={onAddInfraction} onApi={publishApi} />
     </HoverTimerContext.Provider>
   );
 }

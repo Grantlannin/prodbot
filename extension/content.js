@@ -113,7 +113,8 @@ function flushPendingCheckIns() {
 
 flushPendingInfractions();
 flushPendingCheckIns();
-setInterval(flushPendingInfractions, 2000);
-setInterval(flushPendingCheckIns, 2000);
+// Poll slowly — empty responses are cheap, but avoid hammering the SW.
+setInterval(flushPendingInfractions, 5000);
+setInterval(flushPendingCheckIns, 5000);
 void checkSubscriptionEntitlement();
 setInterval(checkSubscriptionEntitlement, 60_000);

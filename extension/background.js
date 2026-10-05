@@ -60,6 +60,22 @@ async function updateRules(state) {
   });
 }
 
+function domainsKey(domains) {
+  return JSON.stringify(Array.isArray(domains) ? domains : []);
+}
+
+function sameFocusState(a, b) {
+  return (
+    !!a?.blocking === !!b?.blocking &&
+    domainsKey(a?.domains) === domainsKey(b?.domains) &&
+    (a?.sessionEndsAt || null) === (b?.sessionEndsAt || null) &&
+    (a?.lockMode || null) === (b?.lockMode || null) &&
+    (a?.sessionId || null) === (b?.sessionId || null) &&
+    !!a?.timerPaused === !!b?.timerPaused &&
+    (a?.remainingMs ?? null) === (b?.remainingMs ?? null)
+  );
+}
+
 async function applySync(payload) {
   // Require explicit entitled === true. Spoofed page messages without entitlement clear blocking.
   if (payload.entitled !== true) {
@@ -89,6 +105,7 @@ async function applySync(payload) {
     state.blocking &&
     !state.timerPaused &&
     state.sessionEndsAt &&
+    state.sessionEndsAt > 0 &&
     state.sessionEndsAt <= Date.now()
   ) {
     state.blocking = false;
@@ -99,8 +116,17 @@ async function applySync(payload) {
     state.remainingMs = null;
   }
 
+  const prev = await getStoredState();
+  // Identical syncs must no-op — rewriting DNR every second burns CPU/RAM.
+  if (sameFocusState(prev, state)) return;
+
+  const rulesChanged =
+    !!prev.blocking !== !!state.blocking || domainsKey(prev.domains) !== domainsKey(state.domains);
+
   await chrome.storage.local.set({ focusState: state });
-  await updateRules(state);
+  if (rulesChanged) {
+    await updateRules(state);
+  }
 
   await chrome.alarms.clear('sessionEnd');
   if (

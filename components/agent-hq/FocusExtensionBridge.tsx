@@ -55,8 +55,14 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
   const seenInfractionsRef = useRef<Set<string>>(new Set());
   const blocklistRef = useRef(blocklist);
   const entitledRef = useRef(entitled);
+  const statusRef = useRef(status);
+  const sessionRef = useRef(currentSession);
+  const timerPausedRef = useRef(timerPaused);
   blocklistRef.current = blocklist;
   entitledRef.current = entitled;
+  statusRef.current = status;
+  sessionRef.current = currentSession;
+  timerPausedRef.current = timerPaused;
 
   useEffect(() => {
     let cancelled = false;
@@ -89,38 +95,50 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
 
   const lastSyncKeyRef = useRef('');
 
-  useEffect(() => {
-    const sync = () => {
-      const { openCountdownLeft } = tickStore.getSnapshot();
-      const payload = buildFocusSyncPayload({
-        status,
-        session: currentSession,
-        blocklist: blocklistRef.current,
-        openCountdownLeft,
-        timerPaused,
-        entitled: entitledRef.current,
-      });
-      // Fingerprint stable fields — countdown tick must NOT re-sync every second
-      // (that was rewriting DNR + reinjecting into every tab → multi-GB Chrome leaks).
-      const key = JSON.stringify({
-        blocking: payload.blocking,
-        domains: payload.domains,
-        sessionEndsAt: payload.sessionEndsAt,
-        lockMode: payload.lockMode,
-        sessionId: payload.sessionId,
-        timerPaused: payload.timerPaused,
-        remainingMs: payload.remainingMs,
-        entitled: payload.entitled !== false,
-      });
-      if (key === lastSyncKeyRef.current) return;
-      lastSyncKeyRef.current = key;
-      postFocusSync(payload);
-    };
+  const pushFocusSync = () => {
+    const { openCountdownLeft } = tickStore.getSnapshot();
+    const payload = buildFocusSyncPayload({
+      status: statusRef.current,
+      session: sessionRef.current,
+      blocklist: blocklistRef.current,
+      openCountdownLeft,
+      timerPaused: timerPausedRef.current,
+      entitled: entitledRef.current,
+    });
+    // Fingerprint stable fields only — never include per-tick countdown ms.
+    const key = JSON.stringify({
+      blocking: payload.blocking,
+      domains: payload.domains,
+      sessionEndsAt: payload.sessionEndsAt,
+      lockMode: payload.lockMode,
+      sessionId: payload.sessionId,
+      timerPaused: payload.timerPaused,
+      remainingMs: payload.remainingMs,
+      entitled: payload.entitled !== false,
+    });
+    if (key === lastSyncKeyRef.current) return;
+    lastSyncKeyRef.current = key;
+    postFocusSync(payload);
+  };
 
-    sync();
-    // Tick only matters when countdown hits 0 (blocking clears) or pause remaining changes.
-    return tickStore.subscribe(sync);
-  }, [status, currentSession, timerPaused, tickStore]);
+  // Sync on real session/entitlement/blocklist changes — not every timer tick.
+  useEffect(() => {
+    pushFocusSync();
+  }, [status, currentSession, timerPaused, entitled, blocklist, tickStore]);
+
+  // Tick only to clear blocking / finish when countdown hits 0.
+  useEffect(() => {
+    let wasExpired = tickStore.getSnapshot().openCountdownLeft === 0;
+    const onTick = () => {
+      const { openCountdownLeft } = tickStore.getSnapshot();
+      const expired = openCountdownLeft === 0;
+      if (expired && !wasExpired) {
+        pushFocusSync();
+      }
+      wasExpired = expired;
+    };
+    return tickStore.subscribe(onTick);
+  }, [tickStore]);
 
   useEffect(() => {
     return onExtensionInfraction(payload => {

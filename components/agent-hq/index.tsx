@@ -87,6 +87,10 @@ function AgentHQInner() {
     },
     [setInfractions]
   );
+  const addDashboardInfraction = useCallback(
+    (categoryKey: string, label: string) => addInfraction(categoryKey, label, 'dashboard'),
+    [addInfraction]
+  );
 
   const openNightPrep = useCallback(() => {
     setFocusNightPrep(true);
@@ -141,7 +145,7 @@ function AgentHQInner() {
   }
 
   return (
-    <HoverTimerProvider onAddInfraction={(k, l) => addInfraction(k, l, 'dashboard')}>
+    <HoverTimerProvider onAddInfraction={addDashboardInfraction}>
       <ProjectsProvider>
       <HoverNotesProvider>
       <CloudSyncProvider>
