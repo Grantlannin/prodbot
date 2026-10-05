@@ -29,10 +29,18 @@ function isRetryableError(message: string, statusCode?: number): boolean {
   );
 }
 
+export interface SendEmailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+}
+
 export interface SendEmailInput {
   to: string;
   subject: string;
   html: string;
+  attachments?: SendEmailAttachment[];
+  replyTo?: string;
 }
 
 export interface SendEmailResult {
@@ -78,6 +86,16 @@ export async function sendEmailWithRetry(
         to: input.to,
         subject: input.subject,
         html: input.html,
+        ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+        ...(input.attachments?.length
+          ? {
+              attachments: input.attachments.map(file => ({
+                filename: file.filename,
+                content: file.content,
+                ...(file.contentType ? { contentType: file.contentType } : {}),
+              })),
+            }
+          : {}),
       });
 
       if (!error && data?.id) {

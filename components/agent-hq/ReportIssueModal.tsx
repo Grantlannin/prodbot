@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, type CSSProperties, type FormEvent } from 'react';
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
+
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+const MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024;
 
 const navLinkStyle: CSSProperties = {
   border: 'none',
@@ -22,19 +24,53 @@ export default function ReportIssueModal() {
   const [open, setOpen] = useState(false);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    if (!screenshot) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(screenshot);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [screenshot]);
+
+  const resetForm = () => {
+    setSubject('');
+    setMessage('');
+    setScreenshot(null);
+    setSent(false);
+  };
 
   const close = () => {
     setOpen(false);
     setError(null);
     setSending(false);
-    if (sent) {
-      setSubject('');
-      setMessage('');
-      setSent(false);
+    if (sent) resetForm();
+  };
+
+  const onPickScreenshot = (file: File | null) => {
+    setError(null);
+    if (!file) {
+      setScreenshot(null);
+      return;
     }
+    if (!file.type.startsWith('image/')) {
+      setError('Screenshot must be an image.');
+      setScreenshot(null);
+      return;
+    }
+    if (file.size > MAX_SCREENSHOT_BYTES) {
+      setError('Screenshot must be under 4MB.');
+      setScreenshot(null);
+      return;
+    }
+    setScreenshot(file);
   };
 
   const submit = async (e: FormEvent) => {
@@ -43,10 +79,14 @@ export default function ReportIssueModal() {
     setSending(true);
     setError(null);
     try {
+      const form = new FormData();
+      form.set('subject', subject);
+      form.set('message', message);
+      if (screenshot) form.set('screenshot', screenshot);
+
       const res = await fetch('/api/support/report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject, message }),
+        body: form,
       });
       const data = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) {
@@ -112,12 +152,29 @@ export default function ReportIssueModal() {
                         value={message}
                         onChange={e => setMessage(e.target.value)}
                         placeholder="What you expected, what you saw, Soft/Hard on?, extension version if you know it…"
-                        rows={6}
+                        rows={5}
                         maxLength={4000}
                         required
                         style={styles.textarea}
                       />
                     </label>
+                    <label style={styles.label}>
+                      Screenshot (optional)
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                        onChange={e => onPickScreenshot(e.target.files?.[0] ?? null)}
+                        style={styles.fileInput}
+                      />
+                    </label>
+                    {previewUrl ? (
+                      <div style={styles.previewWrap}>
+                        <img src={previewUrl} alt="Screenshot preview" style={styles.preview} />
+                        <button type="button" onClick={() => setScreenshot(null)} style={styles.removeShot}>
+                          Remove
+                        </button>
+                      </div>
+                    ) : null}
                     {error ? <p style={styles.error}>{error}</p> : null}
                     <button type="submit" disabled={sending || message.trim().length < 10} style={styles.primaryBtn}>
                       {sending ? 'Sending…' : 'Send to support'}
@@ -212,7 +269,36 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: font,
     color: '#0f172a',
     resize: 'vertical',
-    minHeight: 120,
+    minHeight: 100,
+  },
+  fileInput: {
+    fontSize: 13,
+    fontFamily: font,
+    color: '#0f172a',
+  },
+  previewWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  },
+  preview: {
+    width: '100%',
+    maxHeight: 160,
+    objectFit: 'contain',
+    borderRadius: 8,
+    border: '1px solid #e2e8f0',
+    background: '#f8fafc',
+  },
+  removeShot: {
+    alignSelf: 'flex-start',
+    border: 'none',
+    background: 'transparent',
+    padding: 0,
+    fontSize: 12,
+    fontFamily: font,
+    color: '#64748b',
+    textDecoration: 'underline',
+    cursor: 'pointer',
   },
   error: {
     margin: 0,
