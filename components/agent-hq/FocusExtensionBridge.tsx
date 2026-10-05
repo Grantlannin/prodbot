@@ -156,7 +156,7 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
     return onExtensionInfraction(payload => {
       // Lock-on kicks are logged in the extension immediately but may flush to the
       // app seconds later — judge by createdAt vs when blocking turned on, not receive time.
-      const LOCK_ON_GRACE_MS = 20_000;
+      const LOCK_ON_GRACE_MS = 2_000;
       const created =
         typeof payload.createdAt === 'number' && payload.createdAt > 0
           ? payload.createdAt
