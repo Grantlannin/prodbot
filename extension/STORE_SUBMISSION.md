@@ -79,8 +79,14 @@ Ends blocking automatically when the user’s focus session countdown expires, e
 **scripting**  
 Injects the optional time-study check-in overlay onto the user’s active tab during a focus session.
 
+**tabs**  
+Reads open tab URLs and redirects already-open blocked tabs (e.g. X left open when a session starts) to the blocked page.
+
+**webNavigation**  
+Detects in-page / history navigations on SPAs so users cannot keep browsing a blocked site that was already loaded.
+
 **Host permission: \*://\*/\***  
-Users can add any domain to their blocklist. Rules apply only to domains they enable in Daywinner during an active focus session, not a fixed list hardcoded by us. Broad host access is required so arbitrary user-entered domains can be blocked. A light content script on http(s) pages redirects only when Soft/Hard blocking is active and the host matches.
+Users can add any domain to their blocklist. Rules apply only to domains they enable in Produc during an active focus session, not a fixed list hardcoded by us. Broad host access is required so arbitrary user-entered domains can be blocked.
 
 ---
 
@@ -94,9 +100,10 @@ TESTING PRODUC FOCUS
 3. Click "Focus extension" (top right, above "What you got done today").
 4. Confirm "Social media pack" is enabled. Optionally add a custom domain.
 5. Click Start → pick a task → set duration (e.g. 25m) → choose lock mode → Start session.
-6. In a new tab, visit https://twitter.com, https://x.com, or https://reddit.com.
+6. In a new tab, visit https://twitter.com or https://reddit.com.
    Expected: redirect to extension blocked page with time remaining.
-7. End session in Daywinner or wait for countdown; blocking should stop.
+7. Optional: open https://x.com first, then start a session — that tab should also redirect to the blocked page.
+8. End session in Produc or wait for countdown; blocking should stop.
 
 Data: All extension data stays in chrome.storage.local. No external servers.
 Content script runs on daywinner.bot (and legacy domains) to sync session/blocklist from the web app.
