@@ -32,15 +32,13 @@ Privacy policy (required): https://daywinner.bot/privacy/focus-extension
 
 ## How it works
 
-- Daywinner syncs blocklist + session state to the extension via a content script on **daywinner.bot** / **www.daywinner.bot** (and localhost for dev).
-- While a focus session is active with **soft or hard lock**, matching domains redirect to `blocked.html`
-- Already-open tabs on blocked sites (e.g. X already loaded) are force-redirected when blocking starts; SPA/back navigations are watched too
-- Embedded players (iframes) on blocked domains are redirected too; social pack includes common aliases (youtu.be, fb.com, etc.)
-- Blocking is off during breaks, no-lock sessions, and when no session is active
-- Enable **Allow in Incognito** if you use a private window — blocking is per Chrome profile
-- Block hits log infractions in Produc (`Blocked site: …`)
-- **Time study check-ins** (v1.1+): during an active focus session, a type-in card appears on your current tab; answers queue until a Daywinner tab is open, then land in today’s EOD
-- All extension data stays in `chrome.storage.local` — nothing sent to external servers
+- Daywinner syncs blocklist + session state when Soft/Hard lock turns on or off (not every second).
+- Chrome block rules redirect matching sites to `blocked.html` on new loads; a light page script covers stubborn sites (e.g. X) on new tabs.
+- Blocking is off during breaks, no-lock sessions, and when no session is active.
+- Enable **Allow in Incognito** if you use a private window — blocking is per Chrome profile.
+- Block hits log infractions in Daywinner (`Blocked site: …`).
+- **Time study check-ins**: during an active focus session, a type-in card appears on your current tab.
+- All extension data stays in `chrome.storage.local` — nothing sent to external servers.
 
 ## Configure blocking
 

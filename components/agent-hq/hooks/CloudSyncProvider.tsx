@@ -287,6 +287,17 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       ) {
         const hasCloudBackup = await offerRestoreIfNeeded(supabase, user.id);
         if (hasCloudBackup) return false;
+
+        // User dismissed restore (or cloud check raced) — never upload empty over real cloud data.
+        try {
+          const snapshot = await fetchCloudSnapshot(supabase, user.id);
+          if (snapshotHasData(snapshot)) {
+            setSyncError('This device is empty. Restore from cloud before backing up.');
+            return false;
+          }
+        } catch {
+          return false;
+        }
       }
 
       // Never clobber today's cloud misc with an empty local list.
@@ -354,7 +365,23 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     setSyncError(null);
     try {
       const supabase = createBrowserSupabaseClient();
-      const { lastSyncAt: iso } = await enableCloudBackup(supabase, user.id, currentSnapshot());
+      const local = currentSnapshot();
+      if (!snapshotHasData(local)) {
+        const existing = await fetchCloudSnapshot(supabase, user.id);
+        if (snapshotHasData(existing)) {
+          // Turn backup on without uploading empty local over cloud.
+          const { error } = await supabase.from('user_sync_settings').upsert(
+            { user_id: user.id, cloud_enabled: true },
+            { onConflict: 'user_id' }
+          );
+          if (error) throw error;
+          setCloudEnabled(true);
+          setCloudEnabledLocal(true);
+          setRestoreOfferOpen(true);
+          return;
+        }
+      }
+      const { lastSyncAt: iso } = await enableCloudBackup(supabase, user.id, local);
       setCloudEnabled(true);
       setCloudEnabledLocal(true);
       setLastSyncAt(new Date(iso).getTime());
