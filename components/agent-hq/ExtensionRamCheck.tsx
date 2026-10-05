@@ -74,7 +74,7 @@ export default function ExtensionRamCheck() {
               >
                 <div style={styles.header}>
                   <h3 id="ram-check-title" style={styles.title}>
-                    Soft/Hard RAM check
+                    Is Chrome using too much memory?
                   </h3>
                   <button type="button" onClick={() => setOpen(false)} style={styles.closeBtn} aria-label="Close">
                     ×
@@ -82,56 +82,54 @@ export default function ExtensionRamCheck() {
                 </div>
                 <div style={styles.body}>
                   <p style={styles.lead}>
-                    Use your current Daywinner extension (store build is fine). No unpacked reload needed.
+                    Quick test with the Daywinner extension you already have from the Chrome store.
                   </p>
                   <p style={styles.meta}>
                     {loading
-                      ? 'Checking extension…'
+                      ? 'Looking for the extension…'
                       : extInstalled
-                        ? `Extension detected${extVersion ? ` · v${extVersion}` : ''}`
-                        : 'Extension not detected on this page — open Daywinner with the extension enabled.'}
+                        ? `Extension is on${extVersion ? ` (version ${extVersion})` : ''}`
+                        : 'Can’t see the extension yet. Make sure it’s installed and turned on, then refresh this page.'}
                   </p>
 
                   <ol style={styles.steps}>
-                    <li>Start Soft or Hard with your normal blocked sites.</li>
-                    <li>Leave 15+ tabs open (include X if you use it).</li>
-                    <li>Use the app for 5–10 minutes.</li>
+                    <li>Turn Soft or Hard on.</li>
+                    <li>Keep about 15 tabs open.</li>
+                    <li>Use Daywinner for 5–10 minutes.</li>
                     <li>
-                      Chrome → ⋮ → More tools → Task Manager → find “Extension: Daywinner bot”.
+                      In Chrome, open the menu (⋮) → More tools → Task Manager.
                     </li>
-                    <li>Memory should stay roughly flat (tens of MB), not climb toward GBs.</li>
+                    <li>Find the row that says Daywinner bot (extension).</li>
+                    <li>
+                      Good: the Memory number stays about the same.
+                      <br />
+                      Bad: it keeps going up a lot (toward many GB).
+                    </li>
                   </ol>
 
                   {diag ? (
                     <div style={styles.diagBox}>
-                      <div style={styles.diagTitle}>Live counters (this build supports them)</div>
+                      <div style={styles.diagTitle}>Extra detail (optional)</div>
                       <ul style={styles.list}>
                         <li>
-                          Blocking:{' '}
+                          Lock:{' '}
                           {diag.blocking ? `${diag.lockMode || 'on'} · ${diag.domainCount} sites` : 'off'}
                         </li>
-                        <li>SW uptime: {formatUptime(diag.uptimeMs)}</li>
+                        <li>Running for: {formatUptime(diag.uptimeMs)}</li>
                         <li>
-                          Syncs: {diag.syncReceived} received · {diag.syncApplied} applied ·{' '}
-                          {diag.syncSkipped} skipped
+                          Updates: {diag.syncApplied} real / {diag.syncSkipped} skipped (skipped should be higher)
                         </li>
-                        <li>Rule updates: {diag.ruleUpdates}</li>
                         <li>
                           {diag.healthy
-                            ? 'Counters look healthy (not thrashing)'
-                            : 'Counters look busy — watch Task Manager too'}
+                            ? 'Looks calm so far'
+                            : 'Looks busy — trust the Task Manager number more'}
                         </li>
                       </ul>
                     </div>
-                  ) : (
-                    <p style={styles.hint}>
-                      Live counters only show on builds that include them. For the store extension, Task Manager is
-                      the real test.
-                    </p>
-                  )}
+                  ) : null}
 
                   <button type="button" onClick={() => void load()} style={styles.refresh} disabled={loading}>
-                    {loading ? 'Refreshing…' : 'Refresh'}
+                    {loading ? 'Checking…' : 'Check again'}
                   </button>
                 </div>
               </div>
