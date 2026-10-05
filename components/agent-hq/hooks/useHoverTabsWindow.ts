@@ -29,6 +29,8 @@ function injectPipStyles(doc: Document) {
 export function useHoverTabsWindow(display: TimerDisplay | null) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const displayRef = useRef(display);
+  displayRef.current = display;
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [docPipSupported, setDocPipSupported] = useState(false);
@@ -54,15 +56,18 @@ export function useHoverTabsWindow(display: TimerDisplay | null) {
     setIsOpen(false);
   }, [pipWindow]);
 
+  const hasDisplay = display != null;
+
   useEffect(() => {
-    if (!display && (isOpen || pipWindow)) {
+    if (!hasDisplay && (isOpen || pipWindow)) {
       void close();
     }
-  }, [display, isOpen, pipWindow, close]);
+  }, [hasDisplay, isOpen, pipWindow, close]);
 
   const drawVideoFrame = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !display) return;
+    const current = displayRef.current;
+    if (!canvas || !current) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -71,13 +76,13 @@ export function useHoverTabsWindow(display: TimerDisplay | null) {
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(0, 0, w, h);
 
-    const accent = display.mode === 'break' ? '#b45309' : '#22c55e';
+    const accent = current.mode === 'break' ? '#b45309' : '#22c55e';
     ctx.fillStyle = accent;
     ctx.font = 'bold 22px ui-monospace, Menlo, monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(
-      display.countingDown ? formatTimerHMS(display.ms) : formatDurationShort(display.ms),
+      current.countingDown ? formatTimerHMS(current.ms) : formatDurationShort(current.ms),
       w / 2,
       h / 2
     );
@@ -86,20 +91,20 @@ export function useHoverTabsWindow(display: TimerDisplay | null) {
     ctx.font = 'bold 9px -apple-system, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText('LIVE', 10, h - 10);
-  }, [display]);
+  }, []);
 
   useEffect(() => {
-    if (!isOpen || pipWindow || !display) return;
+    if (!isOpen || pipWindow || !hasDisplay) return;
     if (document.pictureInPictureElement) {
       drawVideoFrame();
       const id = setInterval(drawVideoFrame, 1000);
       return () => clearInterval(id);
     }
-  }, [isOpen, pipWindow, display, drawVideoFrame]);
+  }, [isOpen, pipWindow, hasDisplay, drawVideoFrame]);
 
   const openDocPip = useCallback(async () => {
     const api = (window as Window & { documentPictureInPicture?: DocPip }).documentPictureInPicture;
-    if (!api || !display) return false;
+    if (!api || !displayRef.current) return false;
 
     const w = await api.requestWindow({
       width: DEFAULT_W,
@@ -114,12 +119,12 @@ export function useHoverTabsWindow(display: TimerDisplay | null) {
     setPipWindow(w);
     setIsOpen(true);
     return true;
-  }, [display]);
+  }, []);
 
   const openVideoPip = useCallback(async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas || !display) return false;
+    if (!video || !canvas || !displayRef.current) return false;
 
     drawVideoFrame();
     const stream = canvas.captureStream(1);
@@ -128,7 +133,7 @@ export function useHoverTabsWindow(display: TimerDisplay | null) {
     await video.requestPictureInPicture();
     setIsOpen(true);
     return true;
-  }, [display, drawVideoFrame]);
+  }, [drawVideoFrame]);
 
   const open = useCallback(async () => {
     if (docPipSupported) {

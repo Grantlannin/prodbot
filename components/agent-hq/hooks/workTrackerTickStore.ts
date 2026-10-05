@@ -31,6 +31,14 @@ export function createWorkTrackerTickStore(
       return () => listeners.delete(listener);
     },
     setSnapshot: patch => {
+      let changed = false;
+      for (const key of Object.keys(patch) as (keyof WorkTrackerTickSnapshot)[]) {
+        if (snapshot[key] !== patch[key]) {
+          changed = true;
+          break;
+        }
+      }
+      if (!changed) return;
       snapshot = { ...snapshot, ...patch };
       listeners.forEach(listener => listener());
     },

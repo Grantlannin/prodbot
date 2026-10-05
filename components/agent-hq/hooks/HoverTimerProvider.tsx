@@ -50,6 +50,7 @@ function HoverTimerInternals({
   const { requestEndSession } = useEndSession();
   const pendingOpenRef = useRef(false);
   const baseTitleRef = useRef(DEFAULT_TITLE);
+  const lastTitleRef = useRef<string | null>(null);
 
   const display = getTimerDisplay({
     status: tracker.status,
@@ -73,6 +74,19 @@ function HoverTimerInternals({
   const { videoRef, canvasRef, isOpen, supported, open, close, toggle, pipWindow } =
     useHoverTabsWindow(display);
 
+  // Keep latest open/close/toggle behind stable wrappers so publishing the hover-timer
+  // API does not churn context every tick (that was an infinite re-render → 100% CPU).
+  const openRef = useRef(open);
+  const closeRef = useRef(close);
+  const toggleRef = useRef(toggle);
+  openRef.current = open;
+  closeRef.current = close;
+  toggleRef.current = toggle;
+
+  const stableOpen = useCallback(async () => openRef.current(), []);
+  const stableClose = useCallback(async () => closeRef.current(), []);
+  const stableToggle = useCallback(async () => toggleRef.current(), []);
+
   const handleEndSession = useCallback(() => {
     requestEndSession();
   }, [requestEndSession]);
@@ -82,18 +96,30 @@ function HoverTimerInternals({
   }, []);
 
   useEffect(() => {
-    onApi({ isOpen, supported, open, close, toggle, requestOpen });
-  }, [isOpen, supported, open, close, toggle, requestOpen, onApi]);
+    onApi({
+      isOpen,
+      supported,
+      open: stableOpen,
+      close: stableClose,
+      toggle: stableToggle,
+      requestOpen,
+    });
+  }, [isOpen, supported, stableOpen, stableClose, stableToggle, requestOpen, onApi]);
+
+  const hasDisplay = display != null;
 
   useEffect(() => {
-    if (!pendingOpenRef.current || !display || !supported) return;
+    if (!pendingOpenRef.current || !hasDisplay || !supported) return;
     pendingOpenRef.current = false;
-    void open();
-  }, [display, isOpen, supported, open]);
+    void openRef.current();
+  }, [hasDisplay, isOpen, supported]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    document.title = display ? timerTitle(display) : baseTitleRef.current || DEFAULT_TITLE;
+    const next = display ? timerTitle(display) : baseTitleRef.current || DEFAULT_TITLE;
+    if (lastTitleRef.current === next) return;
+    lastTitleRef.current = next;
+    document.title = next;
   }, [display]);
 
   useEffect(() => {
