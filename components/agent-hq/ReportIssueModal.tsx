@@ -46,20 +46,6 @@ function guessOs(ua: string): string {
   return 'Unknown';
 }
 
-function PaperclipIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M21.44 11.05l-8.49 8.49a5.5 5.5 0 01-7.78-7.78l8.49-8.49a3.5 3.5 0 014.95 4.95l-8.49 8.49a1.5 1.5 0 01-2.12-2.12l7.78-7.78"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export default function ReportIssueModal() {
   const { status, currentSession } = useWorkTrackerContext();
   const [blocklist] = useLocalStorage<FocusBlocklistStore>(FOCUS_BLOCKLIST_KEY, DEFAULT_FOCUS_BLOCKLIST);
@@ -268,14 +254,9 @@ export default function ReportIssueModal() {
                       <button
                         type="button"
                         onClick={() => fileRef.current?.click()}
-                        style={{
-                          ...styles.attachBtn,
-                          color: screenshot ? '#0f172a' : '#94a3b8',
-                        }}
-                        aria-label="Attach screenshot"
-                        title="Attach screenshot"
+                        style={styles.attachBtn}
                       >
-                        <PaperclipIcon />
+                        {screenshot ? 'Change screenshot' : 'Attach screenshot'}
                       </button>
                       {screenshot ? (
                         <button
@@ -416,13 +397,15 @@ const styles: Record<string, CSSProperties> = {
   attachBtn: {
     border: 'none',
     background: 'transparent',
-    padding: 4,
+    padding: 0,
     margin: 0,
     cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 6,
+    fontSize: 12,
+    fontWeight: 500,
+    fontFamily: font,
+    color: '#64748b',
+    textDecoration: 'underline',
+    textUnderlineOffset: 2,
   },
   previewWrap: {
     display: 'flex',
