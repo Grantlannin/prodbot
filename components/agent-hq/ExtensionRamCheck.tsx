@@ -48,7 +48,9 @@ export default function ExtensionRamCheck() {
     const next = await fetchExtensionRamDiag();
     if (!next) {
       setDiag(null);
-      setError('Could not read RAM diag. Reload the extension (chrome://extensions) and try again.');
+      setError(
+        'Could not read RAM diag. At chrome://extensions → Load unpacked from Desktop/prodbot/extension → Reload, then hard-refresh this page (⌘⇧R).'
+      );
     } else {
       setDiag(next);
     }

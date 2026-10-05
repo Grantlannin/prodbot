@@ -35,19 +35,19 @@ window.addEventListener('message', event => {
     } catch {
       version = null;
     }
-    window.postMessage({ type: 'PRODUC_FOCUS_PONG', version }, window.location.origin);
-    return;
-  }
-
-  if (event.data?.type === 'PRODUC_FOCUS_RAM_DIAG') {
+    const wantRamDiag = !!event.data?.wantRamDiag;
+    if (!wantRamDiag) {
+      window.postMessage({ type: 'PRODUC_FOCUS_PONG', version }, window.location.origin);
+      return;
+    }
     chrome.runtime.sendMessage({ type: 'GET_RAM_DIAG' }, response => {
       const err = chrome.runtime.lastError;
       window.postMessage(
         {
-          type: 'PRODUC_FOCUS_RAM_DIAG_RESULT',
-          ok: !err && response?.ok !== false,
-          diag: response?.diag || null,
-          error: err?.message || response?.error || null,
+          type: 'PRODUC_FOCUS_PONG',
+          version,
+          ramDiag: !err && response?.diag ? response.diag : null,
+          ramDiagError: err?.message || response?.error || null,
         },
         window.location.origin
       );

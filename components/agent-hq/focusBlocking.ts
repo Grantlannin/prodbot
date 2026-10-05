@@ -88,9 +88,6 @@ const PRODUC_TIME_STUDY_CHECKIN = 'PRODUC_TIME_STUDY_CHECKIN';
 const PRODUC_TIME_STUDY_ACK = 'PRODUC_TIME_STUDY_ACK';
 export const PRODUC_FOCUS_PING = 'PRODUC_FOCUS_PING';
 export const PRODUC_FOCUS_PONG = 'PRODUC_FOCUS_PONG';
-export const PRODUC_FOCUS_RAM_DIAG = 'PRODUC_FOCUS_RAM_DIAG';
-export const PRODUC_FOCUS_RAM_DIAG_RESULT = 'PRODUC_FOCUS_RAM_DIAG_RESULT';
-
 export interface ExtensionRamDiag {
   version: string;
   blocking: boolean;
@@ -302,8 +299,8 @@ export function detectFocusExtension(timeoutMs = 1200): Promise<{
   });
 }
 
-/** Ask the extension service worker for Soft/Hard thrash counters. */
-export function fetchExtensionRamDiag(timeoutMs = 1500): Promise<ExtensionRamDiag | null> {
+/** Ask the extension service worker for Soft/Hard thrash counters (via ping/pong). */
+export function fetchExtensionRamDiag(timeoutMs = 2000): Promise<ExtensionRamDiag | null> {
   if (typeof window === 'undefined') return Promise.resolve(null);
 
   return new Promise(resolve => {
@@ -317,15 +314,20 @@ export function fetchExtensionRamDiag(timeoutMs = 1500): Promise<ExtensionRamDia
     };
     const listener = (event: MessageEvent) => {
       if (event.source !== window) return;
-      if (event.data?.type !== PRODUC_FOCUS_RAM_DIAG_RESULT) return;
-      if (!event.data?.ok || !event.data.diag) {
-        finish(null);
+      if (event.data?.type !== PRODUC_FOCUS_PONG) return;
+      // Ignore plain pongs from the keepalive ping (no ramDiag field).
+      if (!('ramDiag' in (event.data || {})) && !event.data?.ramDiagError) return;
+      if (event.data?.ramDiag) {
+        finish(event.data.ramDiag as ExtensionRamDiag);
         return;
       }
-      finish(event.data.diag as ExtensionRamDiag);
+      finish(null);
     };
     window.addEventListener('message', listener);
-    window.postMessage({ type: PRODUC_FOCUS_RAM_DIAG }, window.location.origin);
+    window.postMessage(
+      { type: PRODUC_FOCUS_PING, wantRamDiag: true },
+      window.location.origin
+    );
     const timer = window.setTimeout(() => finish(null), timeoutMs);
   });
 }
