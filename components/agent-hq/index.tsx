@@ -34,6 +34,7 @@ import { fetchProfileDisplayName } from '@/lib/supabase/profile';
 import { isPlaceholderDisplayName } from './userProfile';
 import OnboardingNameModal from './OnboardingNameModal';
 import TutorialVideoModal from './TutorialVideoModal';
+import ReportIssueModal from './ReportIssueModal';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
@@ -186,6 +187,7 @@ function AgentHQInner() {
               >
                 full bot tutorial
               </button>
+              <ReportIssueModal />
               <FocusExtensionModal variant="nav" />
               <TimeStudyModal variant="nav" />
               <StuckHelpNavButton />
