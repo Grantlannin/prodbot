@@ -197,7 +197,7 @@ export default function ReportIssueModal() {
               >
                 <div style={styles.header}>
                   <h3 id="report-issue-title" style={styles.title}>
-                    not working?
+                    something not working? let us know
                   </h3>
                   <button type="button" onClick={close} style={styles.closeBtn} aria-label="Close">
                     ×
@@ -215,10 +215,6 @@ export default function ReportIssueModal() {
                   </div>
                 ) : (
                   <form style={styles.body} onSubmit={e => void submit(e)}>
-                    <p style={styles.hint}>
-                      One thorough report. We auto-attach Soft/Hard, extension version, and browser so
-                      you don’t get a dozen follow-ups.
-                    </p>
                     <label style={styles.label}>
                       Short title
                       <input
@@ -333,7 +329,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 15,
     fontWeight: 650,
     color: '#0f172a',
-    textTransform: 'lowercase',
   },
   closeBtn: {
     border: 'none',
@@ -349,12 +344,6 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
-  },
-  hint: {
-    margin: 0,
-    fontSize: 13,
-    color: '#64748b',
-    lineHeight: 1.45,
   },
   label: {
     display: 'flex',
