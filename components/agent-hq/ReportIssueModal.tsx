@@ -174,12 +174,6 @@ export default function ReportIssueModal() {
     }
   };
 
-  const lockLabel = currentSession?.lockMode === 'soft'
-    ? 'Soft'
-    : currentSession?.lockMode === 'hard'
-      ? 'Hard'
-      : 'Off';
-
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} style={navLinkStyle}>
@@ -216,7 +210,7 @@ export default function ReportIssueModal() {
                 ) : (
                   <form style={styles.body} onSubmit={e => void submit(e)}>
                     <label style={styles.label}>
-                      Short title
+                      Issue:
                       <input
                         type="text"
                         value={subject}
@@ -272,16 +266,6 @@ export default function ReportIssueModal() {
                         <img src={previewUrl} alt="Screenshot preview" style={styles.preview} />
                       </div>
                     ) : null}
-                    <p style={styles.auto}>
-                      Auto: {lockLabel}
-                      {status === 'working' || status === 'on_break' ? ' · session on' : ''}
-                      {' · '}
-                      {extInfo.installed
-                        ? `ext ${extInfo.version || 'installed'}`
-                        : 'ext not detected'}
-                      {' · '}
-                      {resolveBlocklist(blocklist).length} blocked sites
-                    </p>
                     {error ? <p style={styles.error}>{error}</p> : null}
                     <button type="submit" disabled={sending || message.trim().length < 10} style={styles.primaryBtn}>
                       {sending ? 'Sending…' : 'Send to support'}
@@ -418,12 +402,6 @@ const styles: Record<string, CSSProperties> = {
     color: '#64748b',
     textDecoration: 'underline',
     cursor: 'pointer',
-  },
-  auto: {
-    margin: 0,
-    fontSize: 11,
-    color: '#94a3b8',
-    lineHeight: 1.4,
   },
   error: {
     margin: 0,
