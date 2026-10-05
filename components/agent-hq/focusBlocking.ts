@@ -88,6 +88,23 @@ const PRODUC_TIME_STUDY_CHECKIN = 'PRODUC_TIME_STUDY_CHECKIN';
 const PRODUC_TIME_STUDY_ACK = 'PRODUC_TIME_STUDY_ACK';
 export const PRODUC_FOCUS_PING = 'PRODUC_FOCUS_PING';
 export const PRODUC_FOCUS_PONG = 'PRODUC_FOCUS_PONG';
+export const PRODUC_FOCUS_RAM_DIAG = 'PRODUC_FOCUS_RAM_DIAG';
+export const PRODUC_FOCUS_RAM_DIAG_RESULT = 'PRODUC_FOCUS_RAM_DIAG_RESULT';
+
+export interface ExtensionRamDiag {
+  version: string;
+  blocking: boolean;
+  lockMode: string | null;
+  domainCount: number;
+  uptimeMs: number;
+  syncReceived: number;
+  syncApplied: number;
+  syncSkipped: number;
+  ruleUpdates: number;
+  alarms: string[];
+  hasEnforceLoop: boolean;
+  healthy: boolean;
+}
 
 export const FOCUS_CLEAR_PAYLOAD: FocusSyncPayload = {
   blocking: false,
@@ -282,6 +299,34 @@ export function detectFocusExtension(timeoutMs = 1200): Promise<{
     };
     const cleanup = pingFocusExtension(info => finish(true, info?.version ?? null));
     window.setTimeout(() => finish(false, null), timeoutMs);
+  });
+}
+
+/** Ask the extension service worker for Soft/Hard thrash counters. */
+export function fetchExtensionRamDiag(timeoutMs = 1500): Promise<ExtensionRamDiag | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = (diag: ExtensionRamDiag | null) => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener('message', listener);
+      window.clearTimeout(timer);
+      resolve(diag);
+    };
+    const listener = (event: MessageEvent) => {
+      if (event.source !== window) return;
+      if (event.data?.type !== PRODUC_FOCUS_RAM_DIAG_RESULT) return;
+      if (!event.data?.ok || !event.data.diag) {
+        finish(null);
+        return;
+      }
+      finish(event.data.diag as ExtensionRamDiag);
+    };
+    window.addEventListener('message', listener);
+    window.postMessage({ type: PRODUC_FOCUS_RAM_DIAG }, window.location.origin);
+    const timer = window.setTimeout(() => finish(null), timeoutMs);
   });
 }
 

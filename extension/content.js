@@ -39,6 +39,22 @@ window.addEventListener('message', event => {
     return;
   }
 
+  if (event.data?.type === 'PRODUC_FOCUS_RAM_DIAG') {
+    chrome.runtime.sendMessage({ type: 'GET_RAM_DIAG' }, response => {
+      const err = chrome.runtime.lastError;
+      window.postMessage(
+        {
+          type: 'PRODUC_FOCUS_RAM_DIAG_RESULT',
+          ok: !err && response?.ok !== false,
+          diag: response?.diag || null,
+          error: err?.message || response?.error || null,
+        },
+        window.location.origin
+      );
+    });
+    return;
+  }
+
   if (event.data?.type === 'PRODUC_TIME_STUDY_SYNC') {
     const incoming = event.data.payload && typeof event.data.payload === 'object' ? event.data.payload : {};
     forwardTimeStudySync({
