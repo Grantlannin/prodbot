@@ -89,7 +89,6 @@ export default function ReportIssueModal() {
     setMessage('');
     setScreenshot(null);
     setSent(false);
-    setTicketId(null);
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -155,17 +154,12 @@ export default function ReportIssueModal() {
       });
       const data = (await res.json().catch(() => null)) as {
         error?: string;
-        ticketId?: string | null;
       } | null;
       if (!res.ok) {
         setError(data?.error || 'Could not send. Try again.');
         return;
       }
-      setTicketId(data?.ticketId || null);
       setSent(true);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('daywinner:tickets-changed'));
-      }
     } catch {
       setError('Could not send. Check your connection and try again.');
     } finally {
@@ -199,7 +193,7 @@ export default function ReportIssueModal() {
 
                 {sent ? (
                   <div style={styles.body}>
-                    <p style={styles.success}>Sent successfully. We&apos;re on it.</p>
+                    <p style={styles.success}>Sent successfully. We&rsquo;re on it.</p>
                     <button type="button" onClick={close} style={styles.primaryBtn}>
                       Close
                     </button>
