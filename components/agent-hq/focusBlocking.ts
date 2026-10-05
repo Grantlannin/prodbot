@@ -251,7 +251,7 @@ export function postFocusClearSync(): void {
 }
 
 export function pingFocusExtension(
-  onPong: (info?: { version?: string | null }) => void
+  onPong: (info?: { version?: string | null; extensionId?: string | null }) => void
 ): () => void {
   if (typeof window === 'undefined') return () => {};
 
@@ -262,7 +262,11 @@ export function pingFocusExtension(
       typeof event.data?.version === 'string' && event.data.version.trim()
         ? event.data.version.trim()
         : null;
-    onPong({ version });
+    const extensionId =
+      typeof event.data?.extensionId === 'string' && event.data.extensionId.trim()
+        ? event.data.extensionId.trim()
+        : null;
+    onPong({ version, extensionId });
   };
 
   window.addEventListener('message', listener);
@@ -281,21 +285,28 @@ export function pingFocusExtension(
 export function detectFocusExtension(timeoutMs = 1200): Promise<{
   installed: boolean;
   version: string | null;
+  extensionId: string | null;
 }> {
   if (typeof window === 'undefined') {
-    return Promise.resolve({ installed: false, version: null });
+    return Promise.resolve({ installed: false, version: null, extensionId: null });
   }
 
   return new Promise(resolve => {
     let settled = false;
-    const finish = (installed: boolean, version: string | null) => {
+    const finish = (
+      installed: boolean,
+      version: string | null,
+      extensionId: string | null
+    ) => {
       if (settled) return;
       settled = true;
       cleanup();
-      resolve({ installed, version });
+      resolve({ installed, version, extensionId });
     };
-    const cleanup = pingFocusExtension(info => finish(true, info?.version ?? null));
-    window.setTimeout(() => finish(false, null), timeoutMs);
+    const cleanup = pingFocusExtension(info =>
+      finish(true, info?.version ?? null, info?.extensionId ?? null)
+    );
+    window.setTimeout(() => finish(false, null, null), timeoutMs);
   });
 }
 

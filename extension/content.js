@@ -30,14 +30,20 @@ window.addEventListener('message', event => {
 
   if (event.data?.type === 'PRODUC_FOCUS_PING') {
     let version = null;
+    let extensionId = null;
     try {
       version = chrome.runtime.getManifest()?.version || null;
+      extensionId = chrome.runtime.id || null;
     } catch {
       version = null;
+      extensionId = null;
     }
     const wantRamDiag = !!event.data?.wantRamDiag;
     if (!wantRamDiag) {
-      window.postMessage({ type: 'PRODUC_FOCUS_PONG', version }, window.location.origin);
+      window.postMessage(
+        { type: 'PRODUC_FOCUS_PONG', version, extensionId },
+        window.location.origin
+      );
       return;
     }
     chrome.runtime.sendMessage({ type: 'GET_RAM_DIAG' }, response => {
@@ -46,6 +52,7 @@ window.addEventListener('message', event => {
         {
           type: 'PRODUC_FOCUS_PONG',
           version,
+          extensionId,
           ramDiag: !err && response?.diag ? response.diag : null,
           ramDiagError: err?.message || response?.error || null,
         },
