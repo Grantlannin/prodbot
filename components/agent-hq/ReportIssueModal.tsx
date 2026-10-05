@@ -2,8 +2,6 @@
 
 import { useState, type CSSProperties, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { useAuth } from './hooks/AuthProvider';
-
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 const navLinkStyle: CSSProperties = {
@@ -21,7 +19,6 @@ const navLinkStyle: CSSProperties = {
 };
 
 export default function ReportIssueModal() {
-  const { email } = useAuth();
   const [open, setOpen] = useState(false);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -97,10 +94,7 @@ export default function ReportIssueModal() {
                   </div>
                 ) : (
                   <form style={styles.body} onSubmit={e => void submit(e)}>
-                    <p style={styles.hint}>
-                      Tell us what’s broken. This goes straight to support
-                      {email ? ` (we’ll see you’re ${email})` : ''}.
-                    </p>
+                    <p style={styles.hint}>Tell us what’s broken. This goes straight to support.</p>
                     <label style={styles.label}>
                       Short title
                       <input
