@@ -1,6 +1,7 @@
 const RULE_ID_BASE = 10000;
 const TIME_STUDY_ALARM = 'timeStudyCheckIn';
 const SITE_BLOCKER_SCRIPT_ID = 'daywinner-site-blocker';
+const ENFORCE_ALARM = 'enforceBlockedTabs';
 
 async function getStoredState() {
   const data = await chrome.storage.local.get(['focusState']);
@@ -29,31 +30,125 @@ async function getTimeStudySettings() {
   };
 }
 
-function isActiveBlockingState(state) {
-  return !!(state?.blocking && state.domains?.length);
+function normalizeDomain(domain) {
+  return String(domain || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, '');
 }
 
-function domainsKey(domains) {
-  return JSON.stringify(Array.isArray(domains) ? domains : []);
+function matchBlockedDomain(hostname, domains) {
+  const host = normalizeDomain(hostname);
+  if (!host) return null;
+  for (const raw of domains || []) {
+    const domain = normalizeDomain(raw);
+    if (!domain) continue;
+    if (host === domain || host.endsWith(`.${domain}`)) return domain;
+  }
+  return null;
 }
 
-function sameFocusState(a, b) {
-  return (
-    !!a?.blocking === !!b?.blocking &&
-    domainsKey(a?.domains) === domainsKey(b?.domains) &&
-    (a?.sessionEndsAt || null) === (b?.sessionEndsAt || null) &&
-    (a?.lockMode || null) === (b?.lockMode || null) &&
-    (a?.sessionId || null) === (b?.sessionId || null) &&
-    !!a?.timerPaused === !!b?.timerPaused &&
-    (a?.remainingMs ?? null) === (b?.remainingMs ?? null)
+function blockedPageUrl(domain) {
+  return chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(domain)}`);
+}
+
+async function injectSiteBlocker(tabId) {
+  if (!tabId) return;
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['siteBlocker.js'],
+    });
+  } catch {
+    /* chrome:// pages, discarded tabs, etc. */
+  }
+}
+
+async function syncSiteBlockerRegistration(blocking) {
+  try {
+    const existing = await chrome.scripting.getRegisteredContentScripts();
+    const has = existing.some(script => script.id === SITE_BLOCKER_SCRIPT_ID);
+    if (blocking && !has) {
+      await chrome.scripting.registerContentScripts([
+        {
+          id: SITE_BLOCKER_SCRIPT_ID,
+          matches: ['http://*/*', 'https://*/*'],
+          js: ['siteBlocker.js'],
+          runAt: 'document_start',
+          allFrames: false,
+          persistAcrossSessions: true,
+        },
+      ]);
+    } else if (!blocking && has) {
+      await chrome.scripting.unregisterContentScripts({ ids: [SITE_BLOCKER_SCRIPT_ID] });
+    }
+  } catch (err) {
+    console.error('Daywinner site blocker registration failed', err);
+  }
+}
+
+async function scheduleEnforceAlarm(blocking) {
+  await chrome.alarms.clear(ENFORCE_ALARM);
+  if (!blocking) return;
+  // Keep kicking already-open SPA tabs; SW may sleep between events.
+  chrome.alarms.create(ENFORCE_ALARM, { periodInMinutes: 0.5 });
+}
+
+async function redirectTabIfBlocked(tabId, url, domains) {
+  if (!tabId || !url || !domains?.length) return false;
+  let hostname;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    hostname = parsed.hostname;
+  } catch {
+    return false;
+  }
+
+  const domain = matchBlockedDomain(hostname, domains);
+  if (!domain) return false;
+
+  // Inject SPA trap first so in-tab clicks get caught even if update is slow/fails.
+  await injectSiteBlocker(tabId);
+
+  try {
+    await chrome.tabs.update(tabId, { url: blockedPageUrl(domain) });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** DNR only catches new network navigations — already-open SPA tabs (X, Reddit, etc.) need force + in-page trap. */
+async function enforceBlockedTabs(state) {
+  if (!state?.blocking || !state.domains?.length) return;
+  const tabs = await chrome.tabs.query({});
+  await Promise.all(
+    tabs.map(async tab => {
+      if (!tab.id) return;
+      const url = tab.url || tab.pendingUrl;
+      if (url) {
+        await redirectTabIfBlocked(tab.id, url, state.domains);
+        return;
+      }
+      // URL sometimes missing until hydrated — still try inject on http tabs later via alarm.
+      await injectSiteBlocker(tab.id);
+    })
   );
+}
+
+async function handlePossibleBlockedNavigation(details) {
+  if (details.frameId !== 0) return;
+  const state = await getStoredState();
+  if (!state.blocking || !state.domains?.length) return;
+  await redirectTabIfBlocked(details.tabId, details.url, state.domains);
 }
 
 async function updateRules(state) {
   const existing = await chrome.declarativeNetRequest.getDynamicRules();
   const removeIds = existing.map(rule => rule.id);
 
-  if (!isActiveBlockingState(state)) {
+  if (!state.blocking || !state.domains?.length) {
     if (removeIds.length) {
       await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: removeIds });
     }
@@ -71,6 +166,7 @@ async function updateRules(state) {
     },
     condition: {
       urlFilter: `||${domain}^`,
+      // main_frame = top-level tabs; sub_frame = embeds (YouTube player on other sites, etc.)
       resourceTypes: ['main_frame', 'sub_frame'],
     },
   }));
@@ -81,24 +177,8 @@ async function updateRules(state) {
   });
 }
 
-/** Drop leftover dynamic siteBlocker registration from older builds. */
-async function clearLegacySiteBlockerRegistration() {
-  try {
-    const existing = await chrome.scripting.getRegisteredContentScripts();
-    if (existing.some(script => script.id === SITE_BLOCKER_SCRIPT_ID)) {
-      await chrome.scripting.unregisterContentScripts({ ids: [SITE_BLOCKER_SCRIPT_ID] });
-    }
-  } catch {
-    /* ignore */
-  }
-}
-
-/**
- * Lock on → set Chrome block rules. Lock off → clear them.
- * No all-tab scans, no minute enforce loops, no navigation thrash.
- * New tabs on stubborn sites (X SW) are handled by siteBlocker.js at document_start.
- */
 async function applySync(payload) {
+  // Require explicit entitled === true. Spoofed page messages without entitlement clear blocking.
   if (payload.entitled !== true) {
     payload = {
       blocking: false,
@@ -136,31 +216,26 @@ async function applySync(payload) {
     state.remainingMs = null;
   }
 
-  const prev = await getStoredState();
-  if (sameFocusState(prev, state)) return;
-
-  const prevActive = isActiveBlockingState(prev);
-  const active = isActiveBlockingState(state);
-  const needRules =
-    prevActive !== active || domainsKey(prev.domains) !== domainsKey(state.domains);
-
-  // Clear rules before storage when turning off (avoids stale DNR if SW dies mid-write).
-  if (!active) {
-    if (needRules) await updateRules(state);
-    await chrome.storage.local.set({ focusState: state });
-  } else {
-    await chrome.storage.local.set({ focusState: state });
-    if (needRules) await updateRules(state);
-  }
+  await chrome.storage.local.set({ focusState: state });
+  await updateRules(state);
+  await syncSiteBlockerRegistration(state.blocking && state.domains.length > 0);
+  await scheduleEnforceAlarm(state.blocking && state.domains.length > 0);
+  await enforceBlockedTabs(state);
 
   await chrome.alarms.clear('sessionEnd');
-  if (!state.timerPaused && active && state.sessionEndsAt && state.sessionEndsAt > Date.now()) {
+  if (
+    !state.timerPaused &&
+    state.blocking &&
+    state.sessionEndsAt &&
+    state.sessionEndsAt > Date.now()
+  ) {
     chrome.alarms.create('sessionEnd', { when: state.sessionEndsAt });
   }
 }
 
 async function scheduleTimeStudyAlarm(settings) {
   await chrome.alarms.clear(TIME_STUDY_ALARM);
+  // Only ping while a focus session timer is actively running.
   if (!settings.enabled || !settings.sessionActive) return;
   const minutes = Number(settings.intervalMinutes) || 30;
   chrome.alarms.create(TIME_STUDY_ALARM, {
@@ -200,6 +275,7 @@ async function applyTimeStudySync(payload) {
   return { ok: true, notified: false, overlay: false, sessionActive: settings.sessionActive };
 }
 
+/** On-page type box only — never open checkin.html or Chrome OS notifications. */
 async function showPingOnActiveTab() {
   try {
     const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
@@ -256,6 +332,7 @@ async function logInfraction(domain) {
   const pending = data.pendingInfractions || [];
   pending.push(infraction);
   await chrome.storage.local.set({ pendingInfractions: pending });
+  // Daywinner content script polls GET_PENDING_INFRACTIONS — no tabs permission needed
 }
 
 async function saveTimeStudyCheckIn(payload) {
@@ -272,32 +349,30 @@ async function saveTimeStudyCheckIn(payload) {
   await chrome.storage.local.set({ pendingCheckIns: pending });
 }
 
-function clearPayload() {
-  return {
-    blocking: false,
-    domains: [],
-    sessionEndsAt: null,
-    lockMode: null,
-    sessionId: null,
-    timerPaused: false,
-    remainingMs: null,
-    entitled: true,
-  };
-}
-
 async function restoreFromStorage() {
-  await clearLegacySiteBlockerRegistration();
-  // Clear leftover enforce alarm from older builds.
-  await chrome.alarms.clear('enforceBlockedTabs');
-
   const state = await getStoredState();
-  if (!state.timerPaused && state.sessionEndsAt && state.sessionEndsAt <= Date.now()) {
-    await applySync(clearPayload());
+  if (
+    !state.timerPaused &&
+    state.sessionEndsAt &&
+    state.sessionEndsAt <= Date.now()
+  ) {
+    await applySync({
+      blocking: false,
+      domains: [],
+      sessionEndsAt: null,
+      lockMode: null,
+      sessionId: null,
+      timerPaused: false,
+      remainingMs: null,
+    });
   } else {
     await updateRules(state);
+    await syncSiteBlockerRegistration(state.blocking && state.domains?.length > 0);
+    await scheduleEnforceAlarm(state.blocking && state.domains?.length > 0);
+    await enforceBlockedTabs(state);
     if (
       !state.timerPaused &&
-      isActiveBlockingState(state) &&
+      state.blocking &&
       state.sessionEndsAt &&
       state.sessionEndsAt > Date.now()
     ) {
@@ -387,7 +462,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
 chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'sessionEnd') {
-    void applySync(clearPayload());
+    applySync({
+      blocking: false,
+      domains: [],
+      sessionEndsAt: null,
+      lockMode: null,
+      sessionId: null,
+      timerPaused: false,
+      remainingMs: null,
+    });
     return;
   }
 
@@ -400,7 +483,38 @@ chrome.alarms.onAlarm.addListener(alarm => {
       }
       await fireTimeStudyPing();
     })();
+    return;
   }
+
+  if (alarm.name === ENFORCE_ALARM) {
+    void (async () => {
+      const state = await getStoredState();
+      if (!state.blocking || !state.domains?.length) {
+        await chrome.alarms.clear(ENFORCE_ALARM);
+        return;
+      }
+      await enforceBlockedTabs(state);
+    })();
+  }
+});
+
+// Catch SPA route changes + back-button returns that skip full network navigations.
+chrome.webNavigation.onCommitted.addListener(details => {
+  void handlePossibleBlockedNavigation(details);
+});
+
+chrome.webNavigation.onHistoryStateUpdated.addListener(details => {
+  void handlePossibleBlockedNavigation(details);
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  const url = changeInfo.url || (changeInfo.status === 'loading' ? tab.url : null);
+  if (!url) return;
+  void (async () => {
+    const state = await getStoredState();
+    if (!state.blocking || !state.domains?.length) return;
+    await redirectTabIfBlocked(tabId, url, state.domains);
+  })();
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -410,5 +524,3 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.runtime.onInstalled.addListener(() => {
   restoreFromStorage();
 });
-
-void restoreFromStorage();

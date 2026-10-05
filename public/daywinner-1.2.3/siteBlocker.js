@@ -1,12 +1,14 @@
 /**
- * Runs at document_start on http(s) pages.
- * If Soft/Hard blocking is on and this host is blocked, redirect once.
- * Covers new tabs where Chrome's network rules miss (e.g. X service worker).
- * No timers, no all-tab scans — idle unless this page matches.
+ * Injected on http(s) pages while a focus session may be active.
+ * Full loads redirect immediately; SPA clicks (X notifications, etc.) are trapped too.
  */
 (function daywinnerSiteBlocker() {
-  if (window.__daywinnerSiteBlockerActive) return;
-  window.__daywinnerSiteBlockerActive = true;
+  if (window.__daywinnerSiteBlocker) return;
+  window.__daywinnerSiteBlocker = true;
+
+  let activeDomain = null;
+  let historyWrapped = false;
+  let pollTimer = null;
 
   function normalizeDomain(domain) {
     return String(domain || '')
@@ -37,11 +39,59 @@
     }
   }
 
+  function go() {
+    if (!activeDomain) return;
+    kick(activeDomain);
+  }
+
+  function ensureSpaTrap() {
+    if (historyWrapped) return;
+    historyWrapped = true;
+    try {
+      const wrap = orig =>
+        function wrappedHistoryMethod(...args) {
+          const result = orig.apply(this, args);
+          go();
+          return result;
+        };
+      history.pushState = wrap(history.pushState.bind(history));
+      history.replaceState = wrap(history.replaceState.bind(history));
+    } catch {
+      /* ignore */
+    }
+    window.addEventListener('popstate', go);
+    window.addEventListener('hashchange', go);
+  }
+
   function enforceFromState(state) {
     if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
-    if (!state?.blocking || !state.domains?.length) return;
+
+    if (!state?.blocking || !state.domains?.length) {
+      activeDomain = null;
+      if (pollTimer) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      return;
+    }
+
     const domain = matchBlockedDomain(location.hostname, state.domains);
-    if (domain) kick(domain);
+    if (!domain) {
+      activeDomain = null;
+      if (pollTimer) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      return;
+    }
+
+    activeDomain = domain;
+    ensureSpaTrap();
+    if (!pollTimer) {
+      // Backup for client routers that don't fire history events cleanly
+      pollTimer = window.setInterval(go, 400);
+    }
+    go();
   }
 
   chrome.storage.local.get(['focusState'], data => {

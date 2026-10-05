@@ -8,7 +8,9 @@
     "declarativeNetRequestFeedback",
     "storage",
     "alarms",
-    "scripting"
+    "scripting",
+    "webNavigation",
+    "tabs"
   ],
   "host_permissions": ["*://*/*"],
   "background": {
@@ -24,12 +26,6 @@
       ],
       "js": ["content.js"],
       "run_at": "document_start"
-    },
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["siteBlocker.js"],
-      "run_at": "document_start",
-      "all_frames": false
     }
   ],
   "web_accessible_resources": [
