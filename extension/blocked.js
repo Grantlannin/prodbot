@@ -1,5 +1,8 @@
-function getSiteFromQuery() {
-  const params = new URLSearchParams(window.location.search);
+function getQuery() {
+  return new URLSearchParams(window.location.search);
+}
+
+function getSiteFromQuery(params) {
   return (params.get('site') || 'this site').trim().toLowerCase().replace(/^www\./, '');
 }
 
@@ -10,10 +13,15 @@ function formatRemaining(ms) {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-const site = getSiteFromQuery();
+const params = getQuery();
+const site = getSiteFromQuery(params);
+const passiveKick = params.get('passive') === '1';
 document.getElementById('site-label').textContent = site;
 
-chrome.runtime.sendMessage({ type: 'LOG_INFRACTION', domain: site }).catch(() => {});
+// Lock-on kicks of already-open tabs are not infractions (passive=1 or grace in background).
+if (!passiveKick) {
+  chrome.runtime.sendMessage({ type: 'LOG_INFRACTION', domain: site }).catch(() => {});
+}
 
 function updateRemaining() {
   chrome.runtime.sendMessage({ type: 'GET_STATE' }, state => {

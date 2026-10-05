@@ -142,6 +142,17 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
 
   useEffect(() => {
     return onExtensionInfraction(payload => {
+      // Soft/Hard lock-on kicks of already-open tabs arrive in the first seconds —
+      // those are not intentional visits and must not count as infractions.
+      const session = sessionRef.current;
+      const lock = session?.lockMode;
+      if (
+        (lock === 'soft' || lock === 'hard') &&
+        typeof session?.startTime === 'number' &&
+        Date.now() - session.startTime < 8000
+      ) {
+        return;
+      }
       const key = `${payload.domain}:${payload.createdAt}`;
       if (seenInfractionsRef.current.has(key)) return;
       seenInfractionsRef.current.add(key);

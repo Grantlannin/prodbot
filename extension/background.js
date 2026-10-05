@@ -122,8 +122,17 @@ async function applySync(payload) {
 
   const rulesChanged =
     !!prev.blocking !== !!state.blocking || domainsKey(prev.domains) !== domainsKey(state.domains);
+  const blockingTurnedOn = !prev.blocking && !!state.blocking;
 
-  await chrome.storage.local.set({ focusState: state });
+  const storagePatch = { focusState: state };
+  // Open-tab / lock-on redirects in the first seconds are not real attempts.
+  if (blockingTurnedOn) {
+    storagePatch.suppressInfractionsUntil = Date.now() + 8000;
+  } else if (!state.blocking) {
+    storagePatch.suppressInfractionsUntil = 0;
+  }
+
+  await chrome.storage.local.set(storagePatch);
   if (rulesChanged) {
     await updateRules(state);
   }
@@ -227,6 +236,11 @@ async function fireTimeStudyPing() {
 }
 
 async function logInfraction(domain) {
+  const data = await chrome.storage.local.get(['pendingInfractions', 'suppressInfractionsUntil']);
+  const suppressUntil = Number(data.suppressInfractionsUntil) || 0;
+  // Soft/Hard just turned on — auto-kicks of already-open tabs must not count.
+  if (suppressUntil > 0 && Date.now() < suppressUntil) return;
+
   const normalized = String(domain || 'unknown')
     .trim()
     .toLowerCase()
@@ -234,7 +248,6 @@ async function logInfraction(domain) {
   const label = `Blocked site: ${normalized}`;
   const infraction = { domain: normalized, label, createdAt: Date.now() };
 
-  const data = await chrome.storage.local.get(['pendingInfractions']);
   const pending = data.pendingInfractions || [];
   pending.push(infraction);
   await chrome.storage.local.set({ pendingInfractions: pending });
