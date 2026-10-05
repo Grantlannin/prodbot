@@ -58,7 +58,6 @@ export default function ReportIssueModal() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
-  const [ticketId, setTicketId] = useState<string | null>(null);
   const [extInfo, setExtInfo] = useState<{ installed: boolean; version: string | null }>({
     installed: false,
     version: null,
@@ -200,9 +199,7 @@ export default function ReportIssueModal() {
 
                 {sent ? (
                   <div style={styles.body}>
-                    <p style={styles.success}>
-                      {ticketId ? `Sent — ${ticketId}. We’ll look at it.` : 'Sent — we’ll look at it.'}
-                    </p>
+                    <p style={styles.success}>Sent successfully. We&apos;re on it.</p>
                     <button type="button" onClick={close} style={styles.primaryBtn}>
                       Close
                     </button>
