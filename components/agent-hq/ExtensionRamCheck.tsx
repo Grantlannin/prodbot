@@ -23,11 +23,12 @@ function isLocalHost(): boolean {
   return host === 'localhost' || host === '127.0.0.1';
 }
 
-/** Local-only Soft/Hard thrash check — not shown in production. */
+/** Local-only Soft/Hard RAM test — works with the current store extension. */
 export default function ExtensionRamCheck() {
   const [open, setOpen] = useState(false);
   const [diag, setDiag] = useState<ExtensionRamDiag | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [extVersion, setExtVersion] = useState<string | null>(null);
+  const [extInstalled, setExtInstalled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [local, setLocal] = useState(false);
 
@@ -37,22 +38,14 @@ export default function ExtensionRamCheck() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
     const installed = await detectFocusExtension(1000);
-    if (!installed.installed) {
-      setDiag(null);
-      setError('Extension not detected. Reload the unpacked extension, then refresh this page.');
-      setLoading(false);
-      return;
-    }
-    const next = await fetchExtensionRamDiag();
-    if (!next) {
-      setDiag(null);
-      setError(
-        'Could not read RAM diag. At chrome://extensions → Load unpacked from Desktop/prodbot/extension → Reload, then hard-refresh this page (⌘⇧R).'
-      );
-    } else {
+    setExtInstalled(installed.installed);
+    setExtVersion(installed.version);
+    if (installed.installed) {
+      const next = await fetchExtensionRamDiag();
       setDiag(next);
+    } else {
+      setDiag(null);
     }
     setLoading(false);
   }, []);
@@ -60,8 +53,6 @@ export default function ExtensionRamCheck() {
   useEffect(() => {
     if (!open) return;
     void load();
-    const interval = window.setInterval(() => void load(), 4000);
-    return () => window.clearInterval(interval);
   }, [open, load]);
 
   if (!local) return null;
@@ -90,24 +81,34 @@ export default function ExtensionRamCheck() {
                   </button>
                 </div>
                 <div style={styles.body}>
-                  {loading && !diag ? <p style={styles.muted}>Reading extension…</p> : null}
-                  {error ? <p style={styles.error}>{error}</p> : null}
+                  <p style={styles.lead}>
+                    Use your current Daywinner extension (store build is fine). No unpacked reload needed.
+                  </p>
+                  <p style={styles.meta}>
+                    {loading
+                      ? 'Checking extension…'
+                      : extInstalled
+                        ? `Extension detected${extVersion ? ` · v${extVersion}` : ''}`
+                        : 'Extension not detected on this page — open Daywinner with the extension enabled.'}
+                  </p>
+
+                  <ol style={styles.steps}>
+                    <li>Start Soft or Hard with your normal blocked sites.</li>
+                    <li>Leave 15+ tabs open (include X if you use it).</li>
+                    <li>Use the app for 5–10 minutes.</li>
+                    <li>
+                      Chrome → ⋮ → More tools → Task Manager → find “Extension: Daywinner bot”.
+                    </li>
+                    <li>Memory should stay roughly flat (tens of MB), not climb toward GBs.</li>
+                  </ol>
+
                   {diag ? (
-                    <>
-                      <div
-                        style={{
-                          ...styles.badge,
-                          background: diag.healthy ? '#ecfdf5' : '#fff7ed',
-                          color: diag.healthy ? '#047857' : '#c2410c',
-                          borderColor: diag.healthy ? '#a7f3d0' : '#fed7aa',
-                        }}
-                      >
-                        {diag.healthy ? 'Looks healthy (not thrashing)' : 'Check counters — may still be thrashing'}
-                      </div>
+                    <div style={styles.diagBox}>
+                      <div style={styles.diagTitle}>Live counters (this build supports them)</div>
                       <ul style={styles.list}>
-                        <li>Version {diag.version}</li>
                         <li>
-                          Blocking: {diag.blocking ? `${diag.lockMode || 'on'} · ${diag.domainCount} sites` : 'off'}
+                          Blocking:{' '}
+                          {diag.blocking ? `${diag.lockMode || 'on'} · ${diag.domainCount} sites` : 'off'}
                         </li>
                         <li>SW uptime: {formatUptime(diag.uptimeMs)}</li>
                         <li>
@@ -116,20 +117,19 @@ export default function ExtensionRamCheck() {
                         </li>
                         <li>Rule updates: {diag.ruleUpdates}</li>
                         <li>
-                          Alarms: {diag.alarms.length ? diag.alarms.join(', ') : 'none'}
-                          {diag.hasEnforceLoop ? ' · BAD: enforceBlockedTabs still present' : ''}
+                          {diag.healthy
+                            ? 'Counters look healthy (not thrashing)'
+                            : 'Counters look busy — watch Task Manager too'}
                         </li>
                       </ul>
-                      <p style={styles.hint}>
-                        After Soft/Hard has been on a few minutes, <strong>skipped</strong> should climb and{' '}
-                        <strong>applied</strong> should stay tiny. If applied ≈ received, the old leak pattern is back.
-                      </p>
-                      <p style={styles.hint}>
-                        Chrome check: ⋮ → More tools → Task Manager → “Extension: Daywinner bot”. Leave Soft/Hard on
-                        with 15+ tabs for 5–10 min — memory should stay roughly flat, not climb into GBs.
-                      </p>
-                    </>
-                  ) : null}
+                    </div>
+                  ) : (
+                    <p style={styles.hint}>
+                      Live counters only show on builds that include them. For the store extension, Task Manager is
+                      the real test.
+                    </p>
+                  )}
+
                   <button type="button" onClick={() => void load()} style={styles.refresh} disabled={loading}>
                     {loading ? 'Refreshing…' : 'Refresh'}
                   </button>
@@ -195,16 +195,9 @@ const styles: Record<string, CSSProperties> = {
     padding: 0,
   },
   body: { padding: 16, display: 'flex', flexDirection: 'column', gap: 12 },
-  muted: { margin: 0, fontSize: 13, color: '#64748b' },
-  error: { margin: 0, fontSize: 12, color: '#b45309' },
-  badge: {
-    border: '1px solid',
-    borderRadius: 8,
-    padding: '8px 10px',
-    fontSize: 12,
-    fontWeight: 650,
-  },
-  list: {
+  lead: { margin: 0, fontSize: 13, color: '#334155', lineHeight: 1.45 },
+  meta: { margin: 0, fontSize: 12, color: '#64748b' },
+  steps: {
     margin: 0,
     paddingLeft: 18,
     fontSize: 13,
@@ -212,6 +205,20 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.55,
   },
   hint: { margin: 0, fontSize: 12, color: '#64748b', lineHeight: 1.45 },
+  diagBox: {
+    background: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    padding: 12,
+  },
+  diagTitle: { fontSize: 12, fontWeight: 650, color: '#475569', marginBottom: 6 },
+  list: {
+    margin: 0,
+    paddingLeft: 18,
+    fontSize: 12,
+    color: '#334155',
+    lineHeight: 1.55,
+  },
   refresh: {
     border: '1px solid #cbd5e1',
     background: '#fff',
