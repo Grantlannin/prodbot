@@ -17,12 +17,23 @@ function formatUptime(ms: number): string {
   return `${hrs}h ${mins % 60}m`;
 }
 
-/** Small Soft/Hard thrash check — confirms the extension isn't doing the old RAM-burn loop. */
+function isLocalHost(): boolean {
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1';
+}
+
+/** Local-only Soft/Hard thrash check — not shown in production. */
 export default function ExtensionRamCheck() {
   const [open, setOpen] = useState(false);
   const [diag, setDiag] = useState<ExtensionRamDiag | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [local, setLocal] = useState(false);
+
+  useEffect(() => {
+    setLocal(isLocalHost());
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,6 +61,8 @@ export default function ExtensionRamCheck() {
     const interval = window.setInterval(() => void load(), 4000);
     return () => window.clearInterval(interval);
   }, [open, load]);
+
+  if (!local) return null;
 
   return (
     <>
