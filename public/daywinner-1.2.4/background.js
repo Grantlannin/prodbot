@@ -28,36 +28,11 @@ async function getTimeStudySettings() {
   };
 }
 
-function isActiveBlockingState(state) {
-  return !!(state?.blocking && state.domains?.length);
-}
-
-function domainsKey(domains) {
-  return JSON.stringify(Array.isArray(domains) ? domains : []);
-}
-
-function sameFocusState(a, b) {
-  return (
-    !!a?.blocking === !!b?.blocking &&
-    domainsKey(a?.domains) === domainsKey(b?.domains) &&
-    (a?.sessionEndsAt || null) === (b?.sessionEndsAt || null) &&
-    (a?.lockMode || null) === (b?.lockMode || null) &&
-    (a?.sessionId || null) === (b?.sessionId || null) &&
-    !!a?.timerPaused === !!b?.timerPaused &&
-    (a?.remainingMs ?? null) === (b?.remainingMs ?? null)
-  );
-}
-
-/**
- * Soft/Hard on → Chrome network rules block new navigations to listed sites.
- * Soft/Hard off → clear rules.
- * Does NOT force-redirect tabs that are already open.
- */
 async function updateRules(state) {
   const existing = await chrome.declarativeNetRequest.getDynamicRules();
   const removeIds = existing.map(rule => rule.id);
 
-  if (!isActiveBlockingState(state)) {
+  if (!state.blocking || !state.domains?.length) {
     if (removeIds.length) {
       await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: removeIds });
     }
@@ -75,7 +50,7 @@ async function updateRules(state) {
     },
     condition: {
       urlFilter: `||${domain}^`,
-      resourceTypes: ['main_frame', 'sub_frame'],
+      resourceTypes: ['main_frame'],
     },
   }));
 
@@ -86,6 +61,7 @@ async function updateRules(state) {
 }
 
 async function applySync(payload) {
+  // Require explicit entitled === true. Spoofed page messages without entitlement clear blocking.
   if (payload.entitled !== true) {
     payload = {
       blocking: false,
@@ -123,33 +99,23 @@ async function applySync(payload) {
     state.remainingMs = null;
   }
 
-  const prev = await getStoredState();
-  if (sameFocusState(prev, state)) return;
-
-  const prevActive = isActiveBlockingState(prev);
-  const active = isActiveBlockingState(state);
-  const needRules =
-    prevActive !== active || domainsKey(prev.domains) !== domainsKey(state.domains);
-
-  // Clear rules before storage when turning off (avoids stale DNR if SW dies mid-write).
-  if (!active) {
-    if (needRules) await updateRules(state);
-    await chrome.storage.local.set({ focusState: state });
-  } else {
-    await chrome.storage.local.set({ focusState: state });
-    if (needRules) await updateRules(state);
-  }
+  await chrome.storage.local.set({ focusState: state });
+  await updateRules(state);
 
   await chrome.alarms.clear('sessionEnd');
-  // Drop leftover open-tab enforce alarm from older builds.
-  await chrome.alarms.clear('enforceBlockedTabs');
-  if (!state.timerPaused && active && state.sessionEndsAt && state.sessionEndsAt > Date.now()) {
+  if (
+    !state.timerPaused &&
+    state.blocking &&
+    state.sessionEndsAt &&
+    state.sessionEndsAt > Date.now()
+  ) {
     chrome.alarms.create('sessionEnd', { when: state.sessionEndsAt });
   }
 }
 
 async function scheduleTimeStudyAlarm(settings) {
   await chrome.alarms.clear(TIME_STUDY_ALARM);
+  // Only ping while a focus session timer is actively running.
   if (!settings.enabled || !settings.sessionActive) return;
   const minutes = Number(settings.intervalMinutes) || 30;
   chrome.alarms.create(TIME_STUDY_ALARM, {
@@ -189,6 +155,7 @@ async function applyTimeStudySync(payload) {
   return { ok: true, notified: false, overlay: false, sessionActive: settings.sessionActive };
 }
 
+/** On-page type box only — never open checkin.html or Chrome OS notifications. */
 async function showPingOnActiveTab() {
   try {
     const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
@@ -245,6 +212,7 @@ async function logInfraction(domain) {
   const pending = data.pendingInfractions || [];
   pending.push(infraction);
   await chrome.storage.local.set({ pendingInfractions: pending });
+  // Daywinner content script polls GET_PENDING_INFRACTIONS — no tabs permission needed
 }
 
 async function saveTimeStudyCheckIn(payload) {
@@ -261,40 +229,27 @@ async function saveTimeStudyCheckIn(payload) {
   await chrome.storage.local.set({ pendingCheckIns: pending });
 }
 
-function clearPayload() {
-  return {
-    blocking: false,
-    domains: [],
-    sessionEndsAt: null,
-    lockMode: null,
-    sessionId: null,
-    timerPaused: false,
-    remainingMs: null,
-    entitled: true,
-  };
-}
-
 async function restoreFromStorage() {
-  await chrome.alarms.clear('enforceBlockedTabs');
-
-  // Drop leftover dynamic siteBlocker registration from older builds.
-  try {
-    const existing = await chrome.scripting.getRegisteredContentScripts();
-    if (existing.some(script => script.id === 'daywinner-site-blocker')) {
-      await chrome.scripting.unregisterContentScripts({ ids: ['daywinner-site-blocker'] });
-    }
-  } catch {
-    /* ignore */
-  }
-
   const state = await getStoredState();
-  if (!state.timerPaused && state.sessionEndsAt && state.sessionEndsAt <= Date.now()) {
-    await applySync(clearPayload());
+  if (
+    !state.timerPaused &&
+    state.sessionEndsAt &&
+    state.sessionEndsAt <= Date.now()
+  ) {
+    await applySync({
+      blocking: false,
+      domains: [],
+      sessionEndsAt: null,
+      lockMode: null,
+      sessionId: null,
+      timerPaused: false,
+      remainingMs: null,
+    });
   } else {
     await updateRules(state);
     if (
       !state.timerPaused &&
-      isActiveBlockingState(state) &&
+      state.blocking &&
       state.sessionEndsAt &&
       state.sessionEndsAt > Date.now()
     ) {
@@ -384,7 +339,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
 chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'sessionEnd') {
-    void applySync(clearPayload());
+    applySync({
+      blocking: false,
+      domains: [],
+      sessionEndsAt: null,
+      lockMode: null,
+      sessionId: null,
+      timerPaused: false,
+      remainingMs: null,
+    });
     return;
   }
 
@@ -407,5 +370,3 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.runtime.onInstalled.addListener(() => {
   restoreFromStorage();
 });
-
-void restoreFromStorage();

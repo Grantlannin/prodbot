@@ -44,7 +44,7 @@ Daywinner bot is the official companion extension for [Daywinner](https://daywin
 While you run a focus session in Produc, the extension blocks sites you choose—social media bundle and custom domains. Blocking turns off during breaks and when your session ends.
 
 **Features**
-- Block Twitter/X, Reddit, YouTube, Instagram, and more (including common aliases like youtu.be / fb.com)—or add your own domains
+- Block Twitter/X, Reddit, YouTube, Instagram, and more—or add your own domains
 - Syncs with your Produc dashboard blocklist
 - Logs block attempts as infractions in Produc
 - No data sent to external servers; settings stay on your device
@@ -76,15 +76,6 @@ Stores blocklist, session state (active/inactive, end time), and pending block e
 **alarms**  
 Ends blocking automatically when the user’s focus session countdown expires, even if the Produc tab is closed.
 
-**scripting**  
-Injects the optional time-study check-in overlay onto the user’s active tab during a focus session.
-
-**tabs**  
-Reads open tab URLs and redirects already-open blocked tabs (e.g. X left open when a session starts) to the blocked page.
-
-**webNavigation**  
-Detects in-page / history navigations on SPAs so users cannot keep browsing a blocked site that was already loaded.
-
 **Host permission: \*://\*/\***  
 Users can add any domain to their blocklist. Rules apply only to domains they enable in Produc during an active focus session, not a fixed list hardcoded by us. Broad host access is required so arbitrary user-entered domains can be blocked.
 
@@ -102,8 +93,7 @@ TESTING PRODUC FOCUS
 5. Click Start → pick a task → set duration (e.g. 25m) → choose lock mode → Start session.
 6. In a new tab, visit https://twitter.com or https://reddit.com.
    Expected: redirect to extension blocked page with time remaining.
-7. Optional: open https://x.com first, then start a session — that tab should also redirect to the blocked page.
-8. End session in Produc or wait for countdown; blocking should stop.
+7. End session in Produc or wait for countdown; blocking should stop.
 
 Data: All extension data stays in chrome.storage.local. No external servers.
 Content script runs on daywinner.bot (and legacy domains) to sync session/blocklist from the web app.

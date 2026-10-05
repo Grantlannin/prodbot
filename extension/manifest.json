@@ -8,10 +8,11 @@
     "declarativeNetRequestFeedback",
     "storage",
     "alarms",
-    "scripting",
-    "tabs"
+    "scripting"
   ],
-  "host_permissions": ["*://*/*"],
+  "host_permissions": [
+    "*://*/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
@@ -23,14 +24,21 @@
         "http://localhost:3000/*",
         "http://127.0.0.1:3000/*"
       ],
-      "js": ["content.js"],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["blocked.html", "blocked.js"],
-      "matches": ["*://*/*"]
+      "resources": [
+        "blocked.html",
+        "blocked.js"
+      ],
+      "matches": [
+        "*://*/*"
+      ]
     }
   ],
   "action": {

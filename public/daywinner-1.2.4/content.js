@@ -1,5 +1,4 @@
-/** Optimistic until billing status proves otherwise — avoids unlocking on fetch blips. */
-let lastEntitled = true;
+let lastEntitled = false;
 let lastPayload = null;
 
 function forwardSync(payload) {
@@ -73,7 +72,7 @@ async function checkSubscriptionEntitlement() {
   try {
     const res = await fetch('/api/billing/status', { credentials: 'same-origin' });
     if (!res.ok) {
-      // Network/server blip — keep last known entitlement so blocking doesn't drop mid-session.
+      postClearSync();
       return;
     }
     const data = await res.json();
@@ -88,7 +87,7 @@ async function checkSubscriptionEntitlement() {
       forwardSync({ ...lastPayload, entitled: true });
     }
   } catch {
-    // Same as non-OK response: fail closed on entitlement only when we know it's revoked.
+    postClearSync();
   }
 }
 

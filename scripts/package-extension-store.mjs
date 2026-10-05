@@ -27,26 +27,28 @@ const versionedZip = join(outDir, `daywinner-${version}.zip`);
 
 mkdirSync(outDir, { recursive: true });
 
-const files = [
+const required = [
   'manifest.json',
   'background.js',
   'content.js',
   'blocked.html',
   'blocked.js',
   'pingOverlay.js',
-  'siteBlocker.js',
   'icons/icon16.png',
   'icons/icon48.png',
   'icons/icon128.png',
 ];
+const optional = ['siteBlocker.js'];
 
-for (const f of files) {
+for (const f of required) {
   const p = join(extDir, f);
   if (!existsSync(p)) {
     console.error(`Missing required file: extension/${f}`);
     process.exit(1);
   }
 }
+
+const files = [...required, ...optional.filter(f => existsSync(join(extDir, f)))];
 
 execSync(`rm -f "${outZip}" "${versionedZip}"`, { stdio: 'inherit' });
 execSync(
