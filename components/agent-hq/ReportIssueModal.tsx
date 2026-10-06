@@ -183,9 +183,15 @@ export default function ReportIssueModal() {
                 aria-labelledby="report-issue-title"
               >
                 <div style={styles.header}>
-                  <h3 id="report-issue-title" style={styles.title}>
-                    something not working? let us know
-                  </h3>
+                  <div style={styles.headerText}>
+                    <h3 id="report-issue-title" style={styles.title}>
+                      something not working? let us know
+                    </h3>
+                    <p style={styles.subtitle}>
+                      sometimes the app will glitch due to new setups (different computer, connection,
+                      etc). If something doesn&apos;t work let us know (it should work).
+                    </p>
+                  </div>
                   <button type="button" onClick={close} style={styles.closeBtn} aria-label="Close">
                     ×
                   </button>
@@ -294,16 +300,31 @@ const styles: Record<string, CSSProperties> = {
   },
   header: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: 12,
     padding: '14px 16px',
     borderBottom: '1px solid #e2e8f0',
+  },
+  headerText: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    minWidth: 0,
+    flex: 1,
   },
   title: {
     margin: 0,
     fontSize: 15,
     fontWeight: 650,
     color: '#0f172a',
+  },
+  subtitle: {
+    margin: 0,
+    fontSize: 12,
+    fontWeight: 500,
+    lineHeight: 1.45,
+    color: '#64748b',
   },
   closeBtn: {
     border: 'none',
@@ -313,6 +334,7 @@ const styles: Record<string, CSSProperties> = {
     color: '#94a3b8',
     cursor: 'pointer',
     padding: 0,
+    flexShrink: 0,
   },
   body: {
     padding: 16,
