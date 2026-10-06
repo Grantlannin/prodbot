@@ -118,7 +118,14 @@ async function applySync(payload) {
 
   const prev = await getStoredState();
   // Identical syncs must no-op — rewriting DNR every second burns CPU/RAM.
-  if (sameFocusState(prev, state)) return;
+  // Exception: storage says blocking but dynamic rules are missing (SW death) → re-apply.
+  if (sameFocusState(prev, state)) {
+    if (state.blocking && state.domains?.length) {
+      const existing = await chrome.declarativeNetRequest.getDynamicRules();
+      if (!existing.length) await updateRules(state);
+    }
+    return;
+  }
 
   const rulesChanged =
     !!prev.blocking !== !!state.blocking || domainsKey(prev.domains) !== domainsKey(state.domains);

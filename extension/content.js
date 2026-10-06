@@ -1,5 +1,6 @@
-let lastEntitled = false;
+let lastEntitled = null; // null = unknown; don't clear Soft/Hard until billing answers
 let lastPayload = null;
+let entitlementReady = false;
 
 function forwardSync(payload) {
   chrome.runtime.sendMessage({ type: 'SYNC', payload }).catch(() => {});
@@ -48,7 +49,11 @@ window.addEventListener('message', event => {
   // Never trust page-supplied entitlement — only our billing/status check.
   const incoming = event.data.payload && typeof event.data.payload === 'object' ? event.data.payload : {};
   lastPayload = { ...incoming };
-  forwardSync({ ...lastPayload, entitled: lastEntitled });
+
+  // Until billing answers, hold the sync (don't forward entitled:false and wipe DNR).
+  if (!entitlementReady) return;
+
+  forwardSync({ ...lastPayload, entitled: lastEntitled === true });
 });
 
 const CLEAR_PAYLOAD = {
@@ -72,22 +77,29 @@ async function checkSubscriptionEntitlement() {
   try {
     const res = await fetch('/api/billing/status', { credentials: 'same-origin' });
     if (!res.ok) {
-      postClearSync();
+      // Keep last known entitlement on blips — wiping Soft/Hard mid-session was
+      // leaving refresh unblocked even though the timer still looked locked.
+      entitlementReady = true;
       return;
     }
     const data = await res.json();
     const next = data.billingEnabled ? !!data.active : true;
     const changed = next !== lastEntitled;
     lastEntitled = next;
+    entitlementReady = true;
+
     if (!lastEntitled) {
       postClearSync();
       return;
     }
-    if (changed && lastPayload) {
+    // Always re-push when entitled so Soft/Hard DNR rules land after the first billing check
+    // (first app sync often arrived while entitled was still unknown and was held).
+    if (lastPayload && (changed || lastPayload.blocking)) {
       forwardSync({ ...lastPayload, entitled: true });
     }
   } catch {
-    postClearSync();
+    entitlementReady = true;
+    /* keep prior entitled state on network errors */
   }
 }
 
