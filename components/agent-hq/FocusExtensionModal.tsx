@@ -86,6 +86,11 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
                   ×
                 </button>
               </div>
+              <p style={styles.openTabNote}>
+                NOTE: when blocker is turned on WITH social media tabs open, your CURRENT social media
+                tabs (if you already have social media open) will function properly, and you may even
+                be able to refresh them etc. CLOSE THE TAB OUT to enact the block.
+              </p>
 
               <div style={styles.section}>
                 <div style={styles.sectionLabel}>If you don&apos;t have the extension</div>
@@ -246,6 +251,17 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 16,
     fontWeight: 700,
     color: '#0f172a',
+  },
+  openTabNote: {
+    margin: '10px 0 0',
+    fontSize: 12,
+    fontWeight: 500,
+    lineHeight: 1.45,
+    color: '#92400e',
+    background: '#fffbeb',
+    border: '1px solid #fde68a',
+    borderRadius: 8,
+    padding: '10px 12px',
   },
   closeBtn: {
     border: 'none',
