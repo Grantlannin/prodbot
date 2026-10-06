@@ -87,9 +87,11 @@ export default function FocusExtensionModal({ variant = 'default' }: FocusExtens
                 </button>
               </div>
               <p style={styles.openTabNote}>
-                NOTE: when blocker is turned on WITH social media tabs open, your CURRENT social media
-                tabs (if you already have social media open) will function properly, and you may even
-                be able to refresh them etc. CLOSE THE TAB OUT to enact the block.
+                NOTE: when blocker is turned on WITH social media tabs <em>already</em> open, your
+                CURRENT social media tabs (if you already have them open when you start your blocker)
+                will probably function normally, and you may even be able to refresh them etc
+                (especially twitter). Simply CLOSE THE TAB OUT to enact the block. It should work from
+                then on.
               </p>
 
               <div style={styles.section}>
