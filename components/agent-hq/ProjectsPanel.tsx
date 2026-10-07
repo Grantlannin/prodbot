@@ -1737,7 +1737,8 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                 <div
                   style={{
                     ...styles.taskList,
-                    height: taskListHeight,
+                    // Hug the last task; stored height is only the scroll cap.
+                    height: 'auto',
                     maxHeight: taskListHeight,
                   }}
                 >
