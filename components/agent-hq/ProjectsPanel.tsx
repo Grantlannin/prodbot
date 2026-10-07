@@ -672,7 +672,16 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
 
   const handleTaskListScroll = useCallback(() => {
     if (skipTaskListScrollSaveRef.current) return;
-    liveTaskListScrollTopRef.current = taskListRef.current?.scrollTop ?? 0;
+    const id = selectedIdRef.current;
+    const top = taskListRef.current?.scrollTop ?? 0;
+    liveTaskListScrollTopRef.current = top;
+    // Keep stored scroll current so a later restore never snaps to a stale 0.
+    if (id) {
+      taskListScrollByProjectRef.current = {
+        ...taskListScrollByProjectRef.current,
+        [id]: Math.max(0, Math.round(top)),
+      };
+    }
   }, []);
 
   // Restore last selected project after refresh (before falling back to first).
@@ -724,8 +733,20 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     (e: React.PointerEvent) => {
       const drag = freeResizeRef.current;
       if (!drag) return;
+      const el = taskListRef.current;
+      const keepScroll = el?.scrollTop ?? liveTaskListScrollTopRef.current;
       onPanelWidthChange?.(drag.startW + (e.clientX - drag.startX));
       setTaskListHeightForSelected(drag.startH + (e.clientY - drag.startY));
+      // Keep the viewport where the user was looking while height/width change.
+      if (el) {
+        el.scrollTop = keepScroll;
+        liveTaskListScrollTopRef.current = keepScroll;
+        requestAnimationFrame(() => {
+          if (!taskListRef.current) return;
+          taskListRef.current.scrollTop = keepScroll;
+          liveTaskListScrollTopRef.current = taskListRef.current.scrollTop;
+        });
+      }
     },
     [onPanelWidthChange, setTaskListHeightForSelected]
   );
@@ -811,7 +832,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
 
   const selectedTaskCount = selected?.tasks.length ?? 0;
 
-  // Restore scroll after the new project's rows are in the DOM.
+  // Restore scroll only when switching projects — not on resize/reorder (that jumped to top).
   useEffect(() => {
     if (!selectedId) return;
     const projectId = selectedId;
@@ -821,7 +842,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     const apply = () => {
       if (cancelled) return;
       const el = taskListRef.current;
-      if (!el || (selectedTaskCount > 0 && el.scrollHeight <= el.clientHeight && attempts < 8)) {
+      if (!el || (el.scrollHeight <= el.clientHeight && attempts < 8)) {
         attempts += 1;
         if (attempts < 24) requestAnimationFrame(apply);
         return;
@@ -849,7 +870,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       window.clearTimeout(timer);
       skipTaskListScrollSaveRef.current = false;
     };
-  }, [selectedId, selectedTaskCount, taskListHeight]);
+  }, [selectedId]);
 
   const bumpTaskTextNotch = useCallback(
     (delta: number) => {
