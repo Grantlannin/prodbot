@@ -1997,22 +1997,6 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                                 </span>
                               </button>
                             ) : null}
-                            <div
-                              style={styles.taskTextClickFill}
-                              onMouseDown={e => {
-                                e.preventDefault();
-                                const el = taskInputRefs.current.get(task.id);
-                                if (!el) return;
-                                el.focus();
-                                const pos = el.value.length;
-                                try {
-                                  el.setSelectionRange(pos, pos);
-                                } catch {
-                                  /* ignore */
-                                }
-                              }}
-                              aria-hidden
-                            />
                           </div>
                           <button
                             type="button"
@@ -2598,12 +2582,6 @@ const styles: Record<string, CSSProperties> = {
     columnGap: 4,
     rowGap: 0,
   },
-  taskTextClickFill: {
-    flex: 1,
-    minWidth: 12,
-    alignSelf: 'stretch',
-    cursor: 'text',
-  },
   subTasksToggle: {
     flexShrink: 0,
     width: 14,
@@ -2628,10 +2606,9 @@ const styles: Record<string, CSSProperties> = {
     transition: 'transform 0.12s ease',
   },
   taskInput: {
-    flex: '0 1 auto',
-    width: 'auto',
-    maxWidth: '100%',
+    flex: 1,
     minWidth: 0,
+    width: '100%',
     border: 'none',
     outline: 'none',
     background: 'transparent',
