@@ -829,11 +829,13 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const subActionSize = Math.round(22 * densityScale);
   const subRemoveSize = Math.round(20 * densityScale);
   const rowAlignItems = densityScale < 1 ? ('center' as const) : ('flex-start' as const);
-  // ▸ tracks task text size in both directions (base 12px at 14px text).
+  // ▸ tracks text size but stays a bit smaller than the letters (was oversized at −).
   const chevronScale = taskFontSizePx / TASK_TEXT_BASE_PX;
-  const chevronFontSize = Math.max(8, Math.round(12 * chevronScale));
-  const chevronBtnW = Math.max(10, Math.round(14 * chevronScale));
-  const chevronBtnH = Math.max(12, Math.round(18 * chevronScale));
+  const chevronFontSize = Math.max(5, Math.round(9 * chevronScale)); // ~9px at 14px text
+  const chevronBtnW = Math.max(8, Math.round(11 * chevronScale));
+  const chevronBtnH = Math.max(10, Math.round(14 * chevronScale));
+  const chevronHalfH = Math.max(2, Math.round(chevronFontSize * 0.32));
+  const chevronPointW = Math.max(3, Math.round(chevronFontSize * 0.48));
 
   const selectedTaskCount = selected?.tasks.length ?? 0;
 
@@ -2140,7 +2142,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                                       width: 0,
                                       height: 0,
                                       borderStyle: 'solid',
-                                      borderWidth: `${Math.max(3, Math.round(chevronFontSize * 0.28))}px 0 ${Math.max(3, Math.round(chevronFontSize * 0.28))}px ${Math.max(5, Math.round(chevronFontSize * 0.55))}px`,
+                                      borderWidth: `${chevronHalfH}px 0 ${chevronHalfH}px ${chevronPointW}px`,
                                       borderColor: 'transparent transparent transparent #0f172a',
                                       transform: subTasksCollapsed
                                         ? 'rotate(0deg)'
