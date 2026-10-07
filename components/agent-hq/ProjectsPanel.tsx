@@ -2472,8 +2472,8 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'flex-end',
     flexShrink: 0,
-    height: 11,
-    marginBottom: -2,
+    height: 12,
+    marginBottom: 6,
   },
   taskCompletedLabel: {
     flexShrink: 0,
