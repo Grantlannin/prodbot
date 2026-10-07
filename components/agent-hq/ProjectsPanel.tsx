@@ -449,9 +449,12 @@ function parsePartDragPayload(raw: string): PartDragPayload | null {
   return null;
 }
 
-function DragHandleIcon() {
+function DragHandleIcon({ scale = 1 }: { scale?: number }) {
+  const s = Math.min(1, Math.max(0.5, scale));
+  const w = Math.max(5, Math.round(10 * s));
+  const h = Math.max(7, Math.round(14 * s));
   return (
-    <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden style={{ display: 'block' }}>
+    <svg width={w} height={h} viewBox="0 0 10 14" fill="currentColor" aria-hidden style={{ display: 'block' }}>
       <circle cx="3" cy="2.5" r="1.1" />
       <circle cx="7" cy="2.5" r="1.1" />
       <circle cx="3" cy="7" r="1.1" />
@@ -795,6 +798,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     taskTextNotch >= -3 ? Math.max(1, 2 + Math.min(0, taskTextNotch)) : 0;
   const rowChromeOffsetPx =
     taskTextNotch >= -3 ? 5 : taskTextNotch === -4 ? 2 : taskTextNotch === -5 ? 1 : 0;
+  // Drag-handle / checkbox shrink with −; half size at the smallest notch.
+  const rowChromeScale =
+    taskTextNotch >= 0 ? 1 : Math.max(0.5, 1 + taskTextNotch * (0.5 / 6));
 
   const selectedTaskCount = selected?.tasks.length ?? 0;
 
@@ -1976,7 +1982,12 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             type="checkbox"
                             checked={task.done}
                             onChange={e => toggleTaskDone(selected.id, task.id, e.target.checked)}
-                            style={{ ...styles.taskCheck, marginTop: rowChromeOffsetPx }}
+                            style={{
+                              ...styles.taskCheck,
+                              marginTop: rowChromeOffsetPx,
+                              transform: `scale(${rowChromeScale})`,
+                              transformOrigin: 'top center',
+                            }}
                             aria-label="Mark part done"
                           />
                           <span
@@ -1995,12 +2006,17 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               setDraggingPartIndex(taskIndex);
                             }}
                             onDragEnd={clearPartDrag}
-                            style={{ ...styles.taskDragHandle, marginTop: rowChromeOffsetPx }}
+                            style={{
+                              ...styles.taskDragHandle,
+                              marginTop: rowChromeOffsetPx,
+                              width: Math.round(14 * rowChromeScale),
+                              height: Math.round(18 * rowChromeScale),
+                            }}
                             title="Drag to reorder, or onto another project in the sidebar"
                             aria-label="Drag to reorder part"
                             role="button"
                           >
-                            <DragHandleIcon />
+                            <DragHandleIcon scale={rowChromeScale} />
                           </span>
                           <div style={styles.taskTextWithToggle}>
                             <ProjectDebouncedTextarea
@@ -2208,7 +2224,12 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               onChange={e =>
                                 updateSubTask(selected.id, task.id, sub.id, { done: e.target.checked })
                               }
-                              style={styles.taskCheck}
+                              style={{
+                                ...styles.taskCheck,
+                                marginTop: rowChromeOffsetPx,
+                                transform: `scale(${rowChromeScale})`,
+                                transformOrigin: 'top center',
+                              }}
                               aria-label="Mark task done"
                             />
                             <span
@@ -2223,12 +2244,17 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                                 setDraggingSub({ taskId: task.id, subId: sub.id, fromIndex: subIndex });
                               }}
                               onDragEnd={clearSubDrag}
-                              style={styles.taskDragHandle}
+                              style={{
+                                ...styles.taskDragHandle,
+                                marginTop: rowChromeOffsetPx,
+                                width: Math.round(14 * rowChromeScale),
+                                height: Math.round(18 * rowChromeScale),
+                              }}
                               title="Drag to reorder task"
                               aria-label="Drag to reorder task"
                               role="button"
                             >
-                              <DragHandleIcon />
+                              <DragHandleIcon scale={rowChromeScale} />
                             </span>
                             <ProjectDebouncedTextarea
                               value={sub.text}
