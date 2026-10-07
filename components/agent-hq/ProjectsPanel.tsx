@@ -499,11 +499,12 @@ function cloneSubTasks(subs: ProjectSubTask[]): ProjectSubTask[] {
   return JSON.parse(JSON.stringify(subs)) as ProjectSubTask[];
 }
 
-function NoteIcon({ active = false }: { active?: boolean }) {
+function NoteIcon({ active = false, size = 13 }: { active?: boolean; size?: number }) {
+  const s = Math.max(7, Math.round(size));
   return (
     <svg
-      width={13}
-      height={13}
+      width={s}
+      height={s}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -511,7 +512,7 @@ function NoteIcon({ active = false }: { active?: boolean }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
-      style={{ opacity: active ? 1 : 0.72 }}
+      style={{ opacity: active ? 1 : 0.72, display: 'block' }}
     >
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <polyline points="14 2 14 8 20 8" />
@@ -521,11 +522,12 @@ function NoteIcon({ active = false }: { active?: boolean }) {
   );
 }
 
-function TimerStartIcon() {
+function TimerStartIcon({ size = 13 }: { size?: number }) {
+  const s = Math.max(7, Math.round(size));
   return (
     <svg
-      width={13}
-      height={13}
+      width={s}
+      height={s}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -533,6 +535,7 @@ function TimerStartIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
+      style={{ display: 'block' }}
     >
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 2" />
@@ -787,15 +790,24 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     : 0;
   const taskFontSizePx = TASK_TEXT_BASE_PX + taskTextNotch;
   const subTaskFontSizePx = Math.max(8, SUBTASK_TEXT_BASE_PX + taskTextNotch);
-  // Density → 0.5 at smallest notch (−6): gaps/chrome half; padding/line-height tighter.
+  // Density → 0.5 at smallest (−6): row pitch, chrome, and right-side actions all compress.
   const densityScale =
     taskTextNotch >= 0 ? 1 : Math.max(0.5, 1 + taskTextNotch * (0.5 / 6));
-  const taskRowGapPx = Math.round(TASK_ROW_GAP_PX * densityScale); // 6 → 3 (half)
-  const pieceGapPx = Math.max(0, Math.round(2 * densityScale) - 1); // 2 → 0
-  const rowChromeOffsetPx = Math.round(5 * densityScale);
-  const rowChromeScale = densityScale; // drag handle / checkbox → half at smallest
-  const taskLineHeight = Math.max(1.05, 1.05 + 0.3 * densityScale); // 1.35 → 1.2 → 1.05
-  const taskPadY = Math.max(0, Math.round(4 * (densityScale * 2 - 1))); // 4 → 0 at half
+  // Gap goes to 0 at smallest so packing matches the tight target, not “half of 6”.
+  const taskRowGapPx = Math.max(0, Math.round(TASK_ROW_GAP_PX * (2 * densityScale - 1)));
+  const pieceGapPx = Math.max(0, Math.round(2 * (2 * densityScale - 1)));
+  const rowChromeScale = densityScale;
+  const rowChromeOffsetPx = densityScale >= 0.85 ? Math.round(5 * densityScale) : 0;
+  const taskLineHeight = Math.max(1, 1 + 0.35 * densityScale); // 1.35 → 1.175 → 1.0
+  const taskPadY = Math.max(0, Math.round(4 * (2 * densityScale - 1))); // 4 → 0
+  const actionSize = Math.round(24 * densityScale); // notes/timer/remove → half
+  const actionIconSize = Math.round(13 * densityScale);
+  const addSubBtnH = Math.max(12, Math.round(22 * densityScale));
+  const addSubBtnPadX = Math.max(3, Math.round(6 * densityScale));
+  const addSubMarginTop = densityScale >= 0.85 ? Math.round(4 * densityScale) : 0;
+  const subActionSize = Math.round(22 * densityScale);
+  const subRemoveSize = Math.round(20 * densityScale);
+  const rowAlignItems = densityScale < 1 ? ('center' as const) : ('flex-start' as const);
 
   const selectedTaskCount = selected?.tasks.length ?? 0;
 
@@ -1935,6 +1947,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                           data-active-drag={draggingPartIndex === taskIndex ? 'true' : undefined}
                           style={{
                             ...styles.taskRow,
+                            alignItems: rowAlignItems,
                             ...(draggingPartIndex === taskIndex ? styles.taskRowDragging : {}),
                             ...(partDropIndex === taskIndex && draggingPartIndex !== taskIndex
                               ? styles.taskRowDropTarget
@@ -1981,7 +1994,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               ...styles.taskCheck,
                               marginTop: rowChromeOffsetPx,
                               transform: `scale(${rowChromeScale})`,
-                              transformOrigin: 'top center',
+                              transformOrigin: rowAlignItems === 'center' ? 'center' : 'top center',
                             }}
                             aria-label="Mark part done"
                           />
@@ -2042,6 +2055,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                                 style={{
                                   ...styles.subTasksToggle,
                                   marginTop: rowChromeOffsetPx,
+                                  width: Math.round(14 * rowChromeScale),
+                                  height: Math.round(18 * rowChromeScale),
+                                  fontSize: Math.max(8, Math.round(12 * densityScale)),
                                 }}
                                 aria-expanded={!subTasksCollapsed}
                                 aria-label={
@@ -2084,16 +2100,38 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                           <button
                             type="button"
                             onClick={() => addSubTask(selected.id, task.id)}
-                            style={styles.addSubTaskBtn}
+                            style={{
+                              ...styles.addSubTaskBtn,
+                              height: addSubBtnH,
+                              marginTop: addSubMarginTop,
+                              padding: `0 ${addSubBtnPadX}px`,
+                              gap: Math.max(2, Math.round(4 * densityScale)),
+                              borderRadius: Math.max(3, Math.round(6 * densityScale)),
+                            }}
                             aria-label="Add task"
                             title="Add task"
                           >
-                            <span style={styles.addSubTaskPlus}>+</span>
-                            <span style={styles.addSubTaskLabel}>Add task</span>
+                            <span
+                              style={{
+                                ...styles.addSubTaskPlus,
+                                fontSize: Math.max(9, Math.round(14 * densityScale)),
+                              }}
+                            >
+                              +
+                            </span>
+                            <span
+                              style={{
+                                ...styles.addSubTaskLabel,
+                                fontSize: Math.max(7, Math.round(10 * densityScale)),
+                              }}
+                            >
+                              Add task
+                            </span>
                           </button>
                           <TaskContextLinksBox
                             links={links}
                             compact
+                            scale={densityScale}
                             isOpen={openLinksKey === partLinksKey(task.id)}
                             onToggle={() => {
                               setNotesEditor(null);
@@ -2115,12 +2153,15 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             }}
                             style={{
                               ...styles.taskNotesBtn,
+                              width: actionSize,
+                              height: actionSize,
+                              marginTop: 0,
                               ...(task.notes?.trim() ? styles.taskNotesBtnActive : {}),
                             }}
                             aria-label={task.notes?.trim() ? 'Edit part notes' : 'Add part notes'}
                             title={task.notes?.trim() ? 'Part notes' : 'Add part notes'}
                           >
-                            <NoteIcon active={Boolean(task.notes?.trim())} />
+                            <NoteIcon active={Boolean(task.notes?.trim())} size={actionIconSize} />
                           </button>
                           <button
                             type="button"
@@ -2135,25 +2176,38 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             }}
                             style={{
                               ...styles.taskTimerBtn,
+                              width: actionSize,
+                              height: actionSize,
                               ...(!taskText ? styles.taskTimerBtnDisabled : {}),
                             }}
                             disabled={!taskText}
                             aria-label={taskText ? `Start timer for ${taskText}` : 'Add part text to start timer'}
                             title={taskText ? 'Start timer' : 'Add part text to start timer'}
                           >
-                            <TimerStartIcon />
+                            <TimerStartIcon size={actionIconSize} />
                           </button>
                           {taskIndex > 0 ? (
                             <button
                               type="button"
                               onClick={() => removeTask(selected.id, task.id)}
-                              style={styles.taskRemove}
+                              style={{
+                                ...styles.taskRemove,
+                                width: actionSize,
+                                height: actionSize,
+                                fontSize: Math.max(10, Math.round(16 * densityScale)),
+                              }}
                               aria-label="Remove part"
                             >
                               ×
                             </button>
                           ) : (
-                            <span style={styles.taskRemoveSpacer} aria-hidden />
+                            <span
+                              style={{
+                                ...styles.taskRemoveSpacer,
+                                width: actionSize,
+                              }}
+                              aria-hidden
+                            />
                           )}
                         </div>
                         {!subTasksCollapsed &&
@@ -2171,6 +2225,8 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             }
                             style={{
                               ...styles.subTaskRow,
+                              alignItems: rowAlignItems,
+                              paddingLeft: Math.round(22 * densityScale),
                               ...(draggingSub?.subId === sub.id && draggingSub.taskId === task.id
                                 ? styles.subTaskRowDragging
                                 : {}),
@@ -2275,6 +2331,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             <TaskContextLinksBox
                               links={subLinks}
                               compact
+                              scale={densityScale}
                               isOpen={openLinksKey === linksKey}
                               onToggle={() => {
                                 setNotesEditor(null);
@@ -2304,12 +2361,15 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               }}
                               style={{
                                 ...styles.subTaskActionBtn,
+                                width: subActionSize,
+                                height: subActionSize,
+                                marginTop: 0,
                                 ...(sub.notes?.trim() ? styles.subTaskActionBtnActive : {}),
                               }}
                               aria-label={sub.notes?.trim() ? 'Edit task notes' : 'Add task notes'}
                               title={sub.notes?.trim() ? 'Task notes' : 'Add task notes'}
                             >
-                              <NoteIcon active={Boolean(sub.notes?.trim())} />
+                              <NoteIcon active={Boolean(sub.notes?.trim())} size={actionIconSize} />
                             </button>
                             <button
                               type="button"
@@ -2328,6 +2388,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               }}
                               style={{
                                 ...styles.subTaskActionBtn,
+                                width: subActionSize,
+                                height: subActionSize,
+                                marginTop: 0,
                                 ...(!subText ? styles.subTaskActionBtnDisabled : {}),
                               }}
                               disabled={!subText}
@@ -2336,12 +2399,18 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               }
                               title={subText ? 'Start timer' : 'Add task text to start timer'}
                             >
-                              <TimerStartIcon />
+                              <TimerStartIcon size={actionIconSize} />
                             </button>
                             <button
                               type="button"
                               onClick={() => removeSubTask(selected.id, task.id, sub.id)}
-                              style={styles.subTaskRemove}
+                              style={{
+                                ...styles.subTaskRemove,
+                                width: subRemoveSize,
+                                height: subRemoveSize,
+                                marginTop: 0,
+                                fontSize: Math.max(9, Math.round(14 * densityScale)),
+                              }}
                               aria-label="Remove task"
                             >
                               ×

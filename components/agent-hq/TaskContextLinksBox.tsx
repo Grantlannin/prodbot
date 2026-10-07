@@ -48,6 +48,8 @@ interface TaskContextLinksBoxProps {
   onRemoveLink: (linkId: string) => void;
   onUpdateLinkName: (linkId: string, name: string) => void;
   compact?: boolean;
+  /** Scales compact trigger (1 = default, 0.5 = half). */
+  scale?: number;
 }
 
 export default function TaskContextLinksBox({
@@ -59,6 +61,7 @@ export default function TaskContextLinksBox({
   onRemoveLink,
   onUpdateLinkName,
   compact = false,
+  scale = 1,
 }: TaskContextLinksBoxProps) {
   const [draft, setDraft] = useState('');
   const [nameDraft, setNameDraft] = useState('');
@@ -318,6 +321,10 @@ export default function TaskContextLinksBox({
     </div>
   ) : null;
 
+  const s = Math.min(1, Math.max(0.5, scale));
+  const compactSize = Math.round(22 * s);
+  const iconSize = Math.round((compact ? 11 : 13) * s);
+
   return (
     <>
       <div style={compact ? styles.triggerWrapCompact : styles.triggerWrap}>
@@ -328,6 +335,13 @@ export default function TaskContextLinksBox({
           onClick={onToggle}
           style={{
             ...(compact ? styles.triggerCompact : styles.trigger),
+            ...(compact
+              ? {
+                  width: compactSize,
+                  height: compactSize,
+                  fontSize: Math.max(8, Math.round(10 * s)),
+                }
+              : {}),
             ...(isOpen ? styles.triggerOpen : {}),
             ...(count > 0 ? styles.triggerHasLinks : {}),
           }}
@@ -335,7 +349,7 @@ export default function TaskContextLinksBox({
           aria-label="Context links"
           aria-expanded={isOpen}
         >
-          {count > 0 ? count : <LinkIcon size={compact ? 11 : 13} />}
+          {count > 0 ? count : <LinkIcon size={iconSize} />}
         </button>
       </div>
       {typeof document !== 'undefined' && popover ? createPortal(popover, document.body) : null}
