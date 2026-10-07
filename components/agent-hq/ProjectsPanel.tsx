@@ -16,23 +16,66 @@ import {
   moveTaskToProject,
   requestFocusProject,
 } from './stuckHelp/projectMutations';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const LEGACY_THINGS_KEY = 'agentHQ_things';
+const TASK_LIST_HEIGHT_KEY_LEGACY = 'agentHQ_projectTaskListHeight';
+const TASK_LIST_HEIGHT_BY_PROJECT_KEY = 'agentHQ_projectTaskListHeightByProject';
+const TASK_TEXT_SIZE_KEY = 'agentHQ_projectTaskTextSizeByProject';
 const TASK_LIST_VISIBLE_ROWS = 5;
+const TASK_LIST_MIN_VISIBLE_ROWS = 2;
+const TASK_LIST_MAX_VISIBLE_ROWS = 40;
 const TASK_ROW_HEIGHT_PX = 34;
 const TASK_ROW_GAP_PX = 6;
-const TASK_LIST_SCROLL_HEIGHT =
+const TASK_LIST_DEFAULT_HEIGHT =
   TASK_LIST_VISIBLE_ROWS * TASK_ROW_HEIGHT_PX + (TASK_LIST_VISIBLE_ROWS - 1) * TASK_ROW_GAP_PX;
-const PROJECT_SIDEBAR_VISIBLE = 5;
+const TASK_LIST_MIN_HEIGHT =
+  TASK_LIST_MIN_VISIBLE_ROWS * TASK_ROW_HEIGHT_PX +
+  (TASK_LIST_MIN_VISIBLE_ROWS - 1) * TASK_ROW_GAP_PX;
+const TASK_LIST_ABS_MAX_HEIGHT =
+  TASK_LIST_MAX_VISIBLE_ROWS * TASK_ROW_HEIGHT_PX +
+  (TASK_LIST_MAX_VISIBLE_ROWS - 1) * TASK_ROW_GAP_PX;
+/** Room for nav, timer banner, card chrome, footer — keeps Projects from forcing page scroll. */
+const TASK_LIST_VIEWPORT_CHROME_PX = 340;
+const TASK_TEXT_NOTCH_MIN = -6;
+const TASK_TEXT_NOTCH_MAX = 3;
+const TASK_TEXT_BASE_PX = 14;
+const SUBTASK_TEXT_BASE_PX = 12;
+
+function getTaskListMaxHeight(): number {
+  if (typeof window === 'undefined') return TASK_LIST_ABS_MAX_HEIGHT;
+  // 2x the previous viewport allowance so the bar can drag much taller.
+  const viewportCap = Math.max(
+    TASK_LIST_MIN_HEIGHT,
+    (window.innerHeight - TASK_LIST_VIEWPORT_CHROME_PX) * 2
+  );
+  return Math.min(TASK_LIST_ABS_MAX_HEIGHT, viewportCap);
+}
+
+function clampTaskListHeight(h: number): number {
+  if (!Number.isFinite(h)) return TASK_LIST_DEFAULT_HEIGHT;
+  return Math.min(getTaskListMaxHeight(), Math.max(TASK_LIST_MIN_HEIGHT, Math.round(h)));
+}
+
+function readLegacyTaskListHeight(): number {
+  if (typeof window === 'undefined') return TASK_LIST_DEFAULT_HEIGHT;
+  try {
+    const raw = window.localStorage.getItem(TASK_LIST_HEIGHT_KEY_LEGACY);
+    if (raw == null) return TASK_LIST_DEFAULT_HEIGHT;
+    return clampTaskListHeight(JSON.parse(raw) as number);
+  } catch {
+    return TASK_LIST_DEFAULT_HEIGHT;
+  }
+}
+
+function clampTaskTextNotch(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(TASK_TEXT_NOTCH_MAX, Math.max(TASK_TEXT_NOTCH_MIN, Math.round(n)));
+}
 const PROJECT_SIDEBAR_ITEM_HEIGHT_PX = 48;
 const PROJECT_SIDEBAR_GAP_PX = 4;
 const PROJECT_SIDEBAR_LIST_PADDING_PX = 6;
-
-const PROJECT_SIDEBAR_SCROLL_HEIGHT =
-  PROJECT_SIDEBAR_VISIBLE * PROJECT_SIDEBAR_ITEM_HEIGHT_PX +
-  (PROJECT_SIDEBAR_VISIBLE - 1) * PROJECT_SIDEBAR_GAP_PX +
-  PROJECT_SIDEBAR_LIST_PADDING_PX * 2;
 
 const TEXT_COMMIT_DEBOUNCE_MS = 250;
 
@@ -466,11 +509,17 @@ function TimerStartIcon() {
 
 export interface ProjectsPanelHandle {
   addProject: () => void;
+  getTaskListHeight: () => number;
+  setTaskListHeight: (height: number) => void;
 }
 
 export interface ProjectsPanelProps {
   onProjectCompleted?: (payload: { text: string; detail: string; projectId: string }) => void;
   onSelectedProgressChange?: (progress: ProjectProgress | null) => void;
+  onSelectedProjectIdChange?: (projectId: string | null) => void;
+  /** Freeform bar drag: X changes panel width, Y changes task list height. */
+  panelWidth?: number;
+  onPanelWidthChange?: (width: number) => void;
 }
 
 export const addProjectBtnStyle: CSSProperties = {
@@ -487,13 +536,92 @@ export const addProjectBtnStyle: CSSProperties = {
 };
 
 const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(function ProjectsPanel(
-  { onProjectCompleted, onSelectedProgressChange },
+  {
+    onProjectCompleted,
+    onSelectedProgressChange,
+    onSelectedProjectIdChange,
+    panelWidth = 560,
+    onPanelWidthChange,
+  },
   ref
 ) {
   const { projects, setProjects } = useProjects();
+  const [taskListHeightByProject, setTaskListHeightByProject] = useLocalStorage<
+    Record<string, number>
+  >(TASK_LIST_HEIGHT_BY_PROJECT_KEY, {});
+  const legacyTaskListHeightRef = useRef(readLegacyTaskListHeight());
+  const [taskTextSizeByProject, setTaskTextSizeByProject] = useLocalStorage<Record<string, number>>(
+    TASK_TEXT_SIZE_KEY,
+    {}
+  );
+  const [, setViewportTick] = useState(0);
+  const freeResizeRef = useRef<{
+    startX: number;
+    startY: number;
+    startW: number;
+    startH: number;
+  } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const taskListHeight = clampTaskListHeight(
+    selectedId
+      ? (taskListHeightByProject[selectedId] ?? legacyTaskListHeightRef.current)
+      : legacyTaskListHeightRef.current
+  );
+
+  const setTaskListHeightForSelected = useCallback(
+    (height: number) => {
+      if (!selectedId) return;
+      const next = clampTaskListHeight(height);
+      setTaskListHeightByProject(prev => ({ ...prev, [selectedId]: next }));
+    },
+    [selectedId, setTaskListHeightByProject]
+  );
+
+  useEffect(() => {
+    onSelectedProjectIdChange?.(selectedId);
+  }, [selectedId, onSelectedProjectIdChange]);
+
+  useEffect(() => {
+    const onResize = () => setViewportTick(t => t + 1);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const beginFreeResize = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      freeResizeRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        startW: panelWidth,
+        startH: taskListHeight,
+      };
+    },
+    [panelWidth, taskListHeight]
+  );
+
+  const moveFreeResize = useCallback(
+    (e: React.PointerEvent) => {
+      const drag = freeResizeRef.current;
+      if (!drag) return;
+      onPanelWidthChange?.(drag.startW + (e.clientX - drag.startX));
+      setTaskListHeightForSelected(drag.startH + (e.clientY - drag.startY));
+    },
+    [onPanelWidthChange, setTaskListHeightForSelected]
+  );
+
+  const endFreeResize = useCallback(() => {
+    freeResizeRef.current = null;
+  }, []);
   const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
   const [focusSubTaskKey, setFocusSubTaskKey] = useState<string | null>(null);
+  /** Where to place the caret after a programmatic focus (e.g. empty-delete → line above). */
+  const focusCaretRef = useRef<'start' | 'end'>('start');
+  /** taskId → true means that part's subtasks are collapsed */
+  const [collapsedSubParents, setCollapsedSubParents] = useState<Record<string, boolean>>({});
   const [openLinksKey, setOpenLinksKey] = useState<string | null>(null);
   const [notesEditor, setNotesEditor] = useState<NotesEditorTarget | null>(null);
   const [quickstartTarget, setQuickstartTarget] = useState<QuickstartTarget | null>(null);
@@ -540,6 +668,27 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const linksMigratedRef = useRef(false);
 
   const selected = projects.find(p => p.id === selectedId) ?? null;
+  const taskTextNotch = selected
+    ? clampTaskTextNotch(taskTextSizeByProject[selected.id] ?? 0)
+    : 0;
+  const taskFontSizePx = TASK_TEXT_BASE_PX + taskTextNotch;
+  const subTaskFontSizePx = Math.max(8, SUBTASK_TEXT_BASE_PX + taskTextNotch);
+
+  const bumpTaskTextNotch = useCallback(
+    (delta: number) => {
+      if (!selectedId) return;
+      setTaskTextSizeByProject(prev => {
+        const current = clampTaskTextNotch(prev[selectedId] ?? 0);
+        const next = clampTaskTextNotch(current + delta);
+        if (next === 0) {
+          const { [selectedId]: _removed, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [selectedId]: next };
+      });
+    },
+    [selectedId, setTaskTextSizeByProject]
+  );
 
   useEffect(() => {
     if (migrated) return;
@@ -632,12 +781,20 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   useEffect(() => {
     if (!focusTaskId) return;
     const id = focusTaskId;
+    const caret = focusCaretRef.current;
+    focusCaretRef.current = 'start';
     let attempts = 0;
     let frame = 0;
     const tryFocus = () => {
       const el = taskInputRefs.current.get(id);
       if (el) {
         el.focus();
+        const pos = caret === 'end' ? el.value.length : 0;
+        try {
+          el.setSelectionRange(pos, pos);
+        } catch {
+          /* ignore */
+        }
         el.scrollIntoView({ block: 'nearest' });
         setFocusTaskId(null);
         return;
@@ -652,12 +809,20 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   useEffect(() => {
     if (!focusSubTaskKey) return;
     const key = focusSubTaskKey;
+    const caret = focusCaretRef.current;
+    focusCaretRef.current = 'start';
     let attempts = 0;
     let frame = 0;
     const tryFocus = () => {
       const el = subTaskInputRefs.current.get(key);
       if (el) {
         el.focus();
+        const pos = caret === 'end' ? el.value.length : 0;
+        try {
+          el.setSelectionRange(pos, pos);
+        } catch {
+          /* ignore */
+        }
         el.scrollIntoView({ block: 'nearest' });
         setFocusSubTaskKey(null);
         return;
@@ -729,7 +894,17 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     setTimeout(() => nameRef.current?.focus(), 0);
   }, [setProjects]);
 
-  useImperativeHandle(ref, () => ({ addProject }), [addProject]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      addProject,
+      getTaskListHeight: () => taskListHeight,
+      setTaskListHeight: (height: number) => {
+        setTaskListHeightForSelected(height);
+      },
+    }),
+    [addProject, taskListHeight, setTaskListHeightForSelected]
+  );
 
   const deleteProject = useCallback(
     (id: string) => {
@@ -1004,10 +1179,33 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       const project = projects.find(p => p.id === projectId);
       const prevId = project?.tasks[taskIndex - 1]?.id;
       removeTask(projectId, taskId);
-      if (prevId) setFocusTaskId(prevId);
+      if (prevId) {
+        focusCaretRef.current = 'end';
+        setFocusTaskId(prevId);
+      }
     },
     [projects, removeTask]
   );
+
+  const expandSubTasks = useCallback((taskId: string) => {
+    setCollapsedSubParents(prev => {
+      if (!prev[taskId]) return prev;
+      const next = { ...prev };
+      delete next[taskId];
+      return next;
+    });
+  }, []);
+
+  const toggleSubTasksCollapsed = useCallback((taskId: string) => {
+    setCollapsedSubParents(prev => {
+      if (prev[taskId]) {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      }
+      return { ...prev, [taskId]: true };
+    });
+  }, []);
 
   const addSubTask = useCallback(
     (projectId: string, taskId: string) => {
@@ -1025,9 +1223,10 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
           };
         })
       );
+      expandSubTasks(taskId);
       setFocusSubTaskKey(subTaskKey(taskId, sub.id));
     },
-    [setProjects]
+    [expandSubTasks, setProjects]
   );
 
   const splitSubTaskAfter = useCallback(
@@ -1057,9 +1256,10 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
           };
         })
       );
+      expandSubTasks(taskId);
       setFocusSubTaskKey(subTaskKey(taskId, sub.id));
     },
-    [setProjects]
+    [expandSubTasks, setProjects]
   );
 
   const insertSubTaskLayers = useCallback(
@@ -1175,7 +1375,13 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       const task = project?.tasks.find(t => t.id === taskId);
       const prevId = task?.subTasks?.[subIndex - 1]?.id;
       removeSubTask(projectId, taskId, subTaskId);
-      if (prevId) setFocusSubTaskKey(subTaskKey(taskId, prevId));
+      focusCaretRef.current = 'end';
+      if (prevId) {
+        setFocusSubTaskKey(subTaskKey(taskId, prevId));
+      } else {
+        // First subtask — land at end of the parent part so backspace can continue.
+        setFocusTaskId(taskId);
+      }
     },
     [projects, removeSubTask]
   );
@@ -1528,12 +1734,20 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                 <div style={styles.taskListHeader}>
                   <span style={styles.taskCompletedLabel}>Completed</span>
                 </div>
-                <div style={styles.taskList}>
+                <div
+                  style={{
+                    ...styles.taskList,
+                    height: taskListHeight,
+                    maxHeight: taskListHeight,
+                  }}
+                >
                   {selected.tasks.map((task, taskIndex) => {
                     const links = taskLinks(task);
                     const projectName = displayName(selected);
                     const taskText = task.text.trim();
                     const subTasks = task.subTasks ?? [];
+                    const hasSubTasks = subTasks.length > 0;
+                    const subTasksCollapsed = Boolean(collapsedSubParents[task.id]);
                     return (
                       <div key={task.id} style={styles.pieceBlock}>
                         <div
@@ -1608,24 +1822,69 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                           >
                             <DragHandleIcon />
                           </span>
-                          <ProjectDebouncedTextarea
-                            value={task.text}
-                            inputRef={getTaskInputRef(task.id)}
-                            onCommit={text => updateTask(selected.id, task.id, { text })}
-                            onEnterSplit={(before, after) =>
-                              splitTaskAfter(selected.id, task.id, before, after)
-                            }
-                            onShiftPasteLayers={layers =>
-                              insertTaskLayers(selected.id, task.id, layers)
-                            }
-                            onUndoLayerPaste={undoLayerPaste}
-                            onEmptyDelete={() => removeEmptyTask(selected.id, task.id, taskIndex)}
-                            title="Shift+paste to split · ⌘Z / Ctrl+Z undoes the whole paste"
-                            style={{
-                              ...styles.taskInput,
-                              ...(task.done ? styles.taskInputDone : {}),
-                            }}
-                          />
+                          <div style={styles.taskTextWithToggle}>
+                            <ProjectDebouncedTextarea
+                              value={task.text}
+                              inputRef={getTaskInputRef(task.id)}
+                              onCommit={text => updateTask(selected.id, task.id, { text })}
+                              onEnterSplit={(before, after) =>
+                                splitTaskAfter(selected.id, task.id, before, after)
+                              }
+                              onShiftPasteLayers={layers =>
+                                insertTaskLayers(selected.id, task.id, layers)
+                              }
+                              onUndoLayerPaste={undoLayerPaste}
+                              onEmptyDelete={() => removeEmptyTask(selected.id, task.id, taskIndex)}
+                              title="Shift+paste to split · ⌘Z / Ctrl+Z undoes the whole paste"
+                              style={{
+                                ...styles.taskInput,
+                                fontSize: taskFontSizePx,
+                                ...(task.done ? styles.taskInputDone : {}),
+                              }}
+                            />
+                            {hasSubTasks ? (
+                              <button
+                                type="button"
+                                onClick={() => toggleSubTasksCollapsed(task.id)}
+                                style={styles.subTasksToggle}
+                                aria-expanded={!subTasksCollapsed}
+                                aria-label={
+                                  subTasksCollapsed
+                                    ? `Show ${subTasks.length} tasks`
+                                    : `Hide ${subTasks.length} tasks`
+                                }
+                                title={subTasksCollapsed ? 'Show tasks' : 'Hide tasks'}
+                              >
+                                <span
+                                  style={{
+                                    ...styles.subTasksToggleChevron,
+                                    transform: subTasksCollapsed
+                                      ? 'rotate(0deg)'
+                                      : 'rotate(90deg)',
+                                  }}
+                                  aria-hidden
+                                >
+                                  ▸
+                                </span>
+                              </button>
+                            ) : null}
+                            <div
+                              style={styles.taskTextClickFill}
+                              onMouseDown={e => {
+                                e.preventDefault();
+                                const el = taskInputRefs.current.get(task.id);
+                                if (!el) return;
+                                el.focus();
+                                const pos = el.value.length;
+                                try {
+                                  el.setSelectionRange(pos, pos);
+                                } catch {
+                                  /* ignore */
+                                }
+                              }}
+                              aria-hidden
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => addSubTask(selected.id, task.id)}
@@ -1701,7 +1960,8 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             <span style={styles.taskRemoveSpacer} aria-hidden />
                           )}
                         </div>
-                        {subTasks.map((sub, subIndex) => {
+                        {!subTasksCollapsed &&
+                          subTasks.map((sub, subIndex) => {
                           const subText = sub.text.trim();
                           const subLinks = subTaskLinks(sub);
                           const linksKey = subLinksKey(task.id, sub.id);
@@ -1800,6 +2060,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               title="Shift+paste to split · ⌘Z / Ctrl+Z undoes the whole paste"
                               style={{
                                 ...styles.subTaskInput,
+                                fontSize: subTaskFontSizePx,
                                 ...(sub.done ? styles.taskInputDone : {}),
                               }}
                             />
@@ -1883,6 +2144,68 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                       </div>
                     );
                   })}
+                  {/* Leftover list height is not a drop target — only land on real rows. */}
+                  <div
+                    style={styles.taskListDeadZone}
+                    onDragOver={e => {
+                      if (draggingPartIndex === null && !draggingSub && !isPartDrag(e.dataTransfer.types)) {
+                        return;
+                      }
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'none';
+                      setPartDropIndex(null);
+                      setSubDrop(null);
+                    }}
+                    onDrop={e => {
+                      e.preventDefault();
+                      clearPartDrag();
+                      clearSubDrag();
+                    }}
+                  />
+                </div>
+                <div style={styles.taskListResizeRow}>
+                  <div
+                    role="separator"
+                    aria-label="Drag any direction to resize Projects"
+                    title="Drag any direction to resize"
+                    style={{ ...styles.taskListResizeHandle, cursor: 'move' }}
+                    onPointerDown={beginFreeResize}
+                    onPointerMove={moveFreeResize}
+                    onPointerUp={endFreeResize}
+                    onPointerCancel={endFreeResize}
+                  />
+                  <div style={styles.taskTextSizeControls}>
+                    <button
+                      type="button"
+                      style={{
+                        ...styles.taskTextSizeBtn,
+                        ...(taskTextNotch <= TASK_TEXT_NOTCH_MIN
+                          ? styles.taskTextSizeBtnDisabled
+                          : {}),
+                      }}
+                      disabled={taskTextNotch <= TASK_TEXT_NOTCH_MIN}
+                      onClick={() => bumpTaskTextNotch(-1)}
+                      aria-label="Smaller task text"
+                      title="Smaller task text"
+                    >
+                      −
+                    </button>
+                    <button
+                      type="button"
+                      style={{
+                        ...styles.taskTextSizeBtn,
+                        ...(taskTextNotch >= TASK_TEXT_NOTCH_MAX
+                          ? styles.taskTextSizeBtnDisabled
+                          : {}),
+                      }}
+                      disabled={taskTextNotch >= TASK_TEXT_NOTCH_MAX}
+                      onClick={() => bumpTaskTextNotch(1)}
+                      aria-label="Larger task text"
+                      title="Larger task text"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
               <div style={styles.editorFooter}>
@@ -1926,27 +2249,27 @@ export default memo(ProjectsPanel);
 const styles: Record<string, CSSProperties> = {
   root: { fontFamily: font, minHeight: 0 },
   split: {
-    display: 'flex',
+    position: 'relative',
     border: '1px solid #e2e8f0',
     borderRadius: 10,
     overflow: 'hidden',
     background: '#fff',
-    minHeight: 220,
   },
   sidebar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
     width: 200,
-    minWidth: 200,
-    maxWidth: 200,
-    flexShrink: 0,
     borderRight: '1px solid #e2e8f0',
     background: '#f8fafc',
+    overflowY: 'auto',
+    boxSizing: 'border-box',
   },
   sidebarEmpty: { padding: 14, fontSize: 12, color: '#94a3b8' },
   sidebarList: {
     boxSizing: 'border-box',
-    height: PROJECT_SIDEBAR_SCROLL_HEIGHT,
-    maxHeight: PROJECT_SIDEBAR_SCROLL_HEIGHT,
-    overflowY: 'auto',
+    minHeight: '100%',
     padding: PROJECT_SIDEBAR_LIST_PADDING_PX,
     display: 'flex',
     flexDirection: 'column',
@@ -1995,11 +2318,10 @@ const styles: Record<string, CSSProperties> = {
     marginTop: 2,
   },
   editorPane: {
-    flex: 1,
+    marginLeft: 200,
     minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
-    minHeight: 220,
   },
   nameBlock: { padding: '10px 14px 0' },
   nameInput: {
@@ -2053,14 +2375,62 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: TASK_ROW_GAP_PX,
-    height: TASK_LIST_SCROLL_HEIGHT,
-    maxHeight: TASK_LIST_SCROLL_HEIGHT,
+    height: 'auto',
+    maxHeight: TASK_LIST_DEFAULT_HEIGHT,
     flexShrink: 0,
+  },
+  taskListDeadZone: {
+    flex: 1,
+    minHeight: 0,
+    cursor: 'default',
+  },
+  taskListResizeRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 2,
+    flexShrink: 0,
+  },
+  taskListResizeHandle: {
+    flex: 1,
+    minWidth: 0,
+    height: 10,
+    borderRadius: 999,
+    background: '#e2e8f0',
+    cursor: 'ns-resize',
+    touchAction: 'none',
+    userSelect: 'none',
+  },
+  taskTextSizeControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 0,
+  },
+  taskTextSizeBtn: {
+    width: 22,
+    height: 22,
+    border: '1px solid #cbd5e1',
+    borderRadius: 6,
+    background: '#fff',
+    color: '#475569',
+    fontSize: 14,
+    fontWeight: 700,
+    lineHeight: 1,
+    cursor: 'pointer',
+    padding: 0,
+    fontFamily: font,
+  },
+  taskTextSizeBtnDisabled: {
+    opacity: 0.4,
+    cursor: 'default',
   },
   pieceBlock: {
     display: 'flex',
     flexDirection: 'column',
     gap: 2,
+    flexShrink: 0,
   },
   taskRow: {
     display: 'flex',
@@ -2090,8 +2460,48 @@ const styles: Record<string, CSSProperties> = {
     userSelect: 'none',
     touchAction: 'none',
   },
-  taskInput: {
+  taskTextWithToggle: {
     flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    flexWrap: 'nowrap',
+    alignItems: 'flex-start',
+    columnGap: 4,
+    rowGap: 0,
+  },
+  taskTextClickFill: {
+    flex: 1,
+    minWidth: 12,
+    alignSelf: 'stretch',
+    cursor: 'text',
+  },
+  subTasksToggle: {
+    flexShrink: 0,
+    width: 14,
+    height: 18,
+    marginTop: 5,
+    padding: 0,
+    border: 'none',
+    background: 'transparent',
+    color: '#0f172a',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    lineHeight: 1,
+  },
+  subTasksToggleChevron: {
+    display: 'inline-block',
+    fontSize: 12,
+    fontWeight: 700,
+    lineHeight: 1,
+    color: '#0f172a',
+    transition: 'transform 0.12s ease',
+  },
+  taskInput: {
+    flex: '0 1 auto',
+    width: 'auto',
+    maxWidth: '100%',
     minWidth: 0,
     border: 'none',
     outline: 'none',
@@ -2261,6 +2671,7 @@ const styles: Record<string, CSSProperties> = {
     height: 24,
   },
   editorFooter: {
+    flexShrink: 0,
     padding: '6px 14px 10px',
     borderTop: '1px solid #f1f5f9',
     display: 'flex',
@@ -2300,11 +2711,11 @@ const styles: Record<string, CSSProperties> = {
     padding: '4px 8px',
   },
   editorPlaceholder: {
-    flex: 1,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    minHeight: 180,
     color: '#94a3b8',
     fontSize: 13,
     textAlign: 'center',

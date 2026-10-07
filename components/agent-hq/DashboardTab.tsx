@@ -22,7 +22,35 @@ import { sessionLabel } from './quickstartTask';
 import type { NightPrepTomorrowTask } from './nightPrep/storage';
 import type { TodayTaskLine } from './todayTaskList/storage';
 import { TUTORIAL_LOOM_URLS } from './tutorialLinks';
+import { useLocalStorage } from './hooks/useLocalStorage';
+
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+const PROJECTS_WIDTH_KEY_LEGACY = 'agentHQ_projectsColumnWidth';
+const PROJECTS_WIDTH_BY_PROJECT_KEY = 'agentHQ_projectsColumnWidthByProject';
+const PROJECTS_WIDTH_DEFAULT = 560;
+const PROJECTS_WIDTH_MIN = 280;
+/** Wind Down column floor — Projects drag-right stops so this width is preserved. */
+const NIGHT_PREP_MIN_WIDTH = 400;
+const UPPER_HALF_GAP_PX = 16;
+
+function clampProjectsWidth(w: number, maxWidth: number): number {
+  if (!Number.isFinite(w)) return PROJECTS_WIDTH_DEFAULT;
+  const max = Math.max(PROJECTS_WIDTH_MIN, maxWidth);
+  return Math.min(max, Math.max(PROJECTS_WIDTH_MIN, Math.round(w)));
+}
+
+function readLegacyProjectsWidth(): number {
+  if (typeof window === 'undefined') return PROJECTS_WIDTH_DEFAULT;
+  try {
+    const raw = window.localStorage.getItem(PROJECTS_WIDTH_KEY_LEGACY);
+    if (raw == null) return PROJECTS_WIDTH_DEFAULT;
+    const n = JSON.parse(raw) as number;
+    if (!Number.isFinite(n)) return PROJECTS_WIDTH_DEFAULT;
+    return Math.min(1400, Math.max(PROJECTS_WIDTH_MIN, Math.round(n)));
+  } catch {
+    return PROJECTS_WIDTH_DEFAULT;
+  }
+}
 
 interface DashboardTabProps {
   infractions: Infraction[];
@@ -36,6 +64,12 @@ export default function DashboardTab({
   onNightPrepFocused,
 }: DashboardTabProps) {
   const projectsRef = useRef<ProjectsPanelHandle>(null);
+  const projectsCornerDragRef = useRef<{
+    startX: number;
+    startY: number;
+    startW: number;
+    startH: number;
+  } | null>(null);
   const [selectedProjectProgress, setSelectedProjectProgress] = useState<ProjectProgress | null>(null);
   const [startWorkOpen, setStartWorkOpen] = useState(false);
   const [startWorkPreset, setStartWorkPreset] = useState<StartWorkPreset | null>(null);
@@ -43,8 +77,70 @@ export default function DashboardTab({
   const [showOpenLoopExplain, setShowOpenLoopExplain] = useState(false);
   const [windDownTutorialOpen, setWindDownTutorialOpen] = useState(false);
   const [sessionBusy, setSessionBusy] = useState(false);
+  const [widthByProject, setWidthByProject] = useLocalStorage<Record<string, number>>(
+    PROJECTS_WIDTH_BY_PROJECT_KEY,
+    {}
+  );
+  const legacyProjectsWidthRef = useRef(readLegacyProjectsWidth());
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const upperHalfRef = useRef<HTMLDivElement>(null);
   const nightPrepRef = useRef<HTMLDivElement>(null);
+  const [projectsWidthMax, setProjectsWidthMax] = useState(1200);
   const { items: doneTodayItems, addItem: addDoneToday } = useDoneToday();
+  const projectsWidth = clampProjectsWidth(
+    selectedProjectId
+      ? (widthByProject[selectedProjectId] ?? legacyProjectsWidthRef.current)
+      : legacyProjectsWidthRef.current,
+    projectsWidthMax
+  );
+
+  const setProjectsWidthForSelected = useCallback(
+    (w: number) => {
+      if (!selectedProjectId) return;
+      const next = clampProjectsWidth(w, projectsWidthMax);
+      setWidthByProject(prev => ({ ...prev, [selectedProjectId]: next }));
+    },
+    [projectsWidthMax, selectedProjectId, setWidthByProject]
+  );
+
+  useEffect(() => {
+    try {
+      window.localStorage.removeItem('agentHQ_projectsPanelScale');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    const el = upperHalfRef.current;
+    if (!el) return;
+    const update = () => {
+      const max = el.clientWidth - UPPER_HALF_GAP_PX - NIGHT_PREP_MIN_WIDTH;
+      setProjectsWidthMax(Math.max(PROJECTS_WIDTH_MIN, max));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProjectId) return;
+    setWidthByProject(prev => {
+      const stored = prev[selectedProjectId] ?? legacyProjectsWidthRef.current;
+      const next = clampProjectsWidth(stored, projectsWidthMax);
+      if (next === stored) return prev;
+      return { ...prev, [selectedProjectId]: next };
+    });
+  }, [projectsWidthMax, selectedProjectId, setWidthByProject]);
+
+  const applyProjectsFreeResize = useCallback(
+    (startW: number, startH: number, clientX: number, clientY: number, startX: number, startY: number) => {
+      setProjectsWidthForSelected(startW + (clientX - startX));
+      projectsRef.current?.setTaskListHeight(startH + (clientY - startY));
+    },
+    [setProjectsWidthForSelected]
+  );
 
   const handleStartTimer = useCallback(() => {
     setStartWorkPreset(null);
@@ -136,30 +232,96 @@ export default function DashboardTab({
       />
 
       <div style={styles.captureSection}>
-        <div style={styles.upperHalf}>
-          <DashCard
-            title="Projects"
-            titleBeside={
-              <button
-                type="button"
-                onClick={() => projectsRef.current?.addProject()}
-                style={addProjectBtnStyle}
-              >
-                Add project
-              </button>
-            }
-            headerRight={
-              selectedProjectProgress && selectedProjectProgress.total > 0 ? (
-                <ProjectProgressBar progress={selectedProjectProgress} compact />
-              ) : null
-            }
-          >
-            <ProjectsPanel
-              ref={projectsRef}
-              onSelectedProgressChange={setSelectedProjectProgress}
-              onProjectCompleted={handleProjectCompleted}
-            />
-          </DashCard>
+        <div
+          ref={upperHalfRef}
+          style={{
+            ...styles.upperHalf,
+            gap: UPPER_HALF_GAP_PX,
+            gridTemplateColumns: `${projectsWidth}px minmax(${NIGHT_PREP_MIN_WIDTH}px, 1fr)`,
+          }}
+        >
+          <div style={styles.projectsColumn}>
+            <DashCard
+              title="Projects"
+              titleBeside={
+                <button
+                  type="button"
+                  onClick={() => projectsRef.current?.addProject()}
+                  style={addProjectBtnStyle}
+                >
+                  Add project
+                </button>
+              }
+              headerRight={
+                selectedProjectProgress && selectedProjectProgress.total > 0 ? (
+                  <ProjectProgressBar progress={selectedProjectProgress} compact />
+                ) : null
+              }
+            >
+              <ProjectsPanel
+                ref={projectsRef}
+                onSelectedProgressChange={setSelectedProjectProgress}
+                onSelectedProjectIdChange={setSelectedProjectId}
+                onProjectCompleted={handleProjectCompleted}
+                panelWidth={projectsWidth}
+                onPanelWidthChange={setProjectsWidthForSelected}
+              />
+            </DashCard>
+            <div
+              role="separator"
+              aria-label="Drag corner to resize Projects"
+              title="Drag any direction to resize Projects"
+              style={styles.projectsCornerHandle}
+              onPointerDown={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                projectsCornerDragRef.current = {
+                  startX: e.clientX,
+                  startY: e.clientY,
+                  startW: projectsWidth,
+                  startH: projectsRef.current?.getTaskListHeight() ?? 0,
+                };
+              }}
+              onPointerMove={e => {
+                const drag = projectsCornerDragRef.current;
+                if (!drag) return;
+                applyProjectsFreeResize(
+                  drag.startW,
+                  drag.startH,
+                  e.clientX,
+                  e.clientY,
+                  drag.startX,
+                  drag.startY
+                );
+              }}
+              onPointerUp={() => {
+                projectsCornerDragRef.current = null;
+              }}
+              onPointerCancel={() => {
+                projectsCornerDragRef.current = null;
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden style={{ display: 'block' }}>
+                <path
+                  d="M11 1v10H1"
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M7 11h4V7"
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
           <div ref={nightPrepRef} id="night-prep" style={styles.nightPrepCell}>
             <DashCard
               title="WIND DOWN & NIGHT PREP"
@@ -314,9 +476,30 @@ const styles: Record<string, CSSProperties> = {
   },
   upperHalf: {
     display: 'grid',
-    gridTemplateColumns: 'minmax(380px, 2fr) minmax(300px, 1fr)',
-    gap: 16,
+    gridTemplateColumns: 'minmax(380px, 2fr) minmax(400px, 1fr)',
+    gap: UPPER_HALF_GAP_PX,
     alignItems: 'start',
+  },
+  projectsColumn: {
+    position: 'relative',
+    minWidth: 0,
+    minHeight: 0,
+  },
+  projectsCornerHandle: {
+    position: 'absolute',
+    right: 2,
+    bottom: 2,
+    width: 22,
+    height: 22,
+    display: 'flex',
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    cursor: 'nwse-resize',
+    touchAction: 'none',
+    userSelect: 'none',
+    zIndex: 8,
+    padding: 2,
+    boxSizing: 'border-box',
   },
   lowerHalf: {
     display: 'grid',
