@@ -22,6 +22,7 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 const LEGACY_THINGS_KEY = 'agentHQ_things';
 const TASK_LIST_HEIGHT_KEY_LEGACY = 'agentHQ_projectTaskListHeight';
 const TASK_LIST_HEIGHT_BY_PROJECT_KEY = 'agentHQ_projectTaskListHeightByProject';
+const TASK_LIST_SCROLL_BY_PROJECT_KEY = 'agentHQ_projectTaskListScrollByProject';
 const TASK_TEXT_SIZE_KEY = 'agentHQ_projectTaskTextSizeByProject';
 const TASK_LIST_VISIBLE_ROWS = 5;
 const TASK_LIST_MIN_VISIBLE_ROWS = 2;
@@ -549,6 +550,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const [taskListHeightByProject, setTaskListHeightByProject] = useLocalStorage<
     Record<string, number>
   >(TASK_LIST_HEIGHT_BY_PROJECT_KEY, {});
+  const [taskListScrollByProject, setTaskListScrollByProject] = useLocalStorage<
+    Record<string, number>
+  >(TASK_LIST_SCROLL_BY_PROJECT_KEY, {});
   const legacyTaskListHeightRef = useRef(readLegacyTaskListHeight());
   const [taskTextSizeByProject, setTaskTextSizeByProject] = useLocalStorage<Record<string, number>>(
     TASK_TEXT_SIZE_KEY,
@@ -561,6 +565,11 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     startW: number;
     startH: number;
   } | null>(null);
+  const taskListRef = useRef<HTMLDivElement>(null);
+  const skipTaskListScrollSaveRef = useRef(false);
+  const taskListScrollSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const taskListScrollByProjectRef = useRef(taskListScrollByProject);
+  taskListScrollByProjectRef.current = taskListScrollByProject;
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const taskListHeight = clampTaskListHeight(
@@ -578,9 +587,75 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     [selectedId, setTaskListHeightByProject]
   );
 
+  const persistTaskListScroll = useCallback(
+    (projectId: string, scrollTop: number) => {
+      const top = Math.max(0, Math.round(scrollTop));
+      setTaskListScrollByProject(prev => {
+        if (prev[projectId] === top) return prev;
+        if (top === 0) {
+          if (!(projectId in prev)) return prev;
+          const { [projectId]: _removed, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [projectId]: top };
+      });
+    },
+    [setTaskListScrollByProject]
+  );
+
+  const handleTaskListScroll = useCallback(() => {
+    if (!selectedId || skipTaskListScrollSaveRef.current) return;
+    const top = taskListRef.current?.scrollTop ?? 0;
+    if (taskListScrollSaveTimerRef.current) clearTimeout(taskListScrollSaveTimerRef.current);
+    taskListScrollSaveTimerRef.current = setTimeout(() => {
+      persistTaskListScroll(selectedId, top);
+    }, 120);
+  }, [persistTaskListScroll, selectedId]);
+
   useEffect(() => {
     onSelectedProjectIdChange?.(selectedId);
   }, [selectedId, onSelectedProjectIdChange]);
+
+  // Restore per-project task list scroll when switching into a project.
+  useEffect(() => {
+    if (!selectedId) return;
+    const projectId = selectedId;
+    const top = taskListScrollByProjectRef.current[projectId] ?? 0;
+    let attempts = 0;
+    let frame = 0;
+    const apply = () => {
+      const el = taskListRef.current;
+      if (!el) {
+        attempts += 1;
+        if (attempts < 12) frame = requestAnimationFrame(apply);
+        return;
+      }
+      skipTaskListScrollSaveRef.current = true;
+      el.scrollTop = top;
+      frame = requestAnimationFrame(() => {
+        skipTaskListScrollSaveRef.current = false;
+      });
+    };
+    frame = requestAnimationFrame(apply);
+    return () => {
+      cancelAnimationFrame(frame);
+      if (taskListScrollSaveTimerRef.current) {
+        clearTimeout(taskListScrollSaveTimerRef.current);
+        taskListScrollSaveTimerRef.current = null;
+      }
+      const el = taskListRef.current;
+      if (el) persistTaskListScroll(projectId, el.scrollTop);
+      skipTaskListScrollSaveRef.current = false;
+    };
+  }, [persistTaskListScroll, selectedId]);
+
+  useEffect(() => {
+    return () => {
+      if (taskListScrollSaveTimerRef.current) clearTimeout(taskListScrollSaveTimerRef.current);
+      const el = taskListRef.current;
+      if (selectedId && el) persistTaskListScroll(selectedId, el.scrollTop);
+    };
+  }, [persistTaskListScroll, selectedId]);
 
   useEffect(() => {
     const onResize = () => setViewportTick(t => t + 1);
@@ -1735,6 +1810,8 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                   <span style={styles.taskCompletedLabel}>Completed</span>
                 </div>
                 <div
+                  ref={taskListRef}
+                  onScroll={handleTaskListScroll}
                   style={{
                     ...styles.taskList,
                     height: taskListHeight,
