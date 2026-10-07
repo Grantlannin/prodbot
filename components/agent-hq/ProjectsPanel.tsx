@@ -829,6 +829,11 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const subActionSize = Math.round(22 * densityScale);
   const subRemoveSize = Math.round(20 * densityScale);
   const rowAlignItems = densityScale < 1 ? ('center' as const) : ('flex-start' as const);
+  // ▸ tracks task text size in both directions (base 12px at 14px text).
+  const chevronScale = taskFontSizePx / TASK_TEXT_BASE_PX;
+  const chevronFontSize = Math.max(8, Math.round(12 * chevronScale));
+  const chevronBtnW = Math.max(10, Math.round(14 * chevronScale));
+  const chevronBtnH = Math.max(12, Math.round(18 * chevronScale));
 
   const selectedTaskCount = selected?.tasks.length ?? 0;
 
@@ -2116,9 +2121,8 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                                 style={{
                                   ...styles.subTasksToggle,
                                   marginTop: rowChromeOffsetPx,
-                                  width: Math.round(14 * rowChromeScale),
-                                  height: Math.round(18 * rowChromeScale),
-                                  fontSize: Math.max(8, Math.round(12 * densityScale)),
+                                  width: chevronBtnW,
+                                  height: chevronBtnH,
                                 }}
                                 aria-expanded={!subTasksCollapsed}
                                 aria-label={
@@ -2131,6 +2135,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                                 <span
                                   style={{
                                     ...styles.subTasksToggleChevron,
+                                    fontSize: chevronFontSize,
                                     transform: subTasksCollapsed
                                       ? 'rotate(0deg)'
                                       : 'rotate(90deg)',
