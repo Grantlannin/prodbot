@@ -784,9 +784,17 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     : 0;
   const taskFontSizePx = TASK_TEXT_BASE_PX + taskTextNotch;
   const subTaskFontSizePx = Math.max(8, SUBTASK_TEXT_BASE_PX + taskTextNotch);
-  // Shrink row spacing with − so more tasks fit when text is smaller.
-  const taskRowGapPx = Math.max(2, TASK_ROW_GAP_PX + taskTextNotch);
-  const pieceGapPx = Math.max(1, 2 + Math.min(0, taskTextNotch));
+  // Mild tighten for −1..−3; the smallest 3 (−4..−6) take bigger spacing jumps.
+  const taskRowGapPx =
+    taskTextNotch >= -3
+      ? Math.max(2, TASK_ROW_GAP_PX + taskTextNotch)
+      : taskTextNotch === -4
+        ? 1
+        : 0; // −5 and −6
+  const pieceGapPx =
+    taskTextNotch >= -3 ? Math.max(1, 2 + Math.min(0, taskTextNotch)) : 0;
+  const rowChromeOffsetPx =
+    taskTextNotch >= -3 ? 5 : taskTextNotch === -4 ? 2 : taskTextNotch === -5 ? 1 : 0;
 
   const selectedTaskCount = selected?.tasks.length ?? 0;
 
@@ -1968,7 +1976,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             type="checkbox"
                             checked={task.done}
                             onChange={e => toggleTaskDone(selected.id, task.id, e.target.checked)}
-                            style={styles.taskCheck}
+                            style={{ ...styles.taskCheck, marginTop: rowChromeOffsetPx }}
                             aria-label="Mark part done"
                           />
                           <span
@@ -1987,7 +1995,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               setDraggingPartIndex(taskIndex);
                             }}
                             onDragEnd={clearPartDrag}
-                            style={styles.taskDragHandle}
+                            style={{ ...styles.taskDragHandle, marginTop: rowChromeOffsetPx }}
                             title="Drag to reorder, or onto another project in the sidebar"
                             aria-label="Drag to reorder part"
                             role="button"
@@ -2011,6 +2019,12 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               style={{
                                 ...styles.taskInput,
                                 fontSize: taskFontSizePx,
+                                padding:
+                                  taskTextNotch <= -4
+                                    ? taskTextNotch === -6
+                                      ? '0'
+                                      : '2px 0'
+                                    : styles.taskInput.padding,
                                 ...(task.done ? styles.taskInputDone : {}),
                               }}
                             />
@@ -2018,7 +2032,10 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               <button
                                 type="button"
                                 onClick={() => toggleSubTasksCollapsed(task.id)}
-                                style={styles.subTasksToggle}
+                                style={{
+                                  ...styles.subTasksToggle,
+                                  marginTop: rowChromeOffsetPx,
+                                }}
                                 aria-expanded={!subTasksCollapsed}
                                 aria-label={
                                   subTasksCollapsed
