@@ -2646,8 +2646,12 @@ const styles: Record<string, CSSProperties> = {
   },
   taskInput: {
     flex: 1,
-    minWidth: 0,
+    // Prevent field-sizing:content from collapsing width to a single word.
+    minWidth: '100%',
     width: '100%',
+    maxWidth: '100%',
+    alignSelf: 'stretch',
+    boxSizing: 'border-box',
     border: 'none',
     outline: 'none',
     background: 'transparent',

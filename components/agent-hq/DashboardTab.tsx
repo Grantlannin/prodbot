@@ -28,8 +28,12 @@ const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica 
 const PROJECTS_WIDTH_KEY_LEGACY = 'agentHQ_projectsColumnWidth';
 const PROJECTS_WIDTH_BY_PROJECT_KEY = 'agentHQ_projectsColumnWidthByProject';
 const PROJECTS_WIDTH_LAST_KEY = 'agentHQ_projectsColumnWidthLast';
+/** One-time reset after a bad clamp wrote tiny per-project widths on deploy. */
+const PROJECTS_WIDTH_COLLAPSE_FIX_KEY = 'agentHQ_projectsWidthCollapseFix_v2';
 const PROJECTS_WIDTH_DEFAULT = 560;
 const PROJECTS_WIDTH_MIN = 280;
+/** Widths at/under this were almost certainly corrupted by the clamp bug. */
+const PROJECTS_WIDTH_CORRUPT_CEILING = 400;
 /** Wind Down column floor — Projects drag-right stops so this width is preserved. */
 const NIGHT_PREP_MIN_WIDTH = 400;
 const UPPER_HALF_GAP_PX = 16;
@@ -104,7 +108,9 @@ export default function DashboardTab({
 
   const setProjectsWidthForSelected = useCallback(
     (w: number) => {
+      // Only persist intentional user drags — never auto-shrink from a bad max.
       const next = clampProjectsWidth(w, projectsWidthMax);
+      if (next < PROJECTS_WIDTH_CORRUPT_CEILING && w >= PROJECTS_WIDTH_CORRUPT_CEILING) return;
       setLastProjectsWidth(next);
       if (!selectedProjectId) return;
       setWidthByProject(prev => ({ ...prev, [selectedProjectId]: next }));
@@ -115,36 +121,37 @@ export default function DashboardTab({
   useEffect(() => {
     try {
       window.localStorage.removeItem('agentHQ_projectsPanelScale');
-      if (window.localStorage.getItem(PROJECTS_WIDTH_LAST_KEY) == null) {
+      // Undo the deploy bug that saved ~min widths for every project on first paint.
+      if (window.localStorage.getItem(PROJECTS_WIDTH_COLLAPSE_FIX_KEY) == null) {
+        window.localStorage.setItem(PROJECTS_WIDTH_COLLAPSE_FIX_KEY, '1');
+        window.localStorage.removeItem(PROJECTS_WIDTH_BY_PROJECT_KEY);
+        setWidthByProject({});
+        const legacy = readLegacyProjectsWidth();
+        setLastProjectsWidth(
+          legacy >= PROJECTS_WIDTH_CORRUPT_CEILING ? legacy : PROJECTS_WIDTH_DEFAULT
+        );
+      } else if (window.localStorage.getItem(PROJECTS_WIDTH_LAST_KEY) == null) {
         setLastProjectsWidth(readLegacyProjectsWidth());
       }
     } catch {
       /* ignore */
     }
-  }, [setLastProjectsWidth]);
+  }, [setLastProjectsWidth, setWidthByProject]);
 
   useEffect(() => {
     const el = upperHalfRef.current;
     if (!el) return;
     const update = () => {
       const max = el.clientWidth - UPPER_HALF_GAP_PX - NIGHT_PREP_MIN_WIDTH;
-      setProjectsWidthMax(Math.max(PROJECTS_WIDTH_MIN, max));
+      // Ignore tiny first-paint measurements so we never treat them as the real max.
+      if (max < PROJECTS_WIDTH_DEFAULT) return;
+      setProjectsWidthMax(max);
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-
-  useEffect(() => {
-    if (!selectedProjectId) return;
-    setWidthByProject(prev => {
-      const stored = prev[selectedProjectId] ?? legacyProjectsWidthRef.current;
-      const next = clampProjectsWidth(stored, projectsWidthMax);
-      if (next === stored) return prev;
-      return { ...prev, [selectedProjectId]: next };
-    });
-  }, [projectsWidthMax, selectedProjectId, setWidthByProject]);
 
   const applyProjectsFreeResize = useCallback(
     (startW: number, startH: number, clientX: number, clientY: number, startX: number, startY: number) => {
