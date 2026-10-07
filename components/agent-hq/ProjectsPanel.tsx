@@ -287,6 +287,7 @@ const ProjectDebouncedInput = memo(function ProjectDebouncedInput({
   placeholder,
   id,
   'aria-label': ariaLabel,
+  onEnter,
 }: {
   value: string;
   onCommit: (text: string) => void;
@@ -295,8 +296,9 @@ const ProjectDebouncedInput = memo(function ProjectDebouncedInput({
   placeholder?: string;
   id?: string;
   'aria-label'?: string;
+  onEnter?: () => void;
 }) {
-  const { draft, onDraftChange, onFocus, onBlur } = useDebouncedTextCommit(value, onCommit);
+  const { draft, onDraftChange, onFocus, onBlur, flush } = useDebouncedTextCommit(value, onCommit);
 
   return (
     <input
@@ -307,6 +309,12 @@ const ProjectDebouncedInput = memo(function ProjectDebouncedInput({
       onFocus={onFocus}
       onBlur={onBlur}
       onChange={e => onDraftChange(e.target.value)}
+      onKeyDown={e => {
+        if (e.key !== 'Enter' || e.shiftKey || !onEnter) return;
+        e.preventDefault();
+        flush(draft);
+        onEnter();
+      }}
       placeholder={placeholder}
       style={style}
       aria-label={ariaLabel}
@@ -1840,6 +1848,10 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                   inputRef={nameRef}
                   value={selected.name}
                   onCommit={name => touchProject(selected.id, { name })}
+                  onEnter={() => {
+                    const firstTaskId = selected.tasks[0]?.id;
+                    if (firstTaskId) setFocusTaskId(firstTaskId);
+                  }}
                   placeholder="Name this thing…"
                   style={styles.nameInput}
                   aria-label="Thing name"
