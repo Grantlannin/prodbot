@@ -2637,6 +2637,12 @@ const styles: Record<string, CSSProperties> = {
     columnGap: 4,
     rowGap: 0,
   },
+  taskTextClickFill: {
+    flex: 1,
+    minWidth: 8,
+    alignSelf: 'stretch',
+    cursor: 'text',
+  },
   subTasksToggle: {
     flexShrink: 0,
     width: 14,
@@ -2661,12 +2667,11 @@ const styles: Record<string, CSSProperties> = {
     transition: 'transform 0.12s ease',
   },
   taskInput: {
-    flex: 1,
-    // Prevent field-sizing:content from collapsing width to a single word.
-    minWidth: '100%',
-    width: '100%',
-    maxWidth: '100%',
-    alignSelf: 'stretch',
+    // Hug the typed text so the ▸ sits right after it (not by Add task).
+    flex: '0 1 auto',
+    width: 'auto',
+    minWidth: '12rem',
+    maxWidth: 'calc(100% - 22px)',
     boxSizing: 'border-box',
     border: 'none',
     outline: 'none',
