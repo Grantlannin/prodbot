@@ -567,10 +567,12 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   } | null>(null);
   const taskListRef = useRef<HTMLDivElement>(null);
   const skipTaskListScrollSaveRef = useRef(false);
-  const taskListScrollSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const liveTaskListScrollTopRef = useRef(0);
   const taskListScrollByProjectRef = useRef(taskListScrollByProject);
   taskListScrollByProjectRef.current = taskListScrollByProject;
+  const selectedIdRef = useRef<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  selectedIdRef.current = selectedId;
 
   const taskListHeight = clampTaskListHeight(
     selectedId
@@ -590,72 +592,64 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const persistTaskListScroll = useCallback(
     (projectId: string, scrollTop: number) => {
       const top = Math.max(0, Math.round(scrollTop));
+      taskListScrollByProjectRef.current = {
+        ...taskListScrollByProjectRef.current,
+        [projectId]: top,
+      };
       setTaskListScrollByProject(prev => {
         if (prev[projectId] === top) return prev;
-        if (top === 0) {
-          if (!(projectId in prev)) return prev;
-          const { [projectId]: _removed, ...rest } = prev;
-          return rest;
-        }
         return { ...prev, [projectId]: top };
       });
+      // Write through immediately — React effect cleanups run too late (scroll already 0).
+      try {
+        window.localStorage.setItem(
+          TASK_LIST_SCROLL_BY_PROJECT_KEY,
+          JSON.stringify(taskListScrollByProjectRef.current)
+        );
+      } catch {
+        /* ignore */
+      }
     },
     [setTaskListScrollByProject]
   );
 
+  const flushCurrentTaskListScroll = useCallback(() => {
+    const id = selectedIdRef.current;
+    if (!id) return;
+    const el = taskListRef.current;
+    const top = el ? el.scrollTop : liveTaskListScrollTopRef.current;
+    liveTaskListScrollTopRef.current = top;
+    persistTaskListScroll(id, top);
+  }, [persistTaskListScroll]);
+
+  const selectProject = useCallback(
+    (projectId: string | null) => {
+      if (projectId === selectedIdRef.current) return;
+      flushCurrentTaskListScroll();
+      liveTaskListScrollTopRef.current = 0;
+      setSelectedId(projectId);
+    },
+    [flushCurrentTaskListScroll]
+  );
+
   const handleTaskListScroll = useCallback(() => {
-    if (!selectedId || skipTaskListScrollSaveRef.current) return;
-    const top = taskListRef.current?.scrollTop ?? 0;
-    if (taskListScrollSaveTimerRef.current) clearTimeout(taskListScrollSaveTimerRef.current);
-    taskListScrollSaveTimerRef.current = setTimeout(() => {
-      persistTaskListScroll(selectedId, top);
-    }, 120);
-  }, [persistTaskListScroll, selectedId]);
+    if (skipTaskListScrollSaveRef.current) return;
+    liveTaskListScrollTopRef.current = taskListRef.current?.scrollTop ?? 0;
+  }, []);
 
   useEffect(() => {
     onSelectedProjectIdChange?.(selectedId);
   }, [selectedId, onSelectedProjectIdChange]);
 
-  // Restore per-project task list scroll when switching into a project.
   useEffect(() => {
-    if (!selectedId) return;
-    const projectId = selectedId;
-    const top = taskListScrollByProjectRef.current[projectId] ?? 0;
-    let attempts = 0;
-    let frame = 0;
-    const apply = () => {
-      const el = taskListRef.current;
-      if (!el) {
-        attempts += 1;
-        if (attempts < 12) frame = requestAnimationFrame(apply);
-        return;
-      }
-      skipTaskListScrollSaveRef.current = true;
-      el.scrollTop = top;
-      frame = requestAnimationFrame(() => {
-        skipTaskListScrollSaveRef.current = false;
-      });
-    };
-    frame = requestAnimationFrame(apply);
+    const flush = () => flushCurrentTaskListScroll();
+    window.addEventListener('pagehide', flush);
+    window.addEventListener('beforeunload', flush);
     return () => {
-      cancelAnimationFrame(frame);
-      if (taskListScrollSaveTimerRef.current) {
-        clearTimeout(taskListScrollSaveTimerRef.current);
-        taskListScrollSaveTimerRef.current = null;
-      }
-      const el = taskListRef.current;
-      if (el) persistTaskListScroll(projectId, el.scrollTop);
-      skipTaskListScrollSaveRef.current = false;
+      window.removeEventListener('pagehide', flush);
+      window.removeEventListener('beforeunload', flush);
     };
-  }, [persistTaskListScroll, selectedId]);
-
-  useEffect(() => {
-    return () => {
-      if (taskListScrollSaveTimerRef.current) clearTimeout(taskListScrollSaveTimerRef.current);
-      const el = taskListRef.current;
-      if (selectedId && el) persistTaskListScroll(selectedId, el.scrollTop);
-    };
-  }, [persistTaskListScroll, selectedId]);
+  }, [flushCurrentTaskListScroll]);
 
   useEffect(() => {
     const onResize = () => setViewportTick(t => t + 1);
@@ -749,6 +743,48 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const taskFontSizePx = TASK_TEXT_BASE_PX + taskTextNotch;
   const subTaskFontSizePx = Math.max(8, SUBTASK_TEXT_BASE_PX + taskTextNotch);
 
+  const selectedTaskCount = selected?.tasks.length ?? 0;
+
+  // Restore scroll after the new project's rows are in the DOM.
+  useEffect(() => {
+    if (!selectedId) return;
+    const projectId = selectedId;
+    let cancelled = false;
+    let attempts = 0;
+
+    const apply = () => {
+      if (cancelled) return;
+      const el = taskListRef.current;
+      if (!el || (selectedTaskCount > 0 && el.scrollHeight <= el.clientHeight && attempts < 8)) {
+        attempts += 1;
+        if (attempts < 24) requestAnimationFrame(apply);
+        return;
+      }
+      const top = taskListScrollByProjectRef.current[projectId] ?? 0;
+      skipTaskListScrollSaveRef.current = true;
+      el.scrollTop = top;
+      liveTaskListScrollTopRef.current = el.scrollTop;
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        el.scrollTop = top;
+        liveTaskListScrollTopRef.current = el.scrollTop;
+        requestAnimationFrame(() => {
+          if (cancelled) return;
+          el.scrollTop = top;
+          liveTaskListScrollTopRef.current = el.scrollTop;
+          skipTaskListScrollSaveRef.current = false;
+        });
+      });
+    };
+
+    const timer = window.setTimeout(apply, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      skipTaskListScrollSaveRef.current = false;
+    };
+  }, [selectedId, selectedTaskCount, taskListHeight]);
+
   const bumpTaskTextNotch = useCallback(
     (delta: number) => {
       if (!selectedId) return;
@@ -814,9 +850,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
 
   useEffect(() => {
     if (selectedId && !projects.some(p => p.id === selectedId)) {
-      setSelectedId(projects[0]?.id ?? null);
+      selectProject(projects[0]?.id ?? null);
     }
-  }, [projects, selectedId]);
+  }, [projects, selectProject, selectedId]);
 
   useEffect(() => {
     setLayerPasteUndo(null);
@@ -825,14 +861,14 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const focusProjectInPanel = useCallback(
     (projectId: string) => {
       if (!projects.some(project => project.id === projectId)) return;
-      setSelectedId(projectId);
+      selectProject(projectId);
       try {
         localStorage.removeItem(FOCUS_PROJECT_KEY);
       } catch {
         /* ignore */
       }
     },
-    [projects]
+    [projects, selectProject]
   );
 
   useEffect(() => {
@@ -964,10 +1000,10 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       updatedAt: now,
     };
     setProjects(prev => [project, ...prev]);
-    setSelectedId(project.id);
+    selectProject(project.id);
     setFocusTaskId(project.tasks[0].id);
     setTimeout(() => nameRef.current?.focus(), 0);
-  }, [setProjects]);
+  }, [selectProject, setProjects]);
 
   useImperativeHandle(
     ref,
@@ -985,9 +1021,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     (id: string) => {
       if (!confirm('Delete this project?')) return;
       setProjects(prev => prev.filter(p => p.id !== id));
-      if (selectedId === id) setSelectedId(null);
+      if (selectedId === id) selectProject(null);
     },
-    [selectedId, setProjects]
+    [selectProject, selectedId, setProjects]
   );
 
   const updateTask = useCallback(
@@ -1723,7 +1759,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                   draggable
                   data-drag-row=""
                   data-active-drag={draggingProjectIndex === projectIndex ? 'true' : undefined}
-                  onClick={() => setSelectedId(project.id)}
+                  onClick={() => selectProject(project.id)}
                   style={{
                     ...styles.sidebarItem,
                     ...(project.id === selectedId ? styles.sidebarItemActive : {}),
