@@ -1020,10 +1020,14 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const deleteProject = useCallback(
     (id: string) => {
       if (!confirm('Delete this project?')) return;
+      const idx = projects.findIndex(p => p.id === id);
+      // Prefer the project above in the sidebar; if none, the one below.
+      const nextSelectedId =
+        idx > 0 ? projects[idx - 1]?.id ?? null : projects[idx + 1]?.id ?? null;
       setProjects(prev => prev.filter(p => p.id !== id));
-      if (selectedId === id) selectProject(null);
+      if (selectedId === id) selectProject(nextSelectedId);
     },
-    [selectProject, selectedId, setProjects]
+    [projects, selectProject, selectedId, setProjects]
   );
 
   const updateTask = useCallback(
