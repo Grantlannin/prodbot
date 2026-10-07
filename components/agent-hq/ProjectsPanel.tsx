@@ -2036,6 +2036,22 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                                 </span>
                               </button>
                             ) : null}
+                            <div
+                              style={styles.taskTextClickFill}
+                              onMouseDown={e => {
+                                e.preventDefault();
+                                const el = taskInputRefs.current.get(task.id);
+                                if (!el) return;
+                                el.focus();
+                                const pos = el.value.length;
+                                try {
+                                  el.setSelectionRange(pos, pos);
+                                } catch {
+                                  /* ignore */
+                                }
+                              }}
+                              aria-hidden
+                            />
                           </div>
                           <button
                             type="button"
