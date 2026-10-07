@@ -2093,59 +2093,64 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                             <DragHandleIcon scale={rowChromeScale} />
                           </span>
                           <div style={styles.taskTextWithToggle}>
-                            <ProjectDebouncedTextarea
-                              value={task.text}
-                              inputRef={getTaskInputRef(task.id)}
-                              onCommit={text => updateTask(selected.id, task.id, { text })}
-                              onEnterSplit={(before, after) =>
-                                splitTaskAfter(selected.id, task.id, before, after)
-                              }
-                              onShiftPasteLayers={layers =>
-                                insertTaskLayers(selected.id, task.id, layers)
-                              }
-                              onUndoLayerPaste={undoLayerPaste}
-                              onEmptyDelete={() => removeEmptyTask(selected.id, task.id, taskIndex)}
-                              title="Shift+paste to split · ⌘Z / Ctrl+Z undoes the whole paste"
-                              style={{
-                                ...styles.taskInput,
-                                fontSize: taskFontSizePx,
-                                lineHeight: taskLineHeight,
-                                padding: `${taskPadY}px 0`,
-                                ...(task.done ? styles.taskInputDone : {}),
-                              }}
-                            />
-                            {hasSubTasks ? (
-                              <button
-                                type="button"
-                                onClick={() => toggleSubTasksCollapsed(task.id)}
-                                style={{
-                                  ...styles.subTasksToggle,
-                                  marginTop: rowChromeOffsetPx,
-                                  width: chevronBtnW,
-                                  height: chevronBtnH,
-                                }}
-                                aria-expanded={!subTasksCollapsed}
-                                aria-label={
-                                  subTasksCollapsed
-                                    ? `Show ${subTasks.length} tasks`
-                                    : `Hide ${subTasks.length} tasks`
+                            {/* Text + ▸ hug together; click-fill takes the leftover row width. */}
+                            <div style={styles.taskTextHug}>
+                              <ProjectDebouncedTextarea
+                                value={task.text}
+                                inputRef={getTaskInputRef(task.id)}
+                                onCommit={text => updateTask(selected.id, task.id, { text })}
+                                onEnterSplit={(before, after) =>
+                                  splitTaskAfter(selected.id, task.id, before, after)
                                 }
-                                title={subTasksCollapsed ? 'Show tasks' : 'Hide tasks'}
-                              >
-                                <span
+                                onShiftPasteLayers={layers =>
+                                  insertTaskLayers(selected.id, task.id, layers)
+                                }
+                                onUndoLayerPaste={undoLayerPaste}
+                                onEmptyDelete={() => removeEmptyTask(selected.id, task.id, taskIndex)}
+                                title="Shift+paste to split · ⌘Z / Ctrl+Z undoes the whole paste"
+                                style={{
+                                  ...styles.taskInput,
+                                  fontSize: taskFontSizePx,
+                                  lineHeight: taskLineHeight,
+                                  padding: `${taskPadY}px 0`,
+                                  ...(task.done ? styles.taskInputDone : {}),
+                                }}
+                              />
+                              {hasSubTasks ? (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSubTasksCollapsed(task.id)}
                                   style={{
-                                    ...styles.subTasksToggleChevron,
-                                    fontSize: chevronFontSize,
-                                    transform: subTasksCollapsed
-                                      ? 'rotate(0deg)'
-                                      : 'rotate(90deg)',
+                                    ...styles.subTasksToggle,
+                                    marginTop: rowChromeOffsetPx,
+                                    width: chevronBtnW,
+                                    height: chevronBtnH,
                                   }}
-                                  aria-hidden
+                                  aria-expanded={!subTasksCollapsed}
+                                  aria-label={
+                                    subTasksCollapsed
+                                      ? `Show ${subTasks.length} tasks`
+                                      : `Hide ${subTasks.length} tasks`
+                                  }
+                                  title={subTasksCollapsed ? 'Show tasks' : 'Hide tasks'}
                                 >
-                                  ▸
-                                </span>
-                              </button>
-                            ) : null}
+                                  <span
+                                    style={{
+                                      ...styles.subTasksToggleChevron,
+                                      width: 0,
+                                      height: 0,
+                                      borderStyle: 'solid',
+                                      borderWidth: `${Math.max(3, Math.round(chevronFontSize * 0.28))}px 0 ${Math.max(3, Math.round(chevronFontSize * 0.28))}px ${Math.max(5, Math.round(chevronFontSize * 0.55))}px`,
+                                      borderColor: 'transparent transparent transparent #0f172a',
+                                      transform: subTasksCollapsed
+                                        ? 'rotate(0deg)'
+                                        : 'rotate(90deg)',
+                                    }}
+                                    aria-hidden
+                                  />
+                                </button>
+                              ) : null}
+                            </div>
                             <div
                               style={styles.taskTextClickFill}
                               onMouseDown={e => {
@@ -2809,8 +2814,17 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexWrap: 'nowrap',
     alignItems: 'flex-start',
-    columnGap: 4,
+    columnGap: 0,
     rowGap: 0,
+  },
+  taskTextHug: {
+    display: 'inline-flex',
+    flexWrap: 'nowrap',
+    alignItems: 'flex-start',
+    columnGap: 2,
+    maxWidth: '100%',
+    minWidth: 0,
+    flex: '0 1 auto',
   },
   taskTextClickFill: {
     flex: 1,
@@ -2835,18 +2849,16 @@ const styles: Record<string, CSSProperties> = {
   },
   subTasksToggleChevron: {
     display: 'inline-block',
-    fontSize: 12,
-    fontWeight: 700,
-    lineHeight: 1,
-    color: '#0f172a',
+    flexShrink: 0,
     transition: 'transform 0.12s ease',
+    transformOrigin: 'center',
   },
   taskInput: {
-    // Hug the typed text so the ▸ sits right after it (not by Add task).
+    // Size to typed text so ▸ stays immediately after it.
     flex: '0 1 auto',
     width: 'auto',
-    minWidth: '12rem',
-    maxWidth: 'calc(100% - 22px)',
+    minWidth: '2ch',
+    maxWidth: '100%',
     boxSizing: 'border-box',
     border: 'none',
     outline: 'none',
