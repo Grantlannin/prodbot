@@ -787,20 +787,15 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     : 0;
   const taskFontSizePx = TASK_TEXT_BASE_PX + taskTextNotch;
   const subTaskFontSizePx = Math.max(8, SUBTASK_TEXT_BASE_PX + taskTextNotch);
-  // Mild tighten for −1..−3; the smallest 3 (−4..−6) take bigger spacing jumps.
-  const taskRowGapPx =
-    taskTextNotch >= -3
-      ? Math.max(2, TASK_ROW_GAP_PX + taskTextNotch)
-      : taskTextNotch === -4
-        ? 1
-        : 0; // −5 and −6
-  const pieceGapPx =
-    taskTextNotch >= -3 ? Math.max(1, 2 + Math.min(0, taskTextNotch)) : 0;
-  const rowChromeOffsetPx =
-    taskTextNotch >= -3 ? 5 : taskTextNotch === -4 ? 2 : taskTextNotch === -5 ? 1 : 0;
-  // Drag-handle / checkbox shrink with −; half size at the smallest notch.
-  const rowChromeScale =
+  // Density → 0.5 at smallest notch (−6): gaps/chrome half; padding/line-height tighter.
+  const densityScale =
     taskTextNotch >= 0 ? 1 : Math.max(0.5, 1 + taskTextNotch * (0.5 / 6));
+  const taskRowGapPx = Math.round(TASK_ROW_GAP_PX * densityScale); // 6 → 3 (half)
+  const pieceGapPx = Math.max(0, Math.round(2 * densityScale) - 1); // 2 → 0
+  const rowChromeOffsetPx = Math.round(5 * densityScale);
+  const rowChromeScale = densityScale; // drag handle / checkbox → half at smallest
+  const taskLineHeight = Math.max(1.05, 1.05 + 0.3 * densityScale); // 1.35 → 1.2 → 1.05
+  const taskPadY = Math.max(0, Math.round(4 * (densityScale * 2 - 1))); // 4 → 0 at half
 
   const selectedTaskCount = selected?.tasks.length ?? 0;
 
@@ -2035,12 +2030,8 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               style={{
                                 ...styles.taskInput,
                                 fontSize: taskFontSizePx,
-                                padding:
-                                  taskTextNotch <= -4
-                                    ? taskTextNotch === -6
-                                      ? '0'
-                                      : '2px 0'
-                                    : styles.taskInput.padding,
+                                lineHeight: taskLineHeight,
+                                padding: `${taskPadY}px 0`,
                                 ...(task.done ? styles.taskInputDone : {}),
                               }}
                             />
@@ -2276,6 +2267,8 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               style={{
                                 ...styles.subTaskInput,
                                 fontSize: subTaskFontSizePx,
+                                lineHeight: taskLineHeight,
+                                padding: `${taskPadY}px 0`,
                                 ...(sub.done ? styles.taskInputDone : {}),
                               }}
                             />
