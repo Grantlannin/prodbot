@@ -784,6 +784,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     : 0;
   const taskFontSizePx = TASK_TEXT_BASE_PX + taskTextNotch;
   const subTaskFontSizePx = Math.max(8, SUBTASK_TEXT_BASE_PX + taskTextNotch);
+  // Shrink row spacing with − so more tasks fit when text is smaller.
+  const taskRowGapPx = Math.max(2, TASK_ROW_GAP_PX + taskTextNotch);
+  const pieceGapPx = Math.max(1, 2 + Math.min(0, taskTextNotch));
 
   const selectedTaskCount = selected?.tasks.length ?? 0;
 
@@ -1907,6 +1910,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                     ...styles.taskList,
                     height: taskListHeight,
                     maxHeight: taskListHeight,
+                    gap: taskRowGapPx,
                   }}
                 >
                   {selected.tasks.map((task, taskIndex) => {
@@ -1917,7 +1921,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                     const hasSubTasks = subTasks.length > 0;
                     const subTasksCollapsed = Boolean(collapsedSubParents[task.id]);
                     return (
-                      <div key={task.id} style={styles.pieceBlock}>
+                      <div key={task.id} style={{ ...styles.pieceBlock, gap: pieceGapPx }}>
                         <div
                           data-active-drag={draggingPartIndex === taskIndex ? 'true' : undefined}
                           style={{
