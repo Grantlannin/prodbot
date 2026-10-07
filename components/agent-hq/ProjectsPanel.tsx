@@ -981,6 +981,23 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     }
   }, [projects, focusProjectInPanel]);
 
+  /** Keep Enter/new rows in view inside the task list only — never scroll the page. */
+  const scrollRowIntoTaskList = useCallback((el: HTMLElement, behavior: ScrollBehavior = 'smooth') => {
+    const list = taskListRef.current;
+    if (!list) return;
+    const pad = 10;
+    const elRect = el.getBoundingClientRect();
+    const listRect = list.getBoundingClientRect();
+    let delta = 0;
+    if (elRect.bottom > listRect.bottom - pad) {
+      delta = elRect.bottom - listRect.bottom + pad;
+    } else if (elRect.top < listRect.top + pad) {
+      delta = elRect.top - listRect.top - pad;
+    }
+    if (Math.abs(delta) < 1) return;
+    list.scrollBy({ top: delta, behavior });
+  }, []);
+
   useEffect(() => {
     if (!focusTaskId) return;
     const id = focusTaskId;
@@ -988,26 +1005,38 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     focusCaretRef.current = 'start';
     let attempts = 0;
     let frame = 0;
+    let cancelled = false;
     const tryFocus = () => {
+      if (cancelled) return;
       const el = taskInputRefs.current.get(id);
       if (el) {
-        el.focus();
+        el.focus({ preventScroll: true });
         const pos = caret === 'end' ? el.value.length : 0;
         try {
           el.setSelectionRange(pos, pos);
         } catch {
           /* ignore */
         }
-        el.scrollIntoView({ block: 'nearest' });
-        setFocusTaskId(null);
+        // Two frames: let the new row finish layout, then ease the list down to it.
+        frame = requestAnimationFrame(() => {
+          frame = requestAnimationFrame(() => {
+            if (cancelled) return;
+            scrollRowIntoTaskList(el, 'smooth');
+            setFocusTaskId(null);
+          });
+        });
         return;
       }
       attempts += 1;
-      if (attempts < 8) frame = requestAnimationFrame(tryFocus);
+      if (attempts < 20) frame = requestAnimationFrame(tryFocus);
+      else setFocusTaskId(null);
     };
     frame = requestAnimationFrame(tryFocus);
-    return () => cancelAnimationFrame(frame);
-  }, [focusTaskId, selected?.tasks]);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
+  }, [focusTaskId, scrollRowIntoTaskList]);
 
   useEffect(() => {
     if (!focusSubTaskKey) return;
@@ -1016,26 +1045,37 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     focusCaretRef.current = 'start';
     let attempts = 0;
     let frame = 0;
+    let cancelled = false;
     const tryFocus = () => {
+      if (cancelled) return;
       const el = subTaskInputRefs.current.get(key);
       if (el) {
-        el.focus();
+        el.focus({ preventScroll: true });
         const pos = caret === 'end' ? el.value.length : 0;
         try {
           el.setSelectionRange(pos, pos);
         } catch {
           /* ignore */
         }
-        el.scrollIntoView({ block: 'nearest' });
-        setFocusSubTaskKey(null);
+        frame = requestAnimationFrame(() => {
+          frame = requestAnimationFrame(() => {
+            if (cancelled) return;
+            scrollRowIntoTaskList(el, 'smooth');
+            setFocusSubTaskKey(null);
+          });
+        });
         return;
       }
       attempts += 1;
-      if (attempts < 8) frame = requestAnimationFrame(tryFocus);
+      if (attempts < 20) frame = requestAnimationFrame(tryFocus);
+      else setFocusSubTaskKey(null);
     };
     frame = requestAnimationFrame(tryFocus);
-    return () => cancelAnimationFrame(frame);
-  }, [focusSubTaskKey, selected?.tasks]);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
+  }, [focusSubTaskKey, scrollRowIntoTaskList]);
 
   const lastProgressRef = useRef<ProjectProgress | null>(null);
 
