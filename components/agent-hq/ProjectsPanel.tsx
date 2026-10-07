@@ -9,6 +9,7 @@ import ProjectCompletionOverlay from './ProjectCompletionOverlay';
 import { getProjectProgress, type ProjectProgress } from './projectProgress';
 import { sessionLabel } from './quickstartTask';
 import StartWorkModal from './StartWorkModal';
+import { isStoredNoteEmpty } from './noteFormatUtils';
 import { useUserProfile } from './hooks/UserProfileProvider';
 import { triggerCelebration } from './celebrationEffects';
 import {
@@ -25,6 +26,7 @@ const TASK_LIST_HEIGHT_BY_PROJECT_KEY = 'agentHQ_projectTaskListHeightByProject'
 const TASK_LIST_SCROLL_BY_PROJECT_KEY = 'agentHQ_projectTaskListScrollByProject';
 const TASK_TEXT_SIZE_KEY = 'agentHQ_projectTaskTextSizeByProject';
 const SELECTED_PROJECT_KEY = 'agentHQ_selectedProjectId';
+const COLLAPSED_SUB_PARENTS_KEY = 'agentHQ_collapsedSubParents';
 
 function readStoredSelectedProjectId(): string | null {
   if (typeof window === 'undefined') return null;
@@ -758,8 +760,11 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const [focusSubTaskKey, setFocusSubTaskKey] = useState<string | null>(null);
   /** Where to place the caret after a programmatic focus (e.g. empty-delete → line above). */
   const focusCaretRef = useRef<'start' | 'end'>('start');
-  /** taskId → true means that part's subtasks are collapsed */
-  const [collapsedSubParents, setCollapsedSubParents] = useState<Record<string, boolean>>({});
+  /** taskId → true means that part's subtasks are collapsed (persisted). */
+  const [collapsedSubParents, setCollapsedSubParents] = useLocalStorage<Record<string, boolean>>(
+    COLLAPSED_SUB_PARENTS_KEY,
+    {}
+  );
   const [openLinksKey, setOpenLinksKey] = useState<string | null>(null);
   const [notesEditor, setNotesEditor] = useState<NotesEditorTarget | null>(null);
   const [quickstartTarget, setQuickstartTarget] = useState<QuickstartTarget | null>(null);
@@ -1837,22 +1842,27 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
     return label ? `${label} notes` : 'Task notes';
   })();
 
+  /** Sticky while the modal is open — survives `setNotesEditor(null)` during close. */
+  const notesSaveTargetRef = useRef<NotesEditorTarget | null>(null);
+  if (notesEditor) notesSaveTargetRef.current = notesEditor;
+
   const updateNotesEditorValue = useCallback(
     (content: string) => {
-      if (!notesEditor) return;
-      if (notesEditor.kind === 'project') {
-        touchProject(notesEditor.projectId, { notes: content });
+      const target = notesSaveTargetRef.current;
+      if (!target) return;
+      if (target.kind === 'project') {
+        touchProject(target.projectId, { notes: content });
         return;
       }
-      if (notesEditor.kind === 'task') {
-        updateTask(notesEditor.projectId, notesEditor.taskId, { notes: content });
+      if (target.kind === 'task') {
+        updateTask(target.projectId, target.taskId, { notes: content });
         return;
       }
-      updateSubTask(notesEditor.projectId, notesEditor.taskId, notesEditor.subTaskId, {
+      updateSubTask(target.projectId, target.taskId, target.subTaskId, {
         notes: content,
       });
     },
-    [notesEditor, touchProject, updateTask, updateSubTask]
+    [touchProject, updateTask, updateSubTask]
   );
 
   return (
@@ -2229,12 +2239,17 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                               width: actionSize,
                               height: actionSize,
                               marginTop: 0,
-                              ...(task.notes?.trim() ? styles.taskNotesBtnActive : {}),
+                              ...(!isStoredNoteEmpty(task.notes ?? '') ? styles.taskNotesBtnActive : {}),
                             }}
-                            aria-label={task.notes?.trim() ? 'Edit part notes' : 'Add part notes'}
-                            title={task.notes?.trim() ? 'Part notes' : 'Add part notes'}
+                            aria-label={
+                              !isStoredNoteEmpty(task.notes ?? '') ? 'Edit part notes' : 'Add part notes'
+                            }
+                            title={!isStoredNoteEmpty(task.notes ?? '') ? 'Part notes' : 'Add part notes'}
                           >
-                            <NoteIcon active={Boolean(task.notes?.trim())} size={actionIconSize} />
+                            <NoteIcon
+                              active={!isStoredNoteEmpty(task.notes ?? '')}
+                              size={actionIconSize}
+                            />
                           </button>
                           <button
                             type="button"
@@ -2437,12 +2452,21 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                                 width: subActionSize,
                                 height: subActionSize,
                                 marginTop: 0,
-                                ...(sub.notes?.trim() ? styles.subTaskActionBtnActive : {}),
+                                ...(!isStoredNoteEmpty(sub.notes ?? '')
+                                  ? styles.subTaskActionBtnActive
+                                  : {}),
                               }}
-                              aria-label={sub.notes?.trim() ? 'Edit task notes' : 'Add task notes'}
-                              title={sub.notes?.trim() ? 'Task notes' : 'Add task notes'}
+                              aria-label={
+                                !isStoredNoteEmpty(sub.notes ?? '') ? 'Edit task notes' : 'Add task notes'
+                              }
+                              title={
+                                !isStoredNoteEmpty(sub.notes ?? '') ? 'Task notes' : 'Add task notes'
+                              }
                             >
-                              <NoteIcon active={Boolean(sub.notes?.trim())} size={actionIconSize} />
+                              <NoteIcon
+                                active={!isStoredNoteEmpty(sub.notes ?? '')}
+                                size={actionIconSize}
+                              />
                             </button>
                             <button
                               type="button"
@@ -2572,10 +2596,14 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
                     onClick={() => setNotesEditor({ kind: 'project', projectId: selected.id })}
                     style={{
                       ...styles.footerAddTaskBtn,
-                      ...(selected.notes?.trim() ? styles.footerProjectNotesBtnActive : {}),
+                      ...(!isStoredNoteEmpty(selected.notes ?? '')
+                        ? styles.footerProjectNotesBtnActive
+                        : {}),
                     }}
                   >
-                    {selected.notes?.trim() ? 'Project notes/context' : 'Add project notes/context'}
+                    {!isStoredNoteEmpty(selected.notes ?? '')
+                      ? 'Project notes/context'
+                      : 'Add project notes/context'}
                   </button>
                 </div>
                 <button type="button" onClick={() => deleteProject(selected.id)} style={styles.deleteBtn}>
