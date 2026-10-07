@@ -27,6 +27,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const PROJECTS_WIDTH_KEY_LEGACY = 'agentHQ_projectsColumnWidth';
 const PROJECTS_WIDTH_BY_PROJECT_KEY = 'agentHQ_projectsColumnWidthByProject';
+const PROJECTS_WIDTH_LAST_KEY = 'agentHQ_projectsColumnWidthLast';
 const PROJECTS_WIDTH_DEFAULT = 560;
 const PROJECTS_WIDTH_MIN = 280;
 /** Wind Down column floor — Projects drag-right stops so this width is preserved. */
@@ -81,35 +82,46 @@ export default function DashboardTab({
     PROJECTS_WIDTH_BY_PROJECT_KEY,
     {}
   );
+  const [lastProjectsWidth, setLastProjectsWidth] = useLocalStorage<number>(
+    PROJECTS_WIDTH_LAST_KEY,
+    PROJECTS_WIDTH_DEFAULT
+  );
   const legacyProjectsWidthRef = useRef(readLegacyProjectsWidth());
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const upperHalfRef = useRef<HTMLDivElement>(null);
   const nightPrepRef = useRef<HTMLDivElement>(null);
   const [projectsWidthMax, setProjectsWidthMax] = useState(1200);
   const { items: doneTodayItems, addItem: addDoneToday } = useDoneToday();
+  const widthFallback = Number.isFinite(lastProjectsWidth)
+    ? lastProjectsWidth
+    : legacyProjectsWidthRef.current;
   const projectsWidth = clampProjectsWidth(
     selectedProjectId
-      ? (widthByProject[selectedProjectId] ?? legacyProjectsWidthRef.current)
-      : legacyProjectsWidthRef.current,
+      ? (widthByProject[selectedProjectId] ?? widthFallback)
+      : widthFallback,
     projectsWidthMax
   );
 
   const setProjectsWidthForSelected = useCallback(
     (w: number) => {
-      if (!selectedProjectId) return;
       const next = clampProjectsWidth(w, projectsWidthMax);
+      setLastProjectsWidth(next);
+      if (!selectedProjectId) return;
       setWidthByProject(prev => ({ ...prev, [selectedProjectId]: next }));
     },
-    [projectsWidthMax, selectedProjectId, setWidthByProject]
+    [projectsWidthMax, selectedProjectId, setLastProjectsWidth, setWidthByProject]
   );
 
   useEffect(() => {
     try {
       window.localStorage.removeItem('agentHQ_projectsPanelScale');
+      if (window.localStorage.getItem(PROJECTS_WIDTH_LAST_KEY) == null) {
+        setLastProjectsWidth(readLegacyProjectsWidth());
+      }
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [setLastProjectsWidth]);
 
   useEffect(() => {
     const el = upperHalfRef.current;

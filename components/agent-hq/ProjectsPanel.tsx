@@ -24,6 +24,27 @@ const TASK_LIST_HEIGHT_KEY_LEGACY = 'agentHQ_projectTaskListHeight';
 const TASK_LIST_HEIGHT_BY_PROJECT_KEY = 'agentHQ_projectTaskListHeightByProject';
 const TASK_LIST_SCROLL_BY_PROJECT_KEY = 'agentHQ_projectTaskListScrollByProject';
 const TASK_TEXT_SIZE_KEY = 'agentHQ_projectTaskTextSizeByProject';
+const SELECTED_PROJECT_KEY = 'agentHQ_selectedProjectId';
+
+function readStoredSelectedProjectId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(SELECTED_PROJECT_KEY);
+    if (raw == null) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    return typeof parsed === 'string' && parsed ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSelectedProjectId(projectId: string | null) {
+  try {
+    window.localStorage.setItem(SELECTED_PROJECT_KEY, JSON.stringify(projectId));
+  } catch {
+    /* ignore */
+  }
+}
 const TASK_LIST_VISIBLE_ROWS = 5;
 const TASK_LIST_MIN_VISIBLE_ROWS = 2;
 const TASK_LIST_MAX_VISIBLE_ROWS = 40;
@@ -580,6 +601,7 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   taskListScrollByProjectRef.current = taskListScrollByProject;
   const selectedIdRef = useRef<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectionHydrated, setSelectionHydrated] = useState(false);
   selectedIdRef.current = selectedId;
 
   const taskListHeight = clampTaskListHeight(
@@ -635,7 +657,9 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
       if (projectId === selectedIdRef.current) return;
       flushCurrentTaskListScroll();
       liveTaskListScrollTopRef.current = 0;
+      selectedIdRef.current = projectId;
       setSelectedId(projectId);
+      writeStoredSelectedProjectId(projectId);
     },
     [flushCurrentTaskListScroll]
   );
@@ -643,6 +667,16 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   const handleTaskListScroll = useCallback(() => {
     if (skipTaskListScrollSaveRef.current) return;
     liveTaskListScrollTopRef.current = taskListRef.current?.scrollTop ?? 0;
+  }, []);
+
+  // Restore last selected project after refresh (before falling back to first).
+  useEffect(() => {
+    const stored = readStoredSelectedProjectId();
+    if (stored) {
+      selectedIdRef.current = stored;
+      setSelectedId(stored);
+    }
+    setSelectionHydrated(true);
   }, []);
 
   useEffect(() => {
@@ -857,10 +891,15 @@ const ProjectsPanel = forwardRef<ProjectsPanelHandle, ProjectsPanelProps>(functi
   }, [projects, setProjects]);
 
   useEffect(() => {
-    if (selectedId && !projects.some(p => p.id === selectedId)) {
-      selectProject(projects[0]?.id ?? null);
+    if (!selectionHydrated) return;
+    if (projects.length === 0) {
+      if (selectedId) selectProject(null);
+      return;
     }
-  }, [projects, selectProject, selectedId]);
+    if (selectedId && projects.some(p => p.id === selectedId)) return;
+    // Missing/invalid selection after refresh — open the first project, not an empty pane.
+    selectProject(projects[0]?.id ?? null);
+  }, [projects, selectProject, selectedId, selectionHydrated]);
 
   useEffect(() => {
     setLayerPasteUndo(null);
