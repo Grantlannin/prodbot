@@ -37,6 +37,21 @@ const font =
 const COMMIT_DEBOUNCE_MS = 300;
 const PANEL_BASE_W = 520;
 const PANEL_BASE_H = 420;
+
+function caretFromPoint(x: number, y: number): { node: Node; offset: number } | null {
+  const doc = document as Document & {
+    caretRangeFromPoint?: (x: number, y: number) => Range | null;
+    caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+  };
+  if (typeof doc.caretRangeFromPoint === 'function') {
+    const range = doc.caretRangeFromPoint(x, y);
+    if (!range) return null;
+    return { node: range.startContainer, offset: range.startOffset };
+  }
+  const pos = doc.caretPositionFromPoint?.(x, y);
+  if (!pos) return null;
+  return { node: pos.offsetNode, offset: pos.offset };
+}
 /**
  * Dim + click-catcher as one plain filled layer (not React-owned).
  * A flat `background` is cheap; `box-shadow: 0 0 0 100vmax` is not (slow tear-down).
@@ -120,6 +135,12 @@ export default function SimpleNotesEditorModal({
   const closingRef = useRef(false);
   const tabsRef = useRef<NoteTab[]>(tabs);
   const activeTabIdRef = useRef(activeTabId);
+  /** Drag-select: freeze Y when pointer leaves left/right so selection doesn't jump up a line. */
+  const dragSelectRef = useRef<{
+    anchorNode: Node;
+    anchorOffset: number;
+    lastInBoundsY: number;
+  } | null>(null);
   sizeDraftRef.current = sizeDraft;
   fontSizeRef.current = fontSize;
   tabsRef.current = tabs;
@@ -304,6 +325,60 @@ export default function SimpleNotesEditorModal({
     };
     document.addEventListener('selectionchange', onSelectionChange);
     return () => document.removeEventListener('selectionchange', onSelectionChange);
+  }, [open]);
+
+  // Browser contentEditable: dragging left/right off the editor hit-tests prior lines
+  // ("selects up"). While the pointer is outside horizontally, freeze Y and drive
+  // selection ourselves so it only moves lines when the cursor is actually over them.
+  useEffect(() => {
+    if (!open) return;
+
+    const onMove = (e: PointerEvent) => {
+      const drag = dragSelectRef.current;
+      const editor = editorRef.current;
+      if (!drag || !editor || (e.buttons & 1) === 0) return;
+
+      const rect = editor.getBoundingClientRect();
+      if (rect.width <= 2 || rect.height <= 2) return;
+
+      const outsideX = e.clientX < rect.left || e.clientX > rect.right;
+      const x = Math.min(rect.right - 1, Math.max(rect.left + 1, e.clientX));
+      let y: number;
+      if (outsideX) {
+        y = drag.lastInBoundsY;
+      } else {
+        y = Math.min(rect.bottom - 1, Math.max(rect.top + 1, e.clientY));
+        drag.lastInBoundsY = y;
+      }
+
+      const caret = caretFromPoint(x, y);
+      if (!caret || !editor.contains(caret.node)) return;
+      if (!drag.anchorNode.isConnected || !editor.contains(drag.anchorNode)) {
+        dragSelectRef.current = null;
+        return;
+      }
+
+      const sel = window.getSelection();
+      if (!sel) return;
+      try {
+        sel.setBaseAndExtent(drag.anchorNode, drag.anchorOffset, caret.node, caret.offset);
+      } catch {
+        /* ignore invalid extent */
+      }
+    };
+
+    const onUp = () => {
+      dragSelectRef.current = null;
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+    return () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+    };
   }, [open]);
 
   const scheduleCommit = useCallback(() => {
@@ -1106,6 +1181,21 @@ export default function SimpleNotesEditorModal({
           onInput={handleInput}
           onPaste={handlePaste}
           onKeyDown={onEditorKeyDown}
+          onPointerDown={e => {
+            if (e.button !== 0) return;
+            const editor = editorRef.current;
+            if (!editor) return;
+            const caret = caretFromPoint(e.clientX, e.clientY);
+            if (!caret || !editor.contains(caret.node)) {
+              dragSelectRef.current = null;
+              return;
+            }
+            dragSelectRef.current = {
+              anchorNode: caret.node,
+              anchorOffset: caret.offset,
+              lastInBoundsY: e.clientY,
+            };
+          }}
           onMouseUp={syncToolbarFromEditorSelection}
           onKeyUp={syncToolbarFromEditorSelection}
           onCompositionStart={() => {
