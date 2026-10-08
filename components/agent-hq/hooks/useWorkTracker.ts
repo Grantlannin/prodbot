@@ -567,15 +567,19 @@ export function useWorkTracker() {
 
       if (prev.status === 'working' && prev.currentSession) {
         const session = { ...prev.currentSession };
+        const frozenElapsed = readTick().elapsed;
         if (prev.phase === 'pomodoro_working' && session.pomodoroMinutes) {
           const remaining = readTick().pomodoroLeft ?? pomodoroTargetMs(session);
           const target = pomodoroTargetMs(session);
           session.startTime = now - (target - remaining);
-        } else if (session.countdownTargetMs && session.countdownStartTime) {
-          const remaining = readTick().openCountdownLeft ?? session.countdownTargetMs;
-          session.countdownStartTime = now - (session.countdownTargetMs - remaining);
         } else {
-          session.startTime = now - readTick().elapsed;
+          // Always rewind work-clock startTime so pause duration is not counted.
+          // Countdown sessions also need countdownStartTime rewound (display only).
+          if (session.countdownTargetMs && session.countdownStartTime) {
+            const remaining = readTick().openCountdownLeft ?? session.countdownTargetMs;
+            session.countdownStartTime = now - (session.countdownTargetMs - remaining);
+          }
+          session.startTime = now - frozenElapsed;
         }
         return { ...prev, timerPaused: false, currentSession: session };
       }
