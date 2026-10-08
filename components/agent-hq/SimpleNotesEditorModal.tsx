@@ -558,22 +558,34 @@ export default function SimpleNotesEditorModal({
     const editor = editorRef.current;
     if (!editor) return;
 
-    let restored = restoreSelection();
-    if (!restored) {
+    const sel = window.getSelection();
+    const liveInEditor =
+      !!sel &&
+      sel.rangeCount > 0 &&
+      editor.contains(sel.getRangeAt(0).commonAncestorContainer);
+
+    if (liveInEditor && sel!.isCollapsed) {
+      // Caret already in the editor — toggle bold for next typing; do NOT
+      // re-select a stale toolbar bookmark (that "grabs" the old text).
       editor.focus();
-      // Fall back to a still-valid saved highlight if the caret is empty.
-      const fallback = cloneUsableEditorRange(savedRangeRef.current);
-      const sel = window.getSelection();
-      if (fallback && sel) {
-        try {
-          sel.removeAllRanges();
-          sel.addRange(fallback);
-          restored = true;
-        } catch {
-          /* ignore */
+    } else if (!liveInEditor) {
+      // Focus left for the toolbar — restore the last highlight if we still have one.
+      const restored = restoreSelection();
+      if (!restored) {
+        editor.focus();
+        const fallback = cloneUsableEditorRange(savedRangeRef.current);
+        const s = window.getSelection();
+        if (fallback && s) {
+          try {
+            s.removeAllRanges();
+            s.addRange(fallback);
+          } catch {
+            /* ignore */
+          }
         }
       }
     }
+    // else: live non-collapsed selection — use it as-is
 
     let wasBold = false;
     try {
@@ -584,7 +596,7 @@ export default function SimpleNotesEditorModal({
 
     document.execCommand('bold', false);
 
-    const sel = window.getSelection();
+    const selAfter = window.getSelection();
     let isBold = false;
     try {
       isBold = document.queryCommandState('bold');
@@ -593,15 +605,24 @@ export default function SimpleNotesEditorModal({
     }
 
     // execCommand sometimes fails to unbold nested <strong><span>…</span></strong>.
-    if (wasBold && isBold && sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-      unwrapBoldInRange(sel.getRangeAt(0));
+    if (wasBold && isBold && selAfter && selAfter.rangeCount > 0 && !selAfter.isCollapsed) {
+      unwrapBoldInRange(selAfter.getRangeAt(0));
       isBold = false;
     }
 
-    if (sel && sel.rangeCount > 0) {
-      const next = cloneUsableEditorRange(sel.getRangeAt(0));
-      if (next) savedRangeRef.current = next;
+    // Park caret at the end of the formatted span so the next keystroke types
+    // new text instead of replacing the still-highlighted run.
+    if (selAfter && selAfter.rangeCount > 0 && !selAfter.isCollapsed) {
+      try {
+        const end = selAfter.getRangeAt(0).cloneRange();
+        end.collapse(false);
+        selAfter.removeAllRanges();
+        selAfter.addRange(end);
+      } catch {
+        /* ignore */
+      }
     }
+    savedRangeRef.current = null;
 
     setBoldActive(isBold);
     handleInput();
