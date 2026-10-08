@@ -12,6 +12,7 @@ import {
   buildFocusSyncPayload,
   onExtensionInfraction,
   onTimeStudyCheckIn,
+  postFocusClearSync,
   postFocusSync,
   postTimeStudySync,
   type FocusBlocklistStore,
@@ -134,7 +135,16 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
   };
 
   // Sync on real session/entitlement/blocklist changes — not every timer tick.
+  // When not in an active work session, always force-clear the extension (dedupe
+  // can otherwise leave blocking on after the session UI is already idle).
   useEffect(() => {
+    if (status !== 'working') {
+      lastSyncKeyRef.current = '';
+      wasBlockingRef.current = false;
+      blockingOnAtRef.current = 0;
+      postFocusClearSync();
+      return;
+    }
     pushFocusSync();
   }, [status, currentSession, timerPaused, entitled, blocklist, tickStore]);
 
@@ -142,6 +152,7 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
   useEffect(() => {
     let wasExpired = tickStore.getSnapshot().openCountdownLeft === 0;
     const onTick = () => {
+      if (statusRef.current !== 'working') return;
       const { openCountdownLeft } = tickStore.getSnapshot();
       const expired = openCountdownLeft === 0;
       if (expired && !wasExpired) {
@@ -154,8 +165,15 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
 
   useEffect(() => {
     return onExtensionInfraction(payload => {
+      // Only count kicks while Soft/Hard work is actually running (not after end / break).
+      if (statusRef.current !== 'working') return;
+      const session = sessionRef.current;
+      const lock = session?.lockMode;
+      if (lock !== 'soft' && lock !== 'hard') return;
+
       // Lock-on kicks are logged in the extension immediately but may flush to the
       // app seconds later — judge by createdAt vs when blocking turned on, not receive time.
+      // Do NOT use session.startTime: pause/resume rewrites that clock for Work today.
       const LOCK_ON_GRACE_MS = 2_000;
       const created =
         typeof payload.createdAt === 'number' && payload.createdAt > 0
@@ -163,16 +181,6 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
           : Date.now();
       const blockingOnAt = blockingOnAtRef.current;
       if (blockingOnAt > 0 && created >= blockingOnAt - 1000 && created < blockingOnAt + LOCK_ON_GRACE_MS) {
-        return;
-      }
-      const session = sessionRef.current;
-      const lock = session?.lockMode;
-      if (
-        (lock === 'soft' || lock === 'hard') &&
-        typeof session?.startTime === 'number' &&
-        created >= session.startTime - 1000 &&
-        created < session.startTime + LOCK_ON_GRACE_MS
-      ) {
         return;
       }
       const key = `${payload.domain}:${payload.createdAt}`;

@@ -260,7 +260,7 @@ export function useWorkTracker() {
         timerPaused: false,
       }));
 
-      patchTick({ elapsed: 0, pomodoroLeft: null });
+      patchTick({ elapsed: 0, pomodoroLeft: null, breakLeft: null, openCountdownLeft: null });
 
       return completed;
     },
@@ -572,12 +572,16 @@ export function useWorkTracker() {
           const remaining = readTick().pomodoroLeft ?? pomodoroTargetMs(session);
           const target = pomodoroTargetMs(session);
           session.startTime = now - (target - remaining);
+          patchTick({ pomodoroLeft: remaining, elapsed: now - session.startTime });
         } else {
           // Always rewind work-clock startTime so pause duration is not counted.
           // Countdown sessions also need countdownStartTime rewound (display only).
           if (session.countdownTargetMs && session.countdownStartTime) {
             const remaining = readTick().openCountdownLeft ?? session.countdownTargetMs;
             session.countdownStartTime = now - (session.countdownTargetMs - remaining);
+            patchTick({ openCountdownLeft: remaining, elapsed: frozenElapsed });
+          } else {
+            patchTick({ elapsed: frozenElapsed });
           }
           session.startTime = now - frozenElapsed;
         }

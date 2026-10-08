@@ -149,9 +149,12 @@ export function computeSessionEndsAt(
   if (status !== 'working' || !session?.countdownTargetMs || !session.countdownStartTime) {
     return null;
   }
-  if (timerPaused && openCountdownLeft != null) {
-    return Date.now() + openCountdownLeft;
+  // Prefer live tick remaining — countdownStartTime is rewritten on pause/resume and
+  // can disagree with the displayed countdown (false expire → no blocking mid-session).
+  if (openCountdownLeft != null) {
+    return Date.now() + Math.max(0, openCountdownLeft);
   }
+  if (timerPaused) return null;
   return session.countdownStartTime + session.countdownTargetMs;
 }
 
