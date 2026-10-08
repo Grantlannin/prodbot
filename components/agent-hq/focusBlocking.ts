@@ -149,8 +149,7 @@ export function computeSessionEndsAt(
   if (status !== 'working' || !session?.countdownTargetMs || !session.countdownStartTime) {
     return null;
   }
-  // Prefer live tick remaining — countdownStartTime is rewritten on pause/resume and
-  // can disagree with the displayed countdown (false expire → no blocking mid-session).
+  // Live tick remaining is source of truth after pause/resume (countdownStartTime moves).
   if (openCountdownLeft != null) {
     return Date.now() + Math.max(0, openCountdownLeft);
   }

@@ -98,6 +98,8 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
   const wasBlockingRef = useRef(false);
   /** Wall-clock when Soft/Hard blocking last turned on — lock-on kicks share this window. */
   const blockingOnAtRef = useRef(0);
+  /** Session id that last armed lock-on grace — re-blocking the same session must not re-arm. */
+  const graceSessionIdRef = useRef<string | null>(null);
 
   const pushFocusSync = () => {
     const { openCountdownLeft } = tickStore.getSnapshot();
@@ -109,25 +111,36 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
       timerPaused: timerPausedRef.current,
       entitled: entitledRef.current,
     });
-    // Fingerprint stable fields only — never include per-tick countdown ms.
+    // Fingerprint stable fields only — never sessionEndsAt (it's Date.now()+remaining
+    // and would change every sync, thrashing the extension / re-arming grace).
     const key = JSON.stringify({
       blocking: payload.blocking,
       domains: payload.domains,
-      sessionEndsAt: payload.sessionEndsAt,
       lockMode: payload.lockMode,
       sessionId: payload.sessionId,
       timerPaused: payload.timerPaused,
       remainingMs: payload.remainingMs,
       entitled: payload.entitled !== false,
+      countdownZero: openCountdownLeft === 0,
     });
     if (key === lastSyncKeyRef.current) return;
     lastSyncKeyRef.current = key;
 
     if (payload.blocking && !wasBlockingRef.current) {
-      blockingOnAtRef.current = Date.now();
+      const sid = payload.sessionId ?? null;
+      // Only the first Soft/Hard arm for a session gets lock-on grace. If blocking
+      // flickered off (billing blip, false expire) and came back, keep counting.
+      if (sid && graceSessionIdRef.current !== sid) {
+        blockingOnAtRef.current = Date.now();
+        graceSessionIdRef.current = sid;
+      } else {
+        blockingOnAtRef.current = 0;
+      }
     }
     if (!payload.blocking) {
       blockingOnAtRef.current = 0;
+      // Keep graceSessionIdRef — CLEAR from an entitlement blip has null sessionId;
+      // only status leaving 'working' resets it so re-arming grace stays one-shot per session.
     }
     wasBlockingRef.current = !!payload.blocking;
 
@@ -142,6 +155,7 @@ export default function FocusExtensionBridge({ onAddInfraction }: FocusExtension
       lastSyncKeyRef.current = '';
       wasBlockingRef.current = false;
       blockingOnAtRef.current = 0;
+      graceSessionIdRef.current = null;
       postFocusClearSync();
       return;
     }
